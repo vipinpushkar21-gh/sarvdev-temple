@@ -18,11 +18,11 @@ export default function Page() {
   return (
     <div suppressHydrationWarning>
       <section className="hero-bg relative overflow-hidden">`
-        <div className="absolute inset-0 bg-gradient-to-br from-sky-50/60 to-violet-50/60 pointer-events-none"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-orange-50/60 to-amber-50/60 pointer-events-none"></div>
         <div className="container mx-auto px-4 py-24 relative">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
             <div className="lg:col-span-7">
-              <h1 className="font-playfair text-5xl md:text-6xl font-extrabold text-sky-800 leading-tight drop-shadow-sm fade-in">Discover temples. Deepen devotion.</h1>
+              <h1 className="font-playfair text-5xl md:text-6xl font-extrabold text-orange-800 leading-tight drop-shadow-sm fade-in">Discover temples. Deepen devotion.</h1>
               <p className="mt-6 text-lg text-slate-700 max-w-2xl">Sarvdev connects seekers with temples, live darshan, and devotional resources — thoughtfully curated and accessible.</p>
 
               <div className="mt-8 relative">
@@ -58,13 +58,13 @@ export default function Page() {
             <article key={card.title} className="p-6 bg-white rounded-2xl shadow hover:shadow-lg transition-shadow transform hover:-translate-y-1">
               <h3 className="font-semibold text-lg">{card.title}</h3>
               <p className="mt-2 text-sm text-gray-600">{card.desc}</p>
-              <a href="#" className="mt-4 inline-block text-sky-600 font-medium">Explore →</a>
+              <a href="#" className="mt-4 inline-block text-orange-600 font-medium">Explore →</a>
             </article>
           ))}
         </section>
       </main>
 
-      <footer className="bg-sky-900 text-sky-100 mt-12">
+      <footer className="bg-orange-900 text-orange-100 mt-12">
         <div className="container mx-auto px-4 py-12 grid grid-cols-1 md:grid-cols-3 gap-8">
           <div>
             <h4 className="text-2xl font-semibold text-white">Sarvdev</h4>

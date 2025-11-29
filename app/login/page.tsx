@@ -29,7 +29,7 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center px-4 bg-gradient-to-br from-sky-50 to-emerald-50">
+    <main className="min-h-screen flex items-center justify-center px-4 bg-gradient-to-br from-orange-50 to-amber-50">
       <div className="max-w-md w-full">
         <div className="bg-white/80 backdrop-blur rounded-2xl shadow-xl p-8">
           <div className="text-center mb-8">

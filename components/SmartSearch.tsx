@@ -38,7 +38,7 @@ export default function SmartSearch() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search temples, events, devotionals..."
-          className="w-full rounded-xl border border-gray-200 px-4 py-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-300"
+          className="w-full rounded-xl border border-gray-200 px-4 py-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-300"
           suppressHydrationWarning
         />
       </div>
@@ -49,7 +49,7 @@ export default function SmartSearch() {
             <div key={category} className="p-3 border-b last:border-b-0">
               <div className="text-xs font-semibold text-gray-500 mb-2">{category}</div>
               {items.map((it) => (
-                <a key={it.id} href="#" className="block px-2 py-2 hover:bg-sky-50">
+                <a key={it.id} href="#" className="block px-2 py-2 hover:bg-orange-50">
                   <div className="font-medium text-gray-800">{it.title}</div>
                   <div className="text-sm text-gray-500">{it.description}</div>
                 </a>
