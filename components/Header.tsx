@@ -12,7 +12,6 @@ const navItems = [
   { label: 'Devotionals', href: '/devotionals' },
   { label: 'Blog', href: '/blog' },
   { label: 'List Temple', href: '/list-temple' },
-  { label: 'Donation', href: '/donation' },
   { label: 'Login', href: '/login' },
 ]
 
