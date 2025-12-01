@@ -15,15 +15,25 @@ const navItems = [
 ]
 
 export default function Page() {
+  const templeImages = [
+    'https://images.unsplash.com/photo-1549880338-65ddcdfd017b?auto=format&fit=crop&w=1400&q=80',
+    'https://images.unsplash.com/photo-1532623727643-c1e0c83c0b1e?auto=format&fit=crop&w=1400&q=80',
+    'https://images.unsplash.com/photo-1620766182966-c6eb5ed2b788?auto=format&fit=crop&w=1400&q=80',
+  ]
+
   return (
     <div suppressHydrationWarning>
-      <section className="hero-bg relative overflow-hidden">`
-        <div className="absolute inset-0 bg-gradient-to-br from-orange-50/60 to-amber-50/60 pointer-events-none"></div>
+      <section className="hero-bg relative overflow-hidden min-h-[600px]">
+        <div className="absolute inset-0 bg-gradient-to-br from-orange-600/20 via-amber-500/10 to-orange-400/5 pointer-events-none"></div>
         <div className="container mx-auto px-4 py-24 relative">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-            <div className="lg:col-span-7">
-              <h1 className="font-playfair text-5xl md:text-6xl font-extrabold text-orange-800 leading-tight drop-shadow-sm fade-in">Discover temples. Deepen devotion.</h1>
-              <p className="mt-6 text-lg text-slate-700 max-w-2xl">Sarvdev connects seekers with temples, live darshan, and devotional resources — thoughtfully curated and accessible.</p>
+            <div className="lg:col-span-7 slide-in">
+              <h1 className="font-playfair text-5xl md:text-7xl font-extrabold text-white drop-shadow-lg leading-tight">
+                Discover temples.<br/>Deepen devotion.
+              </h1>
+              <p className="mt-6 text-lg text-white/90 max-w-2xl drop-shadow-md">
+                Sarvdev connects seekers with temples, live darshan, and devotional resources — thoughtfully curated and accessible.
+              </p>
 
               <div className="mt-8 relative">
                 <div className="absolute left-0 right-0 mx-auto w-full max-w-2xl search-float">
@@ -32,33 +42,53 @@ export default function Page() {
               </div>
 
               <div className="mt-32 flex gap-4">
-                <a href="#" className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-white shadow hover:scale-105 transition-transform">📅 Upcoming Events</a>
-                <a href="#" className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-white/80 shadow hover:scale-105 transition-transform">✨ Virtual Darshan</a>
+                <a href="/events" className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-orange-600 text-white font-semibold shadow-lg hover:bg-orange-700 hover:scale-105 transition-all">
+                  📅 Upcoming Events
+                </a>
+                <a href="/daily-darshan" className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-white/95 text-orange-700 font-semibold shadow-lg hover:bg-white hover:scale-105 transition-all">
+                  ✨ Virtual Darshan
+                </a>
               </div>
             </div>
 
-            <div className="lg:col-span-5 relative">
-              <div className="rounded-xl overflow-hidden shadow-xl transform hover:scale-102 transition-transform float-anim">
-                <div className="w-full h-64 md:h-80 bg-cover bg-center" style={{backgroundImage: "linear-gradient(180deg, rgba(2,6,23,0.04), rgba(2,6,23,0.02)), url('https://images.unsplash.com/photo-1549880338-65ddcdfd017b?auto=format&fit=crop&w=1400&q=60')"}} />
+            <div className="lg:col-span-5 relative zoom-in">
+              <div className="rounded-2xl overflow-hidden shadow-2xl transform hover:scale-105 transition-transform duration-500">
+                {templeImages.map((img, idx) => (
+                  <div
+                    key={idx}
+                    className="w-full h-64 md:h-96 bg-cover bg-center absolute inset-0"
+                    style={{
+                      backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.2), rgba(0,0,0,0.1)), url('${img}')`,
+                      animation: `slideShow 15s infinite`,
+                      animationDelay: `${idx * 5}s`,
+                      opacity: idx === 0 ? 1 : 0
+                    }}
+                  />
+                ))}
+                <div className="relative w-full h-64 md:h-96"></div>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      <main className="container mx-auto px-4 py-12">
-        <h2 className="font-playfair text-3xl mb-6">Explore features</h2>
+      <main className="container mx-auto px-4 py-16">
+        <h2 className="font-playfair text-4xl mb-8 text-center fade-in">Explore features</h2>
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {[
             { title: 'Temples Near You', desc: 'Find nearby temples and their timings.' },
             { title: 'Live Darshan', desc: 'Watch live rituals and ceremonies.' },
             { title: 'Book Online', desc: 'Reserve slots for darshan or rituals.' },
             { title: 'Community', desc: 'Join groups and devotional communities.' },
-          ].map((card) => (
-            <article key={card.title} className="p-6 bg-white rounded-2xl shadow hover:shadow-lg transition-shadow transform hover:-translate-y-1">
-              <h3 className="font-semibold text-lg">{card.title}</h3>
-              <p className="mt-2 text-sm text-gray-600">{card.desc}</p>
-              <a href="#" className="mt-4 inline-block text-orange-600 font-medium">Explore →</a>
+          ].map((card, idx) => (
+            <article 
+              key={card.title} 
+              className="p-6 bg-gradient-to-br from-white to-orange-50/30 rounded-2xl shadow-lg hover:shadow-2xl transition-all transform hover:-translate-y-2 border border-orange-100 zoom-in"
+              style={{ animationDelay: `${idx * 0.1}s` }}
+            >
+              <h3 className="font-semibold text-xl text-orange-800">{card.title}</h3>
+              <p className="mt-3 text-sm text-gray-600">{card.desc}</p>
+              <a href="#" className="mt-4 inline-block text-orange-600 font-semibold hover:text-orange-700">Explore →</a>
             </article>
           ))}
         </section>
