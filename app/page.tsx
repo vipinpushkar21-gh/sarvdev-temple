@@ -110,18 +110,14 @@ export default function Page() {
           <div>
             <h5 className="text-xl font-semibold text-white">Quick Links</h5>
             <ul className="mt-4 space-y-2 text-gray-200">
-              <li><a href="#" className="hover:underline">🏛️ Temples</a></li>
-              <li><a href="#" className="hover:underline">🙏 Devotionals</a></li>
-              <li><a href="#" className="hover:underline">🎉 Festivals</a></li>
-              <li><a href="#" className="hover:underline">✨ Virtual Darshan</a></li>
-              <li><a href="#" className="hover:underline">➕ List Your Temple</a></li>
-              <li><a href="#" className="hover:underline">📅 Online Booking</a></li>
-              <li><a href="#" className="hover:underline">💝 Donations</a></li>
-              <li><a href="#" className="hover:underline">🕉️ Poojas</a></li>
-              <li><a href="#" className="hover:underline">📧 Contact Us</a></li>
-              <li><a href="#" className="hover:underline">❓ Help Center</a></li>
-              <li><a href="#" className="hover:underline">🔒 Privacy Policy</a></li>
-              <li><a href="#" className="hover:underline">📜 Terms of Service</a></li>
+              <li><a href="/temples" className="hover:underline">🏛️ Temples</a></li>
+              <li><a href="/devotionals" className="hover:underline">🙏 Devotionals</a></li>
+              <li><a href="/events" className="hover:underline">🎉 Events</a></li>
+              <li><a href="/list-temple" className="hover:underline">➕ List Your Temple</a></li>
+              <li><a href="/contact" className="hover:underline">📧 Contact Us</a></li>
+              <li><a href="/help" className="hover:underline">❓ Help Center</a></li>
+              <li><a href="/privacy" className="hover:underline">🔒 Privacy Policy</a></li>
+              <li><a href="/terms" className="hover:underline">📜 Terms of Service</a></li>
             </ul>
           </div>
 

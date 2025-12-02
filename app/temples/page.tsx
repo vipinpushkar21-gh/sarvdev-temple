@@ -75,9 +75,12 @@ export default function TemplesPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {temples.map((t: Temple) => (
-              <TempleCard key={t._id} temple={{ id: t._id, title: t.title, location: t.location || '', description: t.description || '', image: t.image || '', slug: t._id }} />
-            ))}
+            {temples.map((t: Temple) => {
+              const slug = t.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+              return (
+                <TempleCard key={t._id} temple={{ id: t._id, title: t.title, location: t.location || '', description: t.description || '', image: t.image || '', slug: slug }} />
+              )
+            })}
           </div>
         )}
       </section>

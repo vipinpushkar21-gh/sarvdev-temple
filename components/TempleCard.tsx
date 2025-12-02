@@ -7,7 +7,8 @@ type Props = {
 }
 
 export default function TempleCard({ temple }: Props) {
-  const slug = temple.id || temple.title?.toLowerCase().replace(/[^a-z0-9]+/g, '-')
+  // Use slug from temple object if provided, otherwise generate from title
+  const slug = temple.slug || temple.title?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
 
   return (
     <article className="bg-white/60 dark:bg-slate-900/60 backdrop-blur rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-200">

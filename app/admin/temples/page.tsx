@@ -150,11 +150,11 @@ export default function AdminTemplesPage() {
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex gap-2">
-                    <button className="px-2 py-1 bg-slate-200 rounded-md text-sm">View</button>
-                    <button className="px-2 py-1 bg-slate-200 rounded-md text-sm">Edit</button>
-                    <button onClick={() => approve(r._id)} className="px-2 py-1 bg-emerald-600 text-white rounded-md text-sm">Approve</button>
-                    <button onClick={() => reject(r._id)} className="px-2 py-1 bg-rose-600 text-white rounded-md text-sm">Reject</button>
-                    <button onClick={() => remove(r._id)} className="px-2 py-1 bg-slate-700 text-white rounded-md text-sm">Delete</button>
+                    <Link href={`/temples/${r.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`} target="_blank" className="px-2 py-1 bg-blue-100 text-blue-700 rounded-md text-sm hover:bg-blue-200">View</Link>
+                    <Link href={`/admin/temples/edit/${r._id}`} className="px-2 py-1 bg-slate-200 rounded-md text-sm hover:bg-slate-300">Edit</Link>
+                    <button onClick={() => approve(r._id)} className="px-2 py-1 bg-emerald-600 text-white rounded-md text-sm hover:bg-emerald-700">Approve</button>
+                    <button onClick={() => reject(r._id)} className="px-2 py-1 bg-rose-600 text-white rounded-md text-sm hover:bg-rose-700">Reject</button>
+                    <button onClick={() => remove(r._id)} className="px-2 py-1 bg-slate-700 text-white rounded-md text-sm hover:bg-slate-800">Delete</button>
                   </div>
                 </td>
               </tr>

@@ -42,7 +42,7 @@ export default function Header() {
   }, [open])
 
   return (
-    <header className="bg-white/90 backdrop-blur-sm border-b">
+    <header className="bg-white/90 backdrop-blur-sm border-b sticky top-0 z-50">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
         <Link href="/" className="text-2xl font-bold text-emerald-700">Sarvdev Temple</Link>
 
@@ -74,7 +74,7 @@ export default function Header() {
           <div
             role="dialog"
             aria-modal="false"
-            className={`absolute right-4 mt-2 w-56 bg-white rounded-lg shadow-lg ring-1 ring-black ring-opacity-5 transform transition-all origin-top-right ${open ? 'scale-100 opacity-100' : 'scale-95 opacity-0 pointer-events-none'}`}
+            className={`absolute right-4 mt-2 w-56 bg-white rounded-lg shadow-lg ring-1 ring-black ring-opacity-5 transform transition-all origin-top-right z-[60] ${open ? 'scale-100 opacity-100' : 'scale-95 opacity-0 pointer-events-none'}`}
           >
             <div className="py-2">
               {navItems.map((item) => (
