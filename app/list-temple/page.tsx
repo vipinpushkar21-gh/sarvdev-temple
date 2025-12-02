@@ -9,6 +9,7 @@ type FormState = {
   state: string
   pincode: string
   description: string
+  descriptionHi: string
   deity: string
   establishedYear: string
   templeType: string
@@ -41,7 +42,7 @@ const templeTypes = ["North Indian", "South Indian", "Modern", "Ancient", "Cave 
 
 export default function ListTemplePage() {
   const [form, setForm] = useState<FormState>({ 
-    name: "", location: "", city: "", state: "", pincode: "", description: "", 
+    name: "", location: "", city: "", state: "", pincode: "", description: "", descriptionHi: "",
     deity: "", establishedYear: "", templeType: "", speciality: "",
     imageUrl: "", timings: "", contact: "", phone: "", email: "", website: "", 
     facebook: "", instagram: ""
@@ -86,6 +87,7 @@ export default function ListTemplePage() {
           state: form.state,
           pincode: form.pincode,
           description: form.description,
+          descriptionHi: form.descriptionHi,
           deity: form.deity,
           establishedYear: form.establishedYear,
           templeType: form.templeType,
@@ -105,7 +107,7 @@ export default function ListTemplePage() {
       if (res.ok) {
         setSubmitted(true)
         setForm({ 
-          name: "", location: "", city: "", state: "", pincode: "", description: "", 
+          name: "", location: "", city: "", state: "", pincode: "", description: "", descriptionHi: "",
           deity: "", establishedYear: "", templeType: "", speciality: "",
           imageUrl: "", timings: "", contact: "", phone: "", email: "", website: "", 
           facebook: "", instagram: ""
@@ -156,9 +158,15 @@ export default function ListTemplePage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Description*</label>
+            <label className="block text-sm font-medium mb-1">Description (English)*</label>
             <textarea value={form.description} onChange={(e) => onChange("description", e.target.value)} rows={4} placeholder="Describe the temple's history, significance, and features..." className={`w-full rounded-lg border px-4 py-2.5 focus:outline-none focus:ring-2 ${errors.description ? "border-rose-500 focus:ring-rose-200" : "border-slate-300 focus:ring-orange-200"}`} />
             {errors.description && <p className="mt-1 text-xs text-rose-600">{errors.description}</p>}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">विवरण (हिंदी) - Description (Hindi)</label>
+            <textarea value={form.descriptionHi} onChange={(e) => onChange("descriptionHi", e.target.value)} rows={4} placeholder="मंदिर के इतिहास, महत्व और विशेषताओं का वर्णन करें..." className="w-full rounded-lg border border-slate-300 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-orange-200" />
+            <p className="mt-1 text-xs text-slate-500">Optional: Add Hindi translation of the description for bilingual support</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

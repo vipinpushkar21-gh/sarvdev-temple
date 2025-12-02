@@ -75,7 +75,7 @@ export default function TemplesPage() {
           <div className="text-center py-12 text-slate-500">
             {t('temples.noTemples')}
           </div>
-        ) : ()
+        ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {temples.map((t: Temple) => {
               const slug = t.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')

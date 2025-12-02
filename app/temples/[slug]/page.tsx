@@ -14,7 +14,7 @@ function slugify(text: string): string {
 }
 
 export default function TemplePage({ params }: Props) {
-  const { t } = useTranslation()
+  const { t, language } = useTranslation()
   const [temple, setTemple] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [slug, setSlug] = useState<string>('')
@@ -28,8 +28,7 @@ export default function TemplePage({ params }: Props) {
     
     async function fetchTemple() {
       try {
-        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
-        const res = await fetch(`${baseUrl}/api/temples`, { cache: 'no-store' })
+        const res = await fetch('/api/temples', { cache: 'no-store' })
         if (!res.ok) {
           setTemple(null)
           setLoading(false)
@@ -92,7 +91,12 @@ export default function TemplePage({ params }: Props) {
       <section className="mt-8 space-y-6">
         <div>
           <h2 className="text-xl font-semibold text-orange-700 mb-3">{t('temple.about')}</h2>
-          <p className="text-slate-700 leading-relaxed">{temple.description || t('temple.noDescription')}</p>
+          <p className="text-slate-700 leading-relaxed">
+            {language === 'hi' && temple.descriptionHi 
+              ? temple.descriptionHi 
+              : temple.description || t('temple.noDescription')
+            }
+          </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -103,7 +107,7 @@ export default function TemplePage({ params }: Props) {
             </div>
           )}
 
-          {temple.city && temple.state && (
+          {temple.city && temple.state && !temple.city.includes('http') && (
             <div className="bg-gradient-to-br from-white to-orange-50/30 p-4 rounded-lg border border-orange-100">
               <h3 className="font-medium text-slate-800">📍 {t('temple.location')}</h3>
               <p className="mt-1 text-slate-700">{temple.city}, {temple.state}</p>

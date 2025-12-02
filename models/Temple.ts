@@ -4,6 +4,7 @@ import mongoose, { Schema, models } from 'mongoose';
 const TempleSchema = new Schema({
   title: { type: String, required: true },
   description: { type: String },
+  descriptionHi: { type: String },
   image: { type: String },
   location: { type: String },
   city: { type: String },
