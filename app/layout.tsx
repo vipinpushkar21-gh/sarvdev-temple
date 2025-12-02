@@ -1,6 +1,7 @@
 import './globals.css'
 import Header from '../components/Header'
 import React from 'react'
+import { TranslationProvider } from '../lib/translation'
 
 export const metadata = {
   title: 'Sarvdev Temple',
@@ -11,8 +12,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" suppressHydrationWarning>
       <body suppressHydrationWarning>
-        <Header />
-        {children}
+        <TranslationProvider>
+          <Header />
+          {children}
+        </TranslationProvider>
       </body>
     </html>
   )

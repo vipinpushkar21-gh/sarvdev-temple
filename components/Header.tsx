@@ -2,20 +2,23 @@
 
 import Link from 'next/link'
 import { useState, useRef, useEffect } from 'react'
+import { useTranslation } from '../lib/translation'
+import LanguageSwitcher from './LanguageSwitcher'
 
 const navItems = [
-  { label: 'Home', href: '/' },
-  { label: 'Temples', href: '/temples' },
-  { label: 'Daily Darshan', href: '/daily-darshan' },
-  { label: 'Upcoming Events', href: '/events' },
-  { label: 'Online Booking', href: '/booking' },
-  { label: 'Devotionals', href: '/devotionals' },
-  { label: 'Blog', href: '/blog' },
-  { label: 'List Temple', href: '/list-temple' },
-  { label: 'Login', href: '/login' },
+  { label: 'nav.home', href: '/' },
+  { label: 'nav.temples', href: '/temples' },
+  { label: 'nav.dailyDarshan', href: '/daily-darshan' },
+  { label: 'nav.events', href: '/events' },
+  { label: 'nav.booking', href: '/booking' },
+  { label: 'nav.devotionals', href: '/devotionals' },
+  { label: 'nav.blog', href: '/blog' },
+  { label: 'nav.listTemple', href: '/list-temple' },
+  { label: 'nav.login', href: '/login' },
 ]
 
 export default function Header() {
+  const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement | null>(null)
 
@@ -48,8 +51,9 @@ export default function Header() {
 
         <nav className="hidden md:flex space-x-4 items-center" aria-label="Main navigation">
           {navItems.map((item) => (
-            <Link key={item.href} href={item.href} className="text-sm text-slate-700 hover:text-emerald-600">{item.label}</Link>
+            <Link key={item.href} href={item.href} className="text-sm text-slate-700 hover:text-emerald-600">{t(item.label)}</Link>
           ))}
+          <LanguageSwitcher />
         </nav>
 
         {/* Mobile menu button */}
@@ -84,9 +88,12 @@ export default function Header() {
                   className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
                   onClick={() => setOpen(false)}
                 >
-                  {item.label}
+                  {t(item.label)}
                 </Link>
               ))}
+              <div className="px-4 py-2 border-t">
+                <LanguageSwitcher />
+              </div>
             </div>
           </div>
         </div>

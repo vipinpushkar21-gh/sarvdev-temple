@@ -1,20 +1,11 @@
+"use client"
+
 import React from 'react'
 import SmartSearch from '../components/SmartSearch'
-
-const navItems = [
-  'Home',
-  'Temples',
-  'Daily Darshan',
-  'Upcoming Events',
-  'Online Booking',
-  'Devotionals',
-  'Blog',
-  'List Temple',
-  'Donation',
-  'Login',
-]
+import { useTranslation } from '../lib/translation'
 
 export default function Page() {
+  const { t } = useTranslation()
   const templeImages = [
     'https://images.unsplash.com/photo-1549880338-65ddcdfd017b?auto=format&fit=crop&w=1400&q=80',
     'https://images.unsplash.com/photo-1532623727643-c1e0c83c0b1e?auto=format&fit=crop&w=1400&q=80',
@@ -29,10 +20,10 @@ export default function Page() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
             <div className="lg:col-span-7 slide-in">
               <h1 className="font-playfair text-5xl md:text-7xl font-extrabold text-white drop-shadow-lg leading-tight">
-                Discover temples.<br/>Deepen devotion.
+                {t('home.title')}
               </h1>
               <p className="mt-6 text-lg text-white/90 max-w-2xl drop-shadow-md">
-                Sarvdev connects seekers with temples, live darshan, and devotional resources — thoughtfully curated and accessible.
+                {t('home.subtitle')}
               </p>
 
               <div className="mt-8 relative">
@@ -43,10 +34,10 @@ export default function Page() {
 
               <div className="mt-32 flex gap-4">
                 <a href="/events" className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-orange-600 text-white font-semibold shadow-lg hover:bg-orange-700 hover:scale-105 transition-all">
-                  📅 Upcoming Events
+                  📅 {t('home.upcomingEvents')}
                 </a>
                 <a href="/daily-darshan" className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-white/95 text-orange-700 font-semibold shadow-lg hover:bg-white hover:scale-105 transition-all">
-                  ✨ Virtual Darshan
+                  ✨ {t('home.virtualDarshan')}
                 </a>
               </div>
             </div>
@@ -73,22 +64,22 @@ export default function Page() {
       </section>
 
       <main className="container mx-auto px-4 py-16">
-        <h2 className="font-playfair text-4xl mb-8 text-center fade-in">Explore features</h2>
+        <h2 className="font-playfair text-4xl mb-8 text-center fade-in">{t('home.exploreFeatures')}</h2>
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {[
-            { title: 'Temples Near You', desc: 'Find nearby temples and their timings.' },
-            { title: 'Live Darshan', desc: 'Watch live rituals and ceremonies.' },
-            { title: 'Book Online', desc: 'Reserve slots for darshan or rituals.' },
-            { title: 'Community', desc: 'Join groups and devotional communities.' },
+            { title: t('features.templesNear'), desc: t('features.templesDesc') },
+            { title: t('features.liveDarshan'), desc: t('features.liveDarshanDesc') },
+            { title: t('features.bookOnline'), desc: t('features.bookOnlineDesc') },
+            { title: t('features.community'), desc: t('features.communityDesc') },
           ].map((card, idx) => (
             <article 
-              key={card.title} 
+              key={idx} 
               className="p-6 bg-gradient-to-br from-white to-orange-50/30 rounded-2xl shadow-lg hover:shadow-2xl transition-all transform hover:-translate-y-2 border border-orange-100 zoom-in"
               style={{ animationDelay: `${idx * 0.1}s` }}
             >
               <h3 className="font-semibold text-xl text-orange-800">{card.title}</h3>
               <p className="mt-3 text-sm text-gray-600">{card.desc}</p>
-              <a href="#" className="mt-4 inline-block text-orange-600 font-semibold hover:text-orange-700">Explore →</a>
+              <a href="#" className="mt-4 inline-block text-orange-600 font-semibold hover:text-orange-700">{t('features.explore')} →</a>
             </article>
           ))}
         </section>
@@ -108,22 +99,22 @@ export default function Page() {
           </div>
 
           <div>
-            <h5 className="text-xl font-semibold text-white">Quick Links</h5>
+            <h5 className="text-xl font-semibold text-white">{t('footer.quickLinks')}</h5>
             <ul className="mt-4 space-y-2 text-gray-200">
-              <li><a href="/temples" className="hover:underline">🏛️ Temples</a></li>
-              <li><a href="/devotionals" className="hover:underline">🙏 Devotionals</a></li>
-              <li><a href="/events" className="hover:underline">🎉 Events</a></li>
-              <li><a href="/list-temple" className="hover:underline">➕ List Your Temple</a></li>
-              <li><a href="/contact" className="hover:underline">📧 Contact Us</a></li>
-              <li><a href="/help" className="hover:underline">❓ Help Center</a></li>
-              <li><a href="/privacy" className="hover:underline">🔒 Privacy Policy</a></li>
-              <li><a href="/terms" className="hover:underline">📜 Terms of Service</a></li>
+              <li><a href="/temples" className="hover:underline">🏛️ {t('footer.temples')}</a></li>
+              <li><a href="/devotionals" className="hover:underline">🙏 {t('footer.devotionals')}</a></li>
+              <li><a href="/events" className="hover:underline">🎉 {t('footer.events')}</a></li>
+              <li><a href="/list-temple" className="hover:underline">➕ {t('footer.listTemple')}</a></li>
+              <li><a href="/contact" className="hover:underline">📧 {t('footer.contact')}</a></li>
+              <li><a href="/help" className="hover:underline">❓ {t('footer.help')}</a></li>
+              <li><a href="/privacy" className="hover:underline">🔒 {t('footer.privacy')}</a></li>
+              <li><a href="/terms" className="hover:underline">📜 {t('footer.terms')}</a></li>
             </ul>
           </div>
 
           <div>
-            <h5 className="text-xl font-semibold text-white">About the Directory</h5>
-            <p className="mt-3 text-gray-200">Search and discover temples across regions, read about traditions, and find ways to participate in rituals and events. Sarvdev aims to make spiritual resources accessible to everyone.</p>
+            <h5 className="text-xl font-semibold text-white">{t('footer.about')}</h5>
+            <p className="mt-3 text-gray-200">{t('footer.aboutText')}</p>
 
             <div className="mt-6 text-gray-200">
               <blockquote className="italic">"सर्वे भवन्तु सुखिनः सर्वे सन्तु निरामयाः"</blockquote>
@@ -133,7 +124,7 @@ export default function Page() {
         </div>
 
         <div className="border-t border-white/10">
-          <div className="container mx-auto px-4 py-4 text-sm text-gray-300">© {new Date().getFullYear()} Sarvdev. All rights reserved.</div>
+          <div className="container mx-auto px-4 py-4 text-sm text-gray-300">© {new Date().getFullYear()} Sarvdev. {t('footer.rights')}</div>
         </div>
       </footer>
     </div>

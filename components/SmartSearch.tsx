@@ -1,10 +1,12 @@
 "use client"
 import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslation } from '../lib/translation'
 
 type ResultItem = { id: string; title: string; description: string; category: string; link: string }
 
 export default function SmartSearch() {
+  const { t } = useTranslation()
   const router = useRouter()
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<Record<string, ResultItem[]>>({})
@@ -94,7 +96,7 @@ export default function SmartSearch() {
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search temples, events, blogs..."
+          placeholder={t('home.search')}
           className="w-full rounded-xl border border-gray-200 px-4 py-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-300"
           suppressHydrationWarning
         />
@@ -130,7 +132,7 @@ export default function SmartSearch() {
       
       {query && Object.keys(results).length === 0 && allItems.length > 0 && (
         <div className="absolute z-50 mt-2 w-full bg-white rounded-xl shadow-lg p-4 text-center text-gray-500">
-          No results found for "{query}"
+          {t('search.noResults')} "{query}"
         </div>
       )}
     </div>
