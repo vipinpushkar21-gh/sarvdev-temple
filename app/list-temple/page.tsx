@@ -15,6 +15,7 @@ type FormState = {
   establishedYear: string
   templeType: string
   speciality: string
+  categories: string[]
   imageUrl: string
   timings: string
   contact: string
@@ -47,10 +48,26 @@ const deities = [
 
 const templeTypes = ["North Indian", "South Indian", "Modern", "Ancient", "Cave Temple", "Hill Temple"]
 
+const sacredCategories = [
+  "Dwadash Jyotirlinga (12 Jyotirlingas)",
+  "Shakti Peeth (51 Shakti Peethas)",
+  "Char Dham",
+  "Panch Kedar",
+  "Panch Prayag",
+  "Arupadai Veedu (6 Abodes of Murugan)",
+  "Navagraha Temples",
+  "Divya Desam (108 Vishnu Temples)",
+  "Pancha Bhoota Stalam",
+  "Ashta Vinayak",
+  "Sapta Puri (7 Sacred Cities)",
+  "108 Shiva Temples",
+  "Other Sacred Group"
+]
+
 export default function ListTemplePage() {
   const [form, setForm] = useState<FormState>({ 
     name: "", location: "", city: "", state: "", country: "India", pincode: "", description: "", descriptionHi: "",
-    deity: "", establishedYear: "", templeType: "", speciality: "",
+    deity: "", establishedYear: "", templeType: "", speciality: "", categories: [],
     imageUrl: "", timings: "", contact: "", phone: "", email: "", website: "", 
     facebook: "", instagram: ""
   })
@@ -100,6 +117,7 @@ export default function ListTemplePage() {
           establishedYear: form.establishedYear,
           templeType: form.templeType,
           speciality: form.speciality,
+          categories: form.categories,
           image: form.imageUrl,
           timings: form.timings,
           contact: form.contact,
@@ -116,7 +134,7 @@ export default function ListTemplePage() {
         setSubmitted(true)
         setForm({ 
           name: "", location: "", city: "", state: "", country: "India", pincode: "", description: "", descriptionHi: "",
-          deity: "", establishedYear: "", templeType: "", speciality: "",
+          deity: "", establishedYear: "", templeType: "", speciality: "", categories: [],
           imageUrl: "", timings: "", contact: "", phone: "", email: "", website: "", 
           facebook: "", instagram: ""
         })
@@ -187,6 +205,30 @@ export default function ListTemplePage() {
               <label className="block text-sm font-medium mb-1">🌟 Speciality</label>
               <input value={form.speciality} onChange={(e) => onChange("speciality", e.target.value)} placeholder="e.g. Famous for Shivratri celebration" className="w-full rounded-lg border border-slate-300 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-orange-200" />
             </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-2">🕊️ Sacred Categories (Select if applicable)</label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-4 bg-orange-50/50 rounded-lg border border-orange-100">
+              {sacredCategories.map(cat => (
+                <label key={cat} className="flex items-center gap-2 cursor-pointer hover:bg-orange-100/50 p-2 rounded transition-colors">
+                  <input 
+                    type="checkbox" 
+                    checked={form.categories.includes(cat)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setForm(s => ({ ...s, categories: [...s.categories, cat] }))
+                      } else {
+                        setForm(s => ({ ...s, categories: s.categories.filter(c => c !== cat) }))
+                      }
+                    }}
+                    className="w-4 h-4 text-orange-600 rounded focus:ring-orange-500"
+                  />
+                  <span className="text-sm text-slate-700">{cat}</span>
+                </label>
+              ))}
+            </div>
+            <p className="mt-2 text-xs text-slate-500">Select categories like Jyotirlinga, Shakti Peeth, etc. if this temple belongs to sacred groups</p>
           </div>
         </div>
 

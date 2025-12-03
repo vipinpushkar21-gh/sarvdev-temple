@@ -154,6 +154,22 @@ export default function TemplePage({ params }: Props) {
           )}
         </div>
 
+        {temple.categories && temple.categories.length > 0 && (
+          <div className="bg-gradient-to-br from-orange-50 to-white p-5 rounded-xl border-2 border-orange-200">
+            <h2 className="text-xl font-semibold text-orange-700 mb-3">🕉️ Sacred Categories</h2>
+            <div className="flex flex-wrap gap-2">
+              {temple.categories.map((cat: string, idx: number) => (
+                <span 
+                  key={idx} 
+                  className="px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-full shadow-sm"
+                >
+                  {cat}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
         {mapsLink && (
           <div>
             <h2 className="text-xl font-semibold text-orange-700 mb-3">📍 {t('temple.locationMap')}</h2>
