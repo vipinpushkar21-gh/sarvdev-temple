@@ -19,10 +19,10 @@ export default function Page() {
         <div className="container mx-auto px-4 py-24 relative">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
             <div className="lg:col-span-7 slide-in">
-              <h1 className="font-playfair text-5xl md:text-7xl font-extrabold text-white drop-shadow-lg leading-tight">
+              <h1 className="font-playfair text-5xl md:text-7xl font-extrabold text-orange-600 drop-shadow-lg leading-tight">
                 {t('home.title')}
               </h1>
-              <p className="mt-6 text-lg text-white/90 max-w-2xl drop-shadow-md">
+              <p className="mt-6 text-lg text-slate-800 max-w-2xl drop-shadow-sm font-medium">
                 {t('home.subtitle')}
               </p>
 
