@@ -6,8 +6,10 @@ import { X } from 'lucide-react'
 export default function Disclaimer() {
   const [isVisible, setIsVisible] = useState(true)
   const [isDismissed, setIsDismissed] = useState(false)
+  const [isMounted, setIsMounted] = useState(false)
 
   useEffect(() => {
+    setIsMounted(true)
     // Check if user has dismissed the disclaimer
     const dismissed = localStorage.getItem('disclaimerDismissed')
     if (dismissed === 'true') {
@@ -26,6 +28,11 @@ export default function Disclaimer() {
     setIsVisible(true)
     setIsDismissed(false)
     localStorage.removeItem('disclaimerDismissed')
+  }
+
+  // Prevent hydration mismatch by not rendering until mounted
+  if (!isMounted) {
+    return null
   }
 
   if (!isVisible && isDismissed) {
