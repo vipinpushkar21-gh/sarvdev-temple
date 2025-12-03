@@ -52,6 +52,7 @@ const sacredCategories = [
   "Dwadash Jyotirlinga (12 Jyotirlingas)",
   "Shakti Peeth (51 Shakti Peethas)",
   "Char Dham",
+  "Chota Char Dham (Uttarakhand)",
   "Panch Kedar",
   "Panch Prayag",
   "Arupadai Veedu (6 Abodes of Murugan)",

@@ -6,8 +6,9 @@ import Link from 'next/link'
 const sacredCategories = [
   { name: "Dwadash Jyotirlinga (12 Jyotirlingas)", icon: "🕉️", desc: "12 sacred Shiva shrines across India" },
   { name: "Shakti Peeth (51 Shakti Peethas)", icon: "🔱", desc: "Places where Goddess Sati's body parts fell" },
-  { name: "Char Dham", icon: "🏔️", desc: "Four sacred pilgrimage sites" },
-  { name: "Panch Kedar", icon: "⛰️", desc: "Five Shiva temples in Uttarakhand" },
+  { name: "Char Dham", icon: "🏔️", desc: "Four sacred pilgrimage sites (Badrinath, Dwarka, Puri, Rameshwaram)" },
+  { name: "Chota Char Dham (Uttarakhand)", icon: "⛰️", desc: "Four sacred sites in Uttarakhand Himalayas" },
+  { name: "Panch Kedar", icon: "🏔️", desc: "Five Shiva temples in Uttarakhand" },
   { name: "Panch Prayag", icon: "🌊", desc: "Five sacred river confluences" },
   { name: "Arupadai Veedu (6 Abodes of Murugan)", icon: "🦚", desc: "Six homes of Lord Murugan" },
   { name: "Navagraha Temples", icon: "🌟", desc: "Nine temples dedicated to celestial bodies" },
