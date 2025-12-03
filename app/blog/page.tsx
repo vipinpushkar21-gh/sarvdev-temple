@@ -46,7 +46,7 @@ export default function BlogIndexPage() {
   return (
     <main className="max-w-6xl mx-auto px-4 py-12">
       <header className="mb-6">
-        <h1 className="text-3xl font-semibold">Blog</h1>
+        <h1 className="text-3xl font-semibold font-playfair text-orange-600 font-bold">Blog</h1>
         <p className="text-slate-700 dark:text-slate-200 text-base mt-2">Articles and guides about temples, rituals, and visiting tips.</p>
       </header>
 

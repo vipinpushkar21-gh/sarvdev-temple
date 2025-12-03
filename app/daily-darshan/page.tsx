@@ -46,7 +46,7 @@ export default function DailyDarshanPage() {
   return (
     <main className="max-w-6xl mx-auto px-4 py-12">
       <header className="mb-8">
-        <h1 className="text-3xl font-playfair text-slate-900 dark:text-slate-100">Daily Darshan</h1>
+        <h1 className="text-3xl font-playfair text-orange-600 font-bold">Daily Darshan</h1>
         <p className="mt-2 text-slate-700 dark:text-slate-200 text-base">Live and recorded darshan times from our temple network.</p>
       </header>
 

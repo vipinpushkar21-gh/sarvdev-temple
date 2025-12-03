@@ -19,7 +19,7 @@ export default function BookingPage() {
   return (
     <main className="max-w-6xl mx-auto px-4 py-12">
       <header className="mb-8">
-        <h1 className="text-3xl font-playfair text-slate-900 dark:text-slate-100">Online Booking</h1>
+        <h1 className="text-3xl font-playfair text-orange-600 font-bold">Online Booking</h1>
         <p className="mt-2 text-slate-700 dark:text-slate-200 text-base">Reserve pooja and darshan slots. This is a static demo layout ready for booking integration.</p>
       </header>
 

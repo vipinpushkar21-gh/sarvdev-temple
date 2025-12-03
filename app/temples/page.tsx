@@ -66,7 +66,7 @@ export default function TemplesPage() {
   return (
     <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <header className="mb-8">
-        <h1 className="text-3xl font-playfair text-slate-900 dark:text-slate-100">{t('temples.title')}</h1>
+        <h1 className="text-3xl font-playfair text-orange-600 font-bold">{t('temples.title')}</h1>
         <p className="mt-2 text-slate-700 dark:text-slate-200 text-base">{t('temples.subtitle')}</p>
       </header>
 
