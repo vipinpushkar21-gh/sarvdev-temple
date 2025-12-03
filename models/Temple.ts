@@ -9,6 +9,7 @@ const TempleSchema = new Schema({
   location: { type: String },
   city: { type: String },
   state: { type: String },
+  country: { type: String, default: 'India' },
   pincode: { type: String },
   deity: { type: String },
   establishedYear: { type: String },

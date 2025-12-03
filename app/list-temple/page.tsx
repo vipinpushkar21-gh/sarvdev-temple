@@ -7,6 +7,7 @@ type FormState = {
   location: string
   city: string
   state: string
+  country: string
   pincode: string
   description: string
   descriptionHi: string
@@ -33,6 +34,12 @@ const indianStates = [
   "Delhi", "Jammu and Kashmir", "Ladakh"
 ]
 
+const countries = [
+  "India", "Nepal", "Sri Lanka", "Bangladesh", "Bhutan", "Myanmar", "Thailand",
+  "Indonesia", "Malaysia", "Singapore", "Cambodia", "Vietnam", "USA", "UK",
+  "Canada", "Australia", "New Zealand", "South Africa", "UAE", "Other"
+]
+
 const deities = [
   "Shiva", "Vishnu", "Durga", "Ganesha", "Hanuman", "Krishna", "Rama",
   "Lakshmi", "Saraswati", "Kali", "Murugan", "Brahma", "Other"
@@ -42,7 +49,7 @@ const templeTypes = ["North Indian", "South Indian", "Modern", "Ancient", "Cave 
 
 export default function ListTemplePage() {
   const [form, setForm] = useState<FormState>({ 
-    name: "", location: "", city: "", state: "", pincode: "", description: "", descriptionHi: "",
+    name: "", location: "", city: "", state: "", country: "India", pincode: "", description: "", descriptionHi: "",
     deity: "", establishedYear: "", templeType: "", speciality: "",
     imageUrl: "", timings: "", contact: "", phone: "", email: "", website: "", 
     facebook: "", instagram: ""
@@ -82,9 +89,10 @@ export default function ListTemplePage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title: form.name,
-          location: `${form.location}, ${form.city}, ${form.state}${form.pincode ? ' - ' + form.pincode : ''}`,
+          location: `${form.location}, ${form.city}, ${form.state}, ${form.country}${form.pincode ? ' - ' + form.pincode : ''}`,
           city: form.city,
           state: form.state,
+          country: form.country,
           pincode: form.pincode,
           description: form.description,
           descriptionHi: form.descriptionHi,
@@ -107,7 +115,7 @@ export default function ListTemplePage() {
       if (res.ok) {
         setSubmitted(true)
         setForm({ 
-          name: "", location: "", city: "", state: "", pincode: "", description: "", descriptionHi: "",
+          name: "", location: "", city: "", state: "", country: "India", pincode: "", description: "", descriptionHi: "",
           deity: "", establishedYear: "", templeType: "", speciality: "",
           imageUrl: "", timings: "", contact: "", phone: "", email: "", website: "", 
           facebook: "", instagram: ""
@@ -211,6 +219,13 @@ export default function ListTemplePage() {
               <label className="block text-sm font-medium mb-1">📮 Pincode</label>
               <input type="number" value={form.pincode} onChange={(e) => onChange("pincode", e.target.value)} placeholder="e.g. 221001" className="w-full rounded-lg border border-slate-300 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-orange-200" />
             </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">🌍 Country*</label>
+            <select value={form.country} onChange={(e) => onChange("country", e.target.value)} className="w-full rounded-lg border border-slate-300 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-orange-200">
+              {countries.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
           </div>
         </div>
 
