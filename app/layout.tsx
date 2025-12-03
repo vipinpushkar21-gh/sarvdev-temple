@@ -1,5 +1,6 @@
 import './globals.css'
 import Header from '../components/Header'
+import Disclaimer from '../components/Disclaimer'
 import React from 'react'
 import { TranslationProvider } from '../lib/translation'
 
@@ -14,6 +15,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body suppressHydrationWarning>
         <TranslationProvider>
           <Header />
+          <Disclaimer />
           {children}
         </TranslationProvider>
       </body>
