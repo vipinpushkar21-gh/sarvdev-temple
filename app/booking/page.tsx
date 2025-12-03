@@ -18,9 +18,9 @@ const sampleSlots: Slot[] = [
 export default function BookingPage() {
   return (
     <main className="max-w-6xl mx-auto px-4 py-12">
-      <header className="mb-6">
-        <h1 className="text-3xl font-playfair text-slate-900 dark:text-slate-100">Booking</h1>
-        <p className="mt-2 text-slate-600 dark:text-slate-300">Reserve pooja and darshan slots. This is a static demo layout ready for booking integration.</p>
+      <header className="mb-8">
+        <h1 className="text-3xl font-playfair text-slate-900 dark:text-slate-100">Online Booking</h1>
+        <p className="mt-2 text-slate-700 dark:text-slate-200 text-base">Reserve pooja and darshan slots. This is a static demo layout ready for booking integration.</p>
       </header>
 
       <section>

@@ -125,7 +125,7 @@ export default function ListTemplePage() {
   return (
     <main className="max-w-4xl mx-auto px-4 py-12" suppressHydrationWarning>
       <h1 className="text-3xl font-bold mb-2 text-orange-800">List a Temple</h1>
-      <p className="text-sm text-slate-600 mb-8">Share details about a temple you'd like to add. We'll review submissions before publishing.</p>
+      <p className="text-base text-slate-700 dark:text-slate-200 mb-8">Share details about a temple you'd like to add. We'll review submissions before publishing.</p>
 
       <form onSubmit={onSubmit} noValidate className="space-y-8 bg-gradient-to-br from-white to-orange-50/30 p-8 rounded-2xl shadow-lg border border-orange-100">
         

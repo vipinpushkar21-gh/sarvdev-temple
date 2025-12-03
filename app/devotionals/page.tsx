@@ -7,9 +7,9 @@ export default function DevotionalsPage() {
 
   return (
     <main className="max-w-6xl mx-auto px-4 py-12">
-      <header className="mb-6">
+      <header className="mb-8">
         <h1 className="text-3xl font-playfair text-slate-900 dark:text-slate-100">Devotionals</h1>
-        <p className="mt-2 text-slate-600 dark:text-slate-300">Bhajans, stotras and devotional audio for daily practice.</p>
+        <p className="mt-2 text-slate-700 dark:text-slate-200 text-base">Bhajans, stotras and devotional audio for daily practice.</p>
       </header>
 
       <section>
