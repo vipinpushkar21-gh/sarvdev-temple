@@ -11,6 +11,7 @@ type TempleRow = {
   type?: string
   location?: string
   status?: 'approved' | 'pending' | 'rejected'
+  verified?: 'verified' | 'not-verified'
 }
 
 export default function AdminTemplesPage() {
@@ -79,6 +80,21 @@ export default function AdminTemplesPage() {
     }
   }
   
+  const updateVerification = async (id: string, verified: 'verified' | 'not-verified') => {
+    try {
+      const res = await fetch('/api/temples', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, verified })
+      })
+      if (res.ok) {
+        setRows(r => r.map(x => x._id === id ? { ...x, verified } : x))
+      }
+    } catch (error) {
+      alert('Failed to update verification status')
+    }
+  }
+  
   const remove = async (id: string) => {
     if (!confirm('Are you sure you want to delete this temple?')) return
     try {
@@ -133,6 +149,7 @@ export default function AdminTemplesPage() {
               <th className="px-4 py-3">Deity</th>
               <th className="px-4 py-3">Type</th>
               <th className="px-4 py-3">Status</th>
+              <th className="px-4 py-3">Verified</th>
               <th className="px-4 py-3">Actions</th>
             </tr>
           </thead>
@@ -149,6 +166,16 @@ export default function AdminTemplesPage() {
                   </span>
                 </td>
                 <td className="px-4 py-3">
+                  <select 
+                    value={r.verified || 'not-verified'} 
+                    onChange={(e) => updateVerification(r._id, e.target.value as 'verified' | 'not-verified')}
+                    className={`px-2 py-1 rounded text-xs border-0 cursor-pointer ${r.verified === 'verified' ? 'bg-blue-100 text-blue-800' : 'bg-orange-100 text-orange-800'}`}
+                  >
+                    <option value="verified">✓ Verified</option>
+                    <option value="not-verified">⚠ Not Verified</option>
+                  </select>
+                </td>
+                <td className="px-4 py-3">
                   <div className="flex gap-2">
                     <Link href={`/temples/${r.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`} target="_blank" className="px-2 py-1 bg-blue-100 text-blue-700 rounded-md text-sm hover:bg-blue-200">View</Link>
                     <Link href={`/admin/temples/edit/${r._id}`} className="px-2 py-1 bg-slate-200 rounded-md text-sm hover:bg-slate-300">Edit</Link>
@@ -161,7 +188,7 @@ export default function AdminTemplesPage() {
             ))}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-6 text-center text-slate-500">No temples match the current filters.</td>
+                <td colSpan={7} className="px-4 py-6 text-center text-slate-500">No temples match the current filters.</td>
               </tr>
             )}
           </tbody>

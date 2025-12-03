@@ -24,6 +24,7 @@ const TempleSchema = new Schema({
   facebook: { type: String },
   instagram: { type: String },
   status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
+  verified: { type: String, enum: ['verified', 'not-verified'], default: 'not-verified' },
   createdAt: { type: Date, default: Date.now }
 });
 
