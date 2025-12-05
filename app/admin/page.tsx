@@ -152,6 +152,7 @@ export default function AdminPage() {
           <Link href="/admin/darshan" className="px-3 py-2 bg-slate-200 rounded-md text-sm">View Darshan</Link>
           <Link href="/admin/events" className="px-3 py-2 bg-slate-200 rounded-md text-sm">View Events</Link>
           <Link href="/admin/blogs" className="px-3 py-2 bg-slate-200 rounded-md text-sm">View Blogs</Link>
+          <Link href="/admin/devotionals" className="px-3 py-2 bg-orange-500 text-white rounded-md text-sm">View Devotionals</Link>
           <button onClick={handleLogout} className="px-3 py-2 bg-rose-600 text-white rounded-md text-sm">Logout</button>
         </div>
       </header>
