@@ -10,6 +10,7 @@
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,css}\""
   },
   "dependencies": {
+    "@vercel/analytics": "^1.6.1",
     "autoprefixer": "^10.4.0",
     "fuse.js": "^6.6.2",
     "lucide-react": "^0.555.0",

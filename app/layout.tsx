@@ -2,6 +2,7 @@ import './globals.css'
 import Header from '../components/Header'
 import Disclaimer from '../components/Disclaimer'
 import GoogleAnalytics from './components/GoogleAnalytics'
+import { Analytics } from '@vercel/analytics/next'
 import React from 'react'
 import { TranslationProvider } from '../lib/translation'
 
@@ -22,6 +23,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <Disclaimer />
           {children}
         </TranslationProvider>
+        <Analytics />
       </body>
     </html>
   )
