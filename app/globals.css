@@ -1,9 +1,9 @@
+/* Font imports: Playfair Display and Inter from Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&family=Playfair+Display:wght@400;700;900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-/* Font imports: Playfair Display and Inter from Google Fonts */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&family=Playfair+Display:wght@400;700;900&display=swap');
 
 /* Tiro Devanagari Sanskrit is usually not available on Google Fonts; provide a local-face fallback name.
    If you host the font later, add @font-face rule pointing to the files. */
