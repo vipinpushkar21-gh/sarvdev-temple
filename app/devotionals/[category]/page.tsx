@@ -41,6 +41,7 @@ export default function CategoryPage() {
   const [devotionals, setDevotionals] = useState<Devotional[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedDeity, setSelectedDeity] = useState<string>('all')
+  const [selectedSubCategory, setSelectedSubCategory] = useState<string>('all')
 
   const categorySlug = params.category as string
   const categoryInfo = CATEGORY_MAP[categorySlug]
@@ -70,10 +71,63 @@ export default function CategoryPage() {
   // Get unique deities from devotionals
   const deities = ['all', ...Array.from(new Set(devotionals.map(d => d.deity).filter(Boolean)))]
   
+  // Check if this is Mantra category and has Rashi mantras
+  const rashiMantras = devotionals.filter(d => 
+    d.title?.toLowerCase().includes('rashi') || 
+    d.title?.toLowerCase().includes('aries') ||
+    d.title?.toLowerCase().includes('taurus') ||
+    d.title?.toLowerCase().includes('gemini') ||
+    d.title?.toLowerCase().includes('cancer') ||
+    d.title?.toLowerCase().includes('leo') ||
+    d.title?.toLowerCase().includes('virgo') ||
+    d.title?.toLowerCase().includes('libra') ||
+    d.title?.toLowerCase().includes('scorpio') ||
+    d.title?.toLowerCase().includes('sagittarius') ||
+    d.title?.toLowerCase().includes('capricorn') ||
+    d.title?.toLowerCase().includes('aquarius') ||
+    d.title?.toLowerCase().includes('pisces')
+  )
+  const hasRashiMantras = rashiMantras.length > 0
+  
   // Filter by deity
-  const filteredByDeity = selectedDeity === 'all'
+  let filteredByDeity = selectedDeity === 'all'
     ? devotionals
     : devotionals.filter(d => d.deity === selectedDeity)
+  
+  // Further filter by subcategory (Rashi)
+  if (selectedSubCategory === 'rashi') {
+    filteredByDeity = filteredByDeity.filter(d => 
+      d.title?.toLowerCase().includes('rashi') || 
+      d.title?.toLowerCase().includes('aries') ||
+      d.title?.toLowerCase().includes('taurus') ||
+      d.title?.toLowerCase().includes('gemini') ||
+      d.title?.toLowerCase().includes('cancer') ||
+      d.title?.toLowerCase().includes('leo') ||
+      d.title?.toLowerCase().includes('virgo') ||
+      d.title?.toLowerCase().includes('libra') ||
+      d.title?.toLowerCase().includes('scorpio') ||
+      d.title?.toLowerCase().includes('sagittarius') ||
+      d.title?.toLowerCase().includes('capricorn') ||
+      d.title?.toLowerCase().includes('aquarius') ||
+      d.title?.toLowerCase().includes('pisces')
+    )
+  } else if (selectedSubCategory === 'other') {
+    filteredByDeity = filteredByDeity.filter(d => 
+      !d.title?.toLowerCase().includes('rashi') && 
+      !d.title?.toLowerCase().includes('aries') &&
+      !d.title?.toLowerCase().includes('taurus') &&
+      !d.title?.toLowerCase().includes('gemini') &&
+      !d.title?.toLowerCase().includes('cancer') &&
+      !d.title?.toLowerCase().includes('leo') &&
+      !d.title?.toLowerCase().includes('virgo') &&
+      !d.title?.toLowerCase().includes('libra') &&
+      !d.title?.toLowerCase().includes('scorpio') &&
+      !d.title?.toLowerCase().includes('sagittarius') &&
+      !d.title?.toLowerCase().includes('capricorn') &&
+      !d.title?.toLowerCase().includes('aquarius') &&
+      !d.title?.toLowerCase().includes('pisces')
+    )
+  }
 
   if (!categoryInfo) {
     return (
@@ -136,6 +190,43 @@ export default function CategoryPage() {
                 {deity === 'all' ? '🕉️ All Deities' : `🙏 ${deity}`}
               </button>
             ))}
+            
+            {/* Rashi Filter - Only show in Mantra category if Rashi mantras exist */}
+            {hasRashiMantras && (
+              <>
+                <div className="w-full border-t border-orange-200 dark:border-orange-700 my-2"></div>
+                <button
+                  onClick={() => setSelectedSubCategory('all')}
+                  className={`px-5 py-2.5 rounded-full font-medium transition-all duration-300 ${
+                    selectedSubCategory === 'all'
+                      ? 'bg-orange-600 text-white shadow-lg scale-105'
+                      : 'bg-white/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-200 hover:bg-orange-100 dark:hover:bg-orange-900/30 border border-orange-200 dark:border-orange-700'
+                  }`}
+                >
+                  📿 All Mantras
+                </button>
+                <button
+                  onClick={() => setSelectedSubCategory('rashi')}
+                  className={`px-5 py-2.5 rounded-full font-medium transition-all duration-300 ${
+                    selectedSubCategory === 'rashi'
+                      ? 'bg-orange-600 text-white shadow-lg scale-105'
+                      : 'bg-white/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-200 hover:bg-orange-100 dark:hover:bg-orange-900/30 border border-orange-200 dark:border-orange-700'
+                  }`}
+                >
+                  ♈ Rashi Mantras ({rashiMantras.length})
+                </button>
+                <button
+                  onClick={() => setSelectedSubCategory('other')}
+                  className={`px-5 py-2.5 rounded-full font-medium transition-all duration-300 ${
+                    selectedSubCategory === 'other'
+                      ? 'bg-orange-600 text-white shadow-lg scale-105'
+                      : 'bg-white/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-200 hover:bg-orange-100 dark:hover:bg-orange-900/30 border border-orange-200 dark:border-orange-700'
+                  }`}
+                >
+                  🔱 Other Mantras ({devotionals.length - rashiMantras.length})
+                </button>
+              </>
+            )}
           </div>
         </div>
       )}
