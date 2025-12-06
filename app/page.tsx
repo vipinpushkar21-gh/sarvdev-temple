@@ -15,9 +15,7 @@ export default function Page() {
 
   return (
     <div suppressHydrationWarning>
-      {/* Full-width Temple Slider at top */}
-      <TempleSlider />
-
+      {/* Hero Section with Search */}
       <section className="hero-bg relative overflow-hidden min-h-[600px]">
         <div className="absolute inset-0 bg-gradient-to-br from-orange-600/20 via-amber-500/10 to-orange-400/5 pointer-events-none"></div>
         <div className="container mx-auto px-4 py-24 relative">
@@ -66,6 +64,9 @@ export default function Page() {
           </div>
         </div>
       </section>
+
+      {/* Full-width Temple Slider below hero */}
+      <TempleSlider />
 
       <main className="container mx-auto px-4 py-16">
         <h2 className="font-playfair text-4xl mb-8 text-center fade-in">{t('home.exploreFeatures')}</h2>
