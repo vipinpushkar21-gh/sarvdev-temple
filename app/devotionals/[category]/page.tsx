@@ -126,7 +126,7 @@ export default function CategoryPage() {
             {deities.map(deity => (
               <button
                 key={deity}
-                onClick={() => setSelectedDeity(deity)}
+                onClick={() => setSelectedDeity(deity || 'all')}
                 className={`px-5 py-2.5 rounded-full font-medium transition-all duration-300 ${
                   selectedDeity === deity
                     ? 'bg-orange-600 text-white shadow-lg scale-105'
