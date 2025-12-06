@@ -88,6 +88,9 @@ export default function NewDevotionalPage() {
               <option value="Chalisa">Chalisa - चालीसा</option>
               <option value="Stuti">Stuti - स्तुति</option>
               <option value="Shloka">Shloka - श्लोक</option>
+              <option value="Ek Shloki">Ek Shloki - एक श्लोकी</option>
+              <option value="Ashtaka">Ashtaka - अष्टक</option>
+              <option value="Sahasranama">Sahasranama - सहस्रनाम</option>
               <option value="Path">Path - पाठ</option>
               <option value="Other">Other - अन्य</option>
             </select>
