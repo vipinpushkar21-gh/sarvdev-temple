@@ -39,6 +39,7 @@ export default function CategoryPage() {
   const router = useRouter()
   const [devotionals, setDevotionals] = useState<Devotional[]>([])
   const [loading, setLoading] = useState(true)
+  const [selectedDeity, setSelectedDeity] = useState<string>('all')
 
   const categorySlug = params.category as string
   const categoryInfo = CATEGORY_MAP[categorySlug]
@@ -64,6 +65,14 @@ export default function CategoryPage() {
     }
     fetchDevotionals()
   }, [categorySlug])
+
+  // Get unique deities from devotionals
+  const deities = ['all', ...Array.from(new Set(devotionals.map(d => d.deity).filter(Boolean)))]
+  
+  // Filter by deity
+  const filteredByDeity = selectedDeity === 'all'
+    ? devotionals
+    : devotionals.filter(d => d.deity === selectedDeity)
 
   if (!categoryInfo) {
     return (
@@ -102,28 +111,57 @@ export default function CategoryPage() {
         </h1>
         <p className="text-2xl text-orange-500 font-medium mb-4">{categoryInfo.hindi}</p>
         <p className="text-slate-600 dark:text-slate-300">
-          {devotionals.length} {categoryInfo.label}{devotionals.length !== 1 ? 's' : ''} available
+          {filteredByDeity.length} {categoryInfo.label}{filteredByDeity.length !== 1 ? 's' : ''} available
         </p>
       </header>
 
+      {/* Deity Filter */}
+      {deities.length > 1 && (
+        <div className="mb-8">
+          <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-200 mb-4 text-center">
+            Filter by Deity
+          </h3>
+          <div className="flex flex-wrap justify-center gap-3">
+            {deities.map(deity => (
+              <button
+                key={deity}
+                onClick={() => setSelectedDeity(deity)}
+                className={`px-5 py-2.5 rounded-full font-medium transition-all duration-300 ${
+                  selectedDeity === deity
+                    ? 'bg-orange-600 text-white shadow-lg scale-105'
+                    : 'bg-white/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-200 hover:bg-orange-100 dark:hover:bg-orange-900/30 border border-orange-200 dark:border-orange-700'
+                }`}
+              >
+                {deity === 'all' ? '🕉️ All Deities' : `🙏 ${deity}`}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Devotionals Grid */}
       <section>
-        {devotionals.length === 0 ? (
+        {filteredByDeity.length === 0 ? (
           <div className="text-center py-16">
             <div className="text-6xl mb-4">🕉️</div>
             <p className="text-lg text-slate-500 mb-6">
-              No {categoryInfo.label}s available yet.
+              {devotionals.length === 0 
+                ? `No ${categoryInfo.label}s available yet.`
+                : `No ${categoryInfo.label}s found for ${selectedDeity}.`
+              }
             </p>
-            <Link 
-              href="/devotionals" 
-              className="inline-block px-6 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-medium"
-            >
-              Browse All Categories
-            </Link>
+            {devotionals.length === 0 && (
+              <Link 
+                href="/devotionals" 
+                className="inline-block px-6 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-medium"
+              >
+                Browse All Categories
+              </Link>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {devotionals.map((d: Devotional) => (
+            {filteredByDeity.map((d: Devotional) => (
               <article 
                 key={d._id} 
                 className="bg-white/80 dark:bg-slate-900/60 backdrop-blur rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow p-5 flex flex-col"
