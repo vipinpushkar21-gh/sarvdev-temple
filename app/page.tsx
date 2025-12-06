@@ -2,6 +2,7 @@
 
 import React from 'react'
 import SmartSearch from '../components/SmartSearch'
+import TempleSlider from '../components/TempleSlider'
 import { useTranslation } from '../lib/translation'
 
 export default function Page() {
@@ -14,6 +15,9 @@ export default function Page() {
 
   return (
     <div suppressHydrationWarning>
+      {/* Full-width Temple Slider at top */}
+      <TempleSlider />
+
       <section className="hero-bg relative overflow-hidden min-h-[600px]">
         <div className="absolute inset-0 bg-gradient-to-br from-orange-600/20 via-amber-500/10 to-orange-400/5 pointer-events-none"></div>
         <div className="container mx-auto px-4 py-24 relative">
