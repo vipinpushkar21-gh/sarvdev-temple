@@ -9,7 +9,7 @@ interface Temple {
   description: string
   image?: string
   location?: string
-  slug: string
+  slug?: string
 }
 
 export default function TempleSlider() {
@@ -17,6 +17,16 @@ export default function TempleSlider() {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isAutoPlaying, setIsAutoPlaying] = useState(true)
   const [isTransitioning, setIsTransitioning] = useState(false)
+
+  // Generate slug from title
+  const generateSlug = (title: string) => {
+    return title
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, '') // Remove special characters
+      .replace(/\s+/g, '-')      // Replace spaces with hyphens
+      .replace(/--+/g, '-')      // Replace multiple hyphens with single
+      .trim()
+  }
 
   useEffect(() => {
     fetchTemples()
@@ -137,7 +147,7 @@ export default function TempleSlider() {
 
           {/* CTA Button - Google Arts style */}
           <Link
-            href={`/temples/${currentTemple.slug}`}
+            href={`/temples/${currentTemple.slug || generateSlug(currentTemple.title)}`}
             className="inline-flex items-center gap-3 px-8 py-4 bg-white text-gray-900 rounded-full font-semibold text-lg hover:bg-gray-100 transition-all hover:scale-105 shadow-2xl group"
           >
             <span>Explore</span>
