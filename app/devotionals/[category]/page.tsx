@@ -180,9 +180,12 @@ export default function CategoryPage() {
             {deities.map(deity => (
               <button
                 key={deity}
-                onClick={() => setSelectedDeity(deity || 'all')}
+                onClick={() => {
+                  setSelectedDeity(deity || 'all')
+                  setSelectedSubCategory('all')
+                }}
                 className={`px-5 py-2.5 rounded-full font-medium transition-all duration-300 ${
-                  selectedDeity === deity
+                  selectedDeity === deity && selectedSubCategory === 'all'
                     ? 'bg-orange-600 text-white shadow-lg scale-105'
                     : 'bg-white/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-200 hover:bg-orange-100 dark:hover:bg-orange-900/30 border border-orange-200 dark:border-orange-700'
                 }`}
@@ -191,41 +194,21 @@ export default function CategoryPage() {
               </button>
             ))}
             
-            {/* Rashi Filter - Only show in Mantra category if Rashi mantras exist */}
+            {/* Rashi Filter - Show in Mantra category if Rashi mantras exist */}
             {hasRashiMantras && (
-              <>
-                <div className="w-full border-t border-orange-200 dark:border-orange-700 my-2"></div>
-                <button
-                  onClick={() => setSelectedSubCategory('all')}
-                  className={`px-5 py-2.5 rounded-full font-medium transition-all duration-300 ${
-                    selectedSubCategory === 'all'
-                      ? 'bg-orange-600 text-white shadow-lg scale-105'
-                      : 'bg-white/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-200 hover:bg-orange-100 dark:hover:bg-orange-900/30 border border-orange-200 dark:border-orange-700'
-                  }`}
-                >
-                  📿 All Mantras
-                </button>
-                <button
-                  onClick={() => setSelectedSubCategory('rashi')}
-                  className={`px-5 py-2.5 rounded-full font-medium transition-all duration-300 ${
-                    selectedSubCategory === 'rashi'
-                      ? 'bg-orange-600 text-white shadow-lg scale-105'
-                      : 'bg-white/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-200 hover:bg-orange-100 dark:hover:bg-orange-900/30 border border-orange-200 dark:border-orange-700'
-                  }`}
-                >
-                  ♈ Rashi Mantras ({rashiMantras.length})
-                </button>
-                <button
-                  onClick={() => setSelectedSubCategory('other')}
-                  className={`px-5 py-2.5 rounded-full font-medium transition-all duration-300 ${
-                    selectedSubCategory === 'other'
-                      ? 'bg-orange-600 text-white shadow-lg scale-105'
-                      : 'bg-white/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-200 hover:bg-orange-100 dark:hover:bg-orange-900/30 border border-orange-200 dark:border-orange-700'
-                  }`}
-                >
-                  🔱 Other Mantras ({devotionals.length - rashiMantras.length})
-                </button>
-              </>
+              <button
+                onClick={() => {
+                  setSelectedDeity('all')
+                  setSelectedSubCategory('rashi')
+                }}
+                className={`px-5 py-2.5 rounded-full font-medium transition-all duration-300 ${
+                  selectedSubCategory === 'rashi'
+                    ? 'bg-orange-600 text-white shadow-lg scale-105'
+                    : 'bg-white/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-200 hover:bg-orange-100 dark:hover:bg-orange-900/30 border border-orange-200 dark:border-orange-700'
+                }`}
+              >
+                ♈ Rashi Mantras ({rashiMantras.length})
+              </button>
             )}
           </div>
         </div>
