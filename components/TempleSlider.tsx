@@ -127,7 +127,7 @@ export default function TempleSlider() {
         >
           {/* Location Tag */}
           {currentTemple.location && (
-            <div className="inline-flex items-center gap-2 px-4 py-2 mb-6 bg-white/10 backdrop-blur-md text-white rounded-full text-sm font-medium border border-white/20 hover:bg-white/20 transition-colors">
+            <div className="inline-flex items-center gap-2 px-4 py-2 mb-6 bg-orange-500/90 backdrop-blur-md text-white rounded-full text-sm font-medium border border-orange-400/30 hover:bg-orange-600/90 transition-colors shadow-lg">
               <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
               </svg>
@@ -148,9 +148,9 @@ export default function TempleSlider() {
           {/* CTA Button - Google Arts style */}
           <Link
             href={`/temples/${currentTemple.slug || generateSlug(currentTemple.title)}`}
-            className="inline-flex items-center gap-3 px-8 py-4 bg-white text-gray-900 rounded-full font-semibold text-lg hover:bg-gray-100 transition-all hover:scale-105 shadow-2xl group"
+            className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-full font-semibold text-lg hover:from-orange-600 hover:to-orange-700 transition-all hover:scale-105 shadow-2xl group"
           >
-            <span>Explore</span>
+            <span>Explore Temple</span>
             <svg className="w-5 h-5 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 8l4 4m0 0l-4 4m4-4H3" />
             </svg>
@@ -162,7 +162,7 @@ export default function TempleSlider() {
       <button
         onClick={handlePrevSlide}
         disabled={isTransitioning}
-        className="absolute left-6 top-1/2 -translate-y-1/2 w-14 h-14 rounded-full bg-white/10 backdrop-blur-md text-white hover:bg-white/25 transition-all flex items-center justify-center group border border-white/20 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="absolute left-6 top-1/2 -translate-y-1/2 w-14 h-14 rounded-full bg-orange-500/80 backdrop-blur-md text-white hover:bg-orange-600 transition-all flex items-center justify-center group border border-orange-400/30 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
         aria-label="Previous"
       >
         <svg className="w-7 h-7 group-hover:-translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
@@ -173,7 +173,7 @@ export default function TempleSlider() {
       <button
         onClick={handleNextSlide}
         disabled={isTransitioning}
-        className="absolute right-6 top-1/2 -translate-y-1/2 w-14 h-14 rounded-full bg-white/10 backdrop-blur-md text-white hover:bg-white/25 transition-all flex items-center justify-center group border border-white/20 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="absolute right-6 top-1/2 -translate-y-1/2 w-14 h-14 rounded-full bg-orange-500/80 backdrop-blur-md text-white hover:bg-orange-600 transition-all flex items-center justify-center group border border-orange-400/30 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
         aria-label="Next"
       >
         <svg className="w-7 h-7 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
@@ -193,18 +193,18 @@ export default function TempleSlider() {
           >
             <div className={`h-1.5 rounded-full transition-all duration-500 ${
               index === currentIndex
-                ? 'w-12 bg-white'
-                : 'w-1.5 bg-white/40 group-hover:bg-white/70 group-hover:w-8'
+                ? 'w-12 bg-orange-500 shadow-lg shadow-orange-500/50'
+                : 'w-1.5 bg-white/40 group-hover:bg-orange-400/70 group-hover:w-8'
             }`} />
           </button>
         ))}
       </div>
 
       {/* Counter Badge - Top Right */}
-      <div className="absolute top-8 right-8 px-5 py-2.5 bg-black/30 backdrop-blur-md text-white rounded-full text-sm font-medium border border-white/20">
+      <div className="absolute top-8 right-8 px-5 py-2.5 bg-orange-500/80 backdrop-blur-md text-white rounded-full text-sm font-medium border border-orange-400/30 shadow-lg">
         <span className="font-bold">{String(currentIndex + 1).padStart(2, '0')}</span>
-        <span className="mx-1.5 text-white/60">/</span>
-        <span className="text-white/80">{String(temples.length).padStart(2, '0')}</span>
+        <span className="mx-1.5 text-white/80">/</span>
+        <span className="text-white/90">{String(temples.length).padStart(2, '0')}</span>
       </div>
     </section>
   )
