@@ -31,6 +31,7 @@ const ALL_CATEGORIES = [
   { id: 'Ashtaka', label: 'Ashtaka', hindi: 'अष्टक' },
   { id: 'Sahasranama', label: 'Sahasranama', hindi: 'सहस्रनाम' },
   { id: 'Path', label: 'Path', hindi: 'पाठ' },
+  { id: 'Rashi', label: 'Rashi', hindi: 'राशि' },
   { id: 'Other', label: 'Other', hindi: 'अन्य' },
 ]
 
