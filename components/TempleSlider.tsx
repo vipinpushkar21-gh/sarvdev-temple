@@ -87,7 +87,7 @@ export default function TempleSlider() {
   const nextTemple = temples[(currentIndex + 1) % temples.length]
 
   return (
-    <section className="relative w-full h-[85vh] min-h-[600px] max-h-[900px] overflow-hidden bg-black">
+    <section className="relative w-full h-[85vh] min-h-[600px] max-h-[900px] overflow-hidden bg-gradient-to-br from-orange-50 via-amber-50 to-orange-100">
       {/* Background Images - Current & Next for smooth transition */}
       <div className="absolute inset-0">
         {/* Current Image */}
@@ -100,8 +100,8 @@ export default function TempleSlider() {
             alt={currentTemple.title}
             className="w-full h-full object-cover scale-105"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent"></div>
-          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent"></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-orange-900/60 via-orange-800/30 to-transparent"></div>
+          <div className="absolute inset-0 bg-gradient-to-t from-orange-900/70 via-orange-800/20 to-transparent"></div>
         </div>
         
         {/* Next Image - Pre-loaded for smooth transition */}
@@ -114,8 +114,8 @@ export default function TempleSlider() {
             alt={nextTemple.title}
             className="w-full h-full object-cover scale-105"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent"></div>
-          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent"></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-orange-900/60 via-orange-800/30 to-transparent"></div>
+          <div className="absolute inset-0 bg-gradient-to-t from-orange-900/70 via-orange-800/20 to-transparent"></div>
         </div>
       </div>
 
