@@ -21,10 +21,11 @@ type Devotional = {
 const ALL_CATEGORIES = [
   { id: 'all', label: 'All', hindi: 'सभी' },
   { id: 'Mantra', label: 'Mantra', hindi: 'मंत्र' },
+  { id: 'Chalisa', label: 'Chalisa', hindi: 'चालीसा' },
+  { id: 'Katyayani', label: 'Katyayani', hindi: 'कात्यायनी' },
   { id: 'Bhajan', label: 'Bhajan', hindi: 'भजन' },
   { id: 'Stotra', label: 'Stotra', hindi: 'स्तोत्र' },
   { id: 'Aarti', label: 'Aarti', hindi: 'आरती' },
-  { id: 'Chalisa', label: 'Chalisa', hindi: 'चालीसा' },
   { id: 'Stuti', label: 'Stuti', hindi: 'स्तुति' },
   { id: 'Shloka', label: 'Shloka', hindi: 'श्लोक' },
   { id: 'Ek Shloki', label: 'Ek Shloki', hindi: 'एक श्लोकी' },
