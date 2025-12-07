@@ -34,6 +34,7 @@ const CATEGORY_MAP: { [key: string]: { label: string; hindi: string } } = {
   'rashi': { label: 'Rashi', hindi: 'राशि' },
   'vastu': { label: 'Vastu', hindi: 'वास्तु' },
   'durga': { label: 'Durga', hindi: 'दुर्गा' },
+  'kuber': { label: 'Kuber', hindi: 'कुबेर' },
   'other': { label: 'Other', hindi: 'अन्य' },
 }
 
