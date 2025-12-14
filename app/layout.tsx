@@ -5,6 +5,7 @@ import GoogleAnalytics from './components/GoogleAnalytics'
 import { Analytics } from '@vercel/analytics/next'
 import React from 'react'
 import { TranslationProvider } from '../lib/translation'
+import VisitorTracker from '../components/VisitorTracker'
 
 export const metadata = {
   title: 'Sarvdev Temple',
@@ -21,6 +22,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <TranslationProvider>
           <Header />
           <Disclaimer />
+          <VisitorTracker />
           {children}
         </TranslationProvider>
         <Analytics />

@@ -15,24 +15,25 @@ type Devotional = {
   duration?: string
   artist?: string
   status?: string
+  names?: { sanskrit?: string; mantra?: string; english?: string }[]
 }
 
 // All devotional categories with bilingual labels
 const ALL_CATEGORIES = [
-  { id: 'all', label: 'All', hindi: 'सभी' },
-  { id: 'Mantra', label: 'Mantra', hindi: 'मंत्र' },
-  { id: 'Chalisa', label: 'Chalisa', hindi: 'चालीसा' },
-  { id: 'Katyayani', label: 'Katyayani', hindi: 'कात्यायनी' },
-  { id: 'Bhajan', label: 'Bhajan', hindi: 'भजन' },
-  { id: 'Stotra', label: 'Stotra', hindi: 'स्तोत्र' },
-  { id: 'Aarti', label: 'Aarti', hindi: 'आरती' },
-  { id: 'Stuti', label: 'Stuti', hindi: 'स्तुति' },
-  { id: 'Shloka', label: 'Shloka', hindi: 'श्लोक' },
-  { id: 'Ek Shloki', label: 'Ek Shloki', hindi: 'एक श्लोकी' },
-  { id: 'Ashtaka', label: 'Ashtaka', hindi: 'अष्टक' },
-  { id: 'Sahasranama', label: 'Sahasranama', hindi: 'सहस्रनाम' },
-  { id: 'Path', label: 'Path', hindi: 'पाठ' },
-  { id: 'Other', label: 'Other', hindi: 'अन्य' },
+  { id: 'all', label: 'All', hindi: 'सभी', icon: '🕉️' },
+  { id: 'Mantra', label: 'Mantra', hindi: 'मंत्र', icon: '🔮' },
+  { id: 'Chalisa', label: 'Chalisa', hindi: 'चालीसा', icon: '🙏' },
+  { id: 'Bhajan', label: 'Bhajan', hindi: 'भजन', icon: '🎵' },
+  { id: 'Stotra', label: 'Stotra', hindi: 'स्तोत्र', icon: '📿' },
+  { id: 'Aarti', label: 'Aarti', hindi: 'आरती', icon: '🪔' },
+  { id: 'Stuti', label: 'Stuti', hindi: 'स्तुति', icon: '🌟' },
+  { id: 'Shloka', label: 'Shloka', hindi: 'श्लोक', icon: '📖' },
+  { id: 'Ek Shloki', label: 'Ek Shloki', hindi: 'एक श्लोकी', icon: '📜' },
+  { id: 'Ashtaka', label: 'Ashtaka', hindi: 'अष्टक', icon: '🔸' },
+  { id: 'Sahasranama', label: 'Sahasranama', hindi: 'सहस्रनाम', icon: '👑' },
+  { id: 'Path', label: 'Path', hindi: 'पाठ', icon: '📚' },
+  { id: '108 Namavali', label: '108 Namavali', hindi: '१०८ नामावली', icon: '🔢' },
+  { id: 'Other', label: 'Other', hindi: 'अन्य', icon: '✨' },
 ]
 
 export default function DevotionalsPage() {
@@ -72,8 +73,11 @@ export default function DevotionalsPage() {
   }
 
   return (
-    <main className="max-w-6xl mx-auto px-4 py-12">
+    <main className="max-w-6xl mx-auto px-4 py-12 relative">
+      <div className="absolute inset-0 bg-gradient-to-br from-orange-50/30 via-transparent to-amber-50/30 dark:from-orange-900/10 dark:to-amber-900/10 pointer-events-none" />
+      <div className="relative z-10">
       <header className="mb-8 text-center">
+        <div className="text-6xl mb-4">🕉️</div>
         <h1 className="text-4xl font-playfair text-orange-600 font-bold">Devotionals</h1>
         <p className="mt-3 text-slate-700 dark:text-slate-200 text-lg">Explore sacred mantras, bhajans, stotras and more</p>
       </header>
@@ -91,9 +95,10 @@ export default function DevotionalsPage() {
               <Link
                 key={cat.id}
                 href={cat.id === 'all' ? '/devotionals' : `/devotionals/${cat.id.toLowerCase().replace(/\s+/g, '-')}`}
-                className="group relative bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 hover:from-orange-100 hover:to-amber-100 dark:hover:from-orange-800/30 dark:hover:to-amber-800/30 rounded-xl p-6 shadow-sm hover:shadow-lg transition-all duration-300 border border-orange-200/50 dark:border-orange-700/50"
+                className="group relative bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 hover:from-orange-100 hover:to-amber-100 dark:hover:from-orange-800/30 dark:hover:to-amber-800/30 rounded-xl p-6 shadow-sm hover:shadow-lg transition-all duration-300 border border-orange-200/50 dark:border-orange-700/50 hover:scale-105"
               >
                 <div className="text-center">
+                  <div className="text-3xl mb-2">{cat.icon}</div>
                   <h3 className="text-lg font-semibold text-orange-700 dark:text-orange-400 mb-1 group-hover:text-orange-600 dark:group-hover:text-orange-300 transition-colors">
                     {cat.label}
                   </h3>
@@ -113,7 +118,11 @@ export default function DevotionalsPage() {
 
       {/* Recent Devotionals */}
       <section>
-        <h2 className="text-2xl font-semibold text-slate-800 dark:text-slate-100 mb-6">Recently Added</h2>
+        <div className="flex items-center justify-center gap-3 mb-6">
+          <div className="text-2xl">🌟</div>
+          <h2 className="text-2xl font-semibold text-slate-800 dark:text-slate-100">Recently Added</h2>
+          <div className="text-2xl">🌟</div>
+        </div>
         {devotionals.length === 0 ? (
           <div className="text-center py-12 text-slate-500">
             No devotionals available yet.
@@ -165,11 +174,30 @@ export default function DevotionalsPage() {
                     </div>
                   </details>
                 )}
+
+                {d.names && d.names.length > 0 && (
+                  <details className="mt-4">
+                    <summary className="text-sm text-orange-600 cursor-pointer hover:underline font-medium">
+                      View 108 Names ({d.names.length})
+                    </summary>
+                    <div className="mt-3 p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg text-sm text-slate-700 dark:text-slate-300 border border-orange-200/50 dark:border-orange-700/50 max-h-96 overflow-y-auto">
+                      <ol className="list-decimal list-inside space-y-1">
+                        {d.names.map((name, index) => (
+                          <li key={index} className="flex flex-col sm:flex-row sm:items-center gap-1">
+                            <span className="font-medium">{name.sanskrit || name.english}</span>
+                            {name.mantra && <span className="text-slate-600 dark:text-slate-400 italic">— {name.mantra}</span>}
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
+                  </details>
+                )}
               </article>
             ))}
           </div>
         )}
       </section>
+    </div>
     </main>
   )
 }

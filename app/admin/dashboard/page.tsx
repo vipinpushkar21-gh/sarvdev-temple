@@ -19,6 +19,7 @@ const STORAGE_KEY = 'sarvdev_admin_pending_v1'
 
 export default function AdminDashboardPage() {
   const [pending, setPending] = useState<PendingStorage>({ temples: [], darshans: [], events: [] })
+  const [visitorStats, setVisitorStats] = useState({ total: 0, today: 0 })
 
   useEffect(() => {
     try {
@@ -30,6 +31,12 @@ export default function AdminDashboardPage() {
     } catch (e) {
       // ignore
     }
+
+    // Fetch visitor stats
+    fetch('/api/visitors')
+      .then(res => res.json())
+      .then(data => setVisitorStats(data))
+      .catch(err => console.error('Failed to fetch visitor stats:', err))
   }, [])
 
   const approveTemple = (id: string) => {
@@ -59,129 +66,113 @@ export default function AdminDashboardPage() {
   }
 
   const totalTemples = 128
-  const donationTotals = { today: 123.5, month: 4520.0, lifetime: 98765.25 }
 
   return (
-    <main className="max-w-7xl mx-auto px-4 py-12">
+    <main className="max-w-7xl mx-auto px-4 py-12 bg-gray-50 dark:bg-gray-900 min-h-screen">
       <header className="mb-6">
-        <h1 className="text-2xl font-semibold">Admin Dashboard</h1>
-        <p className="text-sm text-slate-600">Overview of site activity and quick admin actions.</p>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Admin Dashboard</h1>
+        <p className="text-base text-gray-600 dark:text-gray-300">Overview of site activity and quick admin actions.</p>
       </header>
 
-      <section className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-        <div className="bg-white/60 dark:bg-slate-900/60 p-4 rounded-lg shadow-sm">
-          <div className="text-sm text-slate-500">Total temples</div>
-          <div className="text-2xl font-bold">{totalTemples}</div>
+      <section className="grid grid-cols-1 sm:grid-cols-4 gap-6 mb-8">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
+          <div className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Total temples</div>
+          <div className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{totalTemples}</div>
         </div>
 
-        <div className="bg-white/60 dark:bg-slate-900/60 p-4 rounded-lg shadow-sm">
-          <div className="text-sm text-slate-500">Pending submissions</div>
-          <div className="text-2xl font-bold">{pending.temples.length + pending.darshans.length + pending.events.length}</div>
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
+          <div className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Pending submissions</div>
+          <div className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{pending.temples.length + pending.darshans.length + pending.events.length}</div>
         </div>
 
-        <div className="bg-white/60 dark:bg-slate-900/60 p-4 rounded-lg shadow-sm">
-          <div className="text-sm text-slate-500">Donation (month)</div>
-          <div className="text-2xl font-bold">${donationTotals.month.toLocaleString()}</div>
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
+          <div className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Total Visitors</div>
+          <div className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{visitorStats.total}</div>
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
+          <div className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Today's Visitors</div>
+          <div className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{visitorStats.today}</div>
         </div>
       </section>
 
-      <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white/60 dark:bg-slate-900/60 p-4 rounded-lg shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-medium">Pending Temple Submissions</h2>
-            <Link href="/admin/submissions" className="text-emerald-600 hover:underline">View all</Link>
+      <section className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Pending Temple Submissions</h2>
+            <Link href="/admin/submissions" className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium">View all</Link>
           </div>
 
-          <ul className="space-y-3">
+          <ul className="space-y-4">
             {pending.temples.map((p) => (
-              <li key={p.id} className="flex items-center justify-between">
+              <li key={p.id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
                 <div>
-                  <div className="font-semibold">{p.title}</div>
-                  <div className="text-sm text-slate-500">{p.location}</div>
+                  <div className="font-semibold text-gray-900 dark:text-white">{p.title}</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-300">{p.location}</div>
                 </div>
-                <div className="flex gap-2">
-                  <button onClick={() => approveTemple(p.id)} className="px-3 py-1 bg-emerald-600 text-white rounded-md text-sm">Approve</button>
-                  <button onClick={() => rejectTemple(p.id)} className="px-3 py-1 bg-rose-600 text-white rounded-md text-sm">Reject</button>
+                <div className="flex gap-3">
+                  <button onClick={() => approveTemple(p.id)} className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors">Approve</button>
+                  <button onClick={() => rejectTemple(p.id)} className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors">Reject</button>
                 </div>
               </li>
             ))}
-            {pending.temples.length===0 && <li className="text-sm text-slate-500">No pending temple submissions.</li>}
+            {pending.temples.length===0 && <li className="text-center py-8 text-gray-500 dark:text-gray-400">No pending temple submissions.</li>}
           </ul>
         </div>
 
-        <div className="bg-white/60 dark:bg-slate-900/60 p-4 rounded-lg shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-medium">Pending Darshans & Events</h2>
-            <Link href="/admin/logs" className="text-emerald-600 hover:underline">View logs</Link>
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Pending Darshans & Events</h2>
+            <Link href="/admin/logs" className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium">View logs</Link>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-6">
             <div>
-              <div className="text-sm text-slate-500 mb-2">Darshans</div>
-              <ul className="space-y-2">
+              <div className="text-lg font-medium text-gray-900 dark:text-white mb-3">Darshans</div>
+              <ul className="space-y-3">
                 {pending.darshans.map((d) => (
-                  <li key={d.id} className="flex items-center justify-between">
+                  <li key={d.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
                     <div>
-                      <div className="font-semibold">{d.title}</div>
-                      <div className="text-xs text-slate-500">{d.time} — {d.description?.slice(0,60)}</div>
+                      <div className="font-semibold text-gray-900 dark:text-white">{d.title}</div>
+                      <div className="text-sm text-gray-600 dark:text-gray-300">{d.time} — {d.description?.slice(0,60)}</div>
                     </div>
-                    <div className="flex gap-2">
-                      <button onClick={() => removePending('darshans', d.id)} className="px-2 py-1 bg-emerald-600 text-white rounded-md text-sm">Approve</button>
-                      <button onClick={() => removePending('darshans', d.id)} className="px-2 py-1 bg-rose-600 text-white rounded-md text-sm">Reject</button>
+                    <div className="flex gap-3">
+                      <button onClick={() => removePending('darshans', d.id)} className="px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors">Approve</button>
+                      <button onClick={() => removePending('darshans', d.id)} className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors">Reject</button>
                     </div>
                   </li>
                 ))}
-                {pending.darshans.length===0 && <li className="text-sm text-slate-500">No pending darshans.</li>}
+                {pending.darshans.length===0 && <li className="text-center py-4 text-gray-500 dark:text-gray-400">No pending darshans.</li>}
               </ul>
             </div>
 
             <div>
-              <div className="text-sm text-slate-500 mb-2">Events</div>
-              <ul className="space-y-2">
+              <div className="text-lg font-medium text-gray-900 dark:text-white mb-3">Events</div>
+              <ul className="space-y-3">
                 {pending.events.map((ev) => (
-                  <li key={ev.id} className="flex items-center justify-between">
+                  <li key={ev.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
                     <div>
-                      <div className="font-semibold">{ev.title}</div>
-                      <div className="text-xs text-slate-500">{ev.date} — {ev.description?.slice(0,60)}</div>
+                      <div className="font-semibold text-gray-900 dark:text-white">{ev.title}</div>
+                      <div className="text-sm text-gray-600 dark:text-gray-300">{ev.date} — {ev.description?.slice(0,60)}</div>
                     </div>
-                    <div className="flex gap-2">
-                      <button onClick={() => removePending('events', ev.id)} className="px-2 py-1 bg-emerald-600 text-white rounded-md text-sm">Approve</button>
-                      <button onClick={() => removePending('events', ev.id)} className="px-2 py-1 bg-rose-600 text-white rounded-md text-sm">Reject</button>
+                    <div className="flex gap-3">
+                      <button onClick={() => removePending('events', ev.id)} className="px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors">Approve</button>
+                      <button onClick={() => removePending('events', ev.id)} className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors">Reject</button>
                     </div>
                   </li>
                 ))}
-                {pending.events.length===0 && <li className="text-sm text-slate-500">No pending events.</li>}
+                {pending.events.length===0 && <li className="text-center py-4 text-gray-500 dark:text-gray-400">No pending events.</li>}
               </ul>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="mt-6 bg-white/60 dark:bg-slate-900/60 p-4 rounded-lg shadow-sm">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-medium">Donations</h2>
-          <Link href="/admin/donations" className="text-emerald-600 hover:underline">Manage donations</Link>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="p-3 bg-white/30 rounded-md">
-            <div className="text-sm text-slate-500">Today</div>
-            <div className="text-xl font-semibold">${donationTotals.today}</div>
-          </div>
-          <div className="p-3 bg-white/30 rounded-md">
-            <div className="text-sm text-slate-500">Month</div>
-            <div className="text-xl font-semibold">${donationTotals.month.toLocaleString()}</div>
-          </div>
-          <div className="p-3 bg-white/30 rounded-md">
-            <div className="text-sm text-slate-500">Lifetime</div>
-            <div className="text-xl font-semibold">${donationTotals.lifetime.toLocaleString()}</div>
-          </div>
-        </div>
-
-        <div className="mt-4 flex gap-3">
-          <button className="px-4 py-2 bg-emerald-600 text-white rounded-md">Approve Temples</button>
-          <button className="px-4 py-2 bg-slate-700 text-white rounded-md">View Booking Logs</button>
-          <button className="px-4 py-2 bg-slate-700 text-white rounded-md">Manage Donations</button>
+      <section className="mt-8 bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Quick Actions</h3>
+        <div className="flex flex-wrap gap-4">
+          <button className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors">Approve Temples</button>
+          <button className="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-medium transition-colors">View Booking Logs</button>
         </div>
       </section>
     </main>

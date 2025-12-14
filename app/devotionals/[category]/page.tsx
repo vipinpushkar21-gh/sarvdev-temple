@@ -16,6 +16,7 @@ type Devotional = {
   duration?: string
   artist?: string
   status?: string
+  names?: { sanskrit?: string; mantra?: string; english?: string }[]
 }
 
 // Category mapping
@@ -35,7 +36,7 @@ const CATEGORY_MAP: { [key: string]: { label: string; hindi: string } } = {
   'vastu': { label: 'Vastu', hindi: 'वास्तु' },
   'durga': { label: 'Durga', hindi: 'दुर्गा' },
   'kuber': { label: 'Kuber', hindi: 'कुबेर' },
-  'katyayani': { label: 'Katyayani', hindi: 'कात्यायनी' },
+  '108-namavali': { label: '108 Namavali', hindi: '१०८ नामावली' },
   'other': { label: 'Other', hindi: 'अन्य' },
 }
 
@@ -285,6 +286,24 @@ export default function CategoryPage() {
                     </summary>
                     <div className="mt-3 p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg text-sm text-slate-700 dark:text-slate-300 whitespace-pre-line border border-orange-200/50 dark:border-orange-700/50">
                       {d.lyrics}
+                    </div>
+                  </details>
+                )}
+
+                {d.names && d.names.length > 0 && (
+                  <details className="mt-4">
+                    <summary className="text-sm text-orange-600 cursor-pointer hover:underline font-medium">
+                      View 108 Names ({d.names.length})
+                    </summary>
+                    <div className="mt-3 p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg text-sm text-slate-700 dark:text-slate-300 border border-orange-200/50 dark:border-orange-700/50 max-h-96 overflow-y-auto">
+                      <ol className="list-decimal list-inside space-y-1">
+                        {d.names.map((name, index) => (
+                          <li key={index} className="flex flex-col sm:flex-row sm:items-center gap-1">
+                            <span className="font-medium">{name.sanskrit || name.english}</span>
+                            {name.mantra && <span className="text-slate-600 dark:text-slate-400 italic">— {name.mantra}</span>}
+                          </li>
+                        ))}
+                      </ol>
                     </div>
                   </details>
                 )}
