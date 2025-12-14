@@ -13,7 +13,7 @@ export function middleware(request: NextRequest) {
 
   // Check if user is authenticated
   const authCookie = request.cookies.get('auth_token')
-  const isAuthenticated = authCookie?.value === process.env.AUTH_TOKEN
+  const isAuthenticated = authCookie?.value === process.env.NEXT_PUBLIC_AUTH_TOKEN
 
   // If not authenticated and not on login page, redirect to login
   if (!isAuthenticated && request.nextUrl.pathname !== '/login') {
