@@ -22,8 +22,9 @@ export default function LoginPage() {
       })
 
       if (res.ok) {
+        const data = await res.json()
         // Set auth cookie
-        document.cookie = `auth_token=${process.env.NEXT_PUBLIC_AUTH_TOKEN}; path=/; max-age=86400` // 24 hours
+        document.cookie = `auth_token=${data.authToken}; path=/; max-age=86400` // 24 hours
         router.push('/')
       } else {
         const data = await res.json()
