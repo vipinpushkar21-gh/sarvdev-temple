@@ -13,7 +13,12 @@ export default function AuthGuard() {
       return
     }
 
-    // Temporarily redirect all traffic to maintenance page
+    // Skip maintenance mode on localhost for development
+    if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+      return
+    }
+
+    // Temporarily redirect all traffic to maintenance page (production only)
     router.push('/maintenance')
   }, [pathname, router])
 
