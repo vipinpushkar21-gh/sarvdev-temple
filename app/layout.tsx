@@ -6,6 +6,7 @@ import { Analytics } from '@vercel/analytics/next'
 import React from 'react'
 import { TranslationProvider } from '../lib/translation'
 import VisitorTracker from '../components/VisitorTracker'
+import AuthGuard from '../components/AuthGuard'
 
 export const metadata = {
   title: 'Sarvdev Temple',
@@ -20,6 +21,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <GoogleAnalytics GA_MEASUREMENT_ID={process.env.NEXT_PUBLIC_GA_ID} />
         )}
         <TranslationProvider>
+          <AuthGuard />
           <Header />
           <Disclaimer />
           <VisitorTracker />
