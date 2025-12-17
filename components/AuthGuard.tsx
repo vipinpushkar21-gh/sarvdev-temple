@@ -8,20 +8,13 @@ export default function AuthGuard() {
   const pathname = usePathname()
 
   useEffect(() => {
-    // Skip auth check for login page and API routes
-    if (pathname === '/login' || pathname.startsWith('/api/')) {
+    // Allow access to maintenance page
+    if (pathname === '/maintenance') {
       return
     }
 
-    // Check if auth token exists
-    const authToken = document.cookie
-      .split('; ')
-      .find(row => row.startsWith('auth_token='))
-      ?.split('=')[1]
-
-    if (!authToken) {
-      router.push('/login')
-    }
+    // Temporarily redirect all traffic to maintenance page
+    router.push('/maintenance')
   }, [pathname, router])
 
   return null
