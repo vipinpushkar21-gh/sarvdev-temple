@@ -2,6 +2,11 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 export function middleware(request: NextRequest) {
+  // Allow local development to access the site without the auth gate.
+  // This avoids having to enter SITE_PASSWORD during `next dev`.
+  if (process.env.NODE_ENV !== 'production') {
+    return NextResponse.next()
+  }
   // Skip middleware for API routes and static files
   if (
     request.nextUrl.pathname.startsWith('/api/') ||
