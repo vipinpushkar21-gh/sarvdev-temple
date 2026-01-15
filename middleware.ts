@@ -2,9 +2,10 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 export function middleware(request: NextRequest) {
-  // Allow local development to access the site without the auth gate.
-  // This avoids having to enter SITE_PASSWORD during `next dev`.
-  if (process.env.NODE_ENV !== 'production') {
+  // Allow local development (localhost/127.0.0.1) to access the site without the auth gate.
+  // Use the request host so this works at runtime in the Edge middleware environment.
+  const host = request.headers.get('host') || request.nextUrl.hostname || ''
+  if (host.includes('localhost') || host.includes('127.0.0.1')) {
     return NextResponse.next()
   }
   // Skip middleware for API routes and static files
