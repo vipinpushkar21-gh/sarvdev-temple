@@ -38,7 +38,7 @@ export default function DailyDarshanPage() {
   if (loading) {
     return (
       <main className="max-w-6xl mx-auto px-4 py-12">
-        <div className="text-center text-slate-600">Loading darshan...</div>
+        <div className="text-center text-text">Loading darshan...</div>
       </main>
     )
   }
@@ -46,42 +46,42 @@ export default function DailyDarshanPage() {
   return (
     <main className="max-w-6xl mx-auto px-4 py-12">
       <header className="mb-8">
-        <h1 className="text-3xl font-playfair text-orange-600 font-bold">Daily Darshan</h1>
-        <p className="mt-2 text-slate-700 dark:text-slate-200 text-base">Live and recorded darshan times from our temple network.</p>
+        <h1 className="text-3xl font-bold text-primary">Daily Darshan</h1>
+        <p className="mt-2 text-text text-base">Live and recorded darshan times from our temple network.</p>
       </header>
 
       <section>
         {items.length === 0 ? (
-          <div className="p-6 bg-white/60 dark:bg-slate-900/60 rounded-lg">
-            <p className="text-slate-700 dark:text-slate-300">No daily darshan items available right now. Please check back later.</p>
+          <div className="p-6 bg-background rounded-lg border border-accent/30">
+            <p className="text-text">No daily darshan items available right now. Please check back later.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {items.map((d: Darshan) => (
-              <article key={d._id} className="bg-white/60 dark:bg-slate-900/60 backdrop-blur rounded-xl overflow-hidden shadow-sm">
-                <div className="w-full h-44 bg-gray-100 dark:bg-slate-800">
+              <article key={d._id} className="bg-background rounded-xl overflow-hidden shadow-sm border border-accent/20">
+                <div className="w-full h-44 bg-accent/20">
                   {d.video ? (
                     <video controls src={d.video} className="w-full h-44 object-cover" />
                   ) : d.time ? (
                     <div className="flex items-center justify-center h-44">
-                      <span className="text-xl font-medium text-slate-700 dark:text-slate-300">{d.time}</span>
+                      <span className="text-xl font-medium text-text">{d.time}</span>
                     </div>
                   ) : (
                     <div className="flex items-center justify-center h-44">
-                      <span className="text-slate-500">No media</span>
+                      <span className="text-text">No media</span>
                     </div>
                   )}
                 </div>
 
                 <div className="p-4">
-                  <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{d.title}</h3>
-                  <p className="mt-2 text-sm text-slate-700 dark:text-slate-300">{d.description}</p>
+                  <h3 className="text-lg font-semibold text-primary">{d.title}</h3>
+                  <p className="mt-2 text-sm text-text">{d.description}</p>
 
                   {d.time && (
-                    <div className="mt-3 text-xs text-slate-600 dark:text-slate-400">Time: {d.time}</div>
+                    <div className="mt-3 text-xs text-text">Time: {d.time}</div>
                   )}
                   {d.temple && (
-                    <div className="mt-1 text-xs text-slate-600 dark:text-slate-400">Temple: {d.temple}</div>
+                    <div className="mt-1 text-xs text-text">Temple: {d.temple}</div>
                   )}
                 </div>
               </article>

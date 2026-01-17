@@ -51,7 +51,7 @@ export default function TemplePage({ params }: Props) {
   if (loading) {
     return (
       <main className="max-w-3xl mx-auto px-4 py-16 text-center">
-        <div className="text-slate-600 dark:text-slate-300">{t('temples.loading')}</div>
+        <div className="text-text">{t('temples.loading')}</div>
       </main>
     )
   }
@@ -59,9 +59,9 @@ export default function TemplePage({ params }: Props) {
   if (!temple) {
     return (
       <main className="max-w-3xl mx-auto px-4 py-16 text-center">
-        <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">{t('temple.notFound')}</h1>
-        <p className="mt-4 text-slate-600 dark:text-slate-300">{t('temple.notFoundDesc')}</p>
-        <Link href="/temples" className="inline-block mt-6 px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700">{t('temple.backToTemples')}</Link>
+        <h1 className="text-2xl font-semibold text-text">{t('temple.notFound')}</h1>
+        <p className="mt-4 text-text">{t('temple.notFoundDesc')}</p>
+        <Link href="/temples"><span className="inline-block mt-6 btn btn-primary">{t('temple.backToTemples')}</span></Link>
       </main>
     )
   }
@@ -77,8 +77,8 @@ export default function TemplePage({ params }: Props) {
       <div className="flex justify-end mb-4">
         <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-sm shadow-md ${
           temple.verified === 'verified' 
-            ? 'bg-blue-100 text-blue-800 border-2 border-blue-300' 
-            : 'bg-orange-100 text-orange-800 border-2 border-orange-300'
+            ? 'bg-accent text-text border-2 border-secondary' 
+            : 'bg-background text-text border-2 border-accent'
         }`}>
           {temple.verified === 'verified' ? (
             <>
@@ -98,11 +98,11 @@ export default function TemplePage({ params }: Props) {
         </div>
       </div>
 
-      <Link href="/temples" className="text-sm text-orange-600 hover:underline mb-4 inline-block">← {t('temple.backToTemples')}</Link>
+      <Link href="/temples" className="text-sm mb-4 inline-block">← {t('temple.backToTemples')}</Link>
 
       <header className="mt-4">
-        <h1 className="text-3xl font-bold text-orange-800">{temple.title}</h1>
-        {displayLocation && <p className="mt-2 text-slate-600">📍 {displayLocation}</p>}
+        <h1 className="text-3xl font-bold text-primary">{temple.title}</h1>
+        {displayLocation && <p className="mt-2 text-text">📍 {displayLocation}</p>}
       </header>
 
       {temple.image && (
@@ -115,8 +115,8 @@ export default function TemplePage({ params }: Props) {
 
       <section className="mt-8 space-y-6">
         <div>
-          <h2 className="text-xl font-semibold text-orange-700 mb-3">{t('temple.about')}</h2>
-          <p className="text-slate-700 leading-relaxed">
+          <h2 className="text-xl font-semibold text-primary mb-3">{t('temple.about')}</h2>
+          <p className="text-text leading-relaxed">
             {language === 'hi' && temple.descriptionHi 
               ? temple.descriptionHi 
               : temple.description || t('temple.noDescription')
@@ -126,23 +126,23 @@ export default function TemplePage({ params }: Props) {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {temple.deity && (
-            <div className="bg-gradient-to-br from-white to-orange-50/30 p-4 rounded-lg border border-orange-100">
-              <h3 className="font-medium text-slate-800">🕉️ {t('temple.deity')}</h3>
-              <p className="mt-1 text-slate-700">{temple.deity}</p>
+            <div className="bg-background p-4 rounded-lg border border-accent">
+              <h3 className="font-medium text-text">🕉️ {t('temple.deity')}</h3>
+              <p className="mt-1 text-text">{temple.deity}</p>
             </div>
           )}
 
           {temple.city && temple.state && !temple.city.includes('http') && (
-            <div className="bg-gradient-to-br from-white to-orange-50/30 p-4 rounded-lg border border-orange-100">
-              <h3 className="font-medium text-slate-800">📍 {t('temple.location')}</h3>
-              <p className="mt-1 text-slate-700">{temple.city}, {temple.state}</p>
-              {temple.pincode && <p className="text-sm text-slate-600">{temple.pincode}</p>}
+            <div className="bg-background p-4 rounded-lg border border-accent">
+              <h3 className="font-medium text-text">📍 {t('temple.location')}</h3>
+              <p className="mt-1 text-text">{temple.city}, {temple.state}</p>
+              {temple.pincode && <p className="text-sm text-text">{temple.pincode}</p>}
               {mapsLink && (
                 <a 
                   href={mapsLink} 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="inline-block mt-2 text-sm text-orange-600 hover:text-orange-700 hover:underline"
+                  className="inline-block mt-2 text-sm hover:underline"
                 >
                   🗺️ {t('temple.viewOnMaps')}
                 </a>
@@ -151,42 +151,42 @@ export default function TemplePage({ params }: Props) {
           )}
 
           {temple.templeType && (
-            <div className="bg-gradient-to-br from-white to-orange-50/30 p-4 rounded-lg border border-orange-100">
-              <h3 className="font-medium text-slate-800">🏛️ {t('temple.templeType')}</h3>
-              <p className="mt-1 text-slate-700">{temple.templeType}</p>
+            <div className="bg-background p-4 rounded-lg border border-accent">
+              <h3 className="font-medium text-text">🏛️ {t('temple.templeType')}</h3>
+              <p className="mt-1 text-text">{temple.templeType}</p>
             </div>
           )}
 
           {temple.establishedYear && (
-            <div className="bg-gradient-to-br from-white to-orange-50/30 p-4 rounded-lg border border-orange-100">
-              <h3 className="font-medium text-slate-800">📅 {t('temple.established')}</h3>
-              <p className="mt-1 text-slate-700">{temple.establishedYear}</p>
+            <div className="bg-background p-4 rounded-lg border border-accent">
+              <h3 className="font-medium text-text">📅 {t('temple.established')}</h3>
+              <p className="mt-1 text-text">{temple.establishedYear}</p>
             </div>
           )}
 
           {temple.timings && (
-            <div className="bg-gradient-to-br from-white to-orange-50/30 p-4 rounded-lg border border-orange-100">
-              <h3 className="font-medium text-slate-800">⏰ {t('temple.timings')}</h3>
-              <p className="mt-1 text-slate-700">{temple.timings}</p>
+            <div className="bg-background p-4 rounded-lg border border-accent">
+              <h3 className="font-medium text-text">⏰ {t('temple.timings')}</h3>
+              <p className="mt-1 text-text">{temple.timings}</p>
             </div>
           )}
 
           {temple.speciality && (
-            <div className="bg-gradient-to-br from-white to-orange-50/30 p-4 rounded-lg border border-orange-100 md:col-span-2">
-              <h3 className="font-medium text-slate-800">🌟 {t('temple.speciality')}</h3>
-              <p className="mt-1 text-slate-700">{temple.speciality}</p>
+            <div className="bg-background p-4 rounded-lg border border-accent md:col-span-2">
+              <h3 className="font-medium text-text">🌟 {t('temple.speciality')}</h3>
+              <p className="mt-1 text-text">{temple.speciality}</p>
             </div>
           )}
         </div>
 
         {temple.categories && temple.categories.length > 0 && (
-          <div className="bg-gradient-to-br from-orange-50 to-white p-5 rounded-xl border-2 border-orange-200">
-            <h2 className="text-xl font-semibold text-orange-700 mb-3">🕉️ Sacred Categories</h2>
+          <div className="bg-background p-5 rounded-xl border-2 border-accent">
+            <h2 className="text-xl font-semibold text-primary mb-3">🕉️ Sacred Categories</h2>
             <div className="flex flex-wrap gap-2">
               {temple.categories.map((cat: string, idx: number) => (
                 <span 
                   key={idx} 
-                  className="px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-full shadow-sm"
+                  className="px-4 py-2 text-sm font-medium rounded-full shadow-sm bg-secondary text-background"
                 >
                   {cat}
                 </span>
@@ -197,14 +197,14 @@ export default function TemplePage({ params }: Props) {
 
         {mapsLink && (
           <div>
-            <h2 className="text-xl font-semibold text-orange-700 mb-3">📍 {t('temple.locationMap')}</h2>
-            <div className="bg-gradient-to-br from-white to-orange-50/30 p-4 rounded-lg border border-orange-100">
-              {displayLocation && <p className="text-sm text-slate-600 mb-3">{displayLocation}</p>}
+            <h2 className="text-xl font-semibold text-primary mb-3">📍 {t('temple.locationMap')}</h2>
+            <div className="bg-background p-4 rounded-lg border border-accent">
+              {displayLocation && <p className="text-sm text-text mb-3">{displayLocation}</p>}
               <a 
                 href={mapsLink} 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="inline-block px-6 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors shadow-md"
+                className="inline-block btn btn-primary"
               >
                 🗺️ {t('temple.openInMaps')}
               </a>
@@ -214,33 +214,33 @@ export default function TemplePage({ params }: Props) {
 
         {(temple.phone || temple.email || temple.website) && (
           <div>
-            <h2 className="text-xl font-semibold text-orange-700 mb-3">{t('temple.contactInfo')}</h2>
+            <h2 className="text-xl font-semibold text-primary mb-3">{t('temple.contactInfo')}</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {temple.phone && (
-                <div className="bg-gradient-to-br from-white to-orange-50/30 p-4 rounded-lg border border-orange-100">
-                  <h3 className="font-medium text-slate-800">📞 {t('temple.phone')}</h3>
-                  <a href={`tel:${temple.phone}`} className="mt-1 text-orange-600 hover:underline">{temple.phone}</a>
+                <div className="bg-background p-4 rounded-lg border border-accent">
+                  <h3 className="font-medium text-text">📞 {t('temple.phone')}</h3>
+                  <a href={`tel:${temple.phone}`} className="mt-1 hover:underline">{temple.phone}</a>
                 </div>
               )}
 
               {temple.email && (
-                <div className="bg-gradient-to-br from-white to-orange-50/30 p-4 rounded-lg border border-orange-100">
-                  <h3 className="font-medium text-slate-800">📧 {t('temple.email')}</h3>
-                  <a href={`mailto:${temple.email}`} className="mt-1 text-orange-600 hover:underline">{temple.email}</a>
+                <div className="bg-background p-4 rounded-lg border border-accent">
+                  <h3 className="font-medium text-text">📧 {t('temple.email')}</h3>
+                  <a href={`mailto:${temple.email}`} className="mt-1 hover:underline">{temple.email}</a>
                 </div>
               )}
 
               {temple.website && (
-                <div className="bg-gradient-to-br from-white to-orange-50/30 p-4 rounded-lg border border-orange-100">
-                  <h3 className="font-medium text-slate-800">🌐 {t('temple.website')}</h3>
-                  <a href={temple.website} target="_blank" rel="noopener noreferrer" className="mt-1 text-orange-600 hover:underline">{t('temple.visitWebsite')}</a>
+                <div className="bg-background p-4 rounded-lg border border-accent">
+                  <h3 className="font-medium text-text">🌐 {t('temple.website')}</h3>
+                  <a href={temple.website} target="_blank" rel="noopener noreferrer" className="mt-1 hover:underline">{t('temple.visitWebsite')}</a>
                 </div>
               )}
 
               {temple.contact && (
-                <div className="bg-gradient-to-br from-white to-orange-50/30 p-4 rounded-lg border border-orange-100">
-                  <h3 className="font-medium text-slate-800">👤 {t('temple.contactPerson')}</h3>
-                  <p className="mt-1 text-slate-700">{temple.contact}</p>
+                <div className="bg-background p-4 rounded-lg border border-accent">
+                  <h3 className="font-medium text-text">👤 {t('temple.contactPerson')}</h3>
+                  <p className="mt-1 text-text">{temple.contact}</p>
                 </div>
               )}
             </div>
@@ -249,15 +249,15 @@ export default function TemplePage({ params }: Props) {
 
         {(temple.facebook || temple.instagram) && (
           <div>
-            <h2 className="text-xl font-semibold text-orange-700 mb-3">{t('temple.socialMedia')}</h2>
+            <h2 className="text-xl font-semibold text-primary mb-3">{t('temple.socialMedia')}</h2>
             <div className="flex gap-4">
               {temple.facebook && (
-                <a href={temple.facebook} target="_blank" rel="noopener noreferrer" className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                <a href={temple.facebook} target="_blank" rel="noopener noreferrer" className="btn btn-secondary">
                   Facebook
                 </a>
               )}
               {temple.instagram && (
-                <a href={temple.instagram} target="_blank" rel="noopener noreferrer" className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-colors">
+                <a href={temple.instagram} target="_blank" rel="noopener noreferrer" className="btn btn-secondary">
                   Instagram
                 </a>
               )}
@@ -267,15 +267,15 @@ export default function TemplePage({ params }: Props) {
 
         {/* Disclaimer for Not Verified Temples */}
         {temple.verified === 'not-verified' && (
-          <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+          <div className="bg-background border-l-4 border-accent p-4">
             <div className="flex">
               <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                <svg className="h-5 w-5 text-accent" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                 </svg>
               </div>
               <div className="ml-3">
-                <p className="text-sm text-yellow-700">
+                <p className="text-sm text-text">
                   <strong>Note:</strong> This temple information has not been verified yet. Details may be incomplete or inaccurate. 
                   We are working on verification. Please verify timings and other details before visiting.
                 </p>

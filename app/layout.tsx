@@ -15,8 +15,8 @@ export const metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className="dark" suppressHydrationWarning>
-      <body className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning>
+      <body className="bg-background text-text" suppressHydrationWarning>
         {process.env.NEXT_PUBLIC_GA_ID && (
           <GoogleAnalytics GA_MEASUREMENT_ID={process.env.NEXT_PUBLIC_GA_ID} />
         )}

@@ -10,20 +10,26 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        // Unified site palette
         primary: {
-          50: '#fff7ed',
-          100: '#ffedd5',
-          200: '#fed7aa',
-          300: '#fdba74',
-          400: '#fb923c',
-          500: '#f97316',
-          600: '#ea580c',
-          700: '#c2410c',
-          800: '#9a3412',
-          900: '#7c2d12',
+          DEFAULT: '#FF9933',      // Deep Saffron
+          400: '#FFB366',          // Slightly lighter for rings/hover
+          500: '#FF9933',
+          600: '#E67E22',          // Slightly darker
         },
+        secondary: {
+          DEFAULT: '#5C4033',      // Deep earthy brown
+        },
+        accent: {
+          DEFAULT: '#FFD700',      // Golden
+        },
+        background: '#FAF9F6',     // Off-white
+        text: '#333333',           // Dark Gray
       },
       fontFamily: {
+        // Global font family preference
+        serif: ["'Noto Serif Devanagari'", "'Noto Serif'", 'serif'],
+        // Keep existing keys for compatibility with older components
         playfair: ["'Playfair Display'", 'serif'],
         inter: ['Inter', 'ui-sans-serif', 'system-ui'],
         sans: ['Inter', 'ui-sans-serif', 'system-ui'],

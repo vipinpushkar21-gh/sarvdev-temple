@@ -90,7 +90,7 @@ export default function TemplesPage() {
   if (error) {
     return (
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="text-center text-rose-600">{error}</div>
+        <div className="text-center text-text">{error}</div>
       </main>
     )
   }
@@ -98,19 +98,19 @@ export default function TemplesPage() {
   return (
     <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <header className="mb-8">
-        <h1 className="text-3xl font-playfair text-orange-600 font-bold">{t('temples.title')}</h1>
-        <p className="mt-2 text-slate-700 dark:text-slate-200 text-base">{t('temples.subtitle')}</p>
+        <h1 className="text-3xl font-bold text-primary">{t('temples.title')}</h1>
+        <p className="mt-2 text-text text-base">{t('temples.subtitle')}</p>
       </header>
 
       {/* Category Filter */}
-      <div className="mb-8 bg-white dark:bg-slate-800 rounded-lg p-4 shadow-md">
-        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-3">
+      <div className="mb-8 bg-background rounded-lg p-4 shadow-md border border-accent">
+        <label className="block text-sm font-semibold text-text mb-3">
           🔍 Filter by Sacred Category:
         </label>
         <select 
           value={selectedCategory}
           onChange={(e) => setSelectedCategory(e.target.value)}
-          className="w-full px-4 py-2.5 border-2 border-orange-200 rounded-lg focus:outline-none focus:border-orange-500 dark:bg-slate-700 dark:border-slate-600 dark:text-white"
+          className="w-full px-4 py-2.5 border-2 rounded-lg focus:outline-none bg-background text-text border-accent"
         >
           <option value="all">All Temples ({temples.length})</option>
           {sacredCategories.map(category => {
@@ -128,12 +128,12 @@ export default function TemplesPage() {
         
         {selectedCategory !== 'all' && (
           <div className="mt-3 flex items-center justify-between">
-            <p className="text-sm text-slate-600 dark:text-slate-300">
-              Showing {filteredTemples.length} temple{filteredTemples.length !== 1 ? 's' : ''} in <span className="font-semibold text-orange-600">{selectedCategory}</span>
+            <p className="text-sm text-text">
+              Showing {filteredTemples.length} temple{filteredTemples.length !== 1 ? 's' : ''} in <span className="font-semibold text-primary">{selectedCategory}</span>
             </p>
             <button 
               onClick={() => setSelectedCategory('all')}
-              className="text-sm text-orange-600 hover:text-orange-700 font-medium"
+              className="text-sm text-primary hover:underline font-medium"
             >
               Clear Filter ✕
             </button>
@@ -143,7 +143,7 @@ export default function TemplesPage() {
 
       <section>
         {filteredTemples.length === 0 ? (
-          <div className="text-center py-12 text-slate-500">
+          <div className="text-center py-12 text-text">
             {selectedCategory === 'all' 
               ? t('temples.noTemples')
               : `No temples found in ${selectedCategory}`

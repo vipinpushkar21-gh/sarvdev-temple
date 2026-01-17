@@ -19,27 +19,27 @@ export default function BookingPage() {
   return (
     <main className="max-w-6xl mx-auto px-4 py-12">
       <header className="mb-8">
-        <h1 className="text-3xl font-playfair text-orange-600 font-bold">Online Booking</h1>
-        <p className="mt-2 text-slate-700 dark:text-slate-200 text-base">Reserve pooja and darshan slots. This is a static demo layout ready for booking integration.</p>
+        <h1 className="text-3xl font-bold text-primary">Online Booking</h1>
+        <p className="mt-2 text-text text-base">Reserve pooja and darshan slots. This is a static demo layout ready for booking integration.</p>
       </header>
 
       <section>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {sampleSlots.map((slot) => (
-            <article key={slot.id} className="flex flex-col justify-between bg-white/60 dark:bg-slate-900/60 backdrop-blur rounded-xl p-4 shadow-sm">
+            <article key={slot.id} className="flex flex-col justify-between bg-background rounded-xl p-4 shadow-sm border border-accent">
               <div>
-                <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{slot.title}</h3>
-                <p className="mt-2 text-sm text-slate-700 dark:text-slate-300">{slot.description}</p>
+                <h3 className="text-lg font-semibold text-primary">{slot.title}</h3>
+                <p className="mt-2 text-sm text-text">{slot.description}</p>
               </div>
 
               <div className="mt-4 flex items-center justify-between">
                 <div>
-                  <div className="text-sm text-slate-600 dark:text-slate-400">{slot.time}</div>
-                  {slot.price && <div className="text-sm font-medium text-emerald-700 dark:text-emerald-300">{slot.price}</div>}
+                  <div className="text-sm text-text">{slot.time}</div>
+                  {slot.price && <div className="text-sm font-medium text-text">{slot.price}</div>}
                 </div>
 
                 <button
-                  className="ml-4 px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                  className="ml-4 btn btn-primary"
                   aria-label={`Book ${slot.title}`}
                 >
                   Book Now

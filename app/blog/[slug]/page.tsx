@@ -41,7 +41,7 @@ export default function BlogPostPage() {
   if (loading) {
     return (
       <main className="max-w-3xl mx-auto px-4 py-12">
-        <div className="text-center text-slate-600">Loading...</div>
+        <div className="text-center text-text">Loading...</div>
       </main>
     )
   }
@@ -49,9 +49,9 @@ export default function BlogPostPage() {
   if (!post) {
     return (
       <main className="max-w-3xl mx-auto px-4 py-12">
-        <h1 className="text-2xl font-semibold mb-4">Article not found</h1>
-        <p className="text-slate-600 mb-6">We couldn't find the article you're looking for.</p>
-        <Link href="/blog" className="text-emerald-600 hover:underline">Back to blog</Link>
+        <h1 className="text-2xl font-semibold text-primary mb-4">Article not found</h1>
+        <p className="text-text mb-6">We couldn't find the article you're looking for.</p>
+        <Link href="/blog" className="hover:underline">Back to blog</Link>
       </main>
     )
   }
@@ -60,8 +60,8 @@ export default function BlogPostPage() {
     <main className="max-w-3xl mx-auto px-4 py-12">
       <article className="space-y-6">
         <header>
-          <h1 className="text-3xl font-playfair font-semibold">{post.title}</h1>
-          {post.date && <div className="text-sm text-slate-500">{new Date(post.date).toLocaleDateString()}</div>}
+          <h1 className="text-3xl font-semibold text-primary">{post.title}</h1>
+          {post.date && <div className="text-sm text-text">{new Date(post.date).toLocaleDateString()}</div>}
         </header>
 
         {post.image && <img src={post.image} alt={post.title} className="w-full h-auto rounded-md object-cover" />}
@@ -73,7 +73,7 @@ export default function BlogPostPage() {
         )}
 
         <footer>
-          <Link href="/blog" className="text-emerald-600 hover:underline">← Back to blog</Link>
+          <Link href="/blog" className="hover:underline">← Back to blog</Link>
         </footer>
       </article>
     </main>

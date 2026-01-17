@@ -151,25 +151,25 @@ export default function ListTemplePage() {
 
   return (
     <main className="max-w-4xl mx-auto px-4 py-12" suppressHydrationWarning>
-      <h1 className="text-3xl font-bold mb-2 text-orange-800">List a Temple</h1>
-      <p className="text-base text-slate-700 dark:text-slate-200 mb-8">Share details about a temple you'd like to add. We'll review submissions before publishing.</p>
+      <h1 className="text-3xl font-bold mb-2 text-primary">List a Temple</h1>
+      <p className="text-base text-text mb-8">Share details about a temple you'd like to add. We'll review submissions before publishing.</p>
 
-      <form onSubmit={onSubmit} noValidate className="space-y-8 bg-gradient-to-br from-white to-orange-50/30 p-8 rounded-2xl shadow-lg border border-orange-100">
+      <form onSubmit={onSubmit} noValidate className="space-y-8 bg-background p-8 rounded-2xl shadow-lg border border-accent">
         
         {/* Basic Information */}
         <div className="space-y-4">
-          <h2 className="text-xl font-semibold text-orange-700 border-b border-orange-200 pb-2">Basic Information</h2>
+          <h2 className="text-xl font-semibold text-primary border-b border-accent pb-2">Basic Information</h2>
           
           <div>
             <label className="block text-sm font-medium mb-1">Temple Name*</label>
-            <input value={form.name} onChange={(e) => onChange("name", e.target.value)} placeholder="e.g. Shri Ram Mandir" className={`w-full rounded-lg border px-4 py-2.5 focus:outline-none focus:ring-2 ${errors.name ? "border-rose-500 focus:ring-rose-200" : "border-slate-300 focus:ring-orange-200"}`} />
-            {errors.name && <p className="mt-1 text-xs text-rose-600">{errors.name}</p>}
+            <input value={form.name} onChange={(e) => onChange("name", e.target.value)} placeholder="e.g. Shri Ram Mandir" className={`w-full rounded-lg border px-4 py-2.5 focus:outline-none focus-visible:ring-2 ${errors.name ? "border-rose-500 focus-visible:ring-rose-200" : "border-accent focus-visible:ring-primary-400"}`} />
+            {errors.name && <p className="mt-1 text-xs text-text">{errors.name}</p>}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1">🕉️ Deity/God*</label>
-              <select value={form.deity} onChange={(e) => onChange("deity", e.target.value)} className="w-full rounded-lg border border-slate-300 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-orange-200">
+              <select value={form.deity} onChange={(e) => onChange("deity", e.target.value)} className="w-full rounded-lg border border-accent bg-background text-text px-4 py-2.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400">
                 <option value="">Select Deity</option>
                 {deities.map(d => <option key={d} value={d}>{d}</option>)}
               </select>
@@ -177,7 +177,7 @@ export default function ListTemplePage() {
 
             <div>
               <label className="block text-sm font-medium mb-1">🏛️ Temple Type</label>
-              <select value={form.templeType} onChange={(e) => onChange("templeType", e.target.value)} className="w-full rounded-lg border border-slate-300 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-orange-200">
+              <select value={form.templeType} onChange={(e) => onChange("templeType", e.target.value)} className="w-full rounded-lg border border-accent bg-background text-text px-4 py-2.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400">
                 <option value="">Select Type</option>
                 {templeTypes.map(t => <option key={t} value={t}>{t}</option>)}
               </select>
@@ -186,33 +186,33 @@ export default function ListTemplePage() {
 
           <div>
             <label className="block text-sm font-medium mb-1">Description (English)*</label>
-            <textarea value={form.description} onChange={(e) => onChange("description", e.target.value)} rows={4} placeholder="Describe the temple's history, significance, and features..." className={`w-full rounded-lg border px-4 py-2.5 focus:outline-none focus:ring-2 ${errors.description ? "border-rose-500 focus:ring-rose-200" : "border-slate-300 focus:ring-orange-200"}`} />
-            {errors.description && <p className="mt-1 text-xs text-rose-600">{errors.description}</p>}
+            <textarea value={form.description} onChange={(e) => onChange("description", e.target.value)} rows={4} placeholder="Describe the temple's history, significance, and features..." className={`w-full rounded-lg border px-4 py-2.5 focus:outline-none focus-visible:ring-2 ${errors.description ? "border-rose-500 focus-visible:ring-rose-200" : "border-accent focus-visible:ring-primary-400"}`} />
+            {errors.description && <p className="mt-1 text-xs text-text">{errors.description}</p>}
           </div>
 
           <div>
             <label className="block text-sm font-medium mb-1">विवरण (हिंदी) - Description (Hindi)</label>
-            <textarea value={form.descriptionHi} onChange={(e) => onChange("descriptionHi", e.target.value)} rows={4} placeholder="मंदिर के इतिहास, महत्व और विशेषताओं का वर्णन करें..." className="w-full rounded-lg border border-slate-300 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-orange-200" />
-            <p className="mt-1 text-xs text-slate-500">Optional: Add Hindi translation of the description for bilingual support</p>
+            <textarea value={form.descriptionHi} onChange={(e) => onChange("descriptionHi", e.target.value)} rows={4} placeholder="मंदिर के इतिहास, महत्व और विशेषताओं का वर्णन करें..." className="w-full rounded-lg border border-accent bg-background text-text px-4 py-2.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400" />
+            <p className="mt-1 text-xs text-text">Optional: Add Hindi translation of the description for bilingual support</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1">📅 Established Year</label>
-              <input type="number" value={form.establishedYear} onChange={(e) => onChange("establishedYear", e.target.value)} placeholder="e.g. 1500" className="w-full rounded-lg border border-slate-300 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-orange-200" />
+              <input type="number" value={form.establishedYear} onChange={(e) => onChange("establishedYear", e.target.value)} placeholder="e.g. 1500" className="w-full rounded-lg border border-accent bg-background text-text px-4 py-2.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400" />
             </div>
 
             <div>
               <label className="block text-sm font-medium mb-1">🌟 Speciality</label>
-              <input value={form.speciality} onChange={(e) => onChange("speciality", e.target.value)} placeholder="e.g. Famous for Shivratri celebration" className="w-full rounded-lg border border-slate-300 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-orange-200" />
+              <input value={form.speciality} onChange={(e) => onChange("speciality", e.target.value)} placeholder="e.g. Famous for Shivratri celebration" className="w-full rounded-lg border border-accent bg-background text-text px-4 py-2.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400" />
             </div>
           </div>
 
           <div>
             <label className="block text-sm font-medium mb-2">🕊️ Sacred Categories (Select if applicable)</label>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-4 bg-orange-50/50 rounded-lg border border-orange-100">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-4 bg-background rounded-lg border border-accent">
               {sacredCategories.map(cat => (
-                <label key={cat} className="flex items-center gap-2 cursor-pointer hover:bg-orange-100/50 p-2 rounded transition-colors">
+                <label key={cat} className="flex items-center gap-2 cursor-pointer hover:bg-accent/10 p-2 rounded transition-colors">
                   <input 
                     type="checkbox" 
                     checked={form.categories.includes(cat)}
@@ -223,13 +223,13 @@ export default function ListTemplePage() {
                         setForm(s => ({ ...s, categories: s.categories.filter(c => c !== cat) }))
                       }
                     }}
-                    className="w-4 h-4 text-orange-600 rounded focus:ring-orange-500"
+                    className="w-4 h-4 accent-primary-500 rounded focus-visible:ring-2 focus-visible:ring-primary-400"
                   />
-                  <span className="text-sm text-slate-700">{cat}</span>
+                  <span className="text-sm text-text">{cat}</span>
                 </label>
               ))}
             </div>
-            <p className="mt-2 text-xs text-slate-500">Select categories like Jyotirlinga, Shakti Peeth, etc. if this temple belongs to sacred groups</p>
+            <p className="mt-2 text-xs text-text">Select categories like Jyotirlinga, Shakti Peeth, etc. if this temple belongs to sacred groups</p>
           </div>
         </div>
 

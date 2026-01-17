@@ -97,11 +97,11 @@ export default function DevotionalDetailPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-gradient-to-br from-[#fffbe6] via-[#fff3cd] to-[#ffe5b4] dark:from-[#3b1f0b] dark:via-[#5a2d0c] dark:to-[#7c3a0a] px-4 py-12">
+      <main className="min-h-screen bg-background px-4 py-12">
         <div className="max-w-4xl mx-auto">
           <div className="text-center py-16">
             <div className="text-6xl mb-4 animate-pulse">🕉️</div>
-            <p className="text-lg text-[#7c3a0a] dark:text-[#ffe5b4]">Loading...</p>
+            <p className="text-lg text-text">Loading...</p>
           </div>
         </div>
       </main>
@@ -110,16 +110,15 @@ export default function DevotionalDetailPage() {
 
   if (!devotional) {
     return (
-      <main className="min-h-screen bg-gradient-to-br from-[#fffbe6] via-[#fff3cd] to-[#ffe5b4] dark:from-[#3b1f0b] dark:via-[#5a2d0c] dark:to-[#7c3a0a] px-4 py-12">
+      <main className="min-h-screen bg-background px-4 py-12">
         <div className="max-w-4xl mx-auto">
           <div className="text-center py-16">
             <div className="text-6xl mb-4">🕉️</div>
-            <p className="text-lg text-[#7c3a0a] dark:text-[#ffe5b4] mb-6">Devotional not found</p>
+            <p className="text-lg text-text mb-6">Devotional not found</p>
             <Link 
               href="/devotionals"
-              className="inline-block px-6 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-medium"
             >
-              Back to Devotionals
+              <span className="btn btn-primary">Back to Devotionals</span>
             </Link>
           </div>
         </div>
@@ -130,31 +129,31 @@ export default function DevotionalDetailPage() {
   const bt = renderBilingualTitle(devotional.title || '')
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-[#fffbe6] via-[#fff3cd] to-[#ffe5b4] dark:from-[#3b1f0b] dark:via-[#5a2d0c] dark:to-[#7c3a0a] px-4 py-12">
+    <main className="min-h-screen bg-background px-4 py-12">
       <div className="max-w-4xl mx-auto">
         {/* Back Button */}
         <div className="mb-6">
           <Link 
             href="/devotionals"
-            className="inline-flex items-center gap-2 text-[#a9441a] dark:text-[#ffd700] hover:underline font-medium"
+            className="inline-flex items-center gap-2 font-medium"
           >
             <span>←</span> Back to Devotionals
           </Link>
         </div>
 
         {/* Content Card */}
-        <div className="bg-gradient-to-br from-[#fff9e6] via-[#fff3cd] to-[#ffe5b4] dark:from-[#5a2d0c]/90 dark:via-[#7c3a0a]/90 dark:to-[#a94e1a]/80 border-2 border-[#c97a10] rounded-2xl shadow-2xl p-8 backdrop-blur-sm">
+        <div className="bg-background border border-accent rounded-2xl shadow p-8">
           {/* Title */}
-          <h1 className="text-4xl font-extrabold mb-3 text-[#a9441a] dark:text-[#ffd700] drop-shadow">
+          <h1 className="text-4xl font-extrabold mb-3 text-primary">
             <div>{bt.primary}</div>
             {showTransliteration && bt.secondary && (
-              <div className="text-lg font-normal text-[#7c3a0a] dark:text-[#ffe5b4] mt-1">{bt.secondary}</div>
+              <div className="text-lg font-normal text-text mt-1">{bt.secondary}</div>
             )}
           </h1>
 
           {/* Category Badge */}
           {devotional.category && (
-            <span className="px-3 py-1 bg-gradient-to-r from-[#ffd700] to-[#c97a10] text-[#7c3a0a] text-sm font-bold rounded-full mb-2 inline-block border border-[#a9441a]">
+            <span className="px-3 py-1 bg-accent text-text text-sm font-bold rounded-full mb-2 inline-block border border-secondary">
               {devotional.category}
             </span>
           )}
@@ -162,22 +161,22 @@ export default function DevotionalDetailPage() {
           {/* Metadata */}
           <div className="mt-4 space-y-2">
             {devotional.deity && (
-              <p className="text-lg text-[#c97a10] font-bold">🕉️ {devotional.deity}</p>
+              <p className="text-lg text-text font-bold">🕉️ {devotional.deity}</p>
             )}
             {devotional.artist && (
-              <p className="text-base text-[#a9441a] dark:text-[#ffd700]">🎤 {devotional.artist}</p>
+              <p className="text-base text-text">🎤 {devotional.artist}</p>
             )}
             {devotional.duration && (
-              <p className="text-base text-[#a9441a] dark:text-[#ffd700]">⏱️ {devotional.duration}</p>
+              <p className="text-base text-text">⏱️ {devotional.duration}</p>
             )}
             {devotional.language && (
-              <p className="text-base text-[#a9441a] dark:text-[#ffd700]">🌐 {devotional.language}</p>
+              <p className="text-base text-text">🌐 {devotional.language}</p>
             )}
           </div>
 
           {/* Description */}
           {devotional.description && (
-            <p className="mt-4 text-[#7c3a0a] dark:text-[#ffe5b4]">{devotional.description}</p>
+            <p className="mt-4 text-text">{devotional.description}</p>
           )}
 
           {/* Audio Player or TTS */}
@@ -188,7 +187,7 @@ export default function DevotionalDetailPage() {
               <audio controls src={generatedAudioUrl} className="w-full rounded-md" />
             ) : (
               <div className="space-y-3">
-                <p className="text-sm text-[#c97a10] italic">Text-based devotional</p>
+                <p className="text-sm text-text italic">Text-based devotional</p>
                 <TextToSpeech
                   text={devotional.lyrics || devotional.description || devotional.title || ''}
                   lang={(function(){
@@ -201,7 +200,7 @@ export default function DevotionalDetailPage() {
                 />
                 <button
                   type="button"
-                  className="px-4 py-2 rounded-full bg-primary-500 text-white hover:bg-primary-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400"
+                  className="btn btn-primary rounded-full"
                   onClick={async () => {
                     if (!devotional) return
                     const payload = {
@@ -256,10 +255,10 @@ export default function DevotionalDetailPage() {
           {/* Lyrics */}
           {devotional.lyrics && (
             <details className="mt-6" open>
-              <summary className="text-lg text-[#c97a10] cursor-pointer hover:underline font-bold mb-3 text-center">
+              <summary className="text-lg text-primary cursor-pointer hover:underline font-bold mb-3 text-center">
                 View Lyrics
               </summary>
-              <div className="mt-3 p-6 bg-orange-50 dark:bg-orange-900/20 rounded-lg text-lg text-slate-700 dark:text-slate-300 border border-orange-200/50 dark:border-orange-700/50 text-center max-w-4xl mx-auto">
+              <div className="mt-3 p-6 bg-background rounded-lg text-lg text-text border border-accent/30 text-center max-w-4xl mx-auto">
                 {(function(){
                   const lines = (devotional.lyrics || '').split(/\r?\n/).map(l => l.trim()).filter(Boolean)
                   const devLines = lines.filter(l => isDevanagari(l))
@@ -272,7 +271,7 @@ export default function DevotionalDetailPage() {
                     <div className="space-y-6">
                       {devLines.length > 0 && (
                         <div>
-                          <div className="font-semibold text-orange-700 dark:text-orange-300 mb-3 text-xl">हिंदी</div>
+                          <div className="font-semibold text-secondary mb-3 text-xl">हिंदी</div>
                           <div className="space-y-2">
                             {devLines.map((l, i) => (<p key={i} className="text-xl leading-relaxed">{l}</p>))}
                           </div>
@@ -280,7 +279,7 @@ export default function DevotionalDetailPage() {
                       )}
                       {engLines.length > 0 && (
                         <div>
-                          <div className="font-bold text-[#a9441a] dark:text-[#ffd700] mb-3 text-xl">English</div>
+                          <div className="font-bold text-primary mb-3 text-xl">English</div>
                           <div className="space-y-2">
                             {engLines.map((l, i) => (<p key={i} className="text-xl leading-relaxed">{l}</p>))}
                           </div>
@@ -296,16 +295,16 @@ export default function DevotionalDetailPage() {
           {/* 108 Names */}
           {devotional.names && devotional.names.length > 0 && (
             <details className="mt-4" open>
-              <summary className="text-base text-[#c97a10] cursor-pointer hover:underline font-bold">
+              <summary className="text-base text-primary cursor-pointer hover:underline font-bold">
                 View 108 Names ({devotional.names.length})
               </summary>
-              <div className="mt-3 p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg text-sm border border-orange-200/50 dark:border-orange-700/50">
-                <ol className="list-decimal list-inside space-y-1 text-slate-700 dark:text-slate-300">
+              <div className="mt-3 p-4 bg-background rounded-lg text-sm border border-accent/30">
+                <ol className="list-decimal list-inside space-y-1 text-text">
                   {devotional.names.map((name, i) => (
                     <li key={i}>
                       {name.sanskrit && <span className="font-semibold">{name.sanskrit}</span>}
-                      {name.english && <span className="text-neutral-600 dark:text-neutral-400"> ({name.english})</span>}
-                      {name.mantra && <span className="text-[#a9441a] dark:text-[#ffd700] italic"> — {name.mantra}</span>}
+                      {name.english && <span className="text-text"> ({name.english})</span>}
+                      {name.mantra && <span className="text-primary italic"> — {name.mantra}</span>}
                     </li>
                   ))}
                 </ol>
@@ -318,7 +317,7 @@ export default function DevotionalDetailPage() {
             <button
               type="button"
               onClick={() => setShowTransliteration(!showTransliteration)}
-              className="text-sm text-[#c97a10] hover:underline"
+              className="text-sm text-primary hover:underline"
             >
               {showTransliteration ? 'Hide' : 'Show'} Transliteration
             </button>

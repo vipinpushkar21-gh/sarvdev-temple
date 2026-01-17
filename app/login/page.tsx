@@ -50,51 +50,51 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center px-4 bg-gradient-to-br from-orange-50 to-amber-50 dark:from-gray-900 dark:to-gray-800">
+    <main className="min-h-screen flex items-center justify-center px-4 bg-background">
       <div className="max-w-md w-full">
-        <div className="bg-white dark:bg-gray-800 backdrop-blur rounded-2xl shadow-xl p-8 border border-gray-200 dark:border-gray-700">
-          <div className="text-center mb-8">
-            <div className="text-6xl mb-4">🔒</div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Sarvdev Temple</h1>
-            <p className="mt-2 text-gray-600 dark:text-gray-300">Enter password to access the website</p>
-          </div>
+        <div className="bg-background rounded-2xl shadow-xl p-8 border border-accent">
+          <div className="text-6xl mb-4">🔒</div>
+          <h1 className="text-3xl font-bold text-primary">Sarvdev Temple</h1>
+          <p className="mt-2 text-text">Enter password to access the website</p>
+        </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {error && (
-              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-lg text-sm">
-                {error}
-              </div>
-            )}
-
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Access Password
-              </label>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                placeholder="Enter password"
-                required
-              />
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {error && (
+            <div className="border border-secondary text-secondary bg-accent/10 px-4 py-3 rounded-lg text-sm">
+              {error}
             </div>
+          )}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200"
-            >
-              {loading ? 'Checking...' : 'Access Website'}
-            </button>
-          </form>
-
-          <div className="mt-6 text-center text-sm text-gray-500 dark:text-gray-400">
-            This website is currently private. Contact administrator for access.
+          <div>
+            <label htmlFor="password" className="block text-sm font-medium text-text mb-2">
+              Access Password
+            </label>
+            <input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full px-4 py-3 border border-accent rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 bg-background text-text"
+              placeholder="Enter password"
+              required
+            />
           </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full btn btn-primary"
+          >
+            {loading ? 'Checking...' : 'Access Website'}
+          </button>
+        </form>
+
+        <div className="mt-6 text-center text-sm text-text">
+          This website is currently private. Contact administrator for access.
         </div>
       </div>
+    </main>
+  )
     </main>
   )
 }

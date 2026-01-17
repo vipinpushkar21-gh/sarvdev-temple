@@ -202,9 +202,9 @@ export default function DevotionalsPage() {
       return (
         <main className="max-w-6xl mx-auto px-4 py-12">
           <header className="mb-10 text-center">
-            <div className="text-7xl mb-5 text-[#c97a10] dark:text-[#ffd700] drop-shadow-lg" aria-hidden>🕉️</div>
-            <h1 className="text-5xl font-extrabold text-[#a9441a] dark:text-[#ffd700] tracking-tight mb-2 drop-shadow font-playfair">Devotionals</h1>
-            <p className="mt-2 text-[#7c3a0a] dark:text-[#ffe5b4] text-xl font-medium leading-relaxed max-w-2xl mx-auto">Explore sacred mantras, bhajans, stotras and more</p>
+            <div className="text-7xl mb-5 text-primary" aria-hidden>🕉️</div>
+            <h1 className="text-5xl font-extrabold text-primary tracking-tight mb-2">Devotionals</h1>
+            <p className="mt-2 text-text text-xl font-medium leading-relaxed max-w-2xl mx-auto">Explore sacred mantras, bhajans, stotras and more</p>
           </header>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {Array.from({ length: 6 }).map((_, i) => (
@@ -226,20 +226,17 @@ export default function DevotionalsPage() {
     }
 
     return (
-      <main className="max-w-6xl mx-auto px-4 py-12 relative bg-gradient-to-br from-[#fffbe6] via-[#fff3cd] to-[#ffe5b4] dark:from-[#3b1f0b] dark:via-[#5a2d0c] dark:to-[#7c3a0a] min-h-screen font-inter scroll-smooth">
-        <div className="absolute inset-0 bg-gradient-to-br from-[#fffbe6]/80 via-[#fff3cd]/60 to-[#ffe5b4]/80 dark:from-[#3b1f0b]/80 dark:to-[#7c3a0a]/60 pointer-events-none" />
+      <main className="max-w-6xl mx-auto px-4 py-12 min-h-screen bg-background">
         <div className="relative z-10">
           <header className="mb-10 text-center">
-            <div className="text-7xl mb-5 text-[#c97a10] dark:text-[#ffd700] drop-shadow-lg" aria-hidden>🕉️</div>
-            <h1 className="text-5xl font-extrabold text-[#a9441a] dark:text-[#ffd700] tracking-tight mb-2 drop-shadow font-playfair">Devotionals</h1>
-            <p className="mt-2 text-[#7c3a0a] dark:text-[#ffe5b4] text-xl font-medium leading-relaxed max-w-2xl mx-auto">Explore sacred mantras, bhajans, stotras and more</p>
+            <div className="text-7xl mb-5 text-primary" aria-hidden>🕉️</div>
+            <h1 className="text-5xl font-extrabold text-primary tracking-tight mb-2">Devotionals</h1>
+            <p className="mt-2 text-text text-xl font-medium leading-relaxed max-w-2xl mx-auto">Explore sacred mantras, bhajans, stotras and more</p>
             {/* Slim Hero Banner CTA */}
             <div className="mt-6 max-w-3xl mx-auto">
-              <div className="rounded-lg bg-primary-50 border border-primary-200 text-primary-800 dark:bg-primary-900/20 dark:border-primary-800 px-4 py-3 flex items-center justify-between">
+              <div className="rounded-lg bg-background border border-accent text-text px-4 py-3 flex items-center justify-between">
                 <span className="font-medium">Browse devotionals by category, language, or deity.</span>
-                <a href="#categories" className="px-3 py-1.5 rounded-full bg-primary-500 text-white hover:bg-primary-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400">
-                  Browse Categories
-                </a>
+                <a href="#categories" className="btn btn-primary rounded-full">Browse Categories</a>
               </div>
             </div>
           </header>
@@ -247,17 +244,17 @@ export default function DevotionalsPage() {
           {/* Featured Devotionals */}
           <section aria-labelledby="featured" className="mb-12">
             <div className="flex items-center justify-center gap-3 mb-6">
-              <div className="text-3xl text-[#c97a10] dark:text-[#ffd700]" aria-hidden>✨</div>
-              <h2 id="featured" className="text-2xl font-bold text-[#a9441a] dark:text-[#ffd700] tracking-tight font-playfair">Featured Devotionals</h2>
-              <div className="text-3xl text-[#c97a10] dark:text-[#ffd700]" aria-hidden>✨</div>
+              <div className="text-3xl text-accent" aria-hidden>✨</div>
+              <h2 id="featured" className="text-2xl font-bold text-primary tracking-tight">Featured Devotionals</h2>
+              <div className="text-3xl text-accent" aria-hidden>✨</div>
             </div>
             <FeaturedGrid devotionals={devotionals} />
           </section>
 
           {/* Search and Category Tabs */}
           <section className="mb-12" id="categories">
-            <h2 className="text-2xl font-bold text-[#a9441a] dark:text-[#ffd700] mb-7 text-center tracking-tight font-playfair">Browse by Category</h2>
-            <div className="sticky top-0 z-20 bg-gradient-to-br from-[#fffbe6]/80 via-[#fff3cd]/70 to-[#ffe5b4]/80 dark:from-[#3b1f0b]/80 dark:via-[#5a2d0c]/70 dark:to-[#7c3a0a]/80 backdrop-blur supports-[backdrop-filter]:backdrop-blur-md py-3 mb-6">
+            <h2 className="text-2xl font-bold text-primary mb-7 text-center tracking-tight">Browse by Category</h2>
+            <div className="sticky top-0 z-20 bg-background/90 backdrop-blur py-3 mb-6">
               <div className="flex flex-col md:flex-row md:flex-wrap md:items-center md:justify-between gap-4">
                 <div className="flex-1 min-w-[280px]">
                   <CategoryTabs
@@ -271,19 +268,19 @@ export default function DevotionalsPage() {
                 </div>
                 <div className="w-full md:w-auto flex gap-2 items-center">
                   <select aria-label="Filter by language" value={languageFilter} onChange={e => setLanguageFilter(e.target.value)}
-                    className="flex-1 md:flex-none px-3 py-2 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400">
+                    className="flex-1 md:flex-none px-3 py-2 rounded-lg border bg-background text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400">
                     {languages.map(l => (<option key={l} value={l}>{l === 'all' ? 'All languages' : l}</option>))}
                   </select>
                   <select aria-label="Filter by deity" value={deityFilter} onChange={e => setDeityFilter(e.target.value)}
-                    className="flex-1 md:flex-none px-3 py-2 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400">
+                    className="flex-1 md:flex-none px-3 py-2 rounded-lg border bg-background text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400">
                     {deities.map(d => (<option key={d} value={d}>{d === 'all' ? 'All deities' : d}</option>))}
                   </select>
                   <select aria-label="Sort" value={sortOrder} onChange={e => setSortOrder(e.target.value as 'az' | 'za')}
-                    className="px-3 py-2 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400">
+                    className="px-3 py-2 rounded-lg border bg-background text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400">
                     <option value="az">A–Z</option>
                     <option value="za">Z–A</option>
                   </select>
-                  <label className="flex items-center gap-2 ml-2 text-sm text-neutral-700 dark:text-neutral-200">
+                  <label className="flex items-center gap-2 ml-2 text-sm text-text">
                     <input
                       type="checkbox"
                       className="accent-primary-500 h-4 w-4"
@@ -292,7 +289,7 @@ export default function DevotionalsPage() {
                     />
                     Show English transliteration
                   </label>
-                  <label className="flex items-center gap-2 ml-2 text-sm text-neutral-700 dark:text-neutral-200">
+                  <label className="flex items-center gap-2 ml-2 text-sm text-text">
                     <input
                       type="checkbox"
                       className="accent-primary-500 h-4 w-4"
@@ -309,12 +306,12 @@ export default function DevotionalsPage() {
           {/* Recent Devotionals */}
           <section>
             <div className="flex items-center justify-center gap-3 mb-8">
-              <div className="text-3xl text-[#c97a10] dark:text-[#ffd700]" aria-hidden>🌟</div>
-              <h2 className="text-3xl font-bold text-[#a9441a] dark:text-[#ffd700] tracking-tight">Recently Added</h2>
-              <div className="text-3xl text-[#c97a10] dark:text-[#ffd700]" aria-hidden>🌟</div>
+              <div className="text-3xl text-accent" aria-hidden>🌟</div>
+              <h2 className="text-3xl font-bold text-primary tracking-tight">Recently Added</h2>
+              <div className="text-3xl text-accent" aria-hidden>🌟</div>
             </div>
             {filteredDevotionals.length === 0 ? (
-              <div className="text-center py-12 text-[#a9441a] text-lg font-bold">
+              <div className="text-center py-12 text-text text-lg font-bold">
                 No devotionals found.
               </div>
             ) : (
@@ -377,7 +374,7 @@ export default function DevotionalsPage() {
                               return (
                                 <div>
                                   <div>{primary}</div>
-                                  {secondary && <div className="text-sm text-neutral-600 dark:text-neutral-300 mt-0.5">{secondary}</div>}
+                                  {secondary && <div className="text-sm text-text mt-0.5">{secondary}</div>}
                                 </div>
                               );
                             })()}
@@ -394,10 +391,7 @@ export default function DevotionalsPage() {
                 )}
                 {sortedDevotionals.length > visibleCount && (
                   <div className="mt-8 flex justify-center">
-                    <button type="button" onClick={() => setVisibleCount(c => c + 12)}
-                      className="px-5 py-2 rounded-full bg-primary-500 text-white hover:bg-primary-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400">
-                      Load More
-                    </button>
+                    <button type="button" onClick={() => setVisibleCount(c => c + 12)} className="btn btn-primary rounded-full">Load More</button>
                   </div>
                 )}
               </>
@@ -418,7 +412,7 @@ export default function DevotionalsPage() {
 
     if (featured.length === 0) {
       return (
-        <div className="text-center py-6 text-neutral-600 dark:text-neutral-300">No featured devotionals yet.</div>
+        <div className="text-center py-6 text-text">No featured devotionals yet.</div>
       );
     }
 
@@ -450,7 +444,7 @@ export default function DevotionalsPage() {
     const parts = text.split(regex);
     return parts.map((p, i) => (
       p.toLowerCase() === t.toLowerCase()
-        ? <mark key={i} className="bg-primary-100 text-primary-800 rounded px-1">{p}</mark>
+        ? <mark key={i} className="bg-accent text-text rounded px-1">{p}</mark>
         : p
     ));
   }

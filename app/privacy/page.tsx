@@ -1,13 +1,13 @@
 export default function PrivacyPage() {
   return (
     <main className="max-w-4xl mx-auto px-4 py-12">
-      <h1 className="text-4xl font-bold text-orange-800 mb-6">Privacy Policy</h1>
+      <h1 className="text-4xl font-bold text-primary mb-6">Privacy Policy</h1>
       
-      <div className="space-y-6 bg-gradient-to-br from-white to-orange-50/30 p-8 rounded-2xl shadow-lg text-slate-700">
-        <p className="text-sm text-slate-500">Last Updated: December 2025</p>
+      <div className="space-y-6 bg-background p-8 rounded-2xl shadow-lg border border-accent text-text">
+        <p className="text-sm text-text">Last Updated: December 2025</p>
 
         <div>
-          <h2 className="text-2xl font-semibold text-orange-700 mb-3">1. Information We Collect</h2>
+          <h2 className="text-2xl font-semibold text-primary mb-3">1. Information We Collect</h2>
           <p className="leading-relaxed">
             When you use Sarvdev Temple Directory, we may collect the following information:
           </p>
@@ -19,7 +19,7 @@ export default function PrivacyPage() {
         </div>
 
         <div>
-          <h2 className="text-2xl font-semibold text-orange-700 mb-3">2. How We Use Your Information</h2>
+          <h2 className="text-2xl font-semibold text-primary mb-3">2. How We Use Your Information</h2>
           <p className="leading-relaxed">
             We use the collected information to:
           </p>
@@ -33,21 +33,21 @@ export default function PrivacyPage() {
         </div>
 
         <div>
-          <h2 className="text-2xl font-semibold text-orange-700 mb-3">3. Data Security</h2>
+          <h2 className="text-2xl font-semibold text-primary mb-3">3. Data Security</h2>
           <p className="leading-relaxed">
             We implement appropriate security measures to protect your personal information from unauthorized access, alteration, or disclosure. Your data is stored securely in our database with encryption.
           </p>
         </div>
 
         <div>
-          <h2 className="text-2xl font-semibold text-orange-700 mb-3">4. Information Sharing</h2>
+          <h2 className="text-2xl font-semibold text-primary mb-3">4. Information Sharing</h2>
           <p className="leading-relaxed">
             We do not sell, trade, or rent your personal information to third parties. Temple information submitted for public listing will be displayed on our website for visitors to view.
           </p>
         </div>
 
         <div>
-          <h2 className="text-2xl font-semibold text-orange-700 mb-3">5. Your Rights</h2>
+          <h2 className="text-2xl font-semibold text-primary mb-3">5. Your Rights</h2>
           <p className="leading-relaxed">
             You have the right to:
           </p>
@@ -60,16 +60,16 @@ export default function PrivacyPage() {
         </div>
 
         <div>
-          <h2 className="text-2xl font-semibold text-orange-700 mb-3">6. Cookies</h2>
+          <h2 className="text-2xl font-semibold text-primary mb-3">6. Cookies</h2>
           <p className="leading-relaxed">
             We use cookies to enhance your browsing experience and analyze website traffic. You can disable cookies in your browser settings, though some features may not function properly.
           </p>
         </div>
 
         <div>
-          <h2 className="text-2xl font-semibold text-orange-700 mb-3">7. Contact Us</h2>
+          <h2 className="text-2xl font-semibold text-primary mb-3">7. Contact Us</h2>
           <p className="leading-relaxed">
-            If you have questions about this Privacy Policy, please <a href="/contact" className="text-orange-600 hover:underline">contact us</a>.
+            If you have questions about this Privacy Policy, please <a href="/contact" className="hover:underline">contact us</a>.
           </p>
         </div>
       </div>
