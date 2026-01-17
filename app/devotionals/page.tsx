@@ -1,7 +1,57 @@
 "use client"
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
+
+import { CategoryTabs } from './components/CategoryTabs';
+import { SearchBar } from './components/SearchBar';
+import { DevotionalCard } from './components/DevotionalCard';
+import { TextToSpeech } from './components/TextToSpeech';
+import { renderBilingualTitle, isDevanagari } from './utils/bilingual';
+
+// Helper function to create URL slug from title
+function createSlug(title: string): string {
+  // Extract English text from parentheses if present (e.g., "श्री गणेश आरती (Shri Ganesh Aarti)")
+  const englishMatch = title.match(/\(([^)]+)\)/);
+  let text = englishMatch ? englishMatch[1] : title;
+  
+  // Create slug from text
+  let slug = text
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .trim();
+  
+  // If slug is empty (all Devanagari text), transliterate basic characters or use a generic fallback
+  if (!slug || slug === '-' || slug === '') {
+    // Simple transliteration map for common words
+    const translitMap: {[key: string]: string} = {
+      'श्री': 'shri',
+      'गणेश': 'ganesh',
+      'आरती': 'aarti',
+      'चालीसा': 'chalisa',
+      'मंत्र': 'mantra',
+      'स्तोत्र': 'stotra',
+      'भजन': 'bhajan'
+    };
+    
+    // Try to transliterate known words
+    let transliterated = title.toLowerCase();
+    for (const [devanagari, english] of Object.entries(translitMap)) {
+      transliterated = transliterated.replace(new RegExp(devanagari, 'g'), english);
+    }
+    
+    slug = transliterated
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .trim();
+  }
+  
+  return slug || 'devotional';
+}
 
 type Devotional = {
   _id: string
@@ -15,190 +65,392 @@ type Devotional = {
   duration?: string
   artist?: string
   status?: string
+  type?: string
   names?: { sanskrit?: string; mantra?: string; english?: string }[]
 }
 
-// All devotional categories with bilingual labels
+// Main devotional categories as per user request
 const ALL_CATEGORIES = [
   { id: 'all', label: 'All', hindi: 'सभी', icon: '🕉️' },
-  { id: 'Mantra', label: 'Mantra', hindi: 'मंत्र', icon: '🔮' },
-  { id: 'Chalisa', label: 'Chalisa', hindi: 'चालीसा', icon: '🙏' },
-  { id: 'Bhajan', label: 'Bhajan', hindi: 'भजन', icon: '🎵' },
-  { id: 'Stotra', label: 'Stotra', hindi: 'स्तोत्र', icon: '📿' },
   { id: 'Aarti', label: 'Aarti', hindi: 'आरती', icon: '🪔' },
-  { id: 'Stuti', label: 'Stuti', hindi: 'स्तुति', icon: '🌟' },
-  { id: 'Shloka', label: 'Shloka', hindi: 'श्लोक', icon: '📖' },
-  { id: 'Ek Shloki', label: 'Ek Shloki', hindi: 'एक श्लोकी', icon: '📜' },
-  { id: 'Ashtaka', label: 'Ashtaka', hindi: 'अष्टक', icon: '🔸' },
-  { id: 'Sahasranama', label: 'Sahasranama', hindi: 'सहस्रनाम', icon: '👑' },
+  { id: 'Chalisa', label: 'Chalisa', hindi: 'चालीसा', icon: '🙏' },
+  { id: 'Stotra', label: 'Stotra', hindi: 'स्तोत्र', icon: '📿' },
+  { id: 'Mantra', label: 'Mantra', hindi: 'मंत्र', icon: '🔮' },
+  { id: 'Namavali', label: 'Namavali', hindi: 'नामावली', icon: '🔢' },
+  { id: 'Ashtakam', label: 'Ashtakam', hindi: 'अष्टकम्', icon: '🔸' },
+  { id: 'Shatkam', label: 'Shatkam', hindi: 'षट्कम्', icon: '6️⃣' },
+  { id: 'Kavacham', label: 'Kavacham', hindi: 'कवचम्', icon: '🛡️' },
   { id: 'Path', label: 'Path', hindi: 'पाठ', icon: '📚' },
+  { id: 'Bhajan', label: 'Bhajan', hindi: 'भजन', icon: '🎵' },
+  { id: 'Shloka', label: 'Shloka', hindi: 'श्लोक', icon: '📖' },
+  { id: 'Stuti', label: 'Stuti', hindi: 'स्तुति', icon: '🌟' },
   { id: '108 Namavali', label: '108 Namavali', hindi: '१०८ नामावली', icon: '🔢' },
-  { id: 'Other', label: 'Other', hindi: 'अन्य', icon: '✨' },
+  { id: 'Prarthana', label: 'Prarthana', hindi: 'प्रार्थना', icon: '🙏' },
+  { id: 'Vrat Katha', label: 'Vrat Katha', hindi: 'व्रत कथा', icon: '📜' },
 ]
 
 export default function DevotionalsPage() {
   const [devotionals, setDevotionals] = useState<Devotional[]>([])
   const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  const [showTransliteration, setShowTransliteration] = useState(true);
+  const [groupByLanguage, setGroupByLanguage] = useState(false);
+  const [activeCategory, setActiveCategory] = useState("all");
+  const [languageFilter, setLanguageFilter] = useState("all");
+  const [deityFilter, setDeityFilter] = useState("all");
+  const [sortOrder, setSortOrder] = useState<'az' | 'za'>('az');
+  const [visibleCount, setVisibleCount] = useState(12);
 
   useEffect(() => {
     async function fetchDevotionals() {
       try {
-        const res = await fetch('/api/devotionals')
+        const res = await fetch(`/api/devotionals`);
         if (res.ok) {
-          const data = await res.json()
-          // Only show approved devotionals
-          const approved = data.filter((d: Devotional) => d.status === 'approved')
-          setDevotionals(approved)
+          const data = await res.json();
+          const approved = data.filter((d: Devotional) => d.status === "approved");
+          setDevotionals(approved);
         }
       } catch (error) {
-        console.error('Failed to fetch devotionals:', error)
+        console.error("Failed to fetch devotionals:", error);
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
     }
-    fetchDevotionals()
-  }, [])
+    fetchDevotionals();
+  }, []);
 
-  // Get categories that have devotionals
-  const categoriesWithContent = ALL_CATEGORIES.filter(cat => 
-    cat.id === 'all' || devotionals.some(d => d.category === cat.id)
-  )
+  // Debounce search to reduce re-renders
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 200);
+    return () => clearTimeout(t);
+  }, [search]);
 
-  if (loading) {
-    return (
-      <main className="max-w-6xl mx-auto px-4 py-12">
-        <div className="text-center">Loading devotionals...</div>
-      </main>
-    )
-  }
+  const languages = useMemo(() => {
+    const setVals = new Set<string>();
+    devotionals.forEach(d => { if (d.language) setVals.add(d.language); });
+    return ['all', ...Array.from(setVals).sort()];
+  }, [devotionals]);
 
-  return (
-    <main className="max-w-6xl mx-auto px-4 py-12 relative">
-      <div className="absolute inset-0 bg-gradient-to-br from-orange-50/30 via-transparent to-amber-50/30 dark:from-orange-900/10 dark:to-amber-900/10 pointer-events-none" />
-      <div className="relative z-10">
-      <header className="mb-8 text-center">
-        <div className="text-6xl mb-4">🕉️</div>
-        <h1 className="text-4xl font-playfair text-orange-600 font-bold">Devotionals</h1>
-        <p className="mt-3 text-slate-700 dark:text-slate-200 text-lg">Explore sacred mantras, bhajans, stotras and more</p>
-      </header>
+  const deities = useMemo(() => {
+    const setVals = new Set<string>();
+    devotionals.forEach(d => { if (d.deity) setVals.add(d.deity); });
+    return ['all', ...Array.from(setVals).sort()];
+  }, [devotionals]);
 
-      {/* Category Grid */}
-      <section className="mb-12">
-        <h2 className="text-2xl font-semibold text-slate-800 dark:text-slate-100 mb-6 text-center">Browse by Category</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-          {categoriesWithContent.map(cat => {
-            const count = cat.id === 'all' 
-              ? devotionals.length 
-              : devotionals.filter(d => d.category === cat.id).length
-            
-            return (
-              <Link
-                key={cat.id}
-                href={cat.id === 'all' ? '/devotionals' : `/devotionals/${cat.id.toLowerCase().replace(/\s+/g, '-')}`}
-                className="group relative bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 hover:from-orange-100 hover:to-amber-100 dark:hover:from-orange-800/30 dark:hover:to-amber-800/30 rounded-xl p-6 shadow-sm hover:shadow-lg transition-all duration-300 border border-orange-200/50 dark:border-orange-700/50 hover:scale-105"
-              >
-                <div className="text-center">
-                  <div className="text-3xl mb-2">{cat.icon}</div>
-                  <h3 className="text-lg font-semibold text-orange-700 dark:text-orange-400 mb-1 group-hover:text-orange-600 dark:group-hover:text-orange-300 transition-colors">
-                    {cat.label}
-                  </h3>
-                  <p className="text-sm text-orange-600/70 dark:text-orange-500/70 mb-3 font-medium">
-                    {cat.hindi}
-                  </p>
-                  <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-orange-600 text-white text-sm font-bold">
-                    {count}
-                  </div>
-                </div>
-                <div className="absolute inset-0 rounded-xl ring-2 ring-orange-600 opacity-0 group-hover:opacity-100 transition-opacity" />
-              </Link>
-            )
-          })}
-        </div>
-      </section>
+    // Memoize category counts
+    const categoriesWithCounts = useMemo(() => {
+      const withCounts = ALL_CATEGORIES.map((cat) => ({
+        ...cat,
+        count: cat.id === 'all'
+          ? devotionals.length
+          : devotionals.filter((d) => d.category === cat.id).length,
+      }))
+      // Only show categories that have items, always keep 'all'
+      return withCounts.filter(c => c.id === 'all' || (c.count ?? 0) > 0)
+    }, [devotionals]);
 
-      {/* Recent Devotionals */}
-      <section>
-        <div className="flex items-center justify-center gap-3 mb-6">
-          <div className="text-2xl">🌟</div>
-          <h2 className="text-2xl font-semibold text-slate-800 dark:text-slate-100">Recently Added</h2>
-          <div className="text-2xl">🌟</div>
-        </div>
-        {devotionals.length === 0 ? (
-          <div className="text-center py-12 text-slate-500">
-            No devotionals available yet.
-          </div>
-        ) : (
+    // Filter devotionals by category, language, deity and search
+    const filteredDevotionals = useMemo(() =>
+      devotionals.filter((d) => {
+        const matchesCategory = activeCategory === "all" || d.category === activeCategory;
+        const matchesLanguage = languageFilter === 'all' || (d.language === languageFilter);
+        const matchesDeity = deityFilter === 'all' || (d.deity === deityFilter);
+        const term = debouncedSearch.trim().toLowerCase();
+        const matchesSearch = !term ||
+          d.title?.toLowerCase().includes(term) ||
+          d.description?.toLowerCase().includes(term) ||
+          d.deity?.toLowerCase().includes(term) ||
+          d.artist?.toLowerCase().includes(term);
+        return matchesCategory && matchesLanguage && matchesDeity && matchesSearch;
+      }),
+      [devotionals, activeCategory, languageFilter, deityFilter, debouncedSearch]
+    );
+
+    const sortedDevotionals = useMemo(() => {
+      const arr = [...filteredDevotionals];
+      arr.sort((a, b) => {
+        const ta = (a.title || '').toLowerCase();
+        const tb = (b.title || '').toLowerCase();
+        return sortOrder === 'az' ? ta.localeCompare(tb) : tb.localeCompare(ta);
+      });
+      return arr;
+    }, [filteredDevotionals, sortOrder]);
+
+    const limitedSorted = useMemo(() => sortedDevotionals.slice(0, visibleCount), [sortedDevotionals, visibleCount]);
+
+    function normalizeLanguage(lang?: string): 'Hindi' | 'English' | 'Sanskrit' | 'Other' {
+      const l = (lang || '').toLowerCase();
+      if (l.includes('hi')) return 'Hindi';
+      if (l.includes('en')) return 'English';
+      if (l.includes('sa') || l.includes('sanskrit') || l.includes('संस्क')) return 'Sanskrit';
+      return 'Other';
+    }
+
+    const languageOrder: Array<'Hindi' | 'English' | 'Sanskrit' | 'Other'> = ['Hindi', 'English', 'Sanskrit', 'Other'];
+
+    const groupedLimited = useMemo(() => {
+      const map: Record<string, Devotional[]> = { Hindi: [], English: [], Sanskrit: [], Other: [] };
+      for (const d of limitedSorted) {
+        map[normalizeLanguage(d.language)].push(d);
+      }
+      return map;
+    }, [limitedSorted]);
+
+    if (loading) {
+      return (
+        <main className="max-w-6xl mx-auto px-4 py-12">
+          <header className="mb-10 text-center">
+            <div className="text-7xl mb-5 text-[#c97a10] dark:text-[#ffd700] drop-shadow-lg" aria-hidden>🕉️</div>
+            <h1 className="text-5xl font-extrabold text-[#a9441a] dark:text-[#ffd700] tracking-tight mb-2 drop-shadow font-playfair">Devotionals</h1>
+            <p className="mt-2 text-[#7c3a0a] dark:text-[#ffe5b4] text-xl font-medium leading-relaxed max-w-2xl mx-auto">Explore sacred mantras, bhajans, stotras and more</p>
+          </header>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {devotionals.slice(0, 6).map((d: Devotional) => (
-              <article key={d._id} className="bg-white/80 dark:bg-slate-900/60 backdrop-blur rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow p-5 flex flex-col">
-                <div className="flex items-start justify-between mb-3">
-                  <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 leading-tight">{d.title}</h3>
-                  {d.category && (
-                    <span className="px-2.5 py-1 bg-orange-100 text-orange-800 text-xs font-semibold rounded-full shrink-0 ml-2">
-                      {d.category}
-                    </span>
-                  )}
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="rounded-xl border border-neutral-200 dark:border-neutral-800 p-5">
+                <div className="animate-pulse space-y-4">
+                  <div className="h-6 bg-neutral-200 dark:bg-neutral-800 rounded w-3/4" />
+                  <div className="flex gap-2">
+                    <div className="h-4 bg-neutral-200 dark:bg-neutral-800 rounded w-20" />
+                    <div className="h-4 bg-neutral-200 dark:bg-neutral-800 rounded w-16" />
+                    <div className="h-4 bg-neutral-200 dark:bg-neutral-800 rounded w-24" />
+                  </div>
+                  <div className="h-20 bg-neutral-200 dark:bg-neutral-800 rounded w-full" />
                 </div>
-
-                {d.deity && (
-                  <p className="text-sm text-orange-600 font-medium mb-2">🕉️ {d.deity}</p>
-                )}
-
-                {d.description && (
-                  <p className="mt-2 text-sm text-slate-700 dark:text-slate-300 flex-grow line-clamp-3">
-                    {d.description}
-                  </p>
-                )}
-
-                <div className="mt-3 flex items-center gap-3 text-xs text-slate-500 flex-wrap">
-                  {d.artist && <span>🎤 {d.artist}</span>}
-                  {d.duration && <span>⏱️ {d.duration}</span>}
-                  {d.language && <span>🌐 {d.language}</span>}
-                </div>
-
-                <div className="mt-4">
-                  {d.audio ? (
-                    <audio controls src={d.audio} className="w-full rounded-md" />
-                  ) : (
-                    <p className="text-sm text-slate-400 italic">Text-based devotional</p>
-                  )}
-                </div>
-
-                {d.lyrics && (
-                  <details className="mt-4">
-                    <summary className="text-sm text-orange-600 cursor-pointer hover:underline font-medium">
-                      View Lyrics
-                    </summary>
-                    <div className="mt-3 p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg text-sm text-slate-700 dark:text-slate-300 whitespace-pre-line border border-orange-200/50 dark:border-orange-700/50">
-                      {d.lyrics}
-                    </div>
-                  </details>
-                )}
-
-                {d.names && d.names.length > 0 && (
-                  <details className="mt-4">
-                    <summary className="text-sm text-orange-600 cursor-pointer hover:underline font-medium">
-                      View 108 Names ({d.names.length})
-                    </summary>
-                    <div className="mt-3 p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg text-sm text-slate-700 dark:text-slate-300 border border-orange-200/50 dark:border-orange-700/50 max-h-96 overflow-y-auto">
-                      <ol className="list-decimal list-inside space-y-1">
-                        {d.names.map((name, index) => (
-                          <li key={index} className="flex flex-col sm:flex-row sm:items-center gap-1">
-                            <span className="font-medium">{name.sanskrit || name.english}</span>
-                            {name.mantra && <span className="text-slate-600 dark:text-slate-400 italic">— {name.mantra}</span>}
-                          </li>
-                        ))}
-                      </ol>
-                    </div>
-                  </details>
-                )}
-              </article>
+              </div>
             ))}
           </div>
-        )}
-      </section>
-    </div>
-    </main>
-  )
-}
+        </main>
+      );
+    }
 
+    return (
+      <main className="max-w-6xl mx-auto px-4 py-12 relative bg-gradient-to-br from-[#fffbe6] via-[#fff3cd] to-[#ffe5b4] dark:from-[#3b1f0b] dark:via-[#5a2d0c] dark:to-[#7c3a0a] min-h-screen font-inter scroll-smooth">
+        <div className="absolute inset-0 bg-gradient-to-br from-[#fffbe6]/80 via-[#fff3cd]/60 to-[#ffe5b4]/80 dark:from-[#3b1f0b]/80 dark:to-[#7c3a0a]/60 pointer-events-none" />
+        <div className="relative z-10">
+          <header className="mb-10 text-center">
+            <div className="text-7xl mb-5 text-[#c97a10] dark:text-[#ffd700] drop-shadow-lg" aria-hidden>🕉️</div>
+            <h1 className="text-5xl font-extrabold text-[#a9441a] dark:text-[#ffd700] tracking-tight mb-2 drop-shadow font-playfair">Devotionals</h1>
+            <p className="mt-2 text-[#7c3a0a] dark:text-[#ffe5b4] text-xl font-medium leading-relaxed max-w-2xl mx-auto">Explore sacred mantras, bhajans, stotras and more</p>
+            {/* Slim Hero Banner CTA */}
+            <div className="mt-6 max-w-3xl mx-auto">
+              <div className="rounded-lg bg-primary-50 border border-primary-200 text-primary-800 dark:bg-primary-900/20 dark:border-primary-800 px-4 py-3 flex items-center justify-between">
+                <span className="font-medium">Browse devotionals by category, language, or deity.</span>
+                <a href="#categories" className="px-3 py-1.5 rounded-full bg-primary-500 text-white hover:bg-primary-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400">
+                  Browse Categories
+                </a>
+              </div>
+            </div>
+          </header>
+
+          {/* Featured Devotionals */}
+          <section aria-labelledby="featured" className="mb-12">
+            <div className="flex items-center justify-center gap-3 mb-6">
+              <div className="text-3xl text-[#c97a10] dark:text-[#ffd700]" aria-hidden>✨</div>
+              <h2 id="featured" className="text-2xl font-bold text-[#a9441a] dark:text-[#ffd700] tracking-tight font-playfair">Featured Devotionals</h2>
+              <div className="text-3xl text-[#c97a10] dark:text-[#ffd700]" aria-hidden>✨</div>
+            </div>
+            <FeaturedGrid devotionals={devotionals} />
+          </section>
+
+          {/* Search and Category Tabs */}
+          <section className="mb-12" id="categories">
+            <h2 className="text-2xl font-bold text-[#a9441a] dark:text-[#ffd700] mb-7 text-center tracking-tight font-playfair">Browse by Category</h2>
+            <div className="sticky top-0 z-20 bg-gradient-to-br from-[#fffbe6]/80 via-[#fff3cd]/70 to-[#ffe5b4]/80 dark:from-[#3b1f0b]/80 dark:via-[#5a2d0c]/70 dark:to-[#7c3a0a]/80 backdrop-blur supports-[backdrop-filter]:backdrop-blur-md py-3 mb-6">
+              <div className="flex flex-col md:flex-row md:flex-wrap md:items-center md:justify-between gap-4">
+                <div className="flex-1 min-w-[280px]">
+                  <CategoryTabs
+                    categories={categoriesWithCounts}
+                    activeCategory={activeCategory}
+                    onSelect={setActiveCategory}
+                  />
+                </div>
+                <div className="w-full md:w-80">
+                  <SearchBar value={search} onChange={setSearch} placeholder="Search devotionals..." />
+                </div>
+                <div className="w-full md:w-auto flex gap-2 items-center">
+                  <select aria-label="Filter by language" value={languageFilter} onChange={e => setLanguageFilter(e.target.value)}
+                    className="flex-1 md:flex-none px-3 py-2 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400">
+                    {languages.map(l => (<option key={l} value={l}>{l === 'all' ? 'All languages' : l}</option>))}
+                  </select>
+                  <select aria-label="Filter by deity" value={deityFilter} onChange={e => setDeityFilter(e.target.value)}
+                    className="flex-1 md:flex-none px-3 py-2 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400">
+                    {deities.map(d => (<option key={d} value={d}>{d === 'all' ? 'All deities' : d}</option>))}
+                  </select>
+                  <select aria-label="Sort" value={sortOrder} onChange={e => setSortOrder(e.target.value as 'az' | 'za')}
+                    className="px-3 py-2 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400">
+                    <option value="az">A–Z</option>
+                    <option value="za">Z–A</option>
+                  </select>
+                  <label className="flex items-center gap-2 ml-2 text-sm text-neutral-700 dark:text-neutral-200">
+                    <input
+                      type="checkbox"
+                      className="accent-primary-500 h-4 w-4"
+                      checked={showTransliteration}
+                      onChange={(e) => setShowTransliteration(e.target.checked)}
+                    />
+                    Show English transliteration
+                  </label>
+                  <label className="flex items-center gap-2 ml-2 text-sm text-neutral-700 dark:text-neutral-200">
+                    <input
+                      type="checkbox"
+                      className="accent-primary-500 h-4 w-4"
+                      checked={groupByLanguage}
+                      onChange={(e) => setGroupByLanguage(e.target.checked)}
+                    />
+                    Group by language
+                  </label>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Recent Devotionals */}
+          <section>
+            <div className="flex items-center justify-center gap-3 mb-8">
+              <div className="text-3xl text-[#c97a10] dark:text-[#ffd700]" aria-hidden>🌟</div>
+              <h2 className="text-3xl font-bold text-[#a9441a] dark:text-[#ffd700] tracking-tight">Recently Added</h2>
+              <div className="text-3xl text-[#c97a10] dark:text-[#ffd700]" aria-hidden>🌟</div>
+            </div>
+            {filteredDevotionals.length === 0 ? (
+              <div className="text-center py-12 text-[#a9441a] text-lg font-bold">
+                No devotionals found.
+              </div>
+            ) : (
+              <>
+                {groupByLanguage ? (
+                  <div>
+                    {languageOrder.map((lang) => {
+                      const group = groupedLimited[lang] || [];
+                      if (!group.length) return null;
+                      return (
+                        <div key={lang} className="mb-10">
+                          <div className="flex items-center gap-3 mb-4">
+                            <h3 className="text-2xl font-bold text-[#a9441a] dark:text-[#ffd700] tracking-tight font-playfair">{lang}</h3>
+                            <span className="text-sm text-[#7c3a0a] dark:text-[#ffe5b4]">({group.length})</span>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {group.map((d) => (
+                              <Link key={d._id} href={`/devotionals/${createSlug(d.title || '')}`}
+                                className="focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400"
+                              >
+                                <DevotionalCard
+                                  title={d.title || ''}
+                                  titleNode={(function(){
+                                    const bt = renderBilingualTitle(d.title || '');
+                                    const primary = highlightText(bt.primary, debouncedSearch);
+                                    const secondary = (showTransliteration && bt.secondary) ? highlightText(bt.secondary, debouncedSearch) : null;
+                                    return (
+                                      <div>
+                                        <div>{primary}</div>
+                                        {secondary && <div className="text-sm text-neutral-600 dark:text-neutral-300 mt-0.5">{secondary}</div>}
+                                      </div>
+                                    );
+                                  })()}
+                                  category={d.category}
+                                  language={d.language}
+                                  type={d.type}
+                                  description={d.description}
+                                  descriptionNode={d.description ? highlightText(d.description, debouncedSearch) : undefined}
+                                />
+                              </Link>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <AnimatePresence>
+                      {sortedDevotionals.slice(0, visibleCount).map((d) => (
+                        <Link key={d._id} href={`/devotionals/${createSlug(d.title || '')}`}
+                                  className="focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400"
+                        >
+                          <DevotionalCard
+                            title={d.title || ''}
+                            titleNode={(function(){
+                              const bt = renderBilingualTitle(d.title || '');
+                              const primary = highlightText(bt.primary, debouncedSearch);
+                              const secondary = (showTransliteration && bt.secondary) ? highlightText(bt.secondary, debouncedSearch) : null;
+                              return (
+                                <div>
+                                  <div>{primary}</div>
+                                  {secondary && <div className="text-sm text-neutral-600 dark:text-neutral-300 mt-0.5">{secondary}</div>}
+                                </div>
+                              );
+                            })()}
+                            category={d.category}
+                            language={d.language}
+                            type={d.type}
+                            description={d.description}
+                            descriptionNode={d.description ? highlightText(d.description, debouncedSearch) : undefined}
+                          />
+                        </Link>
+                      ))}
+                    </AnimatePresence>
+                  </div>
+                )}
+                {sortedDevotionals.length > visibleCount && (
+                  <div className="mt-8 flex justify-center">
+                    <button type="button" onClick={() => setVisibleCount(c => c + 12)}
+                      className="px-5 py-2 rounded-full bg-primary-500 text-white hover:bg-primary-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400">
+                      Load More
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
+          </section>
+        </div>
+      </main>
+    );
+  }
+
+  // Featured grid component inline
+  function FeaturedGrid({ devotionals }: { devotionals: Devotional[] }) {
+    const featured = useMemo(() => {
+      const priority = new Set(['Mantra', 'Chalisa', 'Aarti', '108 Namavali']);
+      const arr = devotionals.filter(d => (d.category ? priority.has(d.category) : false));
+      return arr.slice(0, 6);
+    }, [devotionals]);
+
+    if (featured.length === 0) {
+      return (
+        <div className="text-center py-6 text-neutral-600 dark:text-neutral-300">No featured devotionals yet.</div>
+      );
+    }
+
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {featured.map((d) => (
+          <Link key={d._id} href={`/devotionals/${createSlug(d.title || '')}`}
+            className="focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400"
+          >
+            <DevotionalCard
+              title={d.title || ''}
+              category={d.category}
+              language={d.language}
+              type={d.type}
+              description={d.description}
+            />
+          </Link>
+        ))}
+      </div>
+    );
+  }
+
+  // Helper: highlight matched search terms
+  function highlightText(text: string, term: string) {
+    const t = term.trim();
+    if (!t) return text;
+    const escaped = t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`(${escaped})`, 'gi');
+    const parts = text.split(regex);
+    return parts.map((p, i) => (
+      p.toLowerCase() === t.toLowerCase()
+        ? <mark key={i} className="bg-primary-100 text-primary-800 rounded px-1">{p}</mark>
+        : p
+    ));
+  }

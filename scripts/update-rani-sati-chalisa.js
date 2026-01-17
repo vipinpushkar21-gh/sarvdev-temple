@@ -18,13 +18,7 @@ const DevotionalSchema = new mongoose.Schema({
 
 const Devotional = mongoose.models.Devotional || mongoose.model('Devotional', DevotionalSchema);
 
-const raniSatiChalisa = {
-  title: 'Shri Rani Sati Chalisa',
-  deity: 'Rani Sati',
-  category: 'Chalisa',
-  status: 'approved',
-  language: 'Hindi',
-  lyrics: `॥ दोहा ॥
+const completeLyrics = `॥ दोहा ॥
 श्री गुरु पद पंकज नमन,
 दुषित भाव सुधार,
 राणी सती सू विमल यश,
@@ -33,6 +27,7 @@ const raniSatiChalisa = {
 भरम रह्यो संसार,
 शरण गहि करूणामई,
 सुख सम्पति संसार॥
+
 ॥ चौपाई ॥
 नमो नमो श्री सती भवानी।
 जग विख्यात सभी मन मानी ॥
@@ -159,35 +154,44 @@ const raniSatiChalisa = {
 जन जीवन आधार ।
 बिगङी बात सुधारियो,
 सब अपराध बिसार ॥
-॥ मात श्री राणी सतीजी की जय ॥`,
-  description: 'Shri Rani Sati Chalisa - Hindi original with short summary. Duplicate-check before insert.'
-};
 
-async function addRaniSatiChalisa() {
+॥ मात श्री राणी सतीजी की जय ॥`;
+
+async function updateRaniSatiChalisa() {
   try {
     await mongoose.connect(MONGODB_URI);
     console.log('Connected to MongoDB\n');
 
-    const existing = await Devotional.findOne({ title: raniSatiChalisa.title, deity: 'Rani Sati' });
-    if (existing) {
-      console.log(`Shri Rani Sati Chalisa already exists (id: ${existing._id}). Skipping insert.`);
-    } else {
-      const newChalisa = new Devotional(raniSatiChalisa);
-      await newChalisa.save();
-      console.log(`✓ Added: ${raniSatiChalisa.title}`);
-    }
+    const result = await Devotional.updateOne(
+      { title: 'Shri Rani Sati Chalisa', deity: 'Rani Sati' },
+      { 
+        $set: { 
+          lyrics: completeLyrics,
+          description: 'Shri Rani Sati Chalisa - Complete Hindi text with opening doha, 40+ chaupai verses, and closing invocation.',
+          updatedAt: new Date()
+        } 
+      }
+    );
 
-    const allChalisas = await Devotional.find({ category: 'Chalisa' });
-    const count = await Devotional.find({ category: 'Chalisa', deity: 'Rani Sati' });
-    console.log(`\nTotal Chalisas in database: ${allChalisas.length}`);
-    console.log(`Rani Sati Chalisas: ${count.length}`);
+    if (result.matchedCount > 0) {
+      console.log(`✓ Updated Shri Rani Sati Chalisa with complete lyrics`);
+      console.log(`  Modified: ${result.modifiedCount} document(s)`);
+      
+      // Verify the update
+      const updated = await Devotional.findOne({ title: 'Shri Rani Sati Chalisa' });
+      console.log(`\n✓ Verification:`);
+      console.log(`  Lyrics length: ${updated.lyrics.length} characters`);
+      console.log(`  Contains final invocation: ${updated.lyrics.includes('मात श्री राणी सतीजी की जय')}`);
+    } else {
+      console.log('No document found to update');
+    }
 
     await mongoose.connection.close();
     console.log('\nDatabase connection closed.');
   } catch (error) {
-    console.error('Error adding Rani Sati Chalisa:', error);
+    console.error('Error updating Rani Sati Chalisa:', error);
     process.exit(1);
   }
 }
 
-addRaniSatiChalisa();
+updateRaniSatiChalisa();

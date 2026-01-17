@@ -19,5 +19,16 @@ npm run dev
 Open http://localhost:3000 in your browser.
 
 Notes:
-- This scaffold uses the App Router and has no backend/API routes.
-- Tailwind is configured in `tailwind.config.cjs` and globals are in `app/globals.css`.
+
+### Server TTS (Optional)
+
+Devotionals support generating audio via Azure Cognitive Services Text-to-Speech. If you click "Generate Audio (Server)" and see an error about missing configuration, add the following to a new `.env.local` file at the project root:
+
+```
+AZURE_TTS_KEY="<your-azure-speech-key>"
+AZURE_TTS_REGION="<your-azure-region>" # e.g., eastus, westus2, centralindia
+```
+
+Then restart the dev server. An example file is provided at [.env.local.example](.env.local.example).
+
+If you prefer not to configure Azure, use the built-in browser TTS via the "Play via TTS" control.

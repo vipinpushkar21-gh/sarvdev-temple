@@ -2,6 +2,18 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 export function middleware(request: NextRequest) {
+  // Maintenance mode: optionally route all traffic to /maintenance
+  const maintenance = process.env.MAINTENANCE_MODE === 'true'
+  if (maintenance) {
+    const path = request.nextUrl.pathname
+    const isApi = path.startsWith('/api/')
+    const isStatic = path.startsWith('/_next/') || path.includes('.')
+    const isMaintenance = path === '/maintenance'
+    const isLogin = path === '/login'
+    if (!isApi && !isStatic && !isMaintenance && !isLogin) {
+      return NextResponse.redirect(new URL('/maintenance', request.url))
+    }
+  }
   // Allow local development (localhost/127.0.0.1) to access the site without the auth gate.
   // Use the request host so this works at runtime in the Edge middleware environment.
   const host = request.headers.get('host') || request.nextUrl.hostname || ''

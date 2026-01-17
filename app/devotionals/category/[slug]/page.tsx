@@ -1,8 +1,49 @@
 "use client"
 
 import { useEffect, useState } from 'react'
+import { isDevanagari } from '../../utils/bilingual'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
+
+// Helper function to create URL slug from title
+function createSlug(title: string): string {
+  // Extract English text from parentheses if present
+  const englishMatch = title.match(/\(([^)]+)\)/);
+  let text = englishMatch ? englishMatch[1] : title;
+  
+  let slug = text
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .trim();
+  
+  // If slug is empty, transliterate
+  if (!slug || slug === '-' || slug === '') {
+    const translitMap: {[key: string]: string} = {
+      'श्री': 'shri',
+      'गणेश': 'ganesh',
+      'आरती': 'aarti',
+      'चालीसा': 'chalisa',
+      'मंत्र': 'mantra',
+      'स्तोत्र': 'stotra',
+      'भजन': 'bhajan'
+    };
+    
+    let transliterated = title.toLowerCase();
+    for (const [devanagari, english] of Object.entries(translitMap)) {
+      transliterated = transliterated.replace(new RegExp(devanagari, 'g'), english);
+    }
+    
+    slug = transliterated
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .trim();
+  }
+  
+  return slug || 'devotional';
+}
 
 type Devotional = {
   _id: string
@@ -48,13 +89,13 @@ export default function CategoryPage() {
   const [selectedDeity, setSelectedDeity] = useState<string>('all')
   const [selectedSubCategory, setSelectedSubCategory] = useState<string>('all')
 
-  const categorySlug = params.category as string
+  const categorySlug = params.slug as string
   const categoryInfo = CATEGORY_MAP[categorySlug]
 
   useEffect(() => {
     async function fetchDevotionals() {
       try {
-        const res = await fetch('/api/devotionals')
+        const res = await fetch(`/api/devotionals`)
         if (res.ok) {
           const data = await res.json()
           // Filter by category and approved status
@@ -242,8 +283,9 @@ export default function CategoryPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredByDeity.map((d: Devotional) => (
-              <article 
-                key={d._id} 
+              <Link 
+                key={d._id}
+                href={`/devotionals/${createSlug(d.title || '')}`}
                 className="bg-white/80 dark:bg-slate-900/60 backdrop-blur rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow p-5 flex flex-col"
               >
                 <div className="flex items-start justify-between mb-3">
@@ -260,7 +302,7 @@ export default function CategoryPage() {
                 )}
 
                 {d.description && (
-                  <p className="mt-2 text-sm text-slate-700 dark:text-slate-300 flex-grow">
+                  <p className="mt-2 text-sm text-slate-700 dark:text-slate-300 flex-grow line-clamp-3">
                     {d.description}
                   </p>
                 )}
@@ -270,44 +312,7 @@ export default function CategoryPage() {
                   {d.duration && <span>⏱️ {d.duration}</span>}
                   {d.language && <span>🌐 {d.language}</span>}
                 </div>
-
-                <div className="mt-4">
-                  {d.audio ? (
-                    <audio controls src={d.audio} className="w-full rounded-md" />
-                  ) : (
-                    <p className="text-sm text-slate-400 italic">Text-based devotional</p>
-                  )}
-                </div>
-
-                {d.lyrics && (
-                  <details className="mt-4">
-                    <summary className="text-sm text-orange-600 cursor-pointer hover:underline font-medium">
-                      View Lyrics
-                    </summary>
-                    <div className="mt-3 p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg text-sm text-slate-700 dark:text-slate-300 whitespace-pre-line border border-orange-200/50 dark:border-orange-700/50">
-                      {d.lyrics}
-                    </div>
-                  </details>
-                )}
-
-                {d.names && d.names.length > 0 && (
-                  <details className="mt-4">
-                    <summary className="text-sm text-orange-600 cursor-pointer hover:underline font-medium">
-                      View 108 Names ({d.names.length})
-                    </summary>
-                    <div className="mt-3 p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg text-sm text-slate-700 dark:text-slate-300 border border-orange-200/50 dark:border-orange-700/50 max-h-96 overflow-y-auto">
-                      <ol className="list-decimal list-inside space-y-1">
-                        {d.names.map((name, index) => (
-                          <li key={index} className="flex flex-col sm:flex-row sm:items-center gap-1">
-                            <span className="font-medium">{name.sanskrit || name.english}</span>
-                            {name.mantra && <span className="text-slate-600 dark:text-slate-400 italic">— {name.mantra}</span>}
-                          </li>
-                        ))}
-                      </ol>
-                    </div>
-                  </details>
-                )}
-              </article>
+              </Link>
             ))}
           </div>
         )}
