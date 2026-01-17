@@ -69,25 +69,24 @@ type Devotional = {
   names?: { sanskrit?: string; mantra?: string; english?: string }[]
 }
 
-// Main devotional categories as per user request
-const ALL_CATEGORIES = [
-  { id: 'all', label: 'All', hindi: 'सभी', icon: '🕉️' },
-  { id: 'Aarti', label: 'Aarti', hindi: 'आरती', icon: '🪔' },
-  { id: 'Chalisa', label: 'Chalisa', hindi: 'चालीसा', icon: '🙏' },
-  { id: 'Stotra', label: 'Stotra', hindi: 'स्तोत्र', icon: '📿' },
-  { id: 'Mantra', label: 'Mantra', hindi: 'मंत्र', icon: '🔮' },
-  { id: 'Namavali', label: 'Namavali', hindi: 'नामावली', icon: '🔢' },
-  { id: 'Ashtakam', label: 'Ashtakam', hindi: 'अष्टकम्', icon: '🔸' },
-  { id: 'Shatkam', label: 'Shatkam', hindi: 'षट्कम्', icon: '6️⃣' },
-  { id: 'Kavacham', label: 'Kavacham', hindi: 'कवचम्', icon: '🛡️' },
-  { id: 'Path', label: 'Path', hindi: 'पाठ', icon: '📚' },
-  { id: 'Bhajan', label: 'Bhajan', hindi: 'भजन', icon: '🎵' },
-  { id: 'Shloka', label: 'Shloka', hindi: 'श्लोक', icon: '📖' },
-  { id: 'Stuti', label: 'Stuti', hindi: 'स्तुति', icon: '🌟' },
-  { id: '108 Namavali', label: '108 Namavali', hindi: '१०८ नामावली', icon: '🔢' },
-  { id: 'Prarthana', label: 'Prarthana', hindi: 'प्रार्थना', icon: '🙏' },
-  { id: 'Vrat Katha', label: 'Vrat Katha', hindi: 'व्रत कथा', icon: '📜' },
-]
+// Category metadata (icon + Hindi labels) used to decorate dynamic categories
+const CATEGORY_META: Record<string, { hindi: string; icon: string }> = {
+  'Aarti': { hindi: 'आरती', icon: '🪔' },
+  'Chalisa': { hindi: 'चालीसा', icon: '🙏' },
+  'Stotra': { hindi: 'स्तोत्र', icon: '📿' },
+  'Mantra': { hindi: 'मंत्र', icon: '🔮' },
+  'Namavali': { hindi: 'नामावली', icon: '🔢' },
+  '108 Namavali': { hindi: '१०८ नामावली', icon: '🔢' },
+  'Ashtakam': { hindi: 'अष्टकम्', icon: '🔸' },
+  'Shatkam': { hindi: 'षट्कम्', icon: '6️⃣' },
+  'Kavacham': { hindi: 'कवचम्', icon: '🛡️' },
+  'Path': { hindi: 'पाठ', icon: '📚' },
+  'Bhajan': { hindi: 'भजन', icon: '🎵' },
+  'Shloka': { hindi: 'श्लोक', icon: '📖' },
+  'Stuti': { hindi: 'स्तुति', icon: '🌟' },
+  'Prarthana': { hindi: 'प्रार्थना', icon: '🙏' },
+  'Vrat Katha': { hindi: 'व्रत कथा', icon: '📜' },
+};
 
 export default function DevotionalsPage() {
   const [devotionals, setDevotionals] = useState<Devotional[]>([])
@@ -139,16 +138,22 @@ export default function DevotionalsPage() {
     return ['all', ...Array.from(setVals).sort()];
   }, [devotionals]);
 
-    // Memoize category counts
+    // Dynamically derive categories from devotionals with metadata and counts
     const categoriesWithCounts = useMemo(() => {
-      const withCounts = ALL_CATEGORIES.map((cat) => ({
-        ...cat,
-        count: cat.id === 'all'
-          ? devotionals.length
-          : devotionals.filter((d) => d.category === cat.id).length,
-      }))
-      // Only show categories that have items, always keep 'all'
-      return withCounts.filter(c => c.id === 'all' || (c.count ?? 0) > 0)
+      const unique = new Set<string>();
+      devotionals.forEach(d => { if (d.category) unique.add(d.category); });
+      const dynamicCats = Array.from(unique).sort();
+
+      const full = [
+        { id: 'all', label: 'All', hindi: 'सभी', icon: '🕉️', count: devotionals.length },
+        ...dynamicCats.map(id => {
+          const count = devotionals.filter(d => d.category === id).length;
+          const meta = CATEGORY_META[id] || { hindi: id, icon: '📄' };
+          return { id, label: id, hindi: meta.hindi, icon: meta.icon, count };
+        })
+      ];
+      // Show all present categories; hide zero-count except 'all' (in case of empty dataset)
+      return full.filter(c => c.id === 'all' || (c.count ?? 0) > 0);
     }, [devotionals]);
 
     // Filter devotionals by category, language, deity and search
