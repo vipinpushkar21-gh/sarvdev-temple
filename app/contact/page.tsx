@@ -1,7 +1,10 @@
+import Hero from '../../components/Hero'
+
 export default function ContactPage() {
   return (
-    <main className="max-w-4xl mx-auto px-4 py-12">
-      <h1 className="text-4xl font-bold text-primary mb-6">Contact Us</h1>
+    <>
+      <Hero title="Contact Us" subtitle="We'd love to hear from you!" />
+      <main className="max-w-4xl mx-auto px-4 py-12">
       
       <div className="space-y-6 bg-background p-8 rounded-2xl shadow-lg border border-accent text-text">
         <div>
@@ -44,6 +47,7 @@ export default function ContactPage() {
           </form>
         </div>
       </div>
-    </main>
+      </main>
+    </>
   )
 }

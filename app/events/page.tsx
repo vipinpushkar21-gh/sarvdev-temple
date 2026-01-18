@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
+import Hero from '../../components/Hero'
 
 type Event = {
   _id: string
@@ -37,18 +38,19 @@ export default function EventsPage() {
 
   if (loading) {
     return (
-      <main className="max-w-6xl mx-auto px-4 py-12">
-        <div className="text-center text-text">Loading events...</div>
-      </main>
+      <>
+        <Hero title="Upcoming Events" subtitle="Calendar of festivals, cultural programs and temple events." />
+        <main className="max-w-6xl mx-auto px-4 py-12">
+          <div className="text-center text-text">Loading events...</div>
+        </main>
+      </>
     )
   }
 
   return (
-    <main className="max-w-6xl mx-auto px-4 py-12">
-      <header className="mb-8">
-        <h1 className="text-3xl font-bold text-primary">Upcoming Events</h1>
-        <p className="mt-2 text-text text-base">Calendar of festivals, cultural programs and temple events.</p>
-      </header>
+    <>
+      <Hero title="Upcoming Events" subtitle="Calendar of festivals, cultural programs and temple events." />
+      <main className="max-w-6xl mx-auto px-4 py-12">
 
       {events.length === 0 ? (
         <div className="p-6 bg-background rounded-lg border border-accent/30">
@@ -83,7 +85,8 @@ export default function EventsPage() {
             ))}
           </div>
         </section>
-      )}
-    </main>
+        )}
+        </main>
+      </>
   )
 }

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Hero from '../../components/Hero'
 
 type FormState = {
   name: string
@@ -150,9 +151,9 @@ export default function ListTemplePage() {
   }
 
   return (
-    <main className="max-w-4xl mx-auto px-4 py-12" suppressHydrationWarning>
-      <h1 className="text-3xl font-bold mb-2 text-primary">List a Temple</h1>
-      <p className="text-base text-text mb-8">Share details about a temple you'd like to add. We'll review submissions before publishing.</p>
+    <>
+      <Hero title="List a Temple" subtitle="Share temple details to add to the directory" />
+      <main className="max-w-4xl mx-auto px-4 py-12" suppressHydrationWarning>
 
       <form onSubmit={onSubmit} noValidate className="space-y-8 bg-background p-8 rounded-2xl shadow-lg border border-accent">
         
@@ -337,6 +338,7 @@ export default function ListTemplePage() {
           {submitted && <div className="text-sm text-emerald-700 font-medium bg-emerald-50 px-4 py-2 rounded-lg">✓ Thank you! Your temple submission has been received and is pending approval.</div>}
         </div>
       </form>
-    </main>
+      </main>
+    </>
   )
 }

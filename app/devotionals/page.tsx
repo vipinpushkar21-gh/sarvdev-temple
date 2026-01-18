@@ -3,8 +3,10 @@
 import { useEffect, useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
+import Hero from '../../components/Hero'
 
 import { CategoryTabs } from './components/CategoryTabs';
+import { FULL_CATEGORIES } from './components/categories';
 import { SearchBar } from './components/SearchBar';
 import { DevotionalCard } from './components/DevotionalCard';
 import { TextToSpeech } from './components/TextToSpeech';
@@ -69,24 +71,7 @@ type Devotional = {
   names?: { sanskrit?: string; mantra?: string; english?: string }[]
 }
 
-// Category metadata (icon + Hindi labels) used to decorate dynamic categories
-const CATEGORY_META: Record<string, { hindi: string; icon: string }> = {
-  'Aarti': { hindi: 'आरती', icon: '🪔' },
-  'Chalisa': { hindi: 'चालीसा', icon: '🙏' },
-  'Stotra': { hindi: 'स्तोत्र', icon: '📿' },
-  'Mantra': { hindi: 'मंत्र', icon: '🔮' },
-  'Namavali': { hindi: 'नामावली', icon: '🔢' },
-  '108 Namavali': { hindi: '१०८ नामावली', icon: '🔢' },
-  'Ashtakam': { hindi: 'अष्टकम्', icon: '🔸' },
-  'Shatkam': { hindi: 'षट्कम्', icon: '6️⃣' },
-  'Kavacham': { hindi: 'कवचम्', icon: '🛡️' },
-  'Path': { hindi: 'पाठ', icon: '📚' },
-  'Bhajan': { hindi: 'भजन', icon: '🎵' },
-  'Shloka': { hindi: 'श्लोक', icon: '📖' },
-  'Stuti': { hindi: 'स्तुति', icon: '🌟' },
-  'Prarthana': { hindi: 'प्रार्थना', icon: '🙏' },
-  'Vrat Katha': { hindi: 'व्रत कथा', icon: '📜' },
-};
+// Build a full categories list from config, and include any dynamic categories present in data
 
 export default function DevotionalsPage() {
   const [devotionals, setDevotionals] = useState<Devotional[]>([])
@@ -138,22 +123,31 @@ export default function DevotionalsPage() {
     return ['all', ...Array.from(setVals).sort()];
   }, [devotionals]);
 
-    // Dynamically derive categories from devotionals with metadata and counts
+    // Build full categories from config, augment with any categories seen in data, and attach counts
     const categoriesWithCounts = useMemo(() => {
-      const unique = new Set<string>();
-      devotionals.forEach(d => { if (d.category) unique.add(d.category); });
-      const dynamicCats = Array.from(unique).sort();
+      const seen = new Set<string>();
+      devotionals.forEach(d => { if (d.category) seen.add(d.category); });
 
-      const full = [
+      // Start with configured categories
+      const base = [...FULL_CATEGORIES];
+
+      // Add any missing categories discovered in data
+      for (const id of Array.from(seen)) {
+        if (!base.find(c => c.id === id)) {
+          base.push({ id, label: id, hindi: id, icon: '📄' });
+        }
+      }
+
+      const result = [
         { id: 'all', label: 'All', hindi: 'सभी', icon: '🕉️', count: devotionals.length },
-        ...dynamicCats.map(id => {
-          const count = devotionals.filter(d => d.category === id).length;
-          const meta = CATEGORY_META[id] || { hindi: id, icon: '📄' };
-          return { id, label: id, hindi: meta.hindi, icon: meta.icon, count };
+        ...base.map(cat => {
+          const count = devotionals.filter(d => d.category === cat.id).length;
+          return { id: cat.id, label: cat.label, hindi: cat.hindi, icon: cat.icon, count };
         })
       ];
-      // Show all present categories; hide zero-count except 'all' (in case of empty dataset)
-      return full.filter(c => c.id === 'all' || (c.count ?? 0) > 0);
+
+      // Display all categories including zero counts (except when dataset empty we still show All)
+      return result;
     }, [devotionals]);
 
     // Filter devotionals by category, language, deity and search
@@ -205,46 +199,41 @@ export default function DevotionalsPage() {
 
     if (loading) {
       return (
-        <main className="max-w-6xl mx-auto px-4 py-12">
-          <header className="mb-10 text-center">
-            <div className="text-7xl mb-5 text-primary" aria-hidden>🕉️</div>
-            <h1 className="text-5xl font-extrabold text-primary tracking-tight mb-2">Devotionals</h1>
-            <p className="mt-2 text-text text-xl font-medium leading-relaxed max-w-2xl mx-auto">Explore sacred mantras, bhajans, stotras and more</p>
-          </header>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="rounded-xl border border-neutral-200 dark:border-neutral-800 p-5">
-                <div className="animate-pulse space-y-4">
-                  <div className="h-6 bg-neutral-200 dark:bg-neutral-800 rounded w-3/4" />
-                  <div className="flex gap-2">
-                    <div className="h-4 bg-neutral-200 dark:bg-neutral-800 rounded w-20" />
-                    <div className="h-4 bg-neutral-200 dark:bg-neutral-800 rounded w-16" />
-                    <div className="h-4 bg-neutral-200 dark:bg-neutral-800 rounded w-24" />
+        <>
+          <Hero title="Devotionals" subtitle="Explore sacred mantras, bhajans, stotras and more" />
+          <main className="max-w-6xl mx-auto px-4 py-12">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="rounded-xl border border-neutral-200 dark:border-neutral-800 p-5">
+                  <div className="animate-pulse space-y-4">
+                    <div className="h-6 bg-neutral-200 dark:bg-neutral-800 rounded w-3/4" />
+                    <div className="flex gap-2">
+                      <div className="h-4 bg-neutral-200 dark:bg-neutral-800 rounded w-20" />
+                      <div className="h-4 bg-neutral-200 dark:bg-neutral-800 rounded w-16" />
+                      <div className="h-4 bg-neutral-200 dark:bg-neutral-800 rounded w-24" />
+                    </div>
+                    <div className="h-20 bg-neutral-200 dark:bg-neutral-800 rounded w-full" />
                   </div>
-                  <div className="h-20 bg-neutral-200 dark:bg-neutral-800 rounded w-full" />
                 </div>
-              </div>
-            ))}
-          </div>
-        </main>
+              ))}
+            </div>
+          </main>
+        </>
       );
     }
 
     return (
-      <main className="max-w-6xl mx-auto px-4 py-12 min-h-screen bg-background">
-        <div className="relative z-10">
-          <header className="mb-10 text-center">
-            <div className="text-7xl mb-5 text-primary" aria-hidden>🕉️</div>
-            <h1 className="text-5xl font-extrabold text-primary tracking-tight mb-2">Devotionals</h1>
-            <p className="mt-2 text-text text-xl font-medium leading-relaxed max-w-2xl mx-auto">Explore sacred mantras, bhajans, stotras and more</p>
-            {/* Slim Hero Banner CTA */}
-            <div className="mt-6 max-w-3xl mx-auto">
+      <>
+        <Hero title="Devotionals" subtitle="Explore sacred mantras, bhajans, stotras and more" />
+        <main className="max-w-6xl mx-auto px-4 py-12 min-h-screen bg-background">
+          <div className="relative z-10">
+            {/* Slim CTA below Hero */}
+            <div className="mb-10 max-w-3xl mx-auto">
               <div className="rounded-lg bg-background border border-accent text-text px-4 py-3 flex items-center justify-between">
                 <span className="font-medium">Browse devotionals by category, language, or deity.</span>
                 <a href="#categories" className="btn btn-primary rounded-full">Browse Categories</a>
               </div>
             </div>
-          </header>
 
           {/* Featured Devotionals */}
           <section aria-labelledby="featured" className="mb-12">
@@ -402,8 +391,9 @@ export default function DevotionalsPage() {
               </>
             )}
           </section>
-        </div>
-      </main>
+          </div>
+        </main>
+      </>
     );
   }
 

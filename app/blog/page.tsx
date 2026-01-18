@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import Hero from '../../components/Hero'
 
 type Blog = {
   _id: string
@@ -37,18 +38,19 @@ export default function BlogIndexPage() {
 
   if (loading) {
     return (
-      <main className="max-w-6xl mx-auto px-4 py-12">
-        <div className="text-center text-text">Loading blogs...</div>
-      </main>
+      <>
+        <Hero title="Blog" subtitle="Articles and guides about temples, rituals, and visiting tips." />
+        <main className="max-w-6xl mx-auto px-4 py-12">
+          <div className="text-center text-text">Loading blogs...</div>
+        </main>
+      </>
     )
   }
 
   return (
-    <main className="max-w-6xl mx-auto px-4 py-12">
-      <header className="mb-6">
-        <h1 className="text-3xl font-bold text-primary">Blog</h1>
-        <p className="text-text text-base mt-2">Articles and guides about temples, rituals, and visiting tips.</p>
-      </header>
+    <>
+      <Hero title="Blog" subtitle="Articles and guides about temples, rituals, and visiting tips." />
+      <main className="max-w-6xl mx-auto px-4 py-12">
 
       <section>
         {posts.length === 0 ? (
@@ -73,7 +75,8 @@ export default function BlogIndexPage() {
           </div>
         )}
       </section>
-    </main>
+      </main>
+    </>
   )
 }
 

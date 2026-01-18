@@ -34,7 +34,7 @@ export const CategoryTabs: React.FC<CategoryTabsProps> = ({ categories, activeCa
           {cat.hindi && <span className="text-[11px] text-text/70">{cat.hindi}</span>}
         </span>
         {typeof cat.count === 'number' && (
-          <span className="ml-2 text-xs bg-accent/20 text-text rounded-full px-2 py-0.5">{cat.count}</span>
+          <span className="ml-2 text-xs bg-accent text-text rounded-full px-2 py-0.5">{cat.count}</span>
         )}
       </motion.button>
     ))}

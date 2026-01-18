@@ -1,7 +1,10 @@
+import Hero from '../../components/Hero'
+
 export default function PrivacyPage() {
   return (
-    <main className="max-w-4xl mx-auto px-4 py-12">
-      <h1 className="text-4xl font-bold text-primary mb-6">Privacy Policy</h1>
+    <>
+      <Hero title="Privacy Policy" subtitle="Our commitment to your privacy" />
+      <main className="max-w-4xl mx-auto px-4 py-12">
       
       <div className="space-y-6 bg-background p-8 rounded-2xl shadow-lg border border-accent text-text">
         <p className="text-sm text-text">Last Updated: December 2025</p>
@@ -73,6 +76,7 @@ export default function PrivacyPage() {
           </p>
         </div>
       </div>
-    </main>
+      </main>
+    </>
   )
 }

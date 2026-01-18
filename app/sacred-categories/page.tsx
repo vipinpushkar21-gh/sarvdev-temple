@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import Hero from '../../components/Hero'
 
 const sacredCategories = [
   { name: "Dwadash Jyotirlinga (12 Jyotirlingas)", icon: "🕉️", desc: "12 sacred Shiva shrines across India" },
@@ -57,18 +58,19 @@ export default function SacredCategoriesPage() {
 
   if (loading) {
     return (
-      <main className="max-w-6xl mx-auto px-4 py-12">
-        <div className="text-center">Loading sacred categories...</div>
-      </main>
+      <>
+        <Hero title="Sacred Temple Categories" subtitle="Explore temples by their sacred significance and groupings" />
+        <main className="max-w-6xl mx-auto px-4 py-12">
+          <div className="text-center">Loading sacred categories...</div>
+        </main>
+      </>
     )
   }
 
   return (
-    <main className="max-w-6xl mx-auto px-4 py-12">
-      <header className="mb-8 text-center">
-        <h1 className="text-4xl font-bold text-primary">Sacred Temple Categories</h1>
-        <p className="mt-2 text-text text-base">Explore temples by their sacred significance and groupings</p>
-      </header>
+    <>
+      <Hero title="Sacred Temple Categories" subtitle="Explore temples by their sacred significance and groupings" />
+      <main className="max-w-6xl mx-auto px-4 py-12">
 
       <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {sacredCategories.map((category) => {
@@ -137,6 +139,7 @@ export default function SacredCategoriesPage() {
           List a Temple
         </Link>
       </div>
-    </main>
+      </main>
+    </>
   )
 }

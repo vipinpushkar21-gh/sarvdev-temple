@@ -1,3 +1,4 @@
+import Hero from '../../components/Hero'
 export const metadata = { title: 'Booking' }
 
 type Slot = {
@@ -17,11 +18,9 @@ const sampleSlots: Slot[] = [
 
 export default function BookingPage() {
   return (
-    <main className="max-w-6xl mx-auto px-4 py-12">
-      <header className="mb-8">
-        <h1 className="text-3xl font-bold text-primary">Online Booking</h1>
-        <p className="mt-2 text-text text-base">Reserve pooja and darshan slots. This is a static demo layout ready for booking integration.</p>
-      </header>
+    <>
+      <Hero title="Online Booking" subtitle="Reserve pooja and darshan slots." />
+      <main className="max-w-6xl mx-auto px-4 py-12">
 
       <section>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -49,7 +48,8 @@ export default function BookingPage() {
           ))}
         </div>
       </section>
-    </main>
+      </main>
+    </>
   )
 }
 

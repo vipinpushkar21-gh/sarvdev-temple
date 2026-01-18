@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from 'react'
+import Hero from '../../components/Hero'
 
 type Darshan = {
   _id: string
@@ -37,18 +38,19 @@ export default function DailyDarshanPage() {
 
   if (loading) {
     return (
-      <main className="max-w-6xl mx-auto px-4 py-12">
-        <div className="text-center text-text">Loading darshan...</div>
-      </main>
+      <>
+        <Hero title="Daily Darshan" subtitle="Live and recorded darshan from our temple network" />
+        <main className="max-w-6xl mx-auto px-4 py-12">
+          <div className="text-center text-text">Loading darshan...</div>
+        </main>
+      </>
     )
   }
 
   return (
-    <main className="max-w-6xl mx-auto px-4 py-12">
-      <header className="mb-8">
-        <h1 className="text-3xl font-bold text-primary">Daily Darshan</h1>
-        <p className="mt-2 text-text text-base">Live and recorded darshan times from our temple network.</p>
-      </header>
+    <>
+      <Hero title="Daily Darshan" subtitle="Live and recorded darshan from our temple network" />
+      <main className="max-w-6xl mx-auto px-4 py-12">
 
       <section>
         {items.length === 0 ? (
@@ -89,7 +91,8 @@ export default function DailyDarshanPage() {
           </div>
         )}
       </section>
-    </main>
+      </main>
+    </>
   )
 }
 

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import TempleCard from '../../components/TempleCard'
 import { useTranslation } from '../../lib/translation'
+import Hero from '../../components/Hero'
 
 type Temple = {
   _id: string
@@ -81,9 +82,12 @@ export default function TemplesPage() {
 
   if (loading) {
     return (
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="text-center">{t('temples.loading')}</div>
-      </main>
+      <>
+        <Hero title={t('temples.title')} subtitle={t('temples.subtitle')} />
+        <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="text-center">{t('temples.loading')}</div>
+        </main>
+      </>
     )
   }
 
@@ -96,11 +100,9 @@ export default function TemplesPage() {
   }
 
   return (
-    <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <header className="mb-8">
-        <h1 className="text-3xl font-bold text-primary">{t('temples.title')}</h1>
-        <p className="mt-2 text-text text-base">{t('temples.subtitle')}</p>
-      </header>
+    <>
+      <Hero title={t('temples.title')} subtitle={t('temples.subtitle')} />
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
 
       {/* Category Filter */}
       <div className="mb-8 bg-background rounded-lg p-4 shadow-md border border-accent">
@@ -160,6 +162,7 @@ export default function TemplesPage() {
           </div>
         )}
       </section>
-    </main>
+      </main>
+    </>
   )
 }
