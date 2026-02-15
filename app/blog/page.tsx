@@ -40,8 +40,8 @@ export default function BlogIndexPage() {
     return (
       <>
         <Hero title="Blog" subtitle="Articles and guides about temples, rituals, and visiting tips." />
-        <main className="max-w-6xl mx-auto px-4 py-12">
-          <div className="text-center text-text">Loading blogs...</div>
+        <main className="page-container section-sm">
+          <div className="text-center text-ink-muted">Loading blogs...</div>
         </main>
       </>
     )
@@ -50,24 +50,24 @@ export default function BlogIndexPage() {
   return (
     <>
       <Hero title="Blog" subtitle="Articles and guides about temples, rituals, and visiting tips." />
-      <main className="max-w-6xl mx-auto px-4 py-12">
+      <main className="page-container section-sm">
 
       <section>
         {posts.length === 0 ? (
-          <div className="text-center py-12 text-text">
+          <div className="text-center py-12 text-ink-muted">
             No blog posts available yet. Check back soon!
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {posts.map((p: Blog) => (
-              <article key={p._id} className="bg-background rounded-lg shadow-sm overflow-hidden border border-accent">
-                {p.image && <img src={p.image} alt={p.title} className="w-full h-40 object-cover" />}
-                <div className="p-4">
-                  <h3 className="text-lg font-semibold mb-1"><Link href={`/blog/${p._id}`} className="hover:underline">{p.title}</Link></h3>
-                  {p.date && <div className="text-xs text-text mb-2">{new Date(p.date).toLocaleDateString()}</div>}
-                  <p className="text-sm text-text">{p.excerpt}</p>
+              <article key={p._id} className="card-interactive overflow-hidden">
+                {p.image && <img src={p.image} alt={p.title} className="w-full h-48 object-cover" />}
+                <div className="p-5">
+                  <h3 className="text-h4 font-serif"><Link href={`/blog/${p._id}`} className="text-secondary-700 no-underline hover:text-primary-600 hover:no-underline">{p.title}</Link></h3>
+                  {p.date && <div className="text-caption text-ink-muted mt-1 mb-2">{new Date(p.date).toLocaleDateString()}</div>}
+                  <p className="text-body-sm text-ink-muted">{p.excerpt}</p>
                   <div className="mt-3">
-                    <Link href={`/blog/${p._id}`} className="hover:underline">Read more →</Link>
+                    <Link href={`/blog/${p._id}`} className="text-body-sm font-medium text-primary-600 no-underline hover:underline">Read more →</Link>
                   </div>
                 </div>
               </article>

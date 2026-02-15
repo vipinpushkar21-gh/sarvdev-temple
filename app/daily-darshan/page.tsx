@@ -40,8 +40,8 @@ export default function DailyDarshanPage() {
     return (
       <>
         <Hero title="Daily Darshan" subtitle="Live and recorded darshan from our temple network" />
-        <main className="max-w-6xl mx-auto px-4 py-12">
-          <div className="text-center text-text">Loading darshan...</div>
+        <main className="page-container section-sm">
+          <div className="text-center text-ink-muted">Loading darshan...</div>
         </main>
       </>
     )
@@ -50,40 +50,40 @@ export default function DailyDarshanPage() {
   return (
     <>
       <Hero title="Daily Darshan" subtitle="Live and recorded darshan from our temple network" />
-      <main className="max-w-6xl mx-auto px-4 py-12">
+      <main className="page-container section-sm">
 
       <section>
         {items.length === 0 ? (
-          <div className="p-6 bg-background rounded-lg border border-accent/30">
-            <p className="text-text">No daily darshan items available right now. Please check back later.</p>
+          <div className="card p-6">
+            <p className="text-ink-muted">No daily darshan items available right now. Please check back later.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {items.map((d: Darshan) => (
-              <article key={d._id} className="bg-background rounded-xl overflow-hidden shadow-sm border border-accent/20">
-                <div className="w-full h-44 bg-accent/20">
+              <article key={d._id} className="card-interactive overflow-hidden">
+                <div className="w-full h-48 bg-surface-sunken">
                   {d.video ? (
-                    <video controls src={d.video} className="w-full h-44 object-cover" />
+                    <video controls src={d.video} className="w-full h-48 object-cover" />
                   ) : d.time ? (
-                    <div className="flex items-center justify-center h-44">
-                      <span className="text-xl font-medium text-text">{d.time}</span>
+                    <div className="flex items-center justify-center h-48">
+                      <span className="text-h3 font-medium text-ink-muted">{d.time}</span>
                     </div>
                   ) : (
-                    <div className="flex items-center justify-center h-44">
-                      <span className="text-text">No media</span>
+                    <div className="flex items-center justify-center h-48">
+                      <span className="text-ink-faint">No media</span>
                     </div>
                   )}
                 </div>
 
-                <div className="p-4">
-                  <h3 className="text-lg font-semibold text-primary">{d.title}</h3>
-                  <p className="mt-2 text-sm text-text">{d.description}</p>
+                <div className="p-5">
+                  <h3 className="text-h4 text-secondary-700 font-serif">{d.title}</h3>
+                  <p className="mt-2 text-body-sm text-ink-muted">{d.description}</p>
 
                   {d.time && (
-                    <div className="mt-3 text-xs text-text">Time: {d.time}</div>
+                    <div className="mt-3 text-caption text-ink-muted">Time: {d.time}</div>
                   )}
                   {d.temple && (
-                    <div className="mt-1 text-xs text-text">Temple: {d.temple}</div>
+                    <div className="mt-1 text-caption text-ink-muted">Temple: {d.temple}</div>
                   )}
                 </div>
               </article>

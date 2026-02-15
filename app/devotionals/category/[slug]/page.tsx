@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from 'react'
-import { isDevanagari } from '../../utils/bilingual'
+import { isDevanagari, renderBilingualTitle } from '../../utils/bilingual'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 
@@ -199,18 +199,17 @@ export default function CategoryPage() {
       {/* Breadcrumb */}
       <nav className="mb-6 text-sm text-slate-600 dark:text-slate-400">
         <Link href="/devotionals" className="hover:text-orange-600 transition-colors">
-          Devotionals
+          भक्ति सामग्री (Devotionals)
         </Link>
         <span className="mx-2">/</span>
-        <span className="text-orange-600 font-medium">{categoryInfo.label}</span>
+        <span className="text-orange-600 font-medium">{categoryInfo.hindi} ({categoryInfo.label})</span>
       </nav>
 
       {/* Header */}
       <header className="mb-10 text-center">
-        <h1 className="text-4xl font-playfair text-orange-600 font-bold mb-2">
-          {categoryInfo.label}
+        <h1 className="text-4xl font-playfair text-orange-600 font-bold mb-3">
+          {categoryInfo.hindi} ({categoryInfo.label})
         </h1>
-        <p className="text-2xl text-orange-500 font-medium mb-4">{categoryInfo.hindi}</p>
         <p className="text-slate-600 dark:text-slate-300">
           {filteredByDeity.length} {categoryInfo.label}{filteredByDeity.length !== 1 ? 's' : ''} available
         </p>
@@ -290,7 +289,15 @@ export default function CategoryPage() {
               >
                 <div className="flex items-start justify-between mb-3">
                   <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 leading-tight pr-2">
-                    {d.title}
+                    {(function(){
+                      const bt = renderBilingualTitle(d.title || '');
+                      return (
+                        <span>
+                          {bt.primary}
+                          {bt.secondary && <span> ({bt.secondary})</span>}
+                        </span>
+                      );
+                    })()}
                   </h3>
                   <span className="px-2.5 py-1 bg-orange-100 text-orange-800 text-xs font-semibold rounded-full shrink-0">
                     {d.category}

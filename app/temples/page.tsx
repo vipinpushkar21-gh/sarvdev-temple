@@ -84,8 +84,8 @@ export default function TemplesPage() {
     return (
       <>
         <Hero title={t('temples.title')} subtitle={t('temples.subtitle')} />
-        <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="text-center">{t('temples.loading')}</div>
+        <main className="page-container section-sm">
+          <div className="text-center text-ink-muted">{t('temples.loading')}</div>
         </main>
       </>
     )
@@ -93,8 +93,8 @@ export default function TemplesPage() {
 
   if (error) {
     return (
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="text-center text-text">{error}</div>
+      <main className="page-container section-sm">
+        <div className="text-center text-semantic-error">{error}</div>
       </main>
     )
   }
@@ -112,7 +112,7 @@ export default function TemplesPage() {
         <select 
           value={selectedCategory}
           onChange={(e) => setSelectedCategory(e.target.value)}
-          className="w-full px-4 py-2.5 border-2 rounded-lg focus:outline-none bg-background text-text border-accent"
+          className="input"
         >
           <option value="all">All Temples ({temples.length})</option>
           {sacredCategories.map(category => {
@@ -130,14 +130,14 @@ export default function TemplesPage() {
         
         {selectedCategory !== 'all' && (
           <div className="mt-3 flex items-center justify-between">
-            <p className="text-sm text-text">
-              Showing {filteredTemples.length} temple{filteredTemples.length !== 1 ? 's' : ''} in <span className="font-semibold text-primary">{selectedCategory}</span>
+            <p className="text-body-sm text-ink-muted">
+              Showing {filteredTemples.length} temple{filteredTemples.length !== 1 ? 's' : ''} in <span className="font-medium text-primary-600">{selectedCategory}</span>
             </p>
             <button 
               onClick={() => setSelectedCategory('all')}
-              className="text-sm text-primary hover:underline font-medium"
+              className="btn btn-ghost btn-sm"
             >
-              Clear Filter ✕
+              Clear Filter
             </button>
           </div>
         )}
@@ -145,7 +145,7 @@ export default function TemplesPage() {
 
       <section>
         {filteredTemples.length === 0 ? (
-          <div className="text-center py-12 text-text">
+          <div className="text-center py-12 text-ink-muted">
             {selectedCategory === 'all' 
               ? t('temples.noTemples')
               : `No temples found in ${selectedCategory}`

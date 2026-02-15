@@ -145,9 +145,9 @@ export default function DevotionalDetailPage() {
         <div className="bg-background border border-accent rounded-2xl shadow p-8">
           {/* Title */}
           <h1 className="text-4xl font-extrabold mb-3 text-primary">
-            <div>{bt.primary}</div>
+            <span>{bt.primary}</span>
             {showTransliteration && bt.secondary && (
-              <div className="text-lg font-normal text-text mt-1">{bt.secondary}</div>
+              <span> ({bt.secondary})</span>
             )}
           </h1>
 

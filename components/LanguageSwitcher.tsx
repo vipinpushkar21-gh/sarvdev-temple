@@ -6,14 +6,14 @@ export default function LanguageSwitcher() {
   const { language, setLanguage } = useTranslation()
 
   return (
-    <div className="flex items-center gap-2 bg-white/60 rounded-lg p-1 border border-orange-200" suppressHydrationWarning>
+    <div className="flex items-center gap-0.5 rounded-btn border border-surface-border bg-surface-raised p-0.5" suppressHydrationWarning>
       <button
         type="button"
         onClick={() => setLanguage('en')}
-        className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-          language === 'en' 
-            ? 'bg-orange-600 text-white' 
-            : 'text-slate-700 hover:bg-orange-50'
+        className={`px-2.5 py-1 rounded text-caption font-medium transition-colors ${
+          language === 'en'
+            ? 'bg-primary text-white'
+            : 'text-ink-muted hover:bg-surface-sunken'
         }`}
         suppressHydrationWarning
       >
@@ -22,10 +22,10 @@ export default function LanguageSwitcher() {
       <button
         type="button"
         onClick={() => setLanguage('hi')}
-        className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-          language === 'hi' 
-            ? 'bg-orange-600 text-white' 
-            : 'text-slate-700 hover:bg-orange-50'
+        className={`px-2.5 py-1 rounded text-caption font-medium transition-colors font-devanagari ${
+          language === 'hi'
+            ? 'bg-primary text-white'
+            : 'text-ink-muted hover:bg-surface-sunken'
         }`}
         suppressHydrationWarning
       >

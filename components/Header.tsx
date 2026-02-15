@@ -10,7 +10,7 @@ const navItems = [
   { label: 'nav.temples', href: '/temples' },
   { label: 'nav.dailyDarshan', href: '/daily-darshan' },
   { label: 'nav.events', href: '/events' },
-  { label: 'nav.booking', href: '/booking' },
+  { label: 'nav.panchang', href: '/panchang' },
   { label: 'nav.devotionals', href: '/devotionals' },
   { label: 'nav.blog', href: '/blog' },
   { label: 'nav.listTemple', href: '/list-temple' },
@@ -45,27 +45,36 @@ export default function Header() {
   }, [open])
 
   return (
-    <header className="sticky top-0 z-50 border-b border-accent bg-secondary">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-        <Link href="/" className="text-2xl font-bold text-background">Sarvdev Temple</Link>
+    <header className="sticky top-0 z-50 bg-secondary-800 border-b border-secondary-700">
+      <div className="page-container py-3 flex items-center justify-between">
+        <Link href="/" className="text-h4 font-serif font-bold text-white no-underline hover:text-accent hover:no-underline transition-colors">
+          Sarvdev
+        </Link>
 
-        <nav className="hidden md:flex space-x-4 items-center" aria-label="Main navigation">
+        <nav className="hidden md:flex items-center gap-1" aria-label="Main navigation">
           {navItems.map((item) => (
-            <Link key={item.href} href={item.href} className="text-sm text-background hover:text-accent">{t(item.label)}</Link>
+            <Link
+              key={item.href}
+              href={item.href}
+              className="px-3 py-1.5 rounded-btn text-body-sm text-secondary-200 no-underline hover:text-white hover:bg-secondary-700 hover:no-underline transition-colors"
+            >
+              {t(item.label)}
+            </Link>
           ))}
-          <LanguageSwitcher />
+          <div className="ml-2">
+            <LanguageSwitcher />
+          </div>
         </nav>
 
-        {/* Mobile menu button */}
+        {/* Mobile menu */}
         <div className="md:hidden" ref={menuRef}>
           <button
             aria-label={open ? 'Close menu' : 'Open menu'}
             aria-expanded={open}
             onClick={() => setOpen((s) => !s)}
-            onKeyDown={(e) => e.key === 'Enter' && setOpen((s) => !s)}
-            className="p-2 rounded-md bg-secondary text-background hover:bg-primary border border-accent"
+            className="p-2 rounded-btn text-secondary-200 hover:text-white hover:bg-secondary-700 transition-colors"
           >
-            <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden>
+            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
               {open ? (
                 <path strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
               ) : (
@@ -74,24 +83,26 @@ export default function Header() {
             </svg>
           </button>
 
-          {/* Dropdown/drawer */}
+          {/* Dropdown */}
           <div
             role="dialog"
             aria-modal="false"
-            className={`absolute right-4 mt-2 w-56 bg-background text-text rounded-lg shadow-lg ring-1 ring-primary-400 transform transition-all origin-top-right z-[60] ${open ? 'scale-100 opacity-100' : 'scale-95 opacity-0 pointer-events-none'}`}
+            className={`absolute right-4 mt-2 w-56 card shadow-dropdown transform transition-all origin-top-right z-[60] ${
+              open ? 'scale-100 opacity-100' : 'scale-95 opacity-0 pointer-events-none'
+            }`}
           >
-            <div className="py-2">
+            <div className="py-1">
               {navItems.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className="block px-4 py-2 text-sm hover:bg-accent/20"
+                  className="block px-4 py-2.5 text-body-sm text-ink no-underline hover:bg-surface-sunken hover:no-underline transition-colors"
                   onClick={() => setOpen(false)}
                 >
                   {t(item.label)}
                 </Link>
               ))}
-              <div className="px-4 py-2 border-t">
+              <div className="px-4 py-2.5 border-t border-surface-border">
                 <LanguageSwitcher />
               </div>
             </div>

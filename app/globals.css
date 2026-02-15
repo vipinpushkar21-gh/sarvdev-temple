@@ -1,145 +1,206 @@
-/* Global font: Noto Serif Devanagari (with Noto Serif fallback for Latin) */
-@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+Devanagari:wght@400;700&family=Noto+Serif:wght@400;700&display=swap');
+/* ─────────────────────────────────────────────────────── */
+/*  Sarvdev Design System — Global Styles                 */
+/* ─────────────────────────────────────────────────────── */
+
+/* Fonts: Inter (UI text) + Noto Serif Devanagari (headings, Hindi) */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif+Devanagari:wght@400;600;700&family=Noto+Serif:wght@400;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Tiro Devanagari Sanskrit is usually not available on Google Fonts; provide a local-face fallback name.
-   If you host the font later, add @font-face rule pointing to the files. */
-/* @font-face {
-  font-family: 'TiroDevanagariSanskrit';
-  src: url('/fonts/TiroDevanagariSanskrit-Regular.woff2') format('woff2');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-} */
-
+/* ─── CSS Custom Properties ─── */
 :root {
-  /* Unified theme palette */
-  --color-primary: #FF9933;   /* Deep Saffron */
-  --color-secondary: #800000; /* Maroon */
-  --color-accent: #FFD700;    /* Golden */
-  --color-background: #FAF9F6;/* Off-white */
-  --color-text: #333333;      /* Dark Gray */
+  --color-primary:   #FF9933;
+  --color-secondary: #5C4033;
+  --color-accent:    #FFD700;
+  --color-surface:   #FAF9F6;
+  --color-ink:       #2C2C2C;
+  --color-ink-muted: #6B6560;
+  --color-border:    #E5E0D5;
+  --radius-card:     0.75rem;
+  --radius-btn:      0.5rem;
 }
 
-html, body {
-  padding: 0;
-  margin: 0;
-  font-family: 'Noto Serif Devanagari', 'Noto Serif', serif;
-  color: var(--color-text);
-  background-color: var(--color-background);
-}
-
-/* Avoid overriding Tailwind's built-in .container utility */
-
-/* Custom utility classes for hero animation and transitions */
-.hero-bg {
-  background: linear-gradient(135deg, rgba(249,115,22,0.15), rgba(234,88,12,0.1) 40%, rgba(194,65,12,0.08)),
-              url('https://images.unsplash.com/photo-1532623727643-c1e0c83c0b1e?auto=format&fit=crop&w=2000&q=80');
-  background-size: cover;
-  background-position: center;
-  background-blend-mode: overlay;
-  backdrop-filter: blur(2px);
-}
-
-@keyframes floatUp {
-  0% { transform: translateY(0); opacity: 1 }
-  50% { transform: translateY(-8px); opacity: 0.95 }
-  100% { transform: translateY(0); opacity: 1 }
-}
-
-.float-anim { animation: floatUp 6s ease-in-out infinite; }
-
-.fade-in { animation: fadeIn 1200ms ease both; }
-@keyframes fadeIn { from { opacity: 0; transform: translateY(12px) } to { opacity: 1; transform: translateY(0) } }
-
-.slide-in { animation: slideIn 1s ease both; }
-@keyframes slideIn { from { opacity: 0; transform: translateX(-30px) } to { opacity: 1; transform: translateX(0) } }
-
-.zoom-in { animation: zoomIn 0.6s ease both; }
-@keyframes zoomIn { from { opacity: 0; transform: scale(0.95) } to { opacity: 1; transform: scale(1) } }
-
-@keyframes slideShow {
-  0% { opacity: 0; }
-  10% { opacity: 1; }
-  33% { opacity: 1; }
-  43% { opacity: 0; }
-  100% { opacity: 0; }
-}
-
-html {
-  scroll-behavior: smooth;
-}
-
-.sanskrit { font-family: 'Noto Serif Devanagari', 'Noto Serif', serif; }
-
-/* Floating search bar */
-.search-float { transform: translateY(-28px); }
-
-/* Base element theming for consistency across pages */
+/* ─── Base Layer ─── */
 @layer base {
-  h1, h2, h3, h4, h5, h6 {
-    @apply text-text font-semibold;
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
-  p {
-    @apply text-text;
+  body {
+    @apply font-sans text-body text-ink bg-surface;
+    margin: 0;
+    padding: 0;
   }
+
+  h1 { @apply text-h1 text-secondary-800 font-serif; }
+  h2 { @apply text-h2 text-secondary-700 font-serif; }
+  h3 { @apply text-h3 text-secondary-700; }
+  h4 { @apply text-h4 text-secondary-600; }
+
+  p  { @apply text-body text-ink leading-relaxed; }
 
   a {
-    @apply text-primary underline decoration-transparent;
+    @apply text-primary-600 no-underline transition-colors duration-150;
   }
-
   a:hover {
-    @apply text-secondary decoration-primary;
+    @apply text-primary-700 underline decoration-primary-300;
+  }
+  a:focus-visible {
+    @apply outline-2 outline-offset-2 outline-primary-400 rounded-sm;
   }
 
-  a:focus {
-    outline: 2px solid var(--color-accent);
-    outline-offset: 2px;
-  }
-
-  header {
-    @apply bg-secondary text-background;
-  }
-
-  footer {
-    @apply bg-secondary text-background;
-  }
-
-  button {
-    @apply rounded-md px-4 py-2 font-medium transition-colors;
+  ::selection {
+    @apply bg-primary-100 text-primary-900;
   }
 }
 
-/* Component-level helpers to standardize buttons and links */
+/* ─── Component Layer ─── */
 @layer components {
+
+  /* Page shells */
+  .page-container {
+    @apply max-w-page mx-auto px-4 sm:px-6 lg:px-8;
+  }
+  .content-container {
+    @apply max-w-content mx-auto px-4 sm:px-6;
+  }
+  .narrow-container {
+    @apply max-w-narrow mx-auto px-4;
+  }
+
+  /* Sections */
+  .section {
+    @apply py-section;
+  }
+  .section-sm {
+    @apply py-section-sm;
+  }
+
+  /* Buttons */
   .btn {
-    @apply inline-flex items-center justify-center rounded-md px-4 py-2 font-medium transition-colors;
+    @apply inline-flex items-center justify-center gap-2
+           rounded-btn px-5 py-2.5
+           text-body-sm font-medium
+           transition-all duration-150
+           focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-400;
   }
   .btn-primary {
-    @apply bg-primary text-background hover:bg-secondary;
+    @apply bg-primary text-white hover:bg-primary-600 active:bg-primary-700;
   }
   .btn-secondary {
-    @apply bg-secondary text-background hover:bg-primary;
+    @apply bg-secondary text-white hover:bg-secondary-600 active:bg-secondary-700;
   }
-  .btn-accent {
-    @apply bg-accent text-text hover:bg-primary;
+  .btn-outline {
+    @apply border border-surface-border text-ink bg-transparent
+           hover:bg-surface-sunken active:bg-surface-border;
   }
-  .link {
-    @apply text-primary hover:text-secondary underline decoration-transparent hover:decoration-primary;
+  .btn-ghost {
+    @apply text-ink-muted bg-transparent hover:bg-surface-sunken active:text-ink;
+  }
+  .btn-sm {
+    @apply px-3.5 py-1.5 text-caption;
+  }
+  .btn-lg {
+    @apply px-7 py-3.5 text-body;
+  }
+
+  /* Cards */
+  .card {
+    @apply bg-surface-raised rounded-card border border-surface-border shadow-card transition-shadow duration-200;
+  }
+  .card-interactive {
+    @apply card hover:shadow-card-hover;
+  }
+
+  /* Form inputs */
+  .input {
+    @apply w-full rounded-btn border border-surface-border
+           bg-surface-raised text-ink text-body-sm
+           px-3.5 py-2.5
+           placeholder:text-ink-faint
+           focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-400
+           transition-colors duration-150;
+  }
+  .input-error {
+    @apply border-semantic-error focus:ring-red-200;
+  }
+  .label {
+    @apply block text-body-sm font-medium text-ink mb-1.5;
+  }
+  .field-error {
+    @apply text-caption text-semantic-error mt-1;
+  }
+
+  /* Badges / tags */
+  .badge {
+    @apply inline-flex items-center gap-1
+           rounded-pill px-2.5 py-0.5
+           text-caption font-medium
+           bg-surface-sunken text-ink-muted;
+  }
+  .badge-primary {
+    @apply bg-primary-100 text-primary-800;
+  }
+
+  /* Dividers */
+  .divider {
+    @apply border-t border-surface-border;
+  }
+
+  /* Page header */
+  .page-header {
+    @apply bg-surface-sunken border-b border-surface-border;
+  }
+  .page-header-inner {
+    @apply page-container py-12 md:py-16;
+  }
+  .page-header h1 {
+    @apply text-display text-secondary-800 font-serif;
+  }
+  .page-header p {
+    @apply mt-3 text-body text-ink-muted max-w-content;
+  }
+
+  /* Devanagari text */
+  .devanagari {
+    @apply font-devanagari;
   }
 }
 
-/* Updated hero overlay to align with primary color */
-.hero-bg {
-  background: linear-gradient(135deg, rgba(255, 153, 51, 0.15), rgba(230, 126, 34, 0.10) 40%, rgba(128, 0, 0, 0.08)),
-              url('https://images.unsplash.com/photo-1532623727643-c1e0c83c0b1e?auto=format&fit=crop&w=2000&q=80');
-  background-size: cover;
-  background-position: center;
-  background-blend-mode: overlay;
-  backdrop-filter: blur(2px);
+/* ─── Utility Layer ─── */
+@layer utilities {
+  .fade-up {
+    animation: fadeUp 600ms ease both;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .delay-1 { animation-delay: 80ms; }
+  .delay-2 { animation-delay: 160ms; }
+  .delay-3 { animation-delay: 240ms; }
+  .delay-4 { animation-delay: 320ms; }
+
+  /* Hide scrollbar for horizontal scroll galleries */
+  .scrollbar-none {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
 }
 
+/* ─── Slideshow keyframe ─── */
+@keyframes slideShow {
+  0%   { opacity: 0; }
+  10%  { opacity: 1; }
+  33%  { opacity: 1; }
+  43%  { opacity: 0; }
+  100% { opacity: 0; }
+}

@@ -19,7 +19,7 @@ const translations = {
     'nav.temples': 'Temples',
     'nav.dailyDarshan': 'Daily Darshan',
     'nav.events': 'Upcoming Events',
-    'nav.booking': 'Online Booking',
+    'nav.panchang': 'Panchang',
     'nav.devotionals': 'Devotionals',
     'nav.blog': 'Blog',
     'nav.listTemple': 'List Temple',
@@ -41,8 +41,6 @@ const translations = {
     'features.templesDesc': 'Find nearby temples and their timings.',
     'features.liveDarshan': 'Live Darshan',
     'features.liveDarshanDesc': 'Watch live rituals and ceremonies.',
-    'features.bookOnline': 'Book Online',
-    'features.bookOnlineDesc': 'Reserve slots for darshan or rituals.',
     'features.community': 'Community',
     'features.communityDesc': 'Join groups and devotional communities.',
     'features.explore': 'Explore',
@@ -142,7 +140,7 @@ const translations = {
     'nav.temples': 'मंदिर',
     'nav.dailyDarshan': 'दैनिक दर्शन',
     'nav.events': 'आगामी कार्यक्रम',
-    'nav.booking': 'ऑनलाइन बुकिंग',
+    'nav.panchang': 'पंचांग',
     'nav.devotionals': 'भक्ति सामग्री',
     'nav.blog': 'ब्लॉग',
     'nav.listTemple': 'मंदिर सूचीबद्ध करें',
@@ -164,8 +162,6 @@ const translations = {
     'features.templesDesc': 'नजदीकी मंदिर और उनका समय खोजें।',
     'features.liveDarshan': 'लाइव दर्शन',
     'features.liveDarshanDesc': 'लाइव अनुष्ठान और समारोह देखें।',
-    'features.bookOnline': 'ऑनलाइन बुक करें',
-    'features.bookOnlineDesc': 'दर्शन या अनुष्ठान के लिए स्लॉट बुक करें।',
     'features.community': 'समुदाय',
     'features.communityDesc': 'समूहों और भक्ति समुदायों में शामिल हों।',
     'features.explore': 'देखें',
@@ -262,7 +258,7 @@ const translations = {
 }
 
 export function TranslationProvider({ children }: { children: React.ReactNode }) {
-  const [language, setLanguage] = useState<Language>('en')
+  const [language, setLanguage] = useState<Language>('hi')
 
   useEffect(() => {
     const saved = localStorage.getItem('language') as Language

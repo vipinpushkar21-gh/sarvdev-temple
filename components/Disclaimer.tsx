@@ -10,7 +10,6 @@ export default function Disclaimer() {
 
   useEffect(() => {
     setIsMounted(true)
-    // Check if user has dismissed the disclaimer
     const dismissed = localStorage.getItem('disclaimerDismissed')
     if (dismissed === 'true') {
       setIsVisible(false)
@@ -30,20 +29,16 @@ export default function Disclaimer() {
     localStorage.removeItem('disclaimerDismissed')
   }
 
-  // Prevent hydration mismatch by not rendering until mounted
-  if (!isMounted) {
-    return null
-  }
+  if (!isMounted) return null
 
   if (!isVisible && isDismissed) {
-    // Show small button to bring back disclaimer
     return (
       <button
         onClick={handleShow}
-        className="fixed bottom-4 right-4 bg-orange-600 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-orange-700 transition-all z-50 text-sm"
+        className="fixed bottom-4 right-4 btn btn-sm bg-secondary text-white hover:bg-secondary-600 shadow-card z-50"
         title="Show Disclaimer"
       >
-        ℹ️ Disclaimer
+        Disclaimer
       </button>
     )
   }
@@ -51,34 +46,30 @@ export default function Disclaimer() {
   if (!isVisible) return null
 
   return (
-    <div className="bg-gradient-to-r from-orange-50 to-yellow-50 border-l-4 border-orange-500 p-4 shadow-md relative">
+    <div className="bg-primary-50 border-b border-surface-border px-4 py-3 relative">
       <button
         onClick={handleDismiss}
-        className="absolute top-2 right-2 text-gray-600 hover:text-gray-900 transition-colors"
+        className="absolute top-3 right-3 text-ink-muted hover:text-ink transition-colors"
         aria-label="Close disclaimer"
       >
-        <X size={20} />
+        <X size={18} />
       </button>
       
-      <div className="max-w-7xl mx-auto pr-8">
+      <div className="page-container pr-8">
         <div className="flex items-start gap-3">
-          <div className="flex-shrink-0 mt-0.5">
-            <span className="text-2xl">⚠️</span>
-          </div>
+          <svg className="w-5 h-5 text-primary-600 mt-0.5 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+          </svg>
           <div className="flex-1">
-            <h3 className="text-sm font-bold text-orange-800 mb-1">
-              Educational & Practice Purpose Only | शैक्षिक और अभ्यास उद्देश्य के लिए
-            </h3>
-            <p className="text-xs text-gray-700 leading-relaxed">
-              <strong className="text-orange-700">Disclaimer:</strong> This website is created solely for{' '}
-              <span className="font-semibold">educational and practice purposes</span>. All temple information, 
-              images, and content are used for learning web development and are sourced from publicly available 
-              information. We do not claim ownership of any images or content. If you are the copyright holder 
-              and wish to have any content removed, please contact us.
-              {' '}<span className="text-orange-600">•</span>{' '}
-              <span className="font-hindi text-gray-800">
-                यह वेबसाइट केवल शैक्षिक और अभ्यास उद्देश्यों के लिए बनाई गई है। सभी मंदिर जानकारी, 
-                चित्र और सामग्री वेब विकास सीखने के लिए उपयोग की गई है।
+            <p className="text-body-sm font-medium text-secondary-700 mb-0.5">
+              Educational &amp; Practice Purpose Only
+            </p>
+            <p className="text-caption text-ink-muted leading-relaxed">
+              This website is created for educational and practice purposes. All temple information
+              and content are sourced from publicly available information. We do not claim ownership
+              of any images or content.
+              <span className="font-devanagari ml-1">
+                यह वेबसाइट केवल शैक्षिक और अभ्यास उद्देश्यों के लिए बनाई गई है।
               </span>
             </p>
           </div>

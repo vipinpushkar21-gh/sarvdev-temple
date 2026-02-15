@@ -17,6 +17,36 @@ const nextConfig = {
       },
     ],
   },
+  async rewrites() {
+    // Rewrite known category slugs to the existing category route
+    const slugs = [
+      'aarti',
+      'bhajan',
+      'chalisa',
+      'mantra',
+      'stotra',
+      'stuti',
+      'shloka',
+      'ek-shloki',
+      'ashtaka',
+      'sahasranama',
+      'path',
+      'namavali',
+      '108-namavali',
+      'kavacham',
+      'prarthana',
+      'vrat-katha',
+      'rashi',
+      'vastu',
+      'durga',
+      'kuber',
+      'other',
+    ];
+    return slugs.map((slug) => ({
+      source: `/devotionals/${slug}`,
+      destination: `/devotionals/category/${slug}`,
+    }));
+  },
 }
 
 module.exports = nextConfig

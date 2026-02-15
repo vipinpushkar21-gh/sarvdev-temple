@@ -97,32 +97,34 @@ export default function SmartSearch() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder={t('home.search')}
-          className="w-full rounded-xl border border-gray-200 px-4 py-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-300"
+          className="input pr-10"
           suppressHydrationWarning
         />
         {query && (
           <button 
             onClick={() => { setQuery(''); setResults({}) }}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-faint hover:text-ink-muted transition-colors"
           >
-            ✕
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
           </button>
         )}
       </div>
 
       {query && Object.keys(results).length > 0 && (
-        <div className="absolute z-50 mt-2 w-full bg-white rounded-xl shadow-lg overflow-hidden max-h-96 overflow-y-auto">
+        <div className="absolute z-50 mt-2 w-full card shadow-dropdown overflow-hidden max-h-96 overflow-y-auto">
           {Object.entries(results).map(([category, items]) => (
-            <div key={category} className="p-3 border-b last:border-b-0">
-              <div className="text-xs font-semibold text-orange-600 mb-2">{category}</div>
+            <div key={category} className="p-3 border-b border-surface-border last:border-b-0">
+              <div className="text-overline text-primary-600 mb-2 uppercase tracking-wider">{category}</div>
               {items.map((it) => (
                 <button 
                   key={it.id} 
                   onClick={() => handleResultClick(it.link)}
-                  className="w-full text-left block px-2 py-2 hover:bg-orange-50 rounded-md transition-colors"
+                  className="w-full text-left block px-3 py-2 hover:bg-surface-sunken rounded-btn transition-colors"
                 >
-                  <div className="font-medium text-gray-800">{it.title}</div>
-                  <div className="text-sm text-gray-500 line-clamp-2">{it.description}</div>
+                  <div className="text-body-sm font-medium text-ink">{it.title}</div>
+                  <div className="text-caption text-ink-muted line-clamp-2">{it.description}</div>
                 </button>
               ))}
             </div>
@@ -131,8 +133,8 @@ export default function SmartSearch() {
       )}
       
       {query && Object.keys(results).length === 0 && allItems.length > 0 && (
-        <div className="absolute z-50 mt-2 w-full bg-white rounded-xl shadow-lg p-4 text-center text-gray-500">
-          {t('search.noResults')} "{query}"
+        <div className="absolute z-50 mt-2 w-full card shadow-dropdown p-4 text-center text-ink-muted text-body-sm">
+          {t('search.noResults')} &ldquo;{query}&rdquo;
         </div>
       )}
     </div>

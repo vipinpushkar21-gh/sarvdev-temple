@@ -23,9 +23,9 @@ export const FULL_CATEGORIES: CategoryDef[] = [
   { id: 'Kavacham', label: 'Kavacham', hindi: 'कवचम्', icon: '🛡️' },
   { id: 'Prarthana', label: 'Prarthana', hindi: 'प्रार्थना', icon: '🙏' },
   { id: 'Vrat Katha', label: 'Vrat Katha', hindi: 'व्रत कथा', icon: '📜' },
-  { id: 'Rashi', label: 'Rashi', hindi: 'राशि', icon: '♈' },
-  { id: 'Vastu', label: 'Vastu', hindi: 'वास्तु', icon: '🏠' },
-  { id: 'Durga', label: 'Durga', hindi: 'दुर्गा', icon: '🔱' },
-  { id: 'Kuber', label: 'Kuber', hindi: 'कुबेर', icon: '💰' },
-  { id: 'Other', label: 'Other', hindi: 'अन्य', icon: '📄' },
 ];
+
+// Categories to hide from Browse list
+export const EXCLUDED_CATEGORY_IDS = new Set<string>([
+  'Rashi', 'Vastu', 'Durga', 'Kuber', 'Other'
+]);

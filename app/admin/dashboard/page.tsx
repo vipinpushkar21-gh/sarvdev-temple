@@ -172,7 +172,7 @@ export default function AdminDashboardPage() {
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Quick Actions</h3>
         <div className="flex flex-wrap gap-4">
           <button className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors">Approve Temples</button>
-          <button className="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-medium transition-colors">View Booking Logs</button>
+          <button className="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-medium transition-colors">View Activity Logs</button>
         </div>
       </section>
     </main>
