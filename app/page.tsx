@@ -3,6 +3,7 @@
 import React from 'react'
 import SmartSearch from '../components/SmartSearch'
 import TempleSlider from '../components/TempleSlider'
+import HomeCategoryShowcase from '../components/HomeCategoryShowcase'
 import TempleGalleryMosaic from '../components/TempleGalleryMosaic'
 import { useTranslation } from '../lib/translation'
 import Link from 'next/link'
@@ -72,8 +73,14 @@ export default function Page() {
         </div>
       </section>
 
+    </div>
+  )
+}
       {/* Temple Slider */}
       <TempleSlider />
+
+      {/* Sacred Category Showcase — 3 random categories per refresh */}
+      <HomeCategoryShowcase />
 
       {/* Highlighted Temples — Arts & Culture–style mosaic */}
       <TempleGalleryMosaic />
@@ -102,6 +109,3 @@ export default function Page() {
           </div>
         </div>
       </section>
-    </div>
-  )
-}

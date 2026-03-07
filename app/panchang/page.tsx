@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from '../../lib/translation'
 import PanchangCard from '../../components/PanchangCard'
+import Hero from '../../components/Hero'
 
 type CityOption = {
   label: string

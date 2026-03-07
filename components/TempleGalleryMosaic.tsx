@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
+import { getTempleImage, TEMPLE_PLACEHOLDER } from '../lib/temple-image'
 
 /* ─── Types ─── */
 interface Temple {
@@ -109,16 +110,14 @@ function MosaicRow({
           >
             {/* Image */}
             <img
-              src={
-                temple.image ||
-                'https://images.unsplash.com/photo-1532623727643-c1e0c83c0b1e?auto=format&fit=crop&w=1200&q=75'
-              }
+              src={getTempleImage(temple)}
               alt={temple.title}
               loading="lazy"
               className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out will-change-transform"
               style={{
                 transform: isHovered ? 'scale(1.05)' : 'scale(1)',
               }}
+              onError={(e) => { (e.target as HTMLImageElement).src = TEMPLE_PLACEHOLDER }}
             />
 
             {/* Gradient overlay — always present, deepens on hover */}
@@ -220,13 +219,11 @@ function MobileScrollRow({
             onTouchEnd={onLeave}
           >
             <img
-              src={
-                temple.image ||
-                'https://images.unsplash.com/photo-1532623727643-c1e0c83c0b1e?auto=format&fit=crop&w=800&q=75'
-              }
+              src={getTempleImage(temple)}
               alt={temple.title}
               loading="lazy"
               className="absolute inset-0 w-full h-full object-cover"
+              onError={(e) => { (e.target as HTMLImageElement).src = TEMPLE_PLACEHOLDER }}
             />
             <div
               className="absolute inset-0"
@@ -274,7 +271,6 @@ export default function TempleGalleryMosaic() {
       if (res.ok) {
         const data = await res.json()
         const featured = data
-          .filter((t: Temple) => t.image)
           .slice(0, 12)
         setTemples(featured)
       }

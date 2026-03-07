@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useTranslation } from '../../../lib/translation'
+import { getTempleImage, TEMPLE_PLACEHOLDER } from '../../../lib/temple-image'
 
 type Props = {
   params: Promise<{ slug: string }>
@@ -11,6 +12,20 @@ type Props = {
 
 function slugify(text: string): string {
   return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+}
+
+/** Small helper so we can use useState for the onError fallback */
+function TempleDetailImage({ image, alt }: { image?: string; alt: string }) {
+  const [src, setSrc] = useState(getTempleImage({ image }))
+  return (
+    <Image
+      src={src}
+      alt={alt}
+      fill
+      className="object-cover"
+      onError={() => setSrc(TEMPLE_PLACEHOLDER)}
+    />
+  )
 }
 
 export default function TemplePage({ params }: Props) {
@@ -105,13 +120,11 @@ export default function TemplePage({ params }: Props) {
         {displayLocation && <p className="mt-2 text-text">📍 {displayLocation}</p>}
       </header>
 
-      {temple.image && (
-        <div className="mt-6 w-full rounded-lg overflow-hidden shadow-lg">
-          <div className="relative h-64 sm:h-96 w-full">
-            <Image src={temple.image} alt={temple.title} fill className="object-cover" />
-          </div>
+      <div className="mt-6 w-full rounded-lg overflow-hidden shadow-lg">
+        <div className="relative h-64 sm:h-96 w-full bg-surface-sunken">
+          <TempleDetailImage image={temple.image} alt={temple.title} />
         </div>
-      )}
+      </div>
 
       <section className="mt-8 space-y-6">
         <div>

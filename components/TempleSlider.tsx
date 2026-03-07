@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { getTempleImage, TEMPLE_PLACEHOLDER } from '../lib/temple-image'
 
 interface Temple {
   _id: string
@@ -47,10 +48,9 @@ export default function TempleSlider() {
       const res = await fetch('/api/temples')
       if (res.ok) {
         const data = await res.json()
-        // Filter approved temples with images
+        // Show first 12 approved temples (placeholder handles missing images)
         const featured = data
-          .filter((t: Temple) => t.image)
-          .slice(0, 12) // Show first 12 temples
+          .slice(0, 12)
         setTemples(featured)
       }
     } catch (error) {
@@ -96,9 +96,10 @@ export default function TempleSlider() {
           key={`current-${currentIndex}`}
         >
           <img
-            src={currentTemple.image || 'https://images.unsplash.com/photo-1532623727643-c1e0c83c0b1e?auto=format&fit=crop&w=2400&q=80'}
+            src={getTempleImage(currentTemple)}
             alt={currentTemple.title}
             className="w-full h-full object-cover"
+            onError={(e) => { (e.target as HTMLImageElement).src = TEMPLE_PLACEHOLDER }}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-secondary-900/80 via-secondary-900/30 to-secondary-900/10"></div>
         </div>
@@ -109,9 +110,10 @@ export default function TempleSlider() {
           key={`next-${currentIndex}`}
         >
           <img
-            src={nextTemple.image || 'https://images.unsplash.com/photo-1532623727643-c1e0c83c0b1e?auto=format&fit=crop&w=2400&q=80'}
+            src={getTempleImage(nextTemple)}
             alt={nextTemple.title}
             className="w-full h-full object-cover"
+            onError={(e) => { (e.target as HTMLImageElement).src = TEMPLE_PLACEHOLDER }}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-secondary-900/80 via-secondary-900/30 to-secondary-900/10"></div>
         </div>

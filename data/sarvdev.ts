@@ -3,6 +3,8 @@ export type Temple = {
   title: string
   description: string
   image?: string
+  slug?: string
+  location?: string
 }
 
 export type DailyDarshan = {

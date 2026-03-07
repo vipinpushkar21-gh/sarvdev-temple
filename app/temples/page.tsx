@@ -156,7 +156,7 @@ export default function TemplesPage() {
             {filteredTemples.map((t: Temple) => {
               const slug = t.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
               return (
-                <TempleCard key={t._id} temple={{ id: t._id, title: t.title, location: t.location || '', description: t.description || '', image: t.image || '', slug: slug }} />
+                <TempleCard key={t._id} temple={{ id: t._id, title: t.title, location: t.location || '', description: t.description || '', image: t.image, slug: slug }} />
               )
             })}
           </div>
