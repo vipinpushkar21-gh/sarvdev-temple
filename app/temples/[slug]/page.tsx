@@ -5,6 +5,10 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useTranslation } from '../../../lib/translation'
 import { getTempleImage, TEMPLE_PLACEHOLDER } from '../../../lib/temple-image'
+import BookmarkButton from '../../../components/BookmarkButton'
+import Breadcrumbs from '../../../components/Breadcrumbs'
+import ShareButtons from '../../../components/ShareButtons'
+import { DetailPageSkeleton } from '../../../components/Skeleton'
 
 type Props = {
   params: Promise<{ slug: string }>
@@ -65,15 +69,15 @@ export default function TemplePage({ params }: Props) {
 
   if (loading) {
     return (
-      <main className="max-w-3xl mx-auto px-4 py-16 text-center">
-        <div className="text-text">{t('temples.loading')}</div>
+      <main className="content-container section-sm">
+        <DetailPageSkeleton />
       </main>
     )
   }
 
   if (!temple) {
     return (
-      <main className="max-w-3xl mx-auto px-4 py-16 text-center">
+      <main className="content-container section-sm text-center">
         <h1 className="text-2xl font-semibold text-text">{t('temple.notFound')}</h1>
         <p className="mt-4 text-text">{t('temple.notFoundDesc')}</p>
         <Link href="/temples"><span className="inline-block mt-6 btn btn-primary">{t('temple.backToTemples')}</span></Link>
@@ -87,7 +91,13 @@ export default function TemplePage({ params }: Props) {
   const displayLocation = temple.location?.replace(/(https?:\/\/maps\.app\.goo\.gl\/[^\s,]+)/g, '').trim()
 
   return (
-    <main className="max-w-4xl mx-auto px-4 py-12">
+    <main className="content-container section-sm">
+      <Breadcrumbs items={[
+        { label: 'Home', href: '/' },
+        { label: 'Temples', href: '/temples' },
+        { label: temple.title },
+      ]} />
+
       {/* Verification Badge - Top Right Corner */}
       <div className="flex justify-end mb-4">
         <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-sm shadow-md ${
@@ -113,11 +123,19 @@ export default function TemplePage({ params }: Props) {
         </div>
       </div>
 
-      <Link href="/temples" className="text-sm mb-4 inline-block">← {t('temple.backToTemples')}</Link>
+      <div className="flex items-center justify-between flex-wrap gap-4 mb-4">
+        <Link href="/temples" className="text-sm">← {t('temple.backToTemples')}</Link>
+        <ShareButtons title={temple.title} />
+      </div>
 
-      <header className="mt-4">
-        <h1 className="text-3xl font-bold text-primary">{temple.title}</h1>
-        {displayLocation && <p className="mt-2 text-text">📍 {displayLocation}</p>}
+      <header className="mt-4 flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-primary">{temple.title}</h1>
+          {displayLocation && <p className="mt-2 text-text">📍 {displayLocation}</p>}
+        </div>
+        <BookmarkButton
+          item={{ id: temple._id || slug, type: 'temple', title: temple.title, slug, image: temple.image }}
+        />
       </header>
 
       <div className="mt-6 w-full rounded-lg overflow-hidden shadow-lg">
@@ -296,6 +314,11 @@ export default function TemplePage({ params }: Props) {
             </div>
           </div>
         )}
+
+        {/* Share at bottom */}
+        <div className="pt-4 border-t border-surface-border">
+          <ShareButtons title={temple.title} />
+        </div>
       </section>
     </main>
   )

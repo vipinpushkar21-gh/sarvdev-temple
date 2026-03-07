@@ -93,6 +93,17 @@ const sarvdev = {
       title: 'Hanuman Chalisa',
       description: 'A devotional hymn to Lord Hanuman.',
     },
+    {
+      id: 'sundarkand-path',
+      title: 'सुन्दरकाण्ड पाठ (Sundarkand Path)',
+      description: 'श्रीरामचरितमानस का सुन्दरकाण्ड – सम्पूर्ण पाठ हिंदी में।',
+      category: 'Path',
+      language: 'Hindi',
+      deity: 'Shri Ram',
+      audio: '',
+      lyrics: '',
+      status: 'approved',
+    },
   ],
 
   blogs: <BlogPost[]>[

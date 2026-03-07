@@ -150,7 +150,7 @@ export const TextToSpeech: React.FC<TextToSpeechProps> = ({ text, lang, autoPlay
 
   if (!supported) {
     return (
-      <div className="text-sm text-neutral-600 dark:text-neutral-300">
+      <div className="text-body-sm text-ink-muted">
         Text-to-speech is not supported in this browser.
       </div>
     );
@@ -191,7 +191,7 @@ export const TextToSpeech: React.FC<TextToSpeechProps> = ({ text, lang, autoPlay
           <button
             type="button"
             onClick={stopSpeaking}
-            className="px-3 py-1.5 rounded-full bg-neutral-200 dark:bg-neutral-800 text-neutral-900 dark:text-white hover:bg-neutral-300 dark:hover:bg-neutral-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400"
+            className="btn btn-outline btn-sm rounded-full"
             aria-label="Stop text to speech"
           >
             ■ Stop
@@ -199,9 +199,9 @@ export const TextToSpeech: React.FC<TextToSpeechProps> = ({ text, lang, autoPlay
         )}
       </div>
       <div className="flex flex-wrap items-center gap-2">
-        <label className="text-sm text-neutral-700 dark:text-neutral-200">Voice</label>
+        <label className="text-body-sm text-ink-muted">Voice</label>
         <select
-          className="px-3 py-2 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400"
+          className="input w-auto"
           value={voiceIndex}
           onChange={(e) => setVoiceIndex(Number(e.target.value))}
           aria-label="Select voice"
@@ -212,7 +212,7 @@ export const TextToSpeech: React.FC<TextToSpeechProps> = ({ text, lang, autoPlay
             </option>
           ))}
         </select>
-        <label className="text-sm text-neutral-700 dark:text-neutral-200">Speed</label>
+        <label className="text-body-sm text-ink-muted">Speed</label>
         <input
           type="range"
           min={0.8}

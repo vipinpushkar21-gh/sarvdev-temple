@@ -6,12 +6,18 @@ import GoogleAnalytics from './components/GoogleAnalytics'
 import { Analytics } from '@vercel/analytics/next'
 import React from 'react'
 import { TranslationProvider } from '../lib/translation'
+import { FavouritesProvider } from '../lib/favourites'
+import { AudioPlayerProvider } from '../lib/audio-player'
+import { TempleDataProvider } from '../lib/temple-data'
 import VisitorTracker from '../components/VisitorTracker'
 import AuthGuard from '../components/AuthGuard'
+import { ToastProvider } from '../components/Toast'
+import ScrollToTop from '../components/ScrollToTop'
+import AudioPlayerBar from '../components/AudioPlayerBar'
 
 export const metadata = {
   title: 'Sarvdev — Temple Directory & Devotional Hub',
-  description: 'Discover temples across India, explore devotional content, and connect with sacred traditions through Sarvdev.'
+  description: 'Discover temples across the world, explore devotional content, and connect with sacred traditions through Sarvdev.'
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -22,14 +28,24 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <GoogleAnalytics GA_MEASUREMENT_ID={process.env.NEXT_PUBLIC_GA_ID} />
         )}
         <TranslationProvider>
-          <AuthGuard />
-          <Header />
-          <Disclaimer />
-          <VisitorTracker />
-          <div className="flex-1">
-            {children}
-          </div>
-          <Footer />
+          <TempleDataProvider>
+          <FavouritesProvider>
+          <AudioPlayerProvider>
+          <ToastProvider>
+            <AuthGuard />
+            <Header />
+            <Disclaimer />
+            <VisitorTracker />
+            <div className="flex-1">
+              {children}
+            </div>
+            <Footer />
+            <AudioPlayerBar />
+            <ScrollToTop />
+          </ToastProvider>
+          </AudioPlayerProvider>
+          </FavouritesProvider>
+          </TempleDataProvider>
         </TranslationProvider>
         <Analytics />
       </body>

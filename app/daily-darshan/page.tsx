@@ -41,7 +41,18 @@ export default function DailyDarshanPage() {
       <>
         <Hero title="Daily Darshan" subtitle="Live and recorded darshan from our temple network" />
         <main className="page-container section-sm">
-          <div className="text-center text-ink-muted">Loading darshan...</div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="card overflow-hidden animate-pulse">
+                <div className="h-48 bg-surface-sunken" />
+                <div className="p-5 space-y-3">
+                  <div className="h-5 bg-surface-sunken rounded w-3/4" />
+                  <div className="h-3 bg-surface-sunken rounded w-full" />
+                  <div className="h-3 bg-surface-sunken rounded w-1/2" />
+                </div>
+              </div>
+            ))}
+          </div>
         </main>
       </>
     )
@@ -54,37 +65,51 @@ export default function DailyDarshanPage() {
 
       <section>
         {items.length === 0 ? (
-          <div className="card p-6">
-            <p className="text-ink-muted">No daily darshan items available right now. Please check back later.</p>
+          <div className="text-center py-16">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary-100 to-accent-100 flex items-center justify-center mx-auto mb-5">
+              <svg className="w-7 h-7 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" /><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" /></svg>
+            </div>
+            <p className="text-body text-ink-muted">No daily darshan items available right now. Please check back later.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {items.map((d: Darshan) => (
-              <article key={d._id} className="card-interactive overflow-hidden">
-                <div className="w-full h-48 bg-surface-sunken">
+              <article key={d._id} className="group card-interactive overflow-hidden">
+                <div className="relative w-full h-48 bg-surface-sunken overflow-hidden">
                   {d.video ? (
                     <video controls src={d.video} className="w-full h-48 object-cover" />
                   ) : d.time ? (
-                    <div className="flex items-center justify-center h-48">
-                      <span className="text-h3 font-medium text-ink-muted">{d.time}</span>
+                    <div className="flex items-center justify-center h-48 bg-gradient-to-br from-primary-50 to-accent-50">
+                      <div className="text-center">
+                        <svg className="w-8 h-8 text-primary-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        <span className="text-h3 font-semibold text-primary-700">{d.time}</span>
+                      </div>
                     </div>
                   ) : (
-                    <div className="flex items-center justify-center h-48">
+                    <div className="flex items-center justify-center h-48 bg-surface-sunken">
                       <span className="text-ink-faint">No media</span>
                     </div>
                   )}
                 </div>
 
                 <div className="p-5">
-                  <h3 className="text-h4 text-secondary-700 font-serif">{d.title}</h3>
-                  <p className="mt-2 text-body-sm text-ink-muted">{d.description}</p>
+                  <h3 className="text-h4 text-secondary-700 font-serif group-hover:text-primary-600 transition-colors">{d.title}</h3>
+                  <p className="mt-2 text-body-sm text-ink-muted line-clamp-2">{d.description}</p>
 
-                  {d.time && (
-                    <div className="mt-3 text-caption text-ink-muted">Time: {d.time}</div>
-                  )}
-                  {d.temple && (
-                    <div className="mt-1 text-caption text-ink-muted">Temple: {d.temple}</div>
-                  )}
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {d.time && (
+                      <span className="inline-flex items-center gap-1 text-caption text-ink-muted bg-surface-sunken px-2.5 py-1 rounded-full">
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        {d.time}
+                      </span>
+                    )}
+                    {d.temple && (
+                      <span className="inline-flex items-center gap-1 text-caption text-ink-muted bg-surface-sunken px-2.5 py-1 rounded-full">
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" /></svg>
+                        {d.temple}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </article>
             ))}

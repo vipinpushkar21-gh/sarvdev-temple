@@ -64,21 +64,21 @@ type Devotional = {
 const CATEGORY_MAP: { [key: string]: { label: string; hindi: string } } = {
   'mantra': { label: 'Mantra', hindi: 'मंत्र' },
   'bhajan': { label: 'Bhajan', hindi: 'भजन' },
-  'stotra': { label: 'Stotra', hindi: 'स्तोत्र' },
+  'stotra': { label: 'Stotra/Suktam', hindi: 'स्तोत्र/सूक्त' },
   'aarti': { label: 'Aarti', hindi: 'आरती' },
   'chalisa': { label: 'Chalisa', hindi: 'चालीसा' },
   'stuti': { label: 'Stuti', hindi: 'स्तुति' },
   'shloka': { label: 'Shloka', hindi: 'श्लोक' },
   'ek-shloki': { label: 'Ek Shloki', hindi: 'एक श्लोकी' },
   'ashtaka': { label: 'Ashtaka', hindi: 'अष्टक' },
-  'sahasranama': { label: 'Sahasranama', hindi: 'सहस्रनाम' },
   'path': { label: 'Path', hindi: 'पाठ' },
   'rashi': { label: 'Rashi', hindi: 'राशि' },
   'vastu': { label: 'Vastu', hindi: 'वास्तु' },
   'durga': { label: 'Durga', hindi: 'दुर्गा' },
   'kuber': { label: 'Kuber', hindi: 'कुबेर' },
-  '108-namavali': { label: '108 Namavali', hindi: '१०८ नामावली' },
-  'other': { label: 'Other', hindi: 'अन्य' },
+  'namavali': { label: 'Namavali', hindi: 'नामावली' },
+  'other': { label: 'Other', hindi: 'अन्य' }
+  // Removed duplicate 'stotra/suktam' entry
 }
 
 export default function CategoryPage() {
@@ -99,10 +99,14 @@ export default function CategoryPage() {
         if (res.ok) {
           const data = await res.json()
           // Filter by category and approved status
-          const filtered = data.filter((d: Devotional) => 
-            d.status === 'approved' && 
-            d.category?.toLowerCase().replace(/\s+/g, '-') === categorySlug
-          )
+          const filtered = data.filter((d: Devotional) => {
+            if (d.status !== 'approved') return false
+            // Merge all namavali types under single 'namavali' slug
+            if (categorySlug === 'namavali') {
+              return d.category === 'Namavali' || d.category === '108 Namavali'
+            }
+            return d.category?.toLowerCase().replace(/\s+/g, '-') === categorySlug
+          })
           setDevotionals(filtered)
         }
       } catch (error) {
@@ -177,10 +181,10 @@ export default function CategoryPage() {
 
   if (!categoryInfo) {
     return (
-      <main className="max-w-6xl mx-auto px-4 py-12 text-center">
-        <h1 className="text-2xl font-bold text-slate-800 mb-4">Category Not Found</h1>
-        <Link href="/devotionals" className="text-orange-600 hover:underline">
-          ← Back to Devotionals
+      <main className="page-container section-sm text-center">
+        <h1 className="text-h2 font-serif text-secondary-700 mb-4">Category Not Found</h1>
+        <Link href="/devotionals" className="text-primary-600 hover:text-primary-700">
+          Back to Devotionals
         </Link>
       </main>
     )
@@ -188,29 +192,57 @@ export default function CategoryPage() {
 
   if (loading) {
     return (
-      <main className="max-w-6xl mx-auto px-4 py-12">
-        <div className="text-center">Loading {categoryInfo.label}...</div>
+      <main className="page-container section-sm">
+        <div className="text-center text-ink-muted">Loading {categoryInfo.label}...</div>
       </main>
     )
   }
 
   return (
-    <main className="max-w-6xl mx-auto px-4 py-12">
+    <main className="page-container section-sm">
+      {/* Ganesh Ashtaka Ad Section */}
+      {categorySlug === 'ashtaka' && devotionals.length === 1 && devotionals[0].deity && devotionals[0].deity.toLowerCase().includes('ganesh') && (selectedDeity === 'all' || selectedDeity.toLowerCase().includes('ganesh')) && (
+        <div className="mb-10 p-6 rounded-xl bg-gradient-to-br from-yellow-50 to-pink-50 border border-yellow-200 shadow-card text-center">
+          <h2 className="text-h3 font-serif text-pink-700 mb-2">॥ atha shri ganeshashtakam ॥</h2>
+          <p className="text-body font-medium text-amber-900 mb-2">shri ganeshaya namah</p>
+          <p className="text-body-sm text-ink-muted mb-4">Deity: <span className="font-semibold text-primary-700">Ganesh</span></p>
+          <div className="mb-4 text-body-sm text-ink">
+            <p className="mb-2">sarve uchuh.</p>
+            <p className="mb-2">yato'nantashakter anantashcha jivayato nirgunadaprameya gunaste.</p>
+            <p className="mb-2">yato bhati sarvam tridha bhedabhinnam sada tam ganesham namamo bhajamah ॥1॥</p>
+            <p className="mb-2">yatashchavirasij jagat sarvametat tatha'bjasano vishvago vishvagopta.</p>
+            <p className="mb-2">tathendrādayo devasangha manushyah sada tam ganesham namamo bhajamah ॥2॥</p>
+            <p className="mb-2">yato vahnibhanū bhavo bhurjalam chayatah sagarashchandrama vyoma vayuh.</p>
+            <p className="mb-2">yatah sthavara jangama vrikshasangha sada tam ganesham namamo bhajamah ॥3॥</p>
+            <p className="mb-2">yato danavah kinnarā yakshasangha yatashcharana varanah shvapadashcha.</p>
+            <p className="mb-2">yatah pakshikita yato virudhah cha sada tam ganesham namamo bhajamah ॥4॥</p>
+            <p className="mb-2">yato buddhir ajnananasho mumukshor yatah sampado bhaktasantoshikah syuh.</p>
+            <p className="mb-2">yato vighnanasho yatah karyasiddhih sada tam ganesham namamo bhajamah ॥5॥</p>
+            <p className="mb-2">yatah putrasampad yato vanchhitartho yato'bhaktavighnastatha'nekarupah.</p>
+            <p className="mb-2">yatah shokamohau yatah kama eva sada tam ganesham namamo bhajamah ॥6॥</p>
+            <p className="mb-2">yato'nantashaktih sa shesho babhuva dharadhārane'nekarupe cha shaktah.</p>
+            <p className="mb-2">yato'nekadha svargalokā hi nana sada tam ganesham namamo bhajamah ॥7॥</p>
+            <p className="mb-2">yato vedavacho vikuntha manobhih sada neti neti iti yatta grinanti.</p>
+            <p className="mb-2">parabrahmarupam chidanandabhutam sada tam ganesham namamo bhajamah ॥8॥</p>
+          </div>
+          <a href="/devotionals/ganeshashtakam" className="inline-block mt-2 px-6 py-2 rounded-full bg-pink-600 text-white font-semibold shadow hover:bg-pink-700 transition">Read Full Ganeshashtakam</a>
+        </div>
+      )}
       {/* Breadcrumb */}
-      <nav className="mb-6 text-sm text-slate-600 dark:text-slate-400">
-        <Link href="/devotionals" className="hover:text-orange-600 transition-colors">
-          भक्ति सामग्री (Devotionals)
+      <nav className="mb-6 text-body-sm text-ink-muted">
+        <Link href="/devotionals" className="hover:text-primary-600 transition-colors">
+          Devotionals
         </Link>
         <span className="mx-2">/</span>
-        <span className="text-orange-600 font-medium">{categoryInfo.hindi} ({categoryInfo.label})</span>
+        <span className="text-primary-600 font-medium">{categoryInfo.hindi} ({categoryInfo.label})</span>
       </nav>
 
       {/* Header */}
       <header className="mb-10 text-center">
-        <h1 className="text-4xl font-playfair text-orange-600 font-bold mb-3">
+        <h1 className="text-h1 font-serif text-secondary-700 mb-3">
           {categoryInfo.hindi} ({categoryInfo.label})
         </h1>
-        <p className="text-slate-600 dark:text-slate-300">
+        <p className="text-body text-ink-muted">
           {filteredByDeity.length} {categoryInfo.label}{filteredByDeity.length !== 1 ? 's' : ''} available
         </p>
       </header>
@@ -218,7 +250,7 @@ export default function CategoryPage() {
       {/* Deity Filter */}
       {deities.length > 1 && (
         <div className="mb-8">
-          <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-200 mb-4 text-center">
+          <h3 className="text-h4 font-serif text-secondary-700 mb-4 text-center">
             Filter by Deity
           </h3>
           <div className="flex flex-wrap justify-center gap-3">
@@ -229,13 +261,13 @@ export default function CategoryPage() {
                   setSelectedDeity(deity || 'all')
                   setSelectedSubCategory('all')
                 }}
-                className={`px-5 py-2.5 rounded-full font-medium transition-all duration-300 ${
+                className={`px-5 py-2.5 rounded-full font-medium transition-shadow duration-200 border ${
                   selectedDeity === deity && selectedSubCategory === 'all'
-                    ? 'bg-orange-600 text-white shadow-lg scale-105'
-                    : 'bg-white/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-200 hover:bg-orange-100 dark:hover:bg-orange-900/30 border border-orange-200 dark:border-orange-700'
+                    ? 'bg-primary-100 text-primary-800 border-primary-400 font-semibold shadow-card-hover'
+                    : 'bg-surface-raised text-ink border-surface-border hover:shadow-card'
                 }`}
               >
-                {deity === 'all' ? '🕉️ All Deities' : `🙏 ${deity}`}
+                {deity === 'all' ? 'All Deities' : deity}
               </button>
             ))}
             
@@ -246,13 +278,13 @@ export default function CategoryPage() {
                   setSelectedDeity('all')
                   setSelectedSubCategory('rashi')
                 }}
-                className={`px-5 py-2.5 rounded-full font-medium transition-all duration-300 ${
+                className={`px-5 py-2.5 rounded-full font-medium transition-shadow duration-200 border ${
                   selectedSubCategory === 'rashi'
-                    ? 'bg-orange-600 text-white shadow-lg scale-105'
-                    : 'bg-white/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-200 hover:bg-orange-100 dark:hover:bg-orange-900/30 border border-orange-200 dark:border-orange-700'
+                    ? 'bg-primary-100 text-primary-800 border-primary-400 font-semibold shadow-card-hover'
+                    : 'bg-surface-raised text-ink border-surface-border hover:shadow-card'
                 }`}
               >
-                ♈ Rashi Mantras ({rashiMantras.length})
+                Rashi Mantras ({rashiMantras.length})
               </button>
             )}
           </div>
@@ -263,8 +295,7 @@ export default function CategoryPage() {
       <section>
         {filteredByDeity.length === 0 ? (
           <div className="text-center py-16">
-            <div className="text-6xl mb-4">🕉️</div>
-            <p className="text-lg text-slate-500 mb-6">
+            <p className="text-body text-ink-muted mb-6">
               {devotionals.length === 0 
                 ? `No ${categoryInfo.label}s available yet.`
                 : `No ${categoryInfo.label}s found for ${selectedDeity}.`
@@ -273,7 +304,7 @@ export default function CategoryPage() {
             {devotionals.length === 0 && (
               <Link 
                 href="/devotionals" 
-                className="inline-block px-6 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-medium"
+                className="btn btn-primary"
               >
                 Browse All Categories
               </Link>
@@ -285,10 +316,10 @@ export default function CategoryPage() {
               <Link 
                 key={d._id}
                 href={`/devotionals/${createSlug(d.title || '')}`}
-                className="bg-white/80 dark:bg-slate-900/60 backdrop-blur rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow p-5 flex flex-col"
+                className="card-interactive p-5 flex flex-col"
               >
                 <div className="flex items-start justify-between mb-3">
-                  <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 leading-tight pr-2">
+                  <h3 className="text-h4 font-serif text-secondary-700 leading-tight pr-2">
                     {(function(){
                       const bt = renderBilingualTitle(d.title || '');
                       return (
@@ -299,25 +330,25 @@ export default function CategoryPage() {
                       );
                     })()}
                   </h3>
-                  <span className="px-2.5 py-1 bg-orange-100 text-orange-800 text-xs font-semibold rounded-full shrink-0">
+                  <span className="badge badge-primary shrink-0">
                     {d.category}
                   </span>
                 </div>
 
                 {d.deity && (
-                  <p className="text-sm text-orange-600 font-medium mb-2">🕉️ {d.deity}</p>
+                  <p className="text-body-sm text-primary-600 font-medium mb-2">{d.deity}</p>
                 )}
 
                 {d.description && (
-                  <p className="mt-2 text-sm text-slate-700 dark:text-slate-300 flex-grow line-clamp-3">
+                  <p className="mt-2 text-body-sm text-ink-muted flex-grow line-clamp-3">
                     {d.description}
                   </p>
                 )}
 
-                <div className="mt-3 flex items-center gap-3 text-xs text-slate-500 flex-wrap">
-                  {d.artist && <span>🎤 {d.artist}</span>}
-                  {d.duration && <span>⏱️ {d.duration}</span>}
-                  {d.language && <span>🌐 {d.language}</span>}
+                <div className="mt-3 flex items-center gap-3 text-caption text-ink-faint flex-wrap">
+                  {d.artist && <span>{d.artist}</span>}
+                  {d.duration && <span>{d.duration}</span>}
+                  {d.language && <span>{d.language}</span>}
                 </div>
               </Link>
             ))}
@@ -329,7 +360,7 @@ export default function CategoryPage() {
       <div className="mt-12 text-center">
         <Link 
           href="/devotionals"
-          className="inline-flex items-center gap-2 text-orange-600 hover:text-orange-700 font-medium transition-colors"
+          className="inline-flex items-center gap-2 text-primary-600 hover:text-primary-700 font-medium transition-colors"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />

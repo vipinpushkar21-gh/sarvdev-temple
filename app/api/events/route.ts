@@ -2,11 +2,19 @@ import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/db';
 import Event from '@/models/Event';
 
+// ─── In-memory cache (60s TTL) ───
+let _cache: { data: any[]; ts: number } | null = null;
+const CACHE_TTL = 60_000;
+
 // GET all events
 export async function GET() {
   try {
+    if (_cache && Date.now() - _cache.ts < CACHE_TTL) {
+      return NextResponse.json(_cache.data);
+    }
     await connectDB();
-    const events = await Event.find().sort({ createdAt: -1 });
+    const events = await Event.find({}, { __v: 0 }).sort({ createdAt: -1 }).lean();
+    _cache = { data: events, ts: Date.now() };
     return NextResponse.json(events);
   } catch (error) {
     console.error('Events API Error:', error);
@@ -20,6 +28,7 @@ export async function POST(req: NextRequest) {
     await connectDB();
     const data = await req.json();
     const event = await Event.create(data);
+    _cache = null;
     return NextResponse.json(event, { status: 201 });
   } catch (error) {
     return NextResponse.json({ error: 'Failed to create event' }, { status: 500 });
@@ -35,6 +44,7 @@ export async function PUT(req: NextRequest) {
     if (!event) {
       return NextResponse.json({ error: 'Event not found' }, { status: 404 });
     }
+    _cache = null;
     return NextResponse.json(event);
   } catch (error) {
     return NextResponse.json({ error: 'Failed to update event' }, { status: 500 });
@@ -50,6 +60,7 @@ export async function DELETE(req: NextRequest) {
     if (!event) {
       return NextResponse.json({ error: 'Event not found' }, { status: 404 });
     }
+    _cache = null;
     return NextResponse.json({ success: true });
   } catch (error) {
     return NextResponse.json({ error: 'Failed to delete event' }, { status: 500 });

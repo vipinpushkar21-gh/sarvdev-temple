@@ -1,9 +1,10 @@
 "use client"
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
 import { getTempleImage, TEMPLE_PLACEHOLDER } from '../lib/temple-image'
+import { useTempleData } from '../lib/temple-data'
+import { useTranslation } from '../lib/translation'
 
 interface Temple {
   _id: string
@@ -16,7 +17,7 @@ interface Temple {
 }
 
 const allSacredCategories = [
-  { name: "Dwadash Jyotirlinga (12 Jyotirlingas)", icon: "🕉️", desc: "12 sacred Shiva shrines across India" },
+  { name: "Dwadash Jyotirlinga (12 Jyotirlingas)", icon: "🕉️", desc: "12 sacred Shiva shrines across the world" },
   { name: "Shakti Peeth (51 Shakti Peethas)", icon: "🔱", desc: "Places where Goddess Sati's body parts fell" },
   { name: "Char Dham", icon: "🏔️", desc: "Four sacred pilgrimage sites" },
   { name: "Chota Char Dham (Uttarakhand)", icon: "⛰️", desc: "Four sacred sites in Uttarakhand Himalayas" },
@@ -31,6 +32,15 @@ const allSacredCategories = [
   { name: "108 Shiva Temples", icon: "🙏", desc: "Sacred collection of Shiva temples" },
 ]
 
+type CellSize = 'normal' | 'wide'
+
+interface CategoryCell {
+  category: typeof allSacredCategories[0]
+  representativeTemple: Temple
+  templeCount: number
+  size: CellSize
+}
+
 function shuffleArray<T>(arr: T[]): T[] {
   const shuffled = [...arr]
   for (let i = shuffled.length - 1; i > 0; i--) {
@@ -40,228 +50,296 @@ function shuffleArray<T>(arr: T[]): T[] {
   return shuffled
 }
 
-function CategorySlider({ category, temples }: { category: typeof allSacredCategories[0]; temples: Temple[] }) {
-  const scrollRef = useRef<HTMLDivElement>(null)
-  const [canScrollLeft, setCanScrollLeft] = useState(false)
-  const [canScrollRight, setCanScrollRight] = useState(false)
+function assignCellSizes(cells: CategoryCell[]): CategoryCell[] {
+  const pattern: CellSize[] = ['wide', 'normal', 'normal', 'wide', 'normal', 'normal']
+  return cells.map((cell, i) => ({
+    ...cell,
+    size: pattern[i % pattern.length],
+  }))
+}
 
-  const checkScroll = useCallback(() => {
-    const el = scrollRef.current
-    if (!el) return
-    setCanScrollLeft(el.scrollLeft > 4)
-    setCanScrollRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 4)
-  }, [])
-
-  useEffect(() => {
-    checkScroll()
-    const el = scrollRef.current
-    if (el) {
-      el.addEventListener('scroll', checkScroll, { passive: true })
-      window.addEventListener('resize', checkScroll)
-      return () => {
-        el.removeEventListener('scroll', checkScroll)
-        window.removeEventListener('resize', checkScroll)
-      }
-    }
-  }, [checkScroll, temples])
-
-  const scroll = (dir: 'left' | 'right') => {
-    const el = scrollRef.current
-    if (!el) return
-    const amount = el.clientWidth * 0.7
-    el.scrollBy({ left: dir === 'left' ? -amount : amount, behavior: 'smooth' })
+function chunkRows(cells: CategoryCell[], perRow: number): CategoryCell[][] {
+  const rows: CategoryCell[][] = []
+  for (let i = 0; i < cells.length; i += perRow) {
+    rows.push(cells.slice(i, i + perRow))
   }
+  return rows
+}
 
-  const slug = (title: string) =>
-    title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
-
-  if (temples.length === 0) return null
+/* ─── Mosaic Row for Categories ─── */
+function CategoryMosaicRow({
+  cells,
+  rowIndex,
+  hoveredName,
+  onHover,
+  onLeave,
+}: {
+  cells: CategoryCell[]
+  rowIndex: number
+  hoveredName: string | null
+  onHover: (name: string) => void
+  onLeave: () => void
+}) {
+  const rowHeight = rowIndex % 2 === 0 ? 'h-[300px] md:h-[360px]' : 'h-[260px] md:h-[300px]'
 
   return (
-    <div className="mb-12">
-      {/* Category Header */}
-      <div className="flex items-center justify-between mb-5">
-        <div className="flex items-center gap-3">
-          <span className="text-3xl">{category.icon}</span>
-          <div>
-            <h3 className="text-h3 font-serif text-secondary-800">{category.name}</h3>
-            <p className="text-body-sm text-ink-muted">{category.desc}</p>
-          </div>
-        </div>
-        <Link
-          href={`/temples?category=${encodeURIComponent(category.name)}`}
-          className="btn btn-outline btn-sm no-underline hover:no-underline hidden sm:inline-flex"
-        >
-          View All
-          <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-          </svg>
-        </Link>
-      </div>
+    <div className={`flex gap-2 md:gap-3 ${rowHeight}`}>
+      {cells.map((cell) => {
+        const { category, representativeTemple, templeCount, size } = cell
+        const isHovered = hoveredName === category.name
+        const siblingHovered = hoveredName !== null && hoveredName !== category.name
 
-      {/* Slider */}
-      <div className="relative group">
-        {/* Left Arrow */}
-        {canScrollLeft && (
-          <button
-            onClick={() => scroll('left')}
-            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white/90 shadow-lg text-secondary-700 hover:bg-white flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 -translate-x-1/2"
-            aria-label="Scroll left"
+        const baseFlex = size === 'wide' ? 1.6 : 1
+        let flex = baseFlex
+        if (isHovered) flex = baseFlex * 1.8
+        else if (siblingHovered) flex = baseFlex * 0.85
+
+        return (
+          <Link
+            key={category.name}
+            href={`/temples?category=${encodeURIComponent(category.name)}`}
+            className="relative block overflow-hidden rounded-card no-underline hover:no-underline group"
+            style={{
+              flex: `${flex} 1 0%`,
+              transition: 'flex 500ms cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+            }}
+            onMouseEnter={() => onHover(category.name)}
+            onMouseLeave={onLeave}
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
-        )}
+            {/* Image */}
+            <img
+              src={getTempleImage(representativeTemple)}
+              alt={category.name}
+              loading="lazy"
+              className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out will-change-transform"
+              style={{
+                transform: isHovered ? 'scale(1.05)' : 'scale(1)',
+              }}
+              onError={(e) => { (e.target as HTMLImageElement).src = TEMPLE_PLACEHOLDER }}
+            />
 
-        {/* Right Arrow */}
-        {canScrollRight && (
-          <button
-            onClick={() => scroll('right')}
-            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white/90 shadow-lg text-secondary-700 hover:bg-white flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 translate-x-1/2"
-            aria-label="Scroll right"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-            </svg>
-          </button>
-        )}
+            {/* Gradient overlay */}
+            <div
+              className="absolute inset-0 transition-opacity duration-500"
+              style={{
+                background:
+                  'linear-gradient(to top, rgba(26,17,15,0.8) 0%, rgba(26,17,15,0.3) 45%, rgba(26,17,15,0.08) 100%)',
+                opacity: isHovered ? 1 : 0.65,
+              }}
+            />
 
-        {/* Cards container */}
-        <div
-          ref={scrollRef}
-          className="flex gap-5 overflow-x-auto scroll-smooth pb-2 scrollbar-hide"
-          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-        >
-          {temples.map((temple) => (
-            <TempleSlideCard key={temple._id} temple={temple} slug={slug(temple.title)} />
-          ))}
-        </div>
-      </div>
+            {/* Content overlay */}
+            <div className="absolute inset-x-0 bottom-0 p-4 md:p-5 flex flex-col justify-end">
+              {/* Icon + temple count badge */}
+              <div
+                className="flex items-center gap-2 mb-2 transition-all duration-400"
+                style={{
+                  opacity: isHovered ? 1 : 0,
+                  transform: isHovered ? 'translateY(0)' : 'translateY(6px)',
+                  transition: 'opacity 400ms ease, transform 400ms ease',
+                }}
+              >
+                <span className="text-xl">{category.icon}</span>
+                <span className="text-caption text-white/70 bg-white/10 backdrop-blur-sm px-2 py-0.5 rounded-full">
+                  {templeCount} temples
+                </span>
+              </div>
 
-      {/* Mobile "View All" link */}
-      <div className="sm:hidden mt-4 text-center">
-        <Link
-          href={`/temples?category=${encodeURIComponent(category.name)}`}
-          className="btn btn-outline btn-sm no-underline hover:no-underline"
-        >
-          View All {category.name}
-        </Link>
-      </div>
+              {/* Category name */}
+              <h3
+                className="text-h4 md:text-h3 font-serif text-white leading-snug transition-all duration-400"
+                style={{
+                  transform: isHovered ? 'translateY(0)' : 'translateY(4px)',
+                  transition: 'transform 400ms ease',
+                }}
+              >
+                {category.name}
+              </h3>
+
+              {/* Description — only on hover */}
+              <p
+                className="text-body-sm text-white/60 mt-1 transition-all duration-400"
+                style={{
+                  opacity: isHovered ? 1 : 0,
+                  transform: isHovered ? 'translateY(0)' : 'translateY(6px)',
+                  transition: 'opacity 400ms ease 60ms, transform 400ms ease 60ms',
+                }}
+              >
+                {category.desc}
+              </p>
+            </div>
+          </Link>
+        )
+      })}
     </div>
   )
 }
 
-function TempleSlideCard({ temple, slug }: { temple: Temple; slug: string }) {
-  const [imgSrc, setImgSrc] = useState(getTempleImage(temple))
-
+/* ─── Mobile horizontal scroll for categories ─── */
+function CategoryMobileScroll({
+  cells,
+  hoveredName,
+  onHover,
+  onLeave,
+}: {
+  cells: CategoryCell[]
+  hoveredName: string | null
+  onHover: (name: string) => void
+  onLeave: () => void
+}) {
   return (
-    <Link
-      href={`/temples/${slug}`}
-      className="flex-shrink-0 w-[260px] sm:w-[280px] md:w-[300px] card-interactive overflow-hidden no-underline hover:no-underline group"
-    >
-      <div className="relative h-44 w-full bg-surface-sunken overflow-hidden">
-        <Image
-          src={imgSrc}
-          alt={temple.title}
-          fill
-          className="object-cover transition-transform duration-500 group-hover:scale-105"
-          onError={() => setImgSrc(TEMPLE_PLACEHOLDER)}
-        />
-        {temple.location && (
-          <span className="absolute bottom-2 left-2 badge bg-secondary-800/80 text-white text-xs flex items-center gap-1">
-            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
-            </svg>
-            {temple.location}
-          </span>
-        )}
-      </div>
-      <div className="p-4">
-        <h4 className="text-h4 text-secondary-700 font-serif line-clamp-1">{temple.title}</h4>
-        {temple.description && (
-          <p className="mt-1.5 text-body-sm text-ink-muted line-clamp-2">{temple.description}</p>
-        )}
-      </div>
-    </Link>
+    <div className="flex gap-2 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-none">
+      {cells.map((cell) => {
+        const { category, representativeTemple, templeCount } = cell
+        const isHovered = hoveredName === category.name
+
+        return (
+          <Link
+            key={category.name}
+            href={`/temples?category=${encodeURIComponent(category.name)}`}
+            className="relative flex-shrink-0 w-[75vw] h-[260px] rounded-card overflow-hidden no-underline hover:no-underline snap-start"
+            onMouseEnter={() => onHover(category.name)}
+            onMouseLeave={onLeave}
+            onTouchStart={() => onHover(category.name)}
+            onTouchEnd={onLeave}
+          >
+            <img
+              src={getTempleImage(representativeTemple)}
+              alt={category.name}
+              loading="lazy"
+              className="absolute inset-0 w-full h-full object-cover"
+              onError={(e) => { (e.target as HTMLImageElement).src = TEMPLE_PLACEHOLDER }}
+            />
+            <div
+              className="absolute inset-0"
+              style={{
+                background:
+                  'linear-gradient(to top, rgba(26,17,15,0.8) 0%, rgba(26,17,15,0.2) 50%, transparent 100%)',
+              }}
+            />
+            <div className="absolute inset-x-0 bottom-0 p-4">
+              <div className="flex items-center gap-2 mb-1.5">
+                <span className="text-lg">{category.icon}</span>
+                <span className="text-caption text-white/60 bg-white/10 backdrop-blur-sm px-2 py-0.5 rounded-full">
+                  {templeCount} temples
+                </span>
+              </div>
+              <h3 className="text-h4 font-serif text-white leading-snug">
+                {category.name}
+              </h3>
+              <p className="text-body-sm text-white/50 mt-1">{category.desc}</p>
+            </div>
+          </Link>
+        )
+      })}
+    </div>
   )
 }
 
+/* ─── Main Component ─── */
 export default function HomeCategoryShowcase() {
-  const [temples, setTemples] = useState<Temple[]>([])
-  const [randomCategories, setRandomCategories] = useState<typeof allSacredCategories>([])
-  const [loading, setLoading] = useState(true)
+  const { temples: allTemples, loading } = useTempleData()
+  const { language } = useTranslation()
+  const [hoveredName, setHoveredName] = useState<string | null>(null)
+  const [shuffledCategories, setShuffledCategories] = useState<typeof allSacredCategories>([])
 
   useEffect(() => {
-    // Pick 3 random categories on mount (changes every refresh)
-    const shuffled = shuffleArray(allSacredCategories)
-    setRandomCategories(shuffled.slice(0, 3))
-
-    async function fetchTemples() {
-      try {
-        const res = await fetch('/api/temples')
-        if (res.ok) {
-          const data = await res.json()
-          const approved = data.filter((t: Temple) => t.status === 'approved')
-          setTemples(approved)
-        }
-      } catch (err) {
-        console.error('Failed to fetch temples for category showcase:', err)
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchTemples()
+    setShuffledCategories(shuffleArray(allSacredCategories))
   }, [])
 
-  // Filter: only show categories that have temples
-  const categoriesWithTemples = randomCategories
-    .map(cat => ({
-      category: cat,
-      temples: temples.filter(t => t.categories?.includes(cat.name)),
-    }))
-    .filter(c => c.temples.length > 0)
+  const handleHover = useCallback((name: string) => setHoveredName(name), [])
+  const handleLeave = useCallback(() => setHoveredName(null), [])
+
+  const categoryCells: CategoryCell[] = useMemo(() => {
+    if (shuffledCategories.length === 0 || allTemples.length === 0) return []
+
+    const cells: CategoryCell[] = []
+    for (const cat of shuffledCategories) {
+      const catTemples = allTemples.filter(t => t.categories?.includes(cat.name))
+      if (catTemples.length === 0) continue
+      // Pick a random representative temple for the image
+      const representative = catTemples[Math.floor(Math.random() * catTemples.length)]
+      cells.push({
+        category: cat,
+        representativeTemple: representative,
+        templeCount: catTemples.length,
+        size: 'normal',
+      })
+    }
+    return assignCellSizes(cells)
+  }, [shuffledCategories, allTemples])
 
   if (loading) {
     return (
-      <section className="section-sm">
+      <section className="section-sm overflow-hidden">
         <div className="page-container">
-          <div className="flex items-center justify-center gap-3 py-12">
-            <div className="w-5 h-5 border-2 border-primary-400 border-t-transparent rounded-full animate-spin" />
-            <span className="text-body text-ink-muted">Loading sacred categories...</span>
+          <div className="h-7 bg-secondary-100 rounded w-56 mb-3 animate-pulse" />
+          <div className="h-4 bg-secondary-50 rounded w-80 mb-8 animate-pulse" />
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="h-48 md:h-64 bg-surface-sunken rounded-card animate-pulse" />
+            ))}
           </div>
         </div>
       </section>
     )
   }
 
-  if (categoriesWithTemples.length === 0) return null
+  if (categoryCells.length === 0) return null
+
+  const desktopRows = chunkRows(categoryCells, 3)
 
   return (
-    <section className="section-sm bg-surface-sunken border-y border-surface-border">
-      <div className="page-container">
+    <section className="section-sm relative bg-surface-sunken border-y border-surface-border overflow-hidden">
+      {/* Subtle background decoration */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-0 left-1/4 w-64 h-64 bg-primary/[0.03] rounded-full blur-3xl" />
+        <div className="absolute bottom-0 right-1/4 w-48 h-48 bg-accent/[0.03] rounded-full blur-3xl" />
+      </div>
+
+      <div className="page-container relative z-10">
         {/* Section heading */}
-        <div className="text-center mb-10">
-          <h2 className="text-h1 font-serif text-secondary-800">Sacred Temple Categories</h2>
-          <p className="mt-2 text-body text-ink-muted max-w-xl mx-auto">
-            Explore revered temple groups from across India — refreshed every visit
+        <div className="mb-10 md:mb-12 text-center">
+          <h2 className="section-title">{language === 'hi' ? 'पवित्र मंदिर श्रेणियाँ' : 'Sacred Temple Categories'}</h2>
+          <p className="section-subtitle">
+            {language === 'hi' ? 'सम्पूर्ण विश्व के प्रतिष्ठित मंदिर समूहों की खोज करें — हर बार नये' : 'Explore revered temple groups from across the world — refreshed every visit'}
           </p>
+          <div className="mt-4 mx-auto w-16 h-1 rounded-full bg-gradient-to-r from-primary to-accent" />
         </div>
 
-        {/* Category sliders */}
-        {categoriesWithTemples.map(({ category, temples: catTemples }) => (
-          <CategorySlider key={category.name} category={category} temples={catTemples} />
-        ))}
+        {/* Desktop mosaic (hidden on small screens) */}
+        <div className="hidden md:flex flex-col gap-2 md:gap-3">
+          {desktopRows.map((row, i) => (
+            <CategoryMosaicRow
+              key={i}
+              cells={row}
+              rowIndex={i}
+              hoveredName={hoveredName}
+              onHover={handleHover}
+              onLeave={handleLeave}
+            />
+          ))}
+        </div>
+
+        {/* Mobile horizontal scroll (visible on small screens) */}
+        <div className="md:hidden flex flex-col gap-3">
+          <CategoryMobileScroll
+            cells={categoryCells}
+            hoveredName={hoveredName}
+            onHover={handleHover}
+            onLeave={handleLeave}
+          />
+        </div>
 
         {/* CTA to see all categories */}
-        <div className="text-center mt-4">
+        <div className="mt-8 md:mt-10 text-center">
           <Link
             href="/sacred-categories"
-            className="btn btn-primary no-underline hover:no-underline"
+            className="btn btn-primary no-underline hover:no-underline group"
           >
-            Explore All Sacred Categories
-            <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+            {language === 'hi' ? 'सभी पवित्र श्रेणियाँ देखें' : 'Explore All Sacred Categories'}
+            <svg className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
             </svg>
           </Link>
         </div>

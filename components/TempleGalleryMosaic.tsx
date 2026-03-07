@@ -1,14 +1,16 @@
 "use client"
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import Link from 'next/link'
 import { getTempleImage, TEMPLE_PLACEHOLDER } from '../lib/temple-image'
+import { useTempleData } from '../lib/temple-data'
+import { useTranslation } from '../lib/translation'
 
 /* ─── Types ─── */
 interface Temple {
   _id: string
   title: string
-  description: string
+  description?: string
   image?: string
   location?: string
   city?: string
@@ -258,29 +260,30 @@ function MobileScrollRow({
 
 /* ─── Main Component ─── */
 export default function TempleGalleryMosaic() {
-  const [temples, setTemples] = useState<Temple[]>([])
+  const { temples: allTemples, loading } = useTempleData()
+  const { language } = useTranslation()
   const [hoveredId, setHoveredId] = useState<string | null>(null)
 
-  useEffect(() => {
-    fetchTemples()
-  }, [])
-
-  const fetchTemples = async () => {
-    try {
-      const res = await fetch('/api/temples')
-      if (res.ok) {
-        const data = await res.json()
-        const featured = data
-          .slice(0, 12)
-        setTemples(featured)
-      }
-    } catch (error) {
-      console.error('Failed to fetch temples:', error)
-    }
-  }
+  const temples = useMemo(() => allTemples.slice(0, 12), [allTemples])
 
   const handleHover = useCallback((id: string) => setHoveredId(id), [])
   const handleLeave = useCallback(() => setHoveredId(null), [])
+
+  if (loading) {
+    return (
+      <section className="section-sm overflow-hidden">
+        <div className="page-container">
+          <div className="h-7 bg-secondary-100 rounded w-56 mb-3 animate-pulse" />
+          <div className="h-4 bg-secondary-50 rounded w-80 mb-8 animate-pulse" />
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="h-48 md:h-64 bg-surface-sunken rounded-card animate-pulse" />
+            ))}
+          </div>
+        </div>
+      </section>
+    )
+  }
 
   if (temples.length === 0) return null
 
@@ -292,13 +295,14 @@ export default function TempleGalleryMosaic() {
     <section className="section-sm overflow-hidden">
       <div className="page-container">
         {/* Section header */}
-        <div className="mb-8 md:mb-10">
-          <h2 className="text-h1 font-serif text-secondary-800">
-            Highlighted Temples
+        <div className="mb-10 md:mb-12 text-center">
+          <h2 className="section-title">
+            {language === 'hi' ? 'प्रमुख मंदिर' : 'Highlighted Temples'}
           </h2>
-          <p className="mt-2 text-body text-ink-muted max-w-xl">
-            Explore sacred destinations across India — hover to discover.
+          <p className="section-subtitle">
+            {language === 'hi' ? 'सम्पूर्ण विश्व के पवित्र स्थलों की खोज करें।' : 'Explore sacred destinations across the world — hover to discover.'}
           </p>
+          <div className="mt-4 mx-auto w-16 h-1 rounded-full bg-gradient-to-r from-primary to-accent" />
         </div>
 
         {/* Desktop mosaic (hidden on small screens) */}
@@ -326,14 +330,14 @@ export default function TempleGalleryMosaic() {
         </div>
 
         {/* "View all" link */}
-        <div className="mt-6 md:mt-8 text-center">
+        <div className="mt-8 md:mt-10 text-center">
           <Link
             href="/temples"
-            className="btn btn-outline no-underline hover:no-underline inline-flex items-center gap-2"
+            className="btn btn-primary no-underline hover:no-underline inline-flex items-center gap-2 group"
           >
-            View All Temples
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+            {language === 'hi' ? 'सभी मंदिर देखें' : 'View All Temples'}
+            <svg className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
             </svg>
           </Link>
         </div>

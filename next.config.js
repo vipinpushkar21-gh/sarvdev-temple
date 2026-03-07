@@ -29,7 +29,6 @@ const nextConfig = {
       'shloka',
       'ek-shloki',
       'ashtaka',
-      'sahasranama',
       'path',
       'namavali',
       '108-namavali',

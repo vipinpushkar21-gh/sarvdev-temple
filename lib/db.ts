@@ -14,10 +14,18 @@ if (!cached) {
 }
 
 export async function connectDB() {
+  // If cached connection is stale/disconnected, reset it
+  if (cached.conn && mongoose.connection.readyState !== 1) {
+    cached.conn = null;
+    cached.promise = null;
+  }
   if (cached.conn) return cached.conn;
   if (!cached.promise) {
     cached.promise = mongoose.connect(MONGODB_URI, {
       bufferCommands: false,
+      maxPoolSize: 10,
+      serverSelectionTimeoutMS: 15000,
+      socketTimeoutMS: 45000,
     }).then((mongoose) => mongoose)
       .catch((err) => {
         cached.promise = null;

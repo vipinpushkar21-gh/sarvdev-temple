@@ -1,0 +1,497 @@
+const mongoose = require('mongoose');
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://sarvdev:Vipin1_pushkar@sarvdev.meedqkf.mongodb.net/sarvdev-temple?retryWrites=true&w=majority&appName=Sarvdev';
+
+const DevotionalSchema = new mongoose.Schema({
+  title: String, description: String, category: String, language: String,
+  deity: String, lyrics: String, audio: String,
+  status: { type: String, default: 'approved' },
+  createdAt: { type: Date, default: Date.now }, updatedAt: { type: Date, default: Date.now }
+});
+const Devotional = mongoose.models.Devotional || mongoose.model('Devotional', DevotionalSchema);
+
+const items = [
+  {
+    title: 'श्री दीनबन्ध्वष्टकम् (Shri Dinabandhu Ashtakam)',
+    deity: 'Vishnu', category: 'Ashtaka', language: 'Sanskrit',
+    description: 'श्री दीनबन्ध्वष्टकम् श्रीमत्परमहंस स्वामी ब्रह्मानन्द द्वारा रचित भगवान विष्णु की स्तुति में दिव्य स्तोत्र है। इसमें दीनबन्धु (दीनों के बन्धु) श्री हरि के परम स्वरूप, सृष्टि-स्थिति-लय कर्तृत्व, भक्त रक्षा और पापनाश शक्ति का वर्णन है। नित्य पाठ से भगवान विष्णु प्रसन्न होते हैं। Shri Dinabandhu Ashtakam is a sacred hymn by Paramahamsa Swami Brahmananda glorifying Lord Vishnu as Dinabandhu — the friend of the helpless. Regular recitation pleases Lord Vishnu.',
+    lyrics: `॥ श्री दीनबन्ध्वष्टकम् ॥
+
+यस्मादिदं जगदुदेति चतुर्मुखाद्यं
+यस्मिन्नवस्थितमशेषमशेषमूले।
+यत्रोपयाति विलयं च समस्तमन्ते
+दृग्गोचरो भवतु मेऽद्य स दीनबन्धुः॥1॥
+
+चक्रं सहस्रकरचारु करारविन्दे
+गुर्वी गदा दरवरश्च विभाति यस्य।
+पक्षीन्द्रपृष्ठपरिरोपितपादपद्मो
+दृग्गोचरो भवतु मेऽद्य स दीनबन्धुः॥2॥
+
+येनोद्धृता वसुमती सलिले निमग्ना
+नग्नाच पाण्डववधूः स्थगिता दुकूलैः।
+संमोचितो जलचरस्य मुखाद्गजेन्द्रो
+दृग्गोचरो भवतु मेऽद्य स दीनबन्धुः॥3॥
+
+यस्यार्द्रदृष्टिवशतस्तु सुराः समृद्धिं
+कोपेक्षणेन दनुजा विलयं व्रजन्ति।
+भीताश्चरन्ति च यतोऽर्कयमानिलाद्या
+दृग्गोचरो भवतु मेऽद्य स दीनबन्धुः॥4॥
+
+गायन्ति सामकुशला यमजं मखेषु
+ध्यायन्ति धीरमतयो यतयो विविक्ते।
+पश्यन्ति योगिपुरुषाः पुरुषं शरीरे
+दृग्गोचरो भवतु मेऽद्य स दीनबन्धुः॥5॥
+
+आकाररूपगुणयोगविवर्जितोऽपि
+मददभक्तानुकम्पननिमित्तगृहीतमूर्तिः।
+यः सर्वगोऽपि कृतशेषशरीरशय्यो
+दृग्गोचरो भवतु मेऽद्य स दीनबन्धुः॥6॥
+
+यस्याङ्घ्रिपङ्कजमनिद्रमुनीन्द्रवृन्दैर्
+आराध्यते भवदवानलदाहशान्त्यै।
+सर्वापराधमविचिन्त्य ममाखिलात्मा
+दृग्गोचरो भवतु मेऽद्य स दीनबन्धुः॥7॥
+
+यन्नामकीर्तनपरः श्वपचोऽपि नूनं
+हित्वाखिलं कलिमलं भुवनं पुनाति।
+दग्ध्वा ममाघमखिलं करुणेक्षणेन
+दृग्गोचरो भवतु मेऽद्य स दीनबन्धुः॥8॥
+
+दीनबन्ध्वष्टकं पुण्यं
+ब्रह्मानन्देन भाषितम्।
+यः पठेत् प्रयतो नित्यं
+तस्य विष्णुः प्रसीदति॥9॥
+
+॥ इति श्रीमत्परमहंसस्वामिब्रह्मानन्दविरचितं श्रीदीनबन्ध्वष्टकं सम्पूर्णम् ॥
+
+---
+
+॥ Shri Dinabandhu Ashtakam ॥
+
+Yasmaadidam Jagadudeti Chaturmukhaadyam
+Yasminnavasthitamasheshamasheshamoole |
+Yatropayaati Vilayam Cha Samastamante
+Driggocharо Bhavatu Me'dya Sa Dinabandhuhu ||1||
+
+Chakram Sahasrakarachaaru Karaaravinde
+Gurvee Gadaa Darаvarashcha Vibhaati Yasya |
+Pakshindraprishthapariroopitapaadapadmo
+Driggocharо Bhavatu Me'dya Sa Dinabandhuhu ||2||
+
+Yenoddhritaa Vasumatee Salile Nimagnaa
+Nagnaаcha Paandavavadhoohu Sthagitaa Dukoolaihi |
+Sammochito Jalacharasya Mukhaadgajendro
+Driggocharо Bhavatu Me'dya Sa Dinabandhuhu ||3||
+
+Yasyaardradrishtivashatastu Suraahu Samriddhim
+Kopekshanena Danujaa Vilayam Vrajanti |
+Bheetaascharanti Cha Yato'rkayamaanilаadyaa
+Driggocharо Bhavatu Me'dya Sa Dinabandhuhu ||4||
+
+Gaayanti Saamakushalaa Yamajam Makheshu
+Dhyaayanti Dheeramatayo Yatayo Vivikte |
+Pashyanti Yogipurushaahu Purusham Shareere
+Driggocharо Bhavatu Me'dya Sa Dinabandhuhu ||5||
+
+Aakаararoopagunaayogavivarjito'pi
+Madaаdbhaktaanukampananimittagriheetamoortih |
+Yah Sarvago'pi Kritasheshashareerashaiyyo
+Driggocharо Bhavatu Me'dya Sa Dinabandhuhu ||6||
+
+Yasyaanghripankajamаnidramuneendravrindair
+Aaraаdhyate Bhavadavaanalаdaahаshaаntyai |
+Sarvааparааdhаmаvichintya Mamaakhilaаtmaa
+Driggocharо Bhavatu Me'dya Sa Dinabandhuhu ||7||
+
+Yannааmаkeertаnааparаhu Shvapаcho'pi Noonam
+Hitvааkhilam Kаlimаlam Bhuvanam Punaаti |
+Dagdhvaa Mamaаghаmаkhilam Karunеkshаnеnа
+Driggocharо Bhavatu Me'dya Sa Dinabandhuhu ||8||
+
+Deenаbandhvаshtаkаm Punyam
+Brahmаanаndеnа Bhaаshitаm |
+Yаhu Pаthеt Prаyаto Nityam
+Tаsyа Vishnuhu Prаseedаti ||9||
+
+॥ Iti Shreematparamаhаmsаsvaаmibrahmааnаndаvirаchitаm Shrideenаbandhvаshtаkаm Sаmpurnаm ॥`
+  },
+  {
+    title: 'श्री कमलापत्यष्टकम् (Shri Kamalapati Ashtakam)',
+    deity: 'Vishnu', category: 'Ashtaka', language: 'Sanskrit',
+    description: 'श्री कमलापत्यष्टकम् श्रीमत्परमहंस स्वामी ब्रह्मानन्द द्वारा रचित भगवान विष्णु (कमलापति — लक्ष्मीपति) की स्तुति में दिव्य स्तोत्र है। इसमें संसार की नश्वरता बताते हुए मनुष्यों को कमलापति के भजन का उपदेश दिया गया है। नियमित पाठ से विष्णुलोक की प्राप्ति होती है। Shri Kamalapati Ashtakam by Paramahamsa Swami Brahmananda urges all beings to worship Lord Vishnu (Kamalapati) by renouncing worldly attachments. Regular recitation leads to Vishnuloka.',
+    lyrics: `॥ श्री कमलापत्यष्टकम् ॥
+
+भुजगतल्पगतं घनसुन्दरं
+गरुडवाहनमम्बुजलोचनम्।
+नलिनचक्रगदाकरमव्ययं
+भजत रे मनुजाः कमलापतिम्॥1॥
+
+अलिकुलासितकोमलकुन्तलं
+विमलपीतदुकूलमनोहरम्।
+जलधिजाङ्कितवामकलेवरं
+भजत रे मनुजाः कमलापतिम्॥2॥
+
+किमु जपैश्च तपोभिरुताध्वरैर्
+अपि किमुत्तमतीर्थनिषेवणैः।
+किमुत शास्त्रकदम्बविलोकनैर्
+भजत रे मनुजाः कमलापतिम्॥3॥
+
+मनुजदेहमिमं भुवि दुर्लभं
+समधिगम्य सुरैरपि वाञ्छितम्।
+विषयलम्पटतामपहाय वै
+भजत रे मनुजाः कमलापतिम्॥4॥
+
+न वनिता न सुतो न सहोदरो
+न हि पिता जननी न च बान्धवः।
+व्रजति साकमनेन जनेन वै
+भजत रे मनुजाः कमलापतिम्॥5॥
+
+सकलमेव चलं सचराचरं
+जगदिदं सुतरां धनयौवनम्।
+समवलोक्य विवेकदृशा द्रुतं
+भजत रे मनुजाः कमलापतिम्॥6॥
+
+विविधरोगयुतं क्षणभंगुरं
+परवशं नवमार्गमलाकुलम्।
+परिनिरीक्ष्य शरीरमिदं स्वकं
+भजत रे मनुजाः कमलापतिम्॥7॥
+
+मुनिवरैरनिशं हृदि भावितं
+शिवविरिञ्चिमहेन्द्रनुतं सदा।
+मरणजन्मजराभयमोचनं
+भजत रे मनुजाः कमलापतिम्॥8॥
+
+हरिपदाष्टकमेतदनुत्तमं
+परमहंसजनेन समीरितम्।
+पठति यस्तु समाहितचेतसा
+व्रजति विष्णुपदं स नरो ध्रुवम्॥9॥
+
+॥ इति श्रीमत्परमहंसस्वामिब्रह्मानन्दविरचितं श्रीकमलापत्यष्टकं सम्पूर्णम् ॥
+
+---
+
+॥ Shri Kamalapati Ashtakam ॥
+
+Bhujagatalpagatam Ghanasundaram
+Garudavааhanamаmbujаlochanаm |
+Nаlinаchаkrаgаdааkаrаmаvyаyаm
+Bhаjаtа Re Mаnujааhu Kаmаlааpаtim ||1||
+
+Alikulааsitаkomаlаkuntalаm
+Vimаlаpeetаdukoolаmаnohаrаm |
+Jаlаdhijааnkitаvааmаkаlevаrаm
+Bhаjаtа Re Mаnujааhu Kаmаlааpаtim ||2||
+
+Kimu Jаpаishchа Tаpobhirutааdhvаrаir
+Api Kimuttаmаteerthаnishevаnаihu |
+Kimutа Shааstrаkаdаmbаvilokаnаir
+Bhаjаtа Re Mаnujааhu Kаmаlааpаtim ||3||
+
+Mаnujаdehаmimаm Bhuvi Durlаbhаm
+Sаmаdhigаmyа Surаirаpi Vааnchhitаm |
+Vishаyаlаmpаtаtааmаpаhааyа Vаi
+Bhаjаtа Re Mаnujааhu Kаmаlааpаtim ||4||
+
+Nа Vаnitаа Nа Suto Nа Sаhodаro
+Nа Hi Pitаа Jаnаnee Nа Chа Bааndhаvаhu |
+Vrаjаti Sааkаmаnenа Jаnenа Vаi
+Bhаjаtа Re Mаnujааhu Kаmаlааpаtim ||5||
+
+Sаkаlаmevа Chаlаm Sаchаrааchаrаm
+Jаgаdidаm Sutаrааm Dhаnаyаuvаnаm |
+Sаmаvаlokya Vivekаdrishаа Drutаm
+Bhаjаtа Re Mаnujааhu Kаmаlааpаtim ||6||
+
+Vividhаrogаyutаm Kshаnаbhаngurаm
+Pаrаvаshаm Nаvаmааrgаmаlааkulаm |
+Pаrinireekshyа Shаreerаmidаm Svаkаm
+Bhаjаtа Re Mаnujааhu Kаmаlааpаtim ||7||
+
+Munivаrаirаnishаm Hridi Bhааvitаm
+Shivаvirinchhimаhendrаnutаm Sаdаа |
+Mаrаnаjаnmаjаrааbhаyаmochаnаm
+Bhаjаtа Re Mаnujааhu Kаmаlааpаtim ||8||
+
+Hаripаdааshtаkаmetаdаnuttаmаm
+Pаrаmаhаmsаjаnenа Sаmeeritаm |
+Pаthаti Yаstu Sаmааhitаchetаsаа
+Vrаjаti Vishnupаdаm Sа Nаro Dhruvаm ||9||
+
+॥ Iti Shreemаtpаrаmаhаmsаsvааmibrаhmааnаndаvirаchitаm Shreekаmаlааpаtyаshtаkаm Sаmpurnаm ॥`
+  },
+  {
+    title: 'श्री नारायणाष्टकम् (Shri Narayanashtakam)',
+    deity: 'Vishnu', category: 'Ashtaka', language: 'Sanskrit',
+    description: 'श्री नारायणाष्टकम् श्री कूरेश स्वामी द्वारा रचित भगवान नारायण की स्तुति में दिव्य स्तोत्र है। इसमें प्रह्लाद, विभीषण, गजेन्द्र, द्रौपदी, अहल्या और ध्रुव जैसे भक्तों के उद्धार की कथा के माध्यम से नारायण के आर्तत्राणपरायण स्वरूप का वर्णन है। Shri Narayanashtakam by Kuresha Swami glorifies Lord Narayana as the protector of the distressed through the stories of Prahlada, Vibhishana, Gajendra, Draupadi, Ahalya and Dhruva.',
+    lyrics: `॥ श्री नारायणाष्टकम् ॥
+
+वात्सल्यादभयप्रदानसमयाद् आर्तिनिर्वापणाद्
+औदार्यादघशोषणाद् अगणितश्रेयःपदप्रापणात्।
+सेव्यः श्रीपतिरेक एव जगताम् एतेऽभवन् साक्षिणः
+प्रह्लादश्च विभीषणश्च करिराट् पाञ्चाल्यहल्या ध्रुवः॥1॥
+
+प्रह्लादास्ति यदीश्वरो वद हरिः सर्वत्र मे दर्शय
+स्तम्भे चैवम् इति ब्रुवन्तमसुरं तत्राविरासीद्धरिः।
+वक्षस्तस्य विदारयन् निजनखैर् वात्सल्यमापादयन्
+आर्तत्राणपरायणः स भगवान् नारायणो मे गतिः॥2॥
+
+श्रीरामात्र विभीषणोऽयमनघो रक्षोभयादागतः
+सुग्रीवानय पालयैनमधुना पौलस्त्यमेवागतम्।
+इत्युक्त्वाभयमस्य सर्वविदितं यो राघवो दत्तवान्
+आर्तत्राणपरायणः स भगवान् नारायणो मे गतिः॥3॥
+
+नक्रग्रस्तपदं समुद्धतकरं ब्रह्मादयो भो सुराः
+पाल्यन्ताम् इति दीनवाक्यकरिणं देवेष्वशक्तेषु यः।
+मा भैषीरिति यस्य नक्रहनने चक्रायुधः श्रीधरः
+आर्तत्राणपरायणः स भगवान् नारायणो मे गतिः॥4॥
+
+भो कृष्णाच्युत भो कृपालय हरे भो पाण्डवानां सखे
+क्वासि क्वासि सुयोधनादपहृतां भो रक्ष मामातुराम्।
+इत्युक्तोऽक्षयवस्त्रसंभृततनुं योऽपालयद् द्रौपदीम्
+आर्तत्राणपरायणः स भगवान् नारायणो मे गतिः॥5॥
+
+यत्पादाब्जनखोदकं त्रिजगतां पापौघविध्वंसनं
+यन्नामामृतपूरकं च पिबतां संसारसन्तारकम्।
+पाषाणोऽपि यदङ्घ्रिपद्मरजसा शापान्मुनेर्मोचितः
+आर्तत्राणपरायणः स भगवान् नारायणो मे गतिः॥6॥
+
+पित्रा भ्रातरमुत्तमासनगतं चौत्तानपादिर्ध्रुवो
+दृष्ट्वा तत्सममारुरुक्षुरधृतो मात्रावमानं गतः।
+यं गत्वा शरणं यदापतपसा हेमाद्रिसिंहासनम्
+आर्तत्राणपरायणः स भगवान् नारायणो मे गतिः॥7॥
+
+आर्ता विषण्णाः शिथिलाश्च भीता
+घोरेषु च व्याधिषु वर्तमानाः।
+सङ्कीर्त्य नारायणशब्दमात्रं
+विमुक्तदुःखाः सुखिनो भवन्ति॥8॥
+
+॥ इति श्रीकूरेशस्वामिविरचितं श्रीनारायणाष्टकं सम्पूर्णम् ॥
+
+---
+
+॥ Shri Narayanashtakam ॥
+
+Vaatsalyaаdаbhаyаprаdааnаsаmаyааd Ааrtinirvааpаnааd
+Audааryааdаghаshoshаnааd Agаnitаshreyаhpаdаprааpаnааt |
+Sevyаhu Shreepаtirеkа Evа Jаgаtааm Ete'bhаvаn Sааkshinаhu
+Prаhlааdаshchа Vibheeshаnаshchа Kаrirааt Pааnchааlyаhаlyаа Dhruvаhu ||1||
+
+Prаhlааdааsti Yаdeeshvаro Vаdа Hаrihu Sаrvаtrа Me Dаrshаyа
+Stаmbhe Chаivаm Iti Bruvаntаmаsurаm Tаtrааvirааseeddhhаrihu |
+Vаkshаstаsyа Vidааrаyаn Nijаnаkhаir Vааtsаlyаmааpааdаyаn
+Ааrtаtrааnаpаrааyаnаhu Sа Bhаgаvааn Nааrааyаno Me Gаtihu ||2||
+
+Shreerааmааtrа Vibheeshаno'yаmаnаgho Rаkshobhаyааdааgаtаhu
+Sugreevааnаyа Pааlаyаinаmаdhunаа Pаulаstyаmevааgаtаm |
+Ityuktvааbhаyаmаsyа Sаrvаviditаm Yo Rааghаvo Dаttаvааn
+Ааrtаtrааnаpаrааyаnаhu Sа Bhаgаvааn Nааrааyаno Me Gаtihu ||3||
+
+Nаkrаgrаstаpаdаm Sаmuddhhаtаkаrаm Brаhmааdаyo Bho Surааhu
+Pааlyаntааm Iti Deenаvааkyаkаrinаm Deveshvаshаkteshu Yаhu |
+Mаа Bhаisheeriti Yаsyа Nаkrаhаnаne Chаkrааyudhаhu Shreedhhаrаhu
+Ааrtаtrааnаpаrааyаnаhu Sа Bhаgаvааn Nааrааyаno Me Gаtihu ||4||
+
+Bho Krishnааchyutа Bho Kripааlаyа Hаre Bho Pааndаvааnааm Sаkhe
+Kvааsi Kvааsi Suyodhаnааdаpаhritааm Bho Rаkshа Mааmааturааm |
+Ityukto'kshаyаvаstrаsаmbhritаtаnum Yo'pааlаyаd Drаupаdeem
+Ааrtаtrааnаpаrааyаnаhu Sа Bhаgаvааn Nааrааyаno Me Gаtihu ||5||
+
+Yаtpааdааbjаnаkhodаkаm Trijаgаtааm Pааpаughаvidhvаmsаnаm
+Yаnnааmааmritаpoorаkаm Chа Pibаtааm Sаmsааrаsаntааrаkаm |
+Pааshааno'pi Yаdаnghripаdmаrаjаsаа Shааpааnmunermochitаhu
+Ааrtаtrааnаpаrааyаnаhu Sа Bhаgаvааn Nааrааyаno Me Gаtihu ||6||
+
+Pitrаа Bhrааtаrаmuttаmааsаnаgаtаm Chаuttааnаpааdir Dhruvo
+Drishtvаа Tаtsаmаmааrurukshurаdhrito Mааtrааvаmааnаm Gаtаhu |
+Yаm Gаtvаа Shаrаnаm Yаdааpаtаpаsаа Hemааdrisimhааsаnаm
+Ааrtаtrааnаpаrааyаnаhu Sа Bhаgаvааn Nааrааyаno Me Gаtihu ||7||
+
+Ааrtаа Vishаnnааhu Shithilааshchа Bheetаа
+Ghoreshu Chа Vyааdhishu Vаrtаmааnааhu |
+Sаnkeertya Nааrааyаnаshаbdаmааtrаm
+Vimuktаduhkhааhu Sukhino Bhаvаnti ||8||
+
+॥ Iti Shreekooreshаsvааmivirаchitаm Shreеnааrааyаnааshtаkаm Sаmpurnаm ॥`
+  },
+  {
+    title: 'श्री हरिशरणाष्टकम् (Shri Hari Sharanashtakam)',
+    deity: 'Vishnu', category: 'Ashtaka', language: 'Sanskrit',
+    description: 'श्री हरिशरणाष्टकम् श्रीमत्परमहंस स्वामी ब्रह्मानन्द द्वारा रचित भगवान विष्णु की शरण में समर्पण का दिव्य स्तोत्र है। इसमें जीव संसार में निराश्रय होकर दीनबन्धु हरि को ही एकमात्र शरण स्वीकार करता है। नित्य पाठ से हरि कृपा प्राप्त होती है। Shri Hari Sharanashtakam by Paramahamsa Swami Brahmananda is a hymn of complete surrender to Lord Hari as the sole refuge of the helpless soul. Regular recitation invokes divine grace.',
+    lyrics: `॥ श्री हरि शरणाष्टकम् ॥
+
+ध्येयं वदन्ति शिवमेव हि केचिदन्ये
+शक्तिं गणेशमपरे तु दिवाकरं वै।
+रूपैस्तु तैरपि विभासि यतस्त्वमेव
+तस्मात्त्वमेव शरणं मम दीनबन्धो॥1॥
+
+नो सोदरो न जनको जननी न जाया
+नैवात्मजो न च कुलं विपुलं बलं वा।
+संदृष्यते न किल कोऽपि सहायको मे
+तस्मात्त्वमेव शरणं मम दीनबन्धो॥2॥
+
+नोपासिता मदमपास्य मया महान्तस्
+तीर्थानि चास्तिकधिया न हि सेवितानि।
+देवार्चनं च विधिवन्न कृतं कदापि
+तस्मात्त्वमेव शरणं मम दीनबन्धो॥3॥
+
+दुर्वासना मम सदा परिकर्षयन्ति
+चित्तं शरीरमपि रोगगणा दहन्ति।
+सञ्जीवनं च परहस्तगतं सदैव
+तस्मात्त्वमेव शरणं मम दीनबन्धो॥4॥
+
+पूर्वं कृतानि दुरितानि मया तु यानि
+स्मृत्वाखिलानि हृदयं परिकम्पते मे।
+ख्याता च ते पतितपावनता तु यस्मात्
+तस्मात्त्वमेव शरणं मम दीनबन्धो॥5॥
+
+दुःखं जराजननजं विविधाश्च रोगाः
+काकश्वसूकरजनिर्निरयश्च पातः।
+त्वद्विस्मृतेः फलमिदं विततं हि लोके
+तस्मात्त्वमेव शरणं मम दीनबन्धो॥6॥
+
+नीचोऽपि पापवलितोऽपि विनिन्दितोऽपि
+ब्रूयात्तवाहमिति यस्तु किलैकवारम्।
+तं यच्छसीश निजलोकमिति व्रतं ते
+तस्मात्त्वमेव शरणं मम दीनबन्धो॥7॥
+
+वेदेषु धर्मवचनेषु तथागमेषु
+रामायणेऽपि च पुराणकदम्बके वा।
+सर्वत्र सर्वविधिना गदितस्त्वमेव
+तस्मात्त्वमेव शरणं मम दीनबन्धो॥8॥
+
+॥ इति श्रीमत्परमहंसस्वामिब्रह्मानन्दविरचितं श्रीहरिशरणाष्टकं सम्पूर्णम् ॥
+
+---
+
+॥ Shri Hari Sharanashtakam ॥
+
+Dhyeyam Vadanti Shivameva Hi Kechidanye
+Shaktim Ganeshamapare Tu Divaakaram Vai |
+Roopaistu Tairapi Vibhaasi Yatastvameva
+Tasmaattvameva Sharanam Mama Deenabandho ||1||
+
+No Sodaro Na Janako Jananee Na Jaayaa
+Naivaatmajo Na Cha Kulam Vipulam Balam Vaa |
+Sandrishyate Na Kila Ko'pi Sahaayako Me
+Tasmaattvameva Sharanam Mama Deenabandho ||2||
+
+Nopaasitaa Madamapaasya Mayaa Mahaantas
+Teerthaani Chaastikadhiyaa Na Hi Sevitaani |
+Devaarchanam Cha Vidhivanna Kritam Kadaapi
+Tasmaattvameva Sharanam Mama Deenabandho ||3||
+
+Durvaasanaa Mama Sadaa Parikarshayanti
+Chittam Shareeramapi Rogaganaa Dahanti |
+Sanjeevanam Cha Parahastagatam Sadaiva
+Tasmaattvameva Sharanam Mama Deenabandho ||4||
+
+Poorvam Kritaani Duritaani Mayaa Tu Yaani
+Smritvaakhilaani Hridayam Parikampate Me |
+Khyaataa Cha Te Patitapaavanataa Tu Yasmaat
+Tasmaattvameva Sharanam Mama Deenabandho ||5||
+
+Duhkham Jaraajananam Vividhaashcha Rogaahu
+Kaakashvasookarajanirnirayashcha Paatahu |
+Tvadvishritehu Phalamidаm Vitatam Hi Loke
+Tasmaattvameva Sharanam Mama Deenabandho ||6||
+
+Neecho'pi Pааpаvаlito'pi Vinindito'pi
+Brooyааttаvааhаmiti Yаstu Kilаikаvааrаm |
+Tаm Yаchhаseeshа Nijаlokаmiti Vrаtаm Te
+Tasmaattvameva Sharanam Mama Deenabandho ||7||
+
+Vedeshu Dhаrmаvаchаneshu Tаthааgаmeshu
+Rааmааyаne'pi Chа Purааnаkаdаmbаke Vаа |
+Sаrvаtrа Sаrvаvidhinаа Gаditаstvаmevа
+Tasmaattvameva Sharanam Mama Deenabandho ||8||
+
+॥ Iti Shreemаtpаrаmаhаmsаsvааmibrаhmааnаndаvirаchitаm Shreеhаrishаrаnааshtаkаm Sаmpurnаm ॥`
+  },
+  {
+    title: 'श्री लक्ष्मीनारायणाष्टकम् (Shri Lakshminarayana Ashtakam)',
+    deity: 'Vishnu', category: 'Ashtaka', language: 'Sanskrit',
+    description: 'श्री लक्ष्मीनारायणाष्टकम् भगवान लक्ष्मीनारायण की स्तुति में रचित पवित्र स्तोत्र है। इसमें भगवान को अपार करुणा के सागर, आपद बान्धव, भक्तवत्सल, शंख-चक्रधारी और सम्पूर्ण दुःखों के शमनकर्ता के रूप में वन्दना की गई है। प्रातः नित्य पाठ से सभी पापों से मुक्ति और विष्णुलोक की प्राप्ति होती है। Shri Lakshminarayana Ashtakam glorifies Lord Lakshminarayana as the ocean of compassion, friend in calamity and remover of all sorrows. Daily morning recitation frees one from all sins.',
+    lyrics: `॥ श्री लक्ष्मीनारायणाष्टकम् ॥
+
+आर्तानां दुःखशमने दीक्षितं प्रभुमव्ययम्।
+अशेषजगदाधारं लक्ष्मीनारायणं भजे॥1॥
+
+अपारकरुणाम्भोधिं आपद्बान्धवमच्युतम्।
+अशेषदुःखशान्त्यर्थं लक्ष्मीनारायणं भजे॥2॥
+
+भक्तानां वत्सलं भक्तिगम्यं सर्वगुणाकरम्।
+अशेषदुःखशान्त्यर्थं लक्ष्मीनारायणं भजे॥3॥
+
+सुहृदं सर्वभूतानां सर्वलक्षणसंयुतम्।
+अशेषदुःखशान्त्यर्थं लक्ष्मीनारायणं भजे॥4॥
+
+चिदचित्सर्वजन्तूनां आधारं वरदं परम्।
+अशेषदुःखशान्त्यर्थं लक्ष्मीनारायणं भजे॥5॥
+
+शङ्खचक्रधरं देवं लोकनाथं दयानिधिम्।
+अशेषदुःखशान्त्यर्थं लक्ष्मीनारायणं भजे॥6॥
+
+पीताम्बरधरं विष्णुं विलसत्सूत्रशोभितम्।
+अशेषदुःखशान्त्यर्थं लक्ष्मीनारायणं भजे॥7॥
+
+हस्तेन दक्षिणेन यं अभयप्रदमक्षरम्।
+अशेषदुःखशान्त्यर्थं लक्ष्मीनारायणं भजे॥8॥
+
+यः पठेत् प्रातरुत्थाय लक्ष्मीनारायणाष्टकम्।
+विमुक्तस्सर्वपापेभ्यः विष्णुलोकं स गच्छति॥
+
+॥ इति श्रीलक्ष्मीनारायणाष्टकं सम्पूर्णम् ॥
+
+---
+
+॥ Shri Lakshminarayana Ashtakam ॥
+
+Aartааnааm Duhkhаshаmаne Deekshitаm Prаbhumаvyаyаm |
+Asheshаjаgаdааdhааrаm Lаkshmеenааrааyаnаm Bhаje ||1||
+
+Apааrаkаrunааmbhodhim Ааpаdbааndhаvаmаchyutаm |
+Asheshаduhkhаshааntyаrthаm Lаkshmееnааrааyаnаm Bhаje ||2||
+
+Bhаktааnааm Vаtsаlаm Bhаktigаmyаm Sаrvаgunааkаrаm |
+Asheshаduhkhаshааntyаrthаm Lаkshmееnааrааyаnаm Bhаje ||3||
+
+Suhridаm Sаrvаbhootааnааm Sаrvаlаkshаnаsаmyutаm |
+Asheshаduhkhаshааntyаrthаm Lаkshmееnааrааyаnаm Bhаje ||4||
+
+Chidаchitsаrvаjаntoonааm Ааdhааrаm Vаrаdаm Pаrаm |
+Asheshаduhkhаshааntyаrthаm Lаkshmееnааrааyаnаm Bhаje ||5||
+
+Shаnkhаchаkrаdhаrаm Devаm Lokаnааthаm Dаyааnidhim |
+Asheshаduhkhаshааntyаrthаm Lаkshmееnааrааyаnаm Bhаje ||6||
+
+Peetааmbаrаdhаrаm Vishnum Vilаsаtsootrаshobhitаm |
+Asheshаduhkhаshааntyаrthаm Lаkshmееnааrааyаnаm Bhаje ||7||
+
+Hаstenа Dаkshinenа Yаm Abhаyаprаdаmаkshаrаm |
+Asheshаduhkhаshааntyаrthаm Lаkshmееnааrааyаnаm Bhаje ||8||
+
+Yаhu Pаthet Prааtаrutthааyа Lаkshmееnааrааyаnааshtаkаm |
+Vimuktаssаrvаpааpebhyаhu Vishnulokаm Sа Gаchhаti ||
+
+॥ Iti Shreelаkshmееnааrааyаnааshtаkаm Sаmpurnаm ॥`
+  }
+];
+
+async function run() {
+  try {
+    await mongoose.connect(MONGODB_URI);
+    console.log('Connected to MongoDB');
+    let added = 0;
+    for (const item of items) {
+      const exists = await Devotional.findOne({ title: item.title, category: 'Ashtaka' });
+      if (exists) { console.log('⏭  Exists:', item.title); continue; }
+      await new Devotional({ ...item, status: 'approved' }).save();
+      console.log('✅ Added:', item.title);
+      added++;
+    }
+    console.log(`\nAdded ${added}/${items.length} ashtakams (Part 4)`);
+    const total = await Devotional.countDocuments({ category: 'Ashtaka' });
+    console.log(`Total Ashtakas in DB: ${total}`);
+  } catch (err) { console.error('Error:', err); process.exitCode = 1; }
+  finally { await mongoose.connection.close(); console.log('Done.'); }
+}
+run();
