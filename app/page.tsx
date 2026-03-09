@@ -1,6 +1,6 @@
 "use client"
 
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import SmartSearch from '../components/SmartSearch'
 import TempleSlider from '../components/TempleSlider'
 import HomeCategoryShowcase from '../components/HomeCategoryShowcase'
@@ -51,8 +51,16 @@ const features = [
   },
 ]
 
-export default function Page() {
+export default function HomePage() {
   const { t } = useTranslation()
+  const [stats, setStats] = useState({ temples: 0, devotionals: 0, categories: 0 })
+
+  useEffect(() => {
+    fetch('/api/stats')
+      .then(res => res.json())
+      .then(data => setStats(data))
+      .catch(() => {})
+  }, [])
 
   return (
     <div suppressHydrationWarning>
@@ -98,9 +106,9 @@ export default function Page() {
             {/* Quick stats */}
             <div className="mt-12 flex flex-wrap gap-8 fade-up delay-5">
               {[
-                { value: '10K+', label: 'Temples' },
-                { value: '500+', label: 'Devotionals' },
-                { value: '50+', label: 'Categories' },
+                { value: stats.temples > 0 ? stats.temples.toLocaleString() + '+' : '—', label: 'Temples' },
+                { value: stats.devotionals > 0 ? stats.devotionals.toLocaleString() + '+' : '—', label: 'Devotionals' },
+                { value: stats.categories > 0 ? stats.categories.toLocaleString() + '+' : '—', label: 'Categories' },
               ].map((stat) => (
                 <div key={stat.label} className="flex items-center gap-3">
                   <span className="text-h2 font-serif font-bold text-gradient">{stat.value}</span>

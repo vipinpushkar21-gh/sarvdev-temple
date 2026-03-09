@@ -1,5 +1,7 @@
+'use client'
+
 import Hero from '../../components/Hero'
-export const metadata = { title: 'Booking' }
+import { useState } from 'react'
 
 type Slot = {
   id: string
@@ -11,12 +13,19 @@ type Slot = {
 
 const sampleSlots: Slot[] = [
   { id: 's1', title: 'Morning Aarti Slot', description: 'Morning aarti and blessing (30 mins)', time: '06:00 AM - 06:30 AM', price: 'Free' },
-  { id: 's2', title: 'Special Pooja', description: 'Conduct a special pooja with priest (45 mins)', time: '10:00 AM - 10:45 AM', price: '$15' },
+  { id: 's2', title: 'Special Pooja', description: 'Conduct a special pooja with priest (45 mins)', time: '10:00 AM - 10:45 AM', price: '₹1100' },
   { id: 's3', title: 'Evening Aarti', description: 'Evening aarti with lamps and bhajans (30 mins)', time: '07:00 PM - 07:30 PM', price: 'Free' },
-  { id: 's4', title: 'Archana', description: 'One-on-one archana and prasadam (20 mins)', time: '05:00 PM - 05:20 PM', price: '$8' },
+  { id: 's4', title: 'Archana', description: 'One-on-one archana and prasadam (20 mins)', time: '05:00 PM - 05:20 PM', price: '₹501' },
 ]
 
 export default function BookingPage() {
+  const [toast, setToast] = useState(false)
+
+  function handleBook() {
+    setToast(true)
+    setTimeout(() => setToast(false), 3000)
+  }
+
   return (
     <>
       <Hero title="Online Booking" subtitle="Reserve pooja and darshan slots at your favourite temples." />
@@ -47,6 +56,7 @@ export default function BookingPage() {
                 <button
                   className="btn btn-primary w-full group/btn"
                   aria-label={`Book ${slot.title}`}
+                  onClick={handleBook}
                 >
                   Book Now
                   <svg className="w-4 h-4 group-hover/btn:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" /></svg>
@@ -57,6 +67,12 @@ export default function BookingPage() {
         </div>
       </section>
       </main>
+      {toast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-secondary-800 text-white px-6 py-3 rounded-xl shadow-elevated flex items-center gap-3 animate-in slide-in-from-bottom-4">
+          <svg className="w-5 h-5 text-accent flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+          <span className="text-body-sm font-medium">Online booking coming soon! Stay tuned.</span>
+        </div>
+      )}
     </>
   )
 }

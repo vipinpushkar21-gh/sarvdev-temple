@@ -1,6 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/db';
 import Blog from '@/models/Blog';
+import { verifyToken, AUTH_COOKIE_NAME } from '@/lib/auth';
+
+function isAdmin(req: NextRequest): boolean {
+  const token = req.cookies.get(AUTH_COOKIE_NAME)?.value
+  if (!token) return false
+  const payload = verifyToken(token)
+  return payload?.role === 'admin'
+}
 
 // ─── In-memory cache (60s TTL) ───
 let _cache: { data: any[]; ts: number } | null = null;
@@ -21,8 +29,11 @@ export async function GET() {
   }
 }
 
-// POST create new blog
+// POST create new blog (admin only)
 export async function POST(req: NextRequest) {
+  if (!isAdmin(req)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
   try {
     await connectDB();
     const data = await req.json();
@@ -34,8 +45,11 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// PUT update blog
+// PUT update blog (admin only)
 export async function PUT(req: NextRequest) {
+  if (!isAdmin(req)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
   try {
     await connectDB();
     const { id, ...update } = await req.json();
@@ -50,8 +64,11 @@ export async function PUT(req: NextRequest) {
   }
 }
 
-// DELETE blog
+// DELETE blog (admin only)
 export async function DELETE(req: NextRequest) {
+  if (!isAdmin(req)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
   try {
     await connectDB();
     const { id } = await req.json();

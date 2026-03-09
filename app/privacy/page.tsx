@@ -9,7 +9,7 @@ export default function PrivacyPage() {
       <div className="relative card overflow-hidden max-w-3xl mx-auto">
         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-accent to-primary" />
         <div className="p-6 md:p-8 space-y-8 text-ink">
-          <p className="text-caption text-ink-faint">Last Updated: December 2025</p>
+          <p className="text-caption text-ink-faint">Last Updated: March 2026</p>
 
           <div>
             <h2 className="text-h3 font-serif text-secondary-700 mb-3">1. Information We Collect</h2>

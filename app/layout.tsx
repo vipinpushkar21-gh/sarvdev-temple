@@ -17,7 +17,23 @@ import AudioPlayerBar from '../components/AudioPlayerBar'
 
 export const metadata = {
   title: 'Sarvdev — Temple Directory & Devotional Hub',
-  description: 'Discover temples across the world, explore devotional content, and connect with sacred traditions through Sarvdev.'
+  description: 'Discover temples across the world, explore devotional content, and connect with sacred traditions through Sarvdev.',
+  metadataBase: new URL('https://sarvdev.com'),
+  openGraph: {
+    type: 'website',
+    siteName: 'Sarvdev',
+    title: 'Sarvdev — Temple Directory & Devotional Hub',
+    description: 'Discover temples across the world, explore devotional content, and connect with sacred traditions.',
+    locale: 'en_IN',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Sarvdev — Temple Directory & Devotional Hub',
+    description: 'Discover temples across the world, explore devotional content, and connect with sacred traditions.',
+  },
+  icons: {
+    icon: '/icon.svg',
+  },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

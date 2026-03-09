@@ -76,7 +76,6 @@ export default function TemplesPage() {
         const res = await fetch('/api/temples')
         if (res.ok) {
           const data = await res.json()
-          console.log('Fetched temples:', data) // Debug log
           // Only show approved temples
           const approved = data.filter((t: Temple) => t.status === 'approved')
           setTemples(approved)

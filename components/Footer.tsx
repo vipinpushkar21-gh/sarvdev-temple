@@ -25,6 +25,7 @@ const footerNav = [
   {
     heading: 'footer.legal',
     links: [
+      { label: 'footer.about', href: '/about' },
       { label: 'footer.contact', href: '/contact' },
       { label: 'footer.privacy', href: '/privacy' },
       { label: 'footer.terms', href: '/terms' },

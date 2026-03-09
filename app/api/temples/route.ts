@@ -1,6 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/db';
 import Temple from '@/models/Temple';
+import { verifyToken, AUTH_COOKIE_NAME } from '@/lib/auth';
+
+function isAdmin(req: NextRequest): boolean {
+  const token = req.cookies.get(AUTH_COOKIE_NAME)?.value
+  if (!token) return false
+  const payload = verifyToken(token)
+  return payload?.role === 'admin'
+}
 
 // ─── In-memory cache (60s TTL) ───
 let _cache: { data: any[]; ts: number } | null = null;
@@ -27,6 +35,10 @@ export async function POST(req: NextRequest) {
   try {
     await connectDB();
     const data = await req.json();
+    // Allow public submissions (status defaults to 'pending')
+    if (data.status === 'approved' && !isAdmin(req)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     const temple = await Temple.create(data);
     _cache = null;
     return NextResponse.json(temple, { status: 201 });
@@ -35,8 +47,11 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// PUT update temple
+// PUT update temple (admin only)
 export async function PUT(req: NextRequest) {
+  if (!isAdmin(req)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
   try {
     await connectDB();
     const { id, ...update } = await req.json();
@@ -51,8 +66,11 @@ export async function PUT(req: NextRequest) {
   }
 }
 
-// DELETE temple
+// DELETE temple (admin only)
 export async function DELETE(req: NextRequest) {
+  if (!isAdmin(req)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
   try {
     await connectDB();
     const { id } = await req.json();
