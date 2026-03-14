@@ -27,10 +27,9 @@ export default function EditDevotionalPage() {
   useEffect(() => {
     async function fetchDevotional() {
       try {
-        const res = await fetch('/api/devotionals')
+        const res = await fetch(`/api/devotionals?id=${id}`)
         if (res.ok) {
-          const all = await res.json()
-          const found = all.find((d: any) => d._id === id)
+          const found = await res.json()
           if (found) {
             setFormData({
               title: found.title || '',
@@ -48,6 +47,9 @@ export default function EditDevotionalPage() {
             alert('Devotional not found')
             router.push('/admin/devotionals')
           }
+        } else {
+          alert('Failed to load devotional')
+          router.push('/admin/devotionals')
         }
       } catch {
         alert('Failed to load devotional')
