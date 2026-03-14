@@ -142,39 +142,41 @@ export default function TemplesPage() {
     <>
       <Hero title={t('temples.title')} subtitle={t('temples.subtitle')} />
 
-      {/* Search Bar */}
-      <div className="bg-surface-sunken border-b border-surface-border">
-        <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      {/* Search Bar — Glassmorphic */}
+      <div className="relative bg-mesh-warm border-b border-surface-border">
+        <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="relative" ref={searchRef}>
-            <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-ink-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-            </svg>
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => { setSearchQuery(e.target.value); setShowDropdown(true) }}
-              onFocus={() => { if (searchQuery.trim()) setShowDropdown(true) }}
-              placeholder="Search temples by name, location, deity..."
-              className="input pl-12 pr-10 py-3 w-full text-body rounded-full shadow-sm"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => { setSearchQuery(''); setShowDropdown(false) }}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-ink-muted hover:text-ink transition-colors"
-                aria-label="Clear search"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            )}
+            <div className="search-glass flex items-center px-5 py-1">
+              <svg className="w-5 h-5 text-ink-muted flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+              </svg>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => { setSearchQuery(e.target.value); setShowDropdown(true) }}
+                onFocus={() => { if (searchQuery.trim()) setShowDropdown(true) }}
+                placeholder="Search temples by name, location, deity..."
+                className="flex-1 bg-transparent border-none outline-none text-body text-ink px-3 py-3 placeholder:text-ink-faint"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => { setSearchQuery(''); setShowDropdown(false) }}
+                  className="p-1.5 rounded-full text-ink-muted hover:text-ink hover:bg-surface-sunken transition-colors"
+                  aria-label="Clear search"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+            </div>
 
             {/* Search Results Dropdown */}
             {showDropdown && searchQuery.trim() && (
-              <div className="absolute z-50 mt-2 w-full card shadow-dropdown max-h-96 overflow-y-auto">
+              <div className="absolute z-50 mt-3 w-full glass-card-2030 shadow-dropdown max-h-96 overflow-y-auto">
                 {filteredTemples.length > 0 ? (
                   <div className="py-2">
-                    <div className="px-4 py-1.5 text-overline text-primary-600 uppercase tracking-wider">
+                    <div className="px-5 py-2 text-overline text-primary-600 uppercase tracking-wider">
                       Temples ({filteredTemples.length})
                     </div>
                     {filteredTemples.slice(0, 8).map((temple) => {
@@ -183,28 +185,31 @@ export default function TemplesPage() {
                         <button
                           key={temple._id}
                           onClick={() => { setShowDropdown(false); setSearchQuery(''); router.push(`/temples/${slug}`) }}
-                          className="w-full text-left px-4 py-2.5 hover:bg-surface-sunken transition-colors flex items-center gap-3"
+                          className="w-full text-left px-5 py-3 hover:bg-primary-50/50 transition-all duration-200 flex items-center gap-3 group"
                         >
                           {temple.image && (
-                            <img src={temple.image} alt="" className="w-10 h-10 rounded-md object-cover flex-shrink-0" />
+                            <img src={temple.image} alt="" className="w-11 h-11 rounded-xl object-cover flex-shrink-0 shadow-sm" />
                           )}
-                          <div className="min-w-0">
-                            <div className="text-body-sm font-medium text-ink truncate">{temple.title}</div>
+                          <div className="min-w-0 flex-1">
+                            <div className="text-body-sm font-medium text-ink truncate group-hover:text-primary-700 transition-colors">{temple.title}</div>
                             <div className="text-caption text-ink-muted truncate">
                               {[temple.location || temple.deity, temple.state].filter(Boolean).join(' · ')}
                             </div>
                           </div>
+                          <svg className="w-4 h-4 text-ink-faint group-hover:text-primary-500 transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                          </svg>
                         </button>
                       )
                     })}
                     {filteredTemples.length > 8 && (
-                      <div className="px-4 py-2 text-caption text-ink-muted border-t border-surface-border">
+                      <div className="px-5 py-2.5 text-caption text-ink-muted border-t border-surface-border">
                         +{filteredTemples.length - 8} more results below
                       </div>
                     )}
                   </div>
                 ) : (
-                  <div className="p-4 text-center text-ink-muted text-body-sm">
+                  <div className="p-6 text-center text-ink-muted text-body-sm">
                     No temples found for &ldquo;{searchQuery}&rdquo;
                   </div>
                 )}
@@ -222,15 +227,19 @@ export default function TemplesPage() {
 
       <main className="page-container py-12">
 
-      {/* Category Filter */}
-      <div className="mb-8 bg-background rounded-lg p-4 shadow-md border border-accent">
-        <label className="block text-sm font-semibold text-text mb-3">
-          🔍 Filter by Sacred Category:
-        </label>
+      {/* Category Filter — Bento Style */}
+      <div className="bento-card mb-10 p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="bento-icon w-10 h-10 text-base">🔍</div>
+          <div>
+            <p className="text-body-sm font-semibold text-ink">Filter by Sacred Category</p>
+            <p className="text-caption text-ink-muted">Explore temples by their sacred grouping</p>
+          </div>
+        </div>
         <select 
           value={selectedCategory}
           onChange={(e) => setSelectedCategory(e.target.value)}
-          className="input"
+          className="input rounded-xl"
         >
           <option value="all">All Temples ({temples.length})</option>
           {sacredCategories.map(category => {
@@ -247,15 +256,18 @@ export default function TemplesPage() {
         </select>
         
         {selectedCategory !== 'all' && (
-          <div className="mt-3 flex items-center justify-between">
-            <p className="text-body-sm text-ink-muted">
-              Showing {filteredTemples.length} temple{filteredTemples.length !== 1 ? 's' : ''} in <span className="font-medium text-primary-600">{selectedCategory}</span>
+          <div className="mt-4 flex items-center justify-between gap-4 p-3 rounded-xl" style={{ background: 'linear-gradient(135deg, rgba(255,153,51,0.06), rgba(255,215,0,0.04))' }}>
+            <p className="text-body-sm text-ink">
+              Showing <span className="font-bold text-primary-600">{filteredTemples.length}</span> temple{filteredTemples.length !== 1 ? 's' : ''} in <span className="font-semibold text-secondary-600">{selectedCategory}</span>
             </p>
             <button 
               onClick={() => setSelectedCategory('all')}
-              className="btn btn-ghost btn-sm"
+              className="btn btn-ghost btn-sm gap-1.5"
             >
-              Clear Filter
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+              Clear
             </button>
           </div>
         )}
@@ -271,7 +283,7 @@ export default function TemplesPage() {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 stagger-children">
               {filteredTemples
                 .slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
                 .map((t: Temple) => {
@@ -282,55 +294,60 @@ export default function TemplesPage() {
                 })}
             </div>
 
-            {/* Pagination */}
+            {/* Pagination — Modern 2030 */}
             {filteredTemples.length > ITEMS_PER_PAGE && (
-              <div className="mt-10 flex items-center justify-center gap-2">
-                <button
-                  onClick={() => { setCurrentPage(p => Math.max(1, p - 1)); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
-                  disabled={currentPage === 1}
-                  className="btn btn-outline btn-sm disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  Previous
-                </button>
+              <div className="mt-12 flex flex-col items-center gap-4">
+                <div className="floating-bar-2030 flex items-center gap-1 px-2 py-1.5">
+                  <button
+                    onClick={() => { setCurrentPage(p => Math.max(1, p - 1)); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
+                    disabled={currentPage === 1}
+                    className="px-4 py-2 rounded-xl text-body-sm font-medium transition-all duration-300 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-surface-sunken text-ink"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+                    </svg>
+                  </button>
 
-                {Array.from({ length: Math.ceil(filteredTemples.length / ITEMS_PER_PAGE) }).map((_, i) => {
-                  const page = i + 1
-                  const totalPages = Math.ceil(filteredTemples.length / ITEMS_PER_PAGE)
-                  // Show first, last, current, and neighbors
-                  if (page === 1 || page === totalPages || (page >= currentPage - 1 && page <= currentPage + 1)) {
-                    return (
-                      <button
-                        key={page}
-                        onClick={() => { setCurrentPage(page); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
-                        className={`w-9 h-9 rounded-btn text-body-sm font-medium transition-colors ${
-                          page === currentPage
-                            ? 'bg-primary text-white'
-                            : 'bg-surface-sunken text-ink hover:bg-surface-border'
-                        }`}
-                      >
-                        {page}
-                      </button>
-                    )
-                  }
-                  if (page === currentPage - 2 || page === currentPage + 2) {
-                    return <span key={page} className="text-ink-muted px-1">...</span>
-                  }
-                  return null
-                })}
+                  {Array.from({ length: Math.ceil(filteredTemples.length / ITEMS_PER_PAGE) }).map((_, i) => {
+                    const page = i + 1
+                    const totalPages = Math.ceil(filteredTemples.length / ITEMS_PER_PAGE)
+                    if (page === 1 || page === totalPages || (page >= currentPage - 1 && page <= currentPage + 1)) {
+                      return (
+                        <button
+                          key={page}
+                          onClick={() => { setCurrentPage(page); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
+                          className={`w-10 h-10 rounded-xl text-body-sm font-semibold transition-all duration-300 ${
+                            page === currentPage
+                              ? 'bg-gradient-to-r from-primary to-primary-600 text-white shadow-md shadow-primary/25'
+                              : 'text-ink hover:bg-surface-sunken'
+                          }`}
+                        >
+                          {page}
+                        </button>
+                      )
+                    }
+                    if (page === currentPage - 2 || page === currentPage + 2) {
+                      return <span key={page} className="text-ink-faint px-1">···</span>
+                    }
+                    return null
+                  })}
 
-                <button
-                  onClick={() => { setCurrentPage(p => Math.min(Math.ceil(filteredTemples.length / ITEMS_PER_PAGE), p + 1)); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
-                  disabled={currentPage >= Math.ceil(filteredTemples.length / ITEMS_PER_PAGE)}
-                  className="btn btn-outline btn-sm disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  Next
-                </button>
+                  <button
+                    onClick={() => { setCurrentPage(p => Math.min(Math.ceil(filteredTemples.length / ITEMS_PER_PAGE), p + 1)); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
+                    disabled={currentPage >= Math.ceil(filteredTemples.length / ITEMS_PER_PAGE)}
+                    className="px-4 py-2 rounded-xl text-body-sm font-medium transition-all duration-300 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-surface-sunken text-ink"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                    </svg>
+                  </button>
+                </div>
+
+                <p className="text-caption text-ink-muted">
+                  Showing <span className="font-semibold text-ink">{Math.min((currentPage - 1) * ITEMS_PER_PAGE + 1, filteredTemples.length)}–{Math.min(currentPage * ITEMS_PER_PAGE, filteredTemples.length)}</span> of <span className="font-semibold text-ink">{filteredTemples.length}</span> temples
+                </p>
               </div>
             )}
-
-            <p className="text-center text-caption text-ink-muted mt-4">
-              Showing {Math.min((currentPage - 1) * ITEMS_PER_PAGE + 1, filteredTemples.length)}–{Math.min(currentPage * ITEMS_PER_PAGE, filteredTemples.length)} of {filteredTemples.length} temples
-            </p>
           </>
         )}
       </section>

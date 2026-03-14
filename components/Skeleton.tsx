@@ -15,15 +15,16 @@ export function Skeleton({ className = '' }: SkeletonProps) {
   )
 }
 
-/** Skeleton placeholder for a TempleCard */
+/** Skeleton placeholder for a TempleCard — 2030 style */
 export function TempleCardSkeleton() {
   return (
-    <div className="card overflow-hidden">
-      <Skeleton className="h-48 w-full rounded-none" />
+    <div className="rounded-2xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.9)', border: '1px solid rgba(229,224,213,0.6)' }}>
+      <Skeleton className="h-52 w-full rounded-none" />
       <div className="p-5 space-y-3">
-        <Skeleton className="h-5 w-3/4" />
-        <Skeleton className="h-4 w-full" />
-        <Skeleton className="h-4 w-5/6" />
+        <Skeleton className="h-5 w-3/4 rounded-lg" />
+        <Skeleton className="h-4 w-full rounded-lg" />
+        <Skeleton className="h-4 w-5/6 rounded-lg" />
+        <Skeleton className="h-3 w-24 rounded-full" />
       </div>
     </div>
   )
@@ -40,21 +41,27 @@ export function TempleGridSkeleton({ count = 8 }: { count?: number }) {
   )
 }
 
-/** Skeleton for a detail page (e.g., temple detail, blog detail) */
+/** Skeleton for a detail page (e.g., temple detail, blog detail) — 2030 style */
 export function DetailPageSkeleton() {
   return (
-    <div className="space-y-6">
-      <Skeleton className="h-4 w-32" />
-      <Skeleton className="h-8 w-2/3" />
-      <Skeleton className="h-64 w-full rounded-lg" />
-      <div className="space-y-3">
+    <div className="space-y-8">
+      {/* Hero skeleton */}
+      <Skeleton className="h-[50vh] w-full rounded-2xl" />
+      {/* Glass card skeleton */}
+      <div className="rounded-2xl border border-surface-border p-8 space-y-4" style={{ background: 'rgba(255,255,255,0.6)' }}>
+        <Skeleton className="h-6 w-48 rounded-xl" />
         <Skeleton className="h-4 w-full" />
         <Skeleton className="h-4 w-full" />
         <Skeleton className="h-4 w-3/4" />
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Skeleton className="h-24 rounded-lg" />
-        <Skeleton className="h-24 rounded-lg" />
+      {/* Bento grid skeleton */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <Skeleton className="h-28 rounded-2xl" />
+        <Skeleton className="h-28 rounded-2xl" />
+        <Skeleton className="h-28 rounded-2xl" />
+        <Skeleton className="h-28 rounded-2xl" />
+        <Skeleton className="h-28 rounded-2xl" />
+        <Skeleton className="h-28 rounded-2xl" />
       </div>
     </div>
   )

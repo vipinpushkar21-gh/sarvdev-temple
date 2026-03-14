@@ -83,4 +83,4 @@ export function verifyToken(token: string): TokenPayload | null {
 
 // Cookie helpers used in API route handlers
 export const AUTH_COOKIE_NAME = 'auth_token'
-export const AUTH_COOKIE_OPTIONS = `Path=/; HttpOnly; SameSite=Lax; Max-Age=${TOKEN_MAX_AGE}`
+export const AUTH_COOKIE_OPTIONS = `Path=/; HttpOnly; SameSite=Lax; Max-Age=${TOKEN_MAX_AGE}${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`

@@ -31,12 +31,12 @@ export default function AdminAnalyticsPage() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Analytics</h1>
+        <h1 className="admin-page-title">Analytics</h1>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 animate-pulse">
-              <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-32 mb-4" />
-              <div className="h-40 bg-gray-200 dark:bg-gray-700 rounded" />
+            <div key={i} className="admin-card p-6 animate-pulse">
+              <div className="h-5 bg-gray-100 rounded-lg w-32 mb-4" />
+              <div className="h-40 bg-gray-100 rounded-xl" />
             </div>
           ))}
         </div>
@@ -53,35 +53,35 @@ export default function AdminAnalyticsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Analytics</h1>
-        <p className="text-sm text-gray-500 mt-0.5">Visitor insights for the last 30 days</p>
+        <h1 className="admin-page-title">Analytics</h1>
+        <p className="admin-section-subtitle">Visitor insights for the last 30 days</p>
       </div>
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
-          <p className="text-sm text-gray-500">Total Visitors</p>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{totalVisitors.toLocaleString()}</p>
+        <div className="admin-stat">
+          <p className="stat-label">Total Visitors</p>
+          <p className="stat-value mt-1">{totalVisitors.toLocaleString()}</p>
         </div>
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
-          <p className="text-sm text-gray-500">Today</p>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{todayVisitors.toLocaleString()}</p>
+        <div className="admin-stat">
+          <p className="stat-label">Today</p>
+          <p className="stat-value mt-1">{todayVisitors.toLocaleString()}</p>
         </div>
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
-          <p className="text-sm text-gray-500">30-Day Total</p>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{dailyVisitors.reduce((s, d) => s + d.count, 0).toLocaleString()}</p>
+        <div className="admin-stat">
+          <p className="stat-label">30-Day Total</p>
+          <p className="stat-value mt-1">{dailyVisitors.reduce((s, d) => s + d.count, 0).toLocaleString()}</p>
         </div>
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
-          <p className="text-sm text-gray-500">Daily Average</p>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+        <div className="admin-stat">
+          <p className="stat-label">Daily Average</p>
+          <p className="stat-value mt-1">
             {dailyVisitors.length > 0 ? Math.round(dailyVisitors.reduce((s, d) => s + d.count, 0) / dailyVisitors.length).toLocaleString() : 0}
           </p>
         </div>
       </div>
 
       {/* Daily chart */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Daily Visitors — Last 30 Days</h2>
+      <div className="admin-card p-6">
+        <h2 className="admin-section-title mb-5">Daily Visitors — Last 30 Days</h2>
         {dailyVisitors.length > 0 ? (
           <div className="flex items-end gap-[2px] h-48 overflow-x-auto">
             {dailyVisitors.map((d) => (
@@ -109,19 +109,19 @@ export default function AdminAnalyticsPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Top Pages */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Top Pages</h2>
+        <div className="admin-card p-6">
+          <h2 className="admin-section-title mb-5">Top Pages</h2>
           <div className="space-y-3">
             {topPages.map((p, i) => {
               const pct = Math.round((p.count / (topPages[0]?.count || 1)) * 100)
               return (
                 <div key={p._id || i}>
                   <div className="flex justify-between text-sm mb-1">
-                    <span className="text-gray-700 dark:text-gray-300 truncate max-w-[70%]">{p._id || '/'}</span>
-                    <span className="text-gray-500 flex-shrink-0">{p.count.toLocaleString()}</span>
+                    <span className="text-gray-700 truncate max-w-[70%]">{p._id || '/'}</span>
+                    <span className="text-gray-400 flex-shrink-0">{p.count.toLocaleString()}</span>
                   </div>
-                  <div className="h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
-                    <div className="h-full bg-blue-500 rounded-full" style={{ width: `${pct}%` }} />
+                  <div className="h-1.5 rounded-full overflow-hidden" style={{ background: '#F3F4F6' }}>
+                    <div className="h-full rounded-full" style={{ width: `${pct}%`, background: 'linear-gradient(90deg, #3B82F6, #60A5FA)' }} />
                   </div>
                 </div>
               )
@@ -131,8 +131,8 @@ export default function AdminAnalyticsPage() {
         </div>
 
         {/* Device Breakdown */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Device Breakdown</h2>
+        <div className="admin-card p-6">
+          <h2 className="admin-section-title mb-5">Device Breakdown</h2>
           {deviceBreakdown.length > 0 ? (
             <>
               {/* Simple horizontal bar */}
@@ -154,8 +154,8 @@ export default function AdminAnalyticsPage() {
                       <div className={`w-3 h-3 rounded-full ${DEVICE_COLORS[d._id] || 'bg-gray-400'}`} />
                       <div className="flex-1">
                         <div className="flex justify-between text-sm">
-                          <span className="font-medium text-gray-900 dark:text-white">{d._id}</span>
-                          <span className="text-gray-500">{d.count.toLocaleString()} ({pct}%)</span>
+                          <span className="font-medium text-gray-900">{d._id}</span>
+                          <span className="text-gray-400">{d.count.toLocaleString()} ({pct}%)</span>
                         </div>
                       </div>
                     </div>

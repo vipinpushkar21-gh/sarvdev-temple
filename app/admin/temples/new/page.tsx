@@ -67,9 +67,9 @@ const sacredCategories = [
   "Other Sacred Group"
 ]
 
-const inputCls = "w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-const labelCls = "block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-const errorCls = "mt-1 text-xs text-red-600 dark:text-red-400"
+const inputCls = "admin-input w-full"
+const labelCls = "block text-sm font-medium text-gray-600 mb-1"
+const errorCls = "mt-1 text-xs text-red-500"
 
 export default function AdminNewTemplePage() {
   const router = useRouter()
@@ -154,10 +154,10 @@ export default function AdminNewTemplePage() {
   if (submitted) {
     return (
       <div className="flex flex-col items-center justify-center py-20 space-y-4">
-        <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center">
-          <svg className="w-8 h-8 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+        <div className="w-16 h-16 rounded-full flex items-center justify-center" style={{ background: '#ECFDF5' }}>
+          <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
         </div>
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white">Temple Added Successfully!</h2>
+        <h2 className="text-xl font-bold text-gray-900">Temple Added Successfully!</h2>
         <p className="text-sm text-gray-500">Redirecting to temples list...</p>
       </div>
     )
@@ -167,10 +167,10 @@ export default function AdminNewTemplePage() {
     <div className="max-w-3xl space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Add New Temple</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Fill in the temple details below</p>
+          <h1 className="admin-page-title">Add New Temple</h1>
+          <p className="admin-section-subtitle">Fill in the temple details below</p>
         </div>
-        <Link href="/admin/temples" className="px-4 py-2 text-sm font-medium rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600">
+        <Link href="/admin/temples" className="admin-btn admin-btn-ghost px-4 py-2 text-sm">
           ← Back to Temples
         </Link>
       </div>
@@ -178,8 +178,8 @@ export default function AdminNewTemplePage() {
       <form onSubmit={onSubmit} noValidate className="space-y-6">
 
         {/* Basic Information */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 space-y-5">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+        <div className="admin-card p-6 space-y-5">
+          <h2 className="admin-section-title flex items-center gap-2">
             <svg className="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75z" /></svg>
             Basic Information
           </h2>
@@ -232,9 +232,9 @@ export default function AdminNewTemplePage() {
 
           <div>
             <label className={labelCls}>Sacred Categories</label>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-1.5 mt-2 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-1.5 mt-2 p-4 rounded-xl" style={{ background: '#F9FAFB' }}>
               {sacredCategories.map(cat => (
-                <label key={cat} className="flex items-center gap-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 p-2 rounded-lg transition-colors text-sm">
+                <label key={cat} className="flex items-center gap-2 cursor-pointer hover:bg-white p-2 rounded-xl transition-colors text-sm">
                   <input
                     type="checkbox"
                     checked={form.categories.includes(cat)}
@@ -244,7 +244,7 @@ export default function AdminNewTemplePage() {
                     }}
                     className="w-4 h-4 rounded accent-orange-500"
                   />
-                  <span className="text-gray-700 dark:text-gray-300">{cat}</span>
+                  <span className="text-gray-700">{cat}</span>
                 </label>
               ))}
             </div>
@@ -253,8 +253,8 @@ export default function AdminNewTemplePage() {
         </div>
 
         {/* Location Details */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 space-y-5">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+        <div className="admin-card p-6 space-y-5">
+          <h2 className="admin-section-title flex items-center gap-2">
             <svg className="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" /></svg>
             Location Details
           </h2>
@@ -293,8 +293,8 @@ export default function AdminNewTemplePage() {
         </div>
 
         {/* Visit Information */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 space-y-5">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+        <div className="admin-card p-6 space-y-5">
+          <h2 className="admin-section-title flex items-center gap-2">
             <svg className="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
             Visit Information
           </h2>
@@ -314,8 +314,8 @@ export default function AdminNewTemplePage() {
         </div>
 
         {/* Contact Information */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 space-y-5">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+        <div className="admin-card p-6 space-y-5">
+          <h2 className="admin-section-title flex items-center gap-2">
             <svg className="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" /></svg>
             Contact Information
           </h2>
@@ -352,7 +352,7 @@ export default function AdminNewTemplePage() {
 
         {/* Submit */}
         <div className="flex items-center gap-4">
-          <button type="submit" disabled={loading} className="px-6 py-2.5 text-sm font-medium rounded-lg bg-orange-600 text-white hover:bg-orange-700 disabled:opacity-50 transition-colors flex items-center gap-2">
+          <button type="submit" disabled={loading} className="admin-btn admin-btn-primary px-6 py-2.5 text-sm disabled:opacity-50 flex items-center gap-2">
             {loading ? (
               <>
                 <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
@@ -360,7 +360,7 @@ export default function AdminNewTemplePage() {
               </>
             ) : 'Add Temple'}
           </button>
-          <Link href="/admin/temples" className="px-6 py-2.5 text-sm font-medium rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 transition-colors">
+          <Link href="/admin/temples" className="admin-btn admin-btn-ghost px-6 py-2.5 text-sm">
             Cancel
           </Link>
         </div>

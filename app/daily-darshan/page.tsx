@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Hero from '../../components/Hero'
+import BookmarkButton from '../../components/BookmarkButton'
 
 type Darshan = {
   _id: string
@@ -74,7 +75,20 @@ export default function DailyDarshanPage() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {items.map((d: Darshan) => (
-              <article key={d._id} className="group card-interactive overflow-hidden">
+              <article key={d._id} className="group card-interactive overflow-hidden relative">
+                <div className="absolute top-2 right-2 z-10">
+                  <BookmarkButton
+                    item={{
+                      id: d._id,
+                      type: 'darshan',
+                      title: d.title,
+                      slug: d._id,
+                      subtitle: d.temple || undefined,
+                    }}
+                    size="sm"
+                    className="bg-white/80 backdrop-blur-sm shadow-sm hover:bg-white"
+                  />
+                </div>
                 <div className="relative w-full h-48 bg-surface-sunken overflow-hidden">
                   {d.video ? (
                     <video controls src={d.video} className="w-full h-48 object-cover" />

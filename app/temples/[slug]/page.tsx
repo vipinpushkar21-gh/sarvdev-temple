@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useTranslation } from '../../../lib/translation'
@@ -32,11 +32,33 @@ function TempleDetailImage({ image, alt }: { image?: string; alt: string }) {
   )
 }
 
+/** Bento info card with icon and animated gradient top border */
+function BentoInfoCard({ icon, label, value, className = '', children }: {
+  icon: string; label: string; value?: string; className?: string; children?: React.ReactNode
+}) {
+  return (
+    <div className={`bento-card reveal-up gradient-shimmer group ${className}`}>
+      <div className="flex items-start gap-4">
+        <div className="bento-icon flex-shrink-0">
+          <span className="text-xl">{icon}</span>
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-caption font-semibold text-ink-muted uppercase tracking-wider mb-1">{label}</p>
+          {value && <p className="text-body font-medium text-ink leading-relaxed">{value}</p>}
+          {children}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function TemplePage({ params }: Props) {
   const { t, language } = useTranslation()
   const [temple, setTemple] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [slug, setSlug] = useState<string>('')
+  const [heroScale, setHeroScale] = useState(1)
+  const heroRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     params.then(p => setSlug(p.slug))
@@ -67,6 +89,18 @@ export default function TemplePage({ params }: Props) {
     fetchTemple()
   }, [slug])
 
+  // Parallax zoom effect on hero image
+  useEffect(() => {
+    function handleScroll() {
+      if (!heroRef.current) return
+      const rect = heroRef.current.getBoundingClientRect()
+      const scrollProgress = Math.max(0, Math.min(1, -rect.top / rect.height))
+      setHeroScale(1 + scrollProgress * 0.15)
+    }
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
   if (loading) {
     return (
       <main className="content-container section-sm">
@@ -77,10 +111,15 @@ export default function TemplePage({ params }: Props) {
 
   if (!temple) {
     return (
-      <main className="content-container section-sm text-center">
-        <h1 className="text-2xl font-semibold text-text">{t('temple.notFound')}</h1>
-        <p className="mt-4 text-text">{t('temple.notFoundDesc')}</p>
-        <Link href="/temples"><span className="inline-block mt-6 btn btn-primary">{t('temple.backToTemples')}</span></Link>
+      <main className="min-h-[60vh] flex flex-col items-center justify-center px-4">
+        <div className="bento-card p-10 text-center max-w-md">
+          <div className="bento-icon mx-auto mb-5 w-16 h-16 text-2xl">🏛️</div>
+          <h1 className="text-h2 font-serif text-secondary-700">{t('temple.notFound')}</h1>
+          <p className="mt-3 text-body text-ink-muted">{t('temple.notFoundDesc')}</p>
+          <Link href="/temples" className="inline-block mt-6 btn btn-primary btn-lg">
+            {t('temple.backToTemples')}
+          </Link>
+        </div>
       </main>
     )
   }
@@ -90,236 +129,278 @@ export default function TemplePage({ params }: Props) {
   const mapsLink = mapsLinkMatch ? mapsLinkMatch[1] : null
   const displayLocation = temple.location?.replace(/(https?:\/\/maps\.app\.goo\.gl\/[^\s,]+)/g, '').trim()
 
+  // Collect bento items
+  const bentoItems: { icon: string; label: string; value: string; span?: boolean }[] = []
+  if (temple.deity) bentoItems.push({ icon: '🕉️', label: t('temple.deity'), value: temple.deity })
+  if (temple.city && temple.state && !temple.city.includes('http'))
+    bentoItems.push({ icon: '📍', label: t('temple.location'), value: `${temple.city}, ${temple.state}${temple.pincode ? ` — ${temple.pincode}` : ''}` })
+  if (temple.templeType) bentoItems.push({ icon: '🏛️', label: t('temple.templeType'), value: temple.templeType })
+  if (temple.establishedYear) bentoItems.push({ icon: '📅', label: t('temple.established'), value: temple.establishedYear })
+  if (temple.timings) bentoItems.push({ icon: '⏰', label: t('temple.timings'), value: temple.timings })
+  if (temple.speciality) bentoItems.push({ icon: '✨', label: t('temple.speciality'), value: temple.speciality, span: true })
+
   return (
-    <main className="content-container section-sm">
-      <Breadcrumbs items={[
-        { label: 'Home', href: '/' },
-        { label: 'Temples', href: '/temples' },
-        { label: temple.title },
-      ]} />
-
-      {/* Verification Badge - Top Right Corner */}
-      <div className="flex justify-end mb-4">
-        <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-sm shadow-md ${
-          temple.verified === 'verified' 
-            ? 'bg-accent text-text border-2 border-secondary' 
-            : 'bg-background text-text border-2 border-accent'
-        }`}>
-          {temple.verified === 'verified' ? (
-            <>
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-              </svg>
-              <span>Verified Temple</span>
-            </>
-          ) : (
-            <>
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-              </svg>
-              <span>Not Verified</span>
-            </>
-          )}
-        </div>
-      </div>
-
-      <div className="flex items-center justify-between flex-wrap gap-4 mb-4">
-        <Link href="/temples" className="text-sm">← {t('temple.backToTemples')}</Link>
-        <ShareButtons title={temple.title} />
-      </div>
-
-      <header className="mt-4 flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-primary">{temple.title}</h1>
-          {displayLocation && <p className="mt-2 text-text">📍 {displayLocation}</p>}
-        </div>
-        <BookmarkButton
-          item={{ id: temple._id || slug, type: 'temple', title: temple.title, slug, image: temple.image }}
-        />
-      </header>
-
-      <div className="mt-6 w-full rounded-lg overflow-hidden shadow-lg">
-        <div className="relative h-64 sm:h-96 w-full bg-surface-sunken">
+    <>
+      {/* ── Immersive Hero Section ── */}
+      <div ref={heroRef} className="temple-hero-2030">
+        <div
+          className="absolute inset-0 parallax-zoom"
+          style={{ transform: `scale(${heroScale})`, transformOrigin: 'center center' }}
+        >
           <TempleDetailImage image={temple.image} alt={temple.title} />
         </div>
+
+        {/* Hero overlay content */}
+        <div className="temple-hero-content">
+          <div className="max-w-page mx-auto">
+            {/* Breadcrumb over hero */}
+            <nav className="mb-4 fade-in">
+              <ol className="flex items-center gap-1.5 text-body-sm text-white/70 flex-wrap">
+                <li><Link href="/" className="hover:text-white transition-colors text-white/70">Home</Link></li>
+                <li className="text-white/40">/</li>
+                <li><Link href="/temples" className="hover:text-white transition-colors text-white/70">Temples</Link></li>
+                <li className="text-white/40">/</li>
+                <li className="text-white font-medium truncate max-w-[250px]">{temple.title}</li>
+              </ol>
+            </nav>
+
+            {/* Verification badge */}
+            <div className="mb-3 reveal-up">
+              {temple.verified === 'verified' ? (
+                <span className="verified-badge-2030">
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                  Verified Temple
+                </span>
+              ) : (
+                <span className="unverified-badge-2030">
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  Not Verified
+                </span>
+              )}
+            </div>
+
+            {/* Temple title */}
+            <h1 className="text-display-lg text-white font-serif reveal-up" style={{ animationDelay: '100ms', textShadow: '0 2px 20px rgba(0,0,0,0.3)' }}>
+              {temple.title}
+            </h1>
+            {displayLocation && (
+              <p className="mt-3 text-body text-white/80 flex items-center gap-2 reveal-up" style={{ animationDelay: '200ms' }}>
+                <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+                </svg>
+                {displayLocation}
+              </p>
+            )}
+
+            {/* Floating action bar */}
+            <div className="mt-6 flex items-center gap-3 flex-wrap reveal-up" style={{ animationDelay: '300ms' }}>
+              <div className="floating-bar-2030 flex items-center gap-2 px-2 py-1.5">
+                <BookmarkButton
+                  item={{ id: temple._id || slug, type: 'temple', title: temple.title, slug, image: temple.image }}
+                />
+                <div className="w-px h-6 bg-surface-border" />
+                <ShareButtons title={temple.title} />
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <section className="mt-8 space-y-6">
-        <div>
-          <h2 className="text-xl font-semibold text-primary mb-3">{t('temple.about')}</h2>
-          <p className="text-text leading-relaxed">
+      {/* ── Main Content ── */}
+      <main className="max-w-page mx-auto px-4 sm:px-6 lg:px-8 -mt-8 relative z-20 pb-16">
+
+        {/* About Section — Glass card overlapping hero */}
+        <section className="glass-card-2030 p-6 sm:p-8 md:p-10 mb-10 reveal-up">
+          <div className="section-heading-2030">
+            <h2>{t('temple.about')}</h2>
+          </div>
+          <p className="text-body text-ink leading-[1.85] max-w-content">
             {language === 'hi' && temple.descriptionHi 
               ? temple.descriptionHi 
               : temple.description || t('temple.noDescription')
             }
           </p>
-        </div>
+        </section>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {temple.deity && (
-            <div className="bg-background p-4 rounded-lg border border-accent">
-              <h3 className="font-medium text-text">🕉️ {t('temple.deity')}</h3>
-              <p className="mt-1 text-text">{temple.deity}</p>
+        {/* Bento Grid — Temple Info */}
+        {bentoItems.length > 0 && (
+          <section className="mb-10">
+            <div className="section-heading-2030 reveal-up">
+              <h2>Temple Details</h2>
             </div>
-          )}
-
-          {temple.city && temple.state && !temple.city.includes('http') && (
-            <div className="bg-background p-4 rounded-lg border border-accent">
-              <h3 className="font-medium text-text">📍 {t('temple.location')}</h3>
-              <p className="mt-1 text-text">{temple.city}, {temple.state}</p>
-              {temple.pincode && <p className="text-sm text-text">{temple.pincode}</p>}
-              {mapsLink && (
-                <a 
-                  href={mapsLink} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="inline-block mt-2 text-sm hover:underline"
-                >
-                  🗺️ {t('temple.viewOnMaps')}
-                </a>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 stagger-children">
+              {bentoItems.map((item, idx) => (
+                <BentoInfoCard
+                  key={idx}
+                  icon={item.icon}
+                  label={item.label}
+                  value={item.value}
+                  className={item.span ? 'md:col-span-2 lg:col-span-3' : ''}
+                />
+              ))}
+              {/* Maps link inside bento if available */}
+              {mapsLink && temple.city && temple.state && (
+                <BentoInfoCard icon="🗺️" label={t('temple.viewOnMaps')} className="md:col-span-1">
+                  <a
+                    href={mapsLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="contact-link-2030 mt-1"
+                  >
+                    Open in Google Maps
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                    </svg>
+                  </a>
+                </BentoInfoCard>
               )}
             </div>
-          )}
+          </section>
+        )}
 
-          {temple.templeType && (
-            <div className="bg-background p-4 rounded-lg border border-accent">
-              <h3 className="font-medium text-text">🏛️ {t('temple.templeType')}</h3>
-              <p className="mt-1 text-text">{temple.templeType}</p>
-            </div>
-          )}
-
-          {temple.establishedYear && (
-            <div className="bg-background p-4 rounded-lg border border-accent">
-              <h3 className="font-medium text-text">📅 {t('temple.established')}</h3>
-              <p className="mt-1 text-text">{temple.establishedYear}</p>
-            </div>
-          )}
-
-          {temple.timings && (
-            <div className="bg-background p-4 rounded-lg border border-accent">
-              <h3 className="font-medium text-text">⏰ {t('temple.timings')}</h3>
-              <p className="mt-1 text-text">{temple.timings}</p>
-            </div>
-          )}
-
-          {temple.speciality && (
-            <div className="bg-background p-4 rounded-lg border border-accent md:col-span-2">
-              <h3 className="font-medium text-text">🌟 {t('temple.speciality')}</h3>
-              <p className="mt-1 text-text">{temple.speciality}</p>
-            </div>
-          )}
-        </div>
-
+        {/* Sacred Categories */}
         {temple.categories && temple.categories.length > 0 && (
-          <div className="bg-background p-5 rounded-xl border-2 border-accent">
-            <h2 className="text-xl font-semibold text-primary mb-3">🕉️ Sacred Categories</h2>
-            <div className="flex flex-wrap gap-2">
+          <section className="mb-10 reveal-up">
+            <div className="section-heading-2030">
+              <h2>Sacred Categories</h2>
+            </div>
+            <div className="flex flex-wrap gap-3">
               {temple.categories.map((cat: string, idx: number) => (
-                <span 
-                  key={idx} 
-                  className="px-4 py-2 text-sm font-medium rounded-full shadow-sm bg-secondary text-background"
-                >
+                <span key={idx} className="sacred-tag-2030" style={{ animationDelay: `${idx * 60}ms` }}>
+                  <span className="w-1.5 h-1.5 rounded-full bg-primary inline-block" />
                   {cat}
                 </span>
               ))}
             </div>
-          </div>
+          </section>
         )}
 
+        {/* Map CTA */}
         {mapsLink && (
-          <div>
-            <h2 className="text-xl font-semibold text-primary mb-3">📍 {t('temple.locationMap')}</h2>
-            <div className="bg-background p-4 rounded-lg border border-accent">
-              {displayLocation && <p className="text-sm text-text mb-3">{displayLocation}</p>}
-              <a 
-                href={mapsLink} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="inline-block btn btn-primary"
-              >
-                🗺️ {t('temple.openInMaps')}
-              </a>
-            </div>
-          </div>
+          <section className="mb-10 reveal-up">
+            <a
+              href={mapsLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="map-cta-2030 flex items-center justify-between gap-6 no-underline group"
+            >
+              <div className="relative z-10">
+                <p className="text-white/80 text-caption font-semibold uppercase tracking-wider mb-1">{t('temple.locationMap')}</p>
+                <p className="text-white text-h3 font-serif">
+                  {displayLocation || 'View on Maps'}
+                </p>
+                <span className="inline-flex items-center gap-2 mt-3 text-white/90 text-body-sm font-medium group-hover:translate-x-1 transition-transform">
+                  {t('temple.openInMaps')}
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M17.25 8.25L21 12m0 0l-3.75 3.75M21 12H3" />
+                  </svg>
+                </span>
+              </div>
+              <div className="relative z-10 hidden sm:flex items-center justify-center w-16 h-16 rounded-2xl bg-white/15 backdrop-blur-sm">
+                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+                </svg>
+              </div>
+            </a>
+          </section>
         )}
 
-        {(temple.phone || temple.email || temple.website) && (
-          <div>
-            <h2 className="text-xl font-semibold text-primary mb-3">{t('temple.contactInfo')}</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Contact Info */}
+        {(temple.phone || temple.email || temple.website || temple.contact) && (
+          <section className="mb-10 reveal-up">
+            <div className="section-heading-2030">
+              <h2>{t('temple.contactInfo')}</h2>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 stagger-children">
               {temple.phone && (
-                <div className="bg-background p-4 rounded-lg border border-accent">
-                  <h3 className="font-medium text-text">📞 {t('temple.phone')}</h3>
-                  <a href={`tel:${temple.phone}`} className="mt-1 hover:underline">{temple.phone}</a>
-                </div>
+                <BentoInfoCard icon="📞" label={t('temple.phone')}>
+                  <a href={`tel:${temple.phone}`} className="contact-link-2030 mt-1">{temple.phone}</a>
+                </BentoInfoCard>
               )}
-
               {temple.email && (
-                <div className="bg-background p-4 rounded-lg border border-accent">
-                  <h3 className="font-medium text-text">📧 {t('temple.email')}</h3>
-                  <a href={`mailto:${temple.email}`} className="mt-1 hover:underline">{temple.email}</a>
-                </div>
+                <BentoInfoCard icon="📧" label={t('temple.email')}>
+                  <a href={`mailto:${temple.email}`} className="contact-link-2030 mt-1">{temple.email}</a>
+                </BentoInfoCard>
               )}
-
               {temple.website && (
-                <div className="bg-background p-4 rounded-lg border border-accent">
-                  <h3 className="font-medium text-text">🌐 {t('temple.website')}</h3>
-                  <a href={temple.website} target="_blank" rel="noopener noreferrer" className="mt-1 hover:underline">{t('temple.visitWebsite')}</a>
-                </div>
+                <BentoInfoCard icon="🌐" label={t('temple.website')}>
+                  <a href={temple.website} target="_blank" rel="noopener noreferrer" className="contact-link-2030 mt-1">
+                    {t('temple.visitWebsite')}
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                    </svg>
+                  </a>
+                </BentoInfoCard>
               )}
-
               {temple.contact && (
-                <div className="bg-background p-4 rounded-lg border border-accent">
-                  <h3 className="font-medium text-text">👤 {t('temple.contactPerson')}</h3>
-                  <p className="mt-1 text-text">{temple.contact}</p>
-                </div>
+                <BentoInfoCard icon="👤" label={t('temple.contactPerson')} value={temple.contact} />
               )}
             </div>
-          </div>
+          </section>
         )}
 
+        {/* Social Media */}
         {(temple.facebook || temple.instagram) && (
-          <div>
-            <h2 className="text-xl font-semibold text-primary mb-3">{t('temple.socialMedia')}</h2>
-            <div className="flex gap-4">
+          <section className="mb-10 reveal-up">
+            <div className="section-heading-2030">
+              <h2>{t('temple.socialMedia')}</h2>
+            </div>
+            <div className="flex gap-4 flex-wrap">
               {temple.facebook && (
-                <a href={temple.facebook} target="_blank" rel="noopener noreferrer" className="btn btn-secondary">
+                <a href={temple.facebook} target="_blank" rel="noopener noreferrer"
+                  className="social-btn-2030 bg-blue-600 hover:bg-blue-700 no-underline">
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                  </svg>
                   Facebook
                 </a>
               )}
               {temple.instagram && (
-                <a href={temple.instagram} target="_blank" rel="noopener noreferrer" className="btn btn-secondary">
+                <a href={temple.instagram} target="_blank" rel="noopener noreferrer"
+                  className="social-btn-2030 no-underline" style={{ background: 'linear-gradient(135deg, #833AB4, #FD1D1D, #F77737)' }}>
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z" />
+                  </svg>
                   Instagram
                 </a>
               )}
             </div>
-          </div>
+          </section>
         )}
 
         {/* Disclaimer for Not Verified Temples */}
         {temple.verified === 'not-verified' && (
-          <div className="bg-background border-l-4 border-accent p-4">
-            <div className="flex">
-              <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-accent" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <div className="ml-3">
-                <p className="text-sm text-text">
-                  <strong>Note:</strong> This temple information has not been verified yet. Details may be incomplete or inaccurate. 
-                  We are working on verification. Please verify timings and other details before visiting.
-                </p>
-              </div>
+          <div className="disclaimer-2030 reveal-up mb-10">
+            <div className="bento-icon flex-shrink-0 w-10 h-10 text-base" style={{ background: 'linear-gradient(135deg, rgba(245,127,23,0.15), rgba(245,127,23,0.05))' }}>
+              <svg className="w-5 h-5 text-semantic-warning" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-body-sm font-semibold text-ink mb-1">Verification Pending</p>
+              <p className="text-body-sm text-ink-muted leading-relaxed">
+                This temple information has not been verified yet. Details may be incomplete or inaccurate. 
+                Please verify timings and other details before visiting.
+              </p>
             </div>
           </div>
         )}
 
-        {/* Share at bottom */}
-        <div className="pt-4 border-t border-surface-border">
+        {/* Bottom Share Bar */}
+        <div className="bento-card p-5 flex items-center justify-between flex-wrap gap-4 reveal-up">
+          <div className="flex items-center gap-3">
+            <div className="bento-icon w-10 h-10 text-base">🙏</div>
+            <p className="text-body-sm font-medium text-ink">Share this sacred place with others</p>
+          </div>
           <ShareButtons title={temple.title} />
         </div>
-      </section>
-    </main>
+      </main>
+    </>
   )
 }

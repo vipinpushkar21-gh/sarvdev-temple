@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { TextToSpeech } from '../components/TextToSpeech'
 import { renderBilingualTitle, isDevanagari } from '../utils/bilingual'
 import Hero from '../../../components/Hero'
+import BookmarkButton from '../../../components/BookmarkButton'
 
 type Devotional = {
   _id: string
@@ -149,18 +150,29 @@ export default function DevotionalDetailPage() {
       <main className="page-container section-sm min-h-screen">
         <div className="max-w-3xl mx-auto">
 
-          {/* ── Breadcrumb ── */}
-          <nav className="flex items-center gap-2 text-body-sm text-ink-muted mb-6">
-            <Link href="/devotionals" className="hover:text-primary-600 transition-colors">Devotionals</Link>
-            <span>/</span>
-            {devotional.category && (
-              <>
-                <Link href={`/devotionals/category/${devotional.category === '108 Namavali' ? 'namavali' : devotional.category.toLowerCase().replace(/\s+/g, '-')}`} className="hover:text-primary-600 transition-colors">{devotional.category}</Link>
-                <span>/</span>
-              </>
-            )}
-            <span className="text-ink font-medium truncate">{bt.primary}</span>
-          </nav>
+          {/* ── Breadcrumb + Bookmark ── */}
+          <div className="flex items-center justify-between gap-4 mb-6">
+            <nav className="flex items-center gap-2 text-body-sm text-ink-muted min-w-0">
+              <Link href="/devotionals" className="hover:text-primary-600 transition-colors flex-shrink-0">Devotionals</Link>
+              <span>/</span>
+              {devotional.category && (
+                <>
+                  <Link href={`/devotionals/category/${devotional.category === '108 Namavali' ? 'namavali' : devotional.category.toLowerCase().replace(/\s+/g, '-')}`} className="hover:text-primary-600 transition-colors flex-shrink-0">{devotional.category}</Link>
+                  <span>/</span>
+                </>
+              )}
+              <span className="text-ink font-medium truncate">{bt.primary}</span>
+            </nav>
+            <BookmarkButton
+              item={{
+                id: devotional._id,
+                type: 'devotional',
+                title: bt.primary,
+                slug: params.id as string,
+                subtitle: devotional.category || undefined,
+              }}
+            />
+          </div>
 
           {/* ── Meta Card ── */}
           <div className="relative card overflow-hidden p-6 sm:p-8 mb-6 fade-up">

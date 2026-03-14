@@ -77,8 +77,10 @@ const CATEGORY_MAP: { [key: string]: { label: string; hindi: string } } = {
   'durga': { label: 'Durga', hindi: 'दुर्गा' },
   'kuber': { label: 'Kuber', hindi: 'कुबेर' },
   'namavali': { label: 'Namavali', hindi: 'नामावली' },
+  'kavacham': { label: 'Kavacham', hindi: 'कवचम्' },
+  'prarthana': { label: 'Prarthana', hindi: 'प्रार्थना' },
+  'vrat-katha': { label: 'Vrat Katha', hindi: 'व्रत कथा' },
   'other': { label: 'Other', hindi: 'अन्य' }
-  // Removed duplicate 'stotra/suktam' entry
 }
 
 export default function CategoryPage() {

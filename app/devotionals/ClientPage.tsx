@@ -10,6 +10,7 @@ import { FULL_CATEGORIES, EXCLUDED_CATEGORY_IDS } from './components/categories'
 import { SearchBar } from './components/SearchBar'
 import { DevotionalCard } from './components/DevotionalCard'
 import { renderBilingualTitle } from './utils/bilingual'
+import BookmarkButton from '../../components/BookmarkButton'
 // import DevotionalMosaic from './components/DevotionalMosaic'
 
 /* ─── Helpers ─── */
@@ -310,25 +311,40 @@ export default function ClientPage() {
         {secondary && <span className="text-ink-muted font-normal text-body-sm leading-tight mt-0.5">{secondary}</span>}
       </div>
     )
+    const devSlug = createSlug(d.title || '')
     return (
-      <Link
-        key={d._id}
-        href={`/devotionals/${createSlug(d.title || '')}`}
-        className="focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 rounded-2xl"
-      >
-        <DevotionalCard
-          title={d.title || ''}
-          titleNode={titleNode}
-          category={d.category}
-          language={d.language}
-          type={d.type}
-          deity={d.deity}
-          description={d.description}
-          descriptionNode={d.description ? highlightText(d.description, debouncedSearch) : undefined}
-          hasAudio={!!d.audio}
-          isFeatured={opts?.showFeatured}
-        />
-      </Link>
+      <div key={d._id} className="relative">
+        <div className="absolute top-2 right-2 z-10">
+          <BookmarkButton
+            item={{
+              id: d._id,
+              type: 'devotional',
+              title: bt.primary,
+              slug: devSlug,
+              subtitle: d.category || undefined,
+            }}
+            size="sm"
+            className="bg-white/80 backdrop-blur-sm shadow-sm hover:bg-white"
+          />
+        </div>
+        <Link
+          href={`/devotionals/${devSlug}`}
+          className="focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 rounded-2xl"
+        >
+          <DevotionalCard
+            title={d.title || ''}
+            titleNode={titleNode}
+            category={d.category}
+            language={d.language}
+            type={d.type}
+            deity={d.deity}
+            description={d.description}
+            descriptionNode={d.description ? highlightText(d.description, debouncedSearch) : undefined}
+            hasAudio={!!d.audio}
+            isFeatured={opts?.showFeatured}
+          />
+        </Link>
+      </div>
     )
   }
 

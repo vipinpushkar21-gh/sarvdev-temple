@@ -93,30 +93,30 @@ export default function AdminImportPage() {
   return (
     <div className="space-y-6 max-w-4xl">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Bulk Import</h1>
-        <p className="text-sm text-gray-500 mt-0.5">Import temples or devotionals in bulk using CSV or JSON</p>
+        <h1 className="admin-page-title">Bulk Import</h1>
+        <p className="admin-section-subtitle">Import temples or devotionals in bulk using CSV or JSON</p>
       </div>
 
       {/* Entity selector */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">1. Select Type</h2>
+      <div className="admin-card p-6">
+        <h2 className="admin-section-title mb-3">1. Select Type</h2>
         <div className="flex gap-3">
-          <button onClick={() => { setEntity('temples'); setParsed([]); setErrors([]) }} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${entity === 'temples' ? 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300' : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300'}`}>
+          <button onClick={() => { setEntity('temples'); setParsed([]); setErrors([]) }} className={`admin-btn px-4 py-2 text-sm ${entity === 'temples' ? 'admin-btn-primary' : 'admin-btn-ghost'}`}>
             Temples
           </button>
-          <button onClick={() => { setEntity('devotionals'); setParsed([]); setErrors([]) }} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${entity === 'devotionals' ? 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300' : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300'}`}>
+          <button onClick={() => { setEntity('devotionals'); setParsed([]); setErrors([]) }} className={`admin-btn px-4 py-2 text-sm ${entity === 'devotionals' ? 'admin-btn-primary' : 'admin-btn-ghost'}`}>
             Devotionals
           </button>
         </div>
       </div>
 
       {/* Format guide */}
-      <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-xl p-5">
-        <h3 className="font-semibold text-blue-800 dark:text-blue-300 mb-2">Format Guide</h3>
+      <div className="admin-card p-5" style={{ background: '#EFF6FF', borderColor: 'rgba(59,130,246,0.15)' }}>
+        <h3 className="font-semibold text-blue-800 mb-2">Format Guide</h3>
         {entity === 'temples' ? (
-          <div className="text-sm text-blue-700 dark:text-blue-400 space-y-2">
+          <div className="text-sm text-blue-700 space-y-2">
             <p><strong>CSV columns:</strong> title, description, location, city, state, country, deity, type, pincode</p>
-            <pre className="bg-blue-100 dark:bg-blue-900 rounded p-2 text-xs overflow-x-auto">
+            <pre className="rounded-xl p-2 text-xs overflow-x-auto" style={{ background: 'rgba(59,130,246,0.08)' }}>
 {`title,description,location,state,deity
 Kashi Vishwanath,Ancient Shiva temple,Varanasi,Uttar Pradesh,Lord Shiva
 Meenakshi Temple,Historic temple,Madurai,Tamil Nadu,Goddess Meenakshi`}
@@ -124,9 +124,9 @@ Meenakshi Temple,Historic temple,Madurai,Tamil Nadu,Goddess Meenakshi`}
             <p><strong>JSON:</strong> Array of objects with same fields</p>
           </div>
         ) : (
-          <div className="text-sm text-blue-700 dark:text-blue-400 space-y-2">
+          <div className="text-sm text-blue-700 space-y-2">
             <p><strong>CSV columns:</strong> title, description, category, language, deity, audio, lyrics, artist, duration</p>
-            <pre className="bg-blue-100 dark:bg-blue-900 rounded p-2 text-xs overflow-x-auto">
+            <pre className="rounded-xl p-2 text-xs overflow-x-auto" style={{ background: 'rgba(59,130,246,0.08)' }}>
 {`title,category,deity,language
 Shiv Tandav Stotram,Stotra,Lord Shiva,Sanskrit
 Hanuman Chalisa,Chalisa,Lord Hanuman,Hindi`}
@@ -136,20 +136,20 @@ Hanuman Chalisa,Chalisa,Lord Hanuman,Hindi`}
       </div>
 
       {/* Input area */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">2. Paste Data</h2>
+      <div className="admin-card p-6">
+        <h2 className="admin-section-title mb-3">2. Paste Data</h2>
         <textarea
           value={rawText}
           onChange={e => setRawText(e.target.value)}
           rows={10}
-          className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm font-mono focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+          className="admin-input w-full font-mono"
           placeholder={`Paste CSV or JSON data here...\n\nCSV example:\ntitle,description,location\nTemple Name,Description text,City Name`}
         />
         <div className="flex gap-3 mt-3">
-          <button onClick={parseCSV} disabled={!rawText.trim()} className="px-4 py-2 text-sm font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-40 transition-colors">
+          <button onClick={parseCSV} disabled={!rawText.trim()} className="admin-btn admin-btn-primary px-4 py-2 text-sm disabled:opacity-40">
             Parse as CSV
           </button>
-          <button onClick={parseJSON} disabled={!rawText.trim()} className="px-4 py-2 text-sm font-medium rounded-lg bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-40 transition-colors">
+          <button onClick={parseJSON} disabled={!rawText.trim()} className="admin-btn px-4 py-2 text-sm disabled:opacity-40" style={{ background: '#7C3AED', color: 'white' }}>
             Parse as JSON
           </button>
         </div>
@@ -157,9 +157,9 @@ Hanuman Chalisa,Chalisa,Lord Hanuman,Hindi`}
 
       {/* Errors */}
       {errors.length > 0 && (
-        <div className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-xl p-4">
-          <h3 className="font-semibold text-red-700 dark:text-red-400 mb-2">Errors ({errors.length})</h3>
-          <ul className="text-sm text-red-600 dark:text-red-400 space-y-1">
+        <div className="admin-card p-4" style={{ background: '#FEF2F2', borderColor: 'rgba(220,38,38,0.15)' }}>
+          <h3 className="font-semibold text-red-700 mb-2">Errors ({errors.length})</h3>
+          <ul className="text-sm text-red-600 space-y-1">
             {errors.slice(0, 10).map((e, i) => <li key={i}>- {e}</li>)}
             {errors.length > 10 && <li>...and {errors.length - 10} more</li>}
           </ul>
@@ -168,33 +168,33 @@ Hanuman Chalisa,Chalisa,Lord Hanuman,Hindi`}
 
       {/* Preview */}
       {parsed.length > 0 && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
+        <div className="admin-card p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">3. Preview ({parsed.length} items)</h2>
+            <h2 className="admin-section-title">3. Preview ({parsed.length} items)</h2>
             <button
               onClick={doImport}
               disabled={importing}
-              className="px-5 py-2 text-sm font-medium rounded-lg bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 transition-colors"
+              className="admin-btn admin-btn-success px-5 py-2 text-sm disabled:opacity-50"
             >
               {importing ? 'Importing...' : `Import ${parsed.length} ${entity}`}
             </button>
           </div>
-          <div className="overflow-x-auto max-h-72">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 dark:bg-gray-700 sticky top-0">
+          <div className="admin-table-wrap overflow-x-auto max-h-72">
+            <table>
+              <thead className="sticky top-0">
                 <tr>
-                  <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500">#</th>
+                  <th>#</th>
                   {Object.keys(parsed[0] || {}).slice(0, 6).map(k => (
-                    <th key={k} className="px-3 py-2 text-left text-xs font-semibold text-gray-500">{k}</th>
+                    <th key={k}>{k}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {parsed.slice(0, 20).map((row, i) => (
-                  <tr key={i} className="border-t border-gray-100 dark:border-gray-700">
-                    <td className="px-3 py-2 text-gray-400">{i + 1}</td>
+                  <tr key={i}>
+                    <td className="text-gray-400">{i + 1}</td>
                     {Object.values(row).slice(0, 6).map((v, j) => (
-                      <td key={j} className="px-3 py-2 text-gray-700 dark:text-gray-300 max-w-[200px] truncate">{v}</td>
+                      <td key={j} className="text-gray-700 max-w-[200px] truncate">{v}</td>
                     ))}
                   </tr>
                 ))}
@@ -209,8 +209,8 @@ Hanuman Chalisa,Chalisa,Lord Hanuman,Hindi`}
 
       {/* Result */}
       {result && (
-        <div className={`rounded-xl p-5 border ${result.failed === 0 ? 'bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800' : 'bg-yellow-50 dark:bg-yellow-950 border-yellow-200 dark:border-yellow-800'}`}>
-          <h3 className={`font-semibold mb-1 ${result.failed === 0 ? 'text-green-700 dark:text-green-300' : 'text-yellow-700 dark:text-yellow-300'}`}>Import Complete</h3>
+        <div className="admin-card p-5" style={{ background: result.failed === 0 ? '#F0FDF4' : '#FFFBEB', borderColor: result.failed === 0 ? 'rgba(22,163,74,0.15)' : 'rgba(217,119,6,0.15)' }}>
+          <h3 className={`font-semibold mb-1 ${result.failed === 0 ? 'text-green-700' : 'text-yellow-700'}`}>Import Complete</h3>
           <p className="text-sm">
             <span className="text-green-600 font-medium">{result.success} succeeded</span>
             {result.failed > 0 && <span className="text-red-600 font-medium"> · {result.failed} failed</span>}

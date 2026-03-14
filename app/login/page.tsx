@@ -48,7 +48,7 @@ export default function LoginPage() {
       } else {
         setError(data.error || 'Login failed')
       }
-    } catch {
+    } catch (err) {
       setError('Network error. Please try again.')
     } finally {
       setLoading(false)
@@ -121,6 +121,7 @@ export default function LoginPage() {
             <button
               type="button"
               onClick={() => switchTab('login')}
+              suppressHydrationWarning
               className={`flex-1 py-2.5 text-body-sm font-semibold rounded-lg transition-all duration-200 ${
                 tab === 'login'
                   ? 'bg-white text-secondary-800 shadow-md'
@@ -132,6 +133,7 @@ export default function LoginPage() {
             <button
               type="button"
               onClick={() => switchTab('register')}
+              suppressHydrationWarning
               className={`flex-1 py-2.5 text-body-sm font-semibold rounded-lg transition-all duration-200 ${
                 tab === 'register'
                   ? 'bg-white text-secondary-800 shadow-md'
@@ -164,6 +166,7 @@ export default function LoginPage() {
                   placeholder="you@example.com"
                   required
                   autoComplete="email"
+                  suppressHydrationWarning
                 />
               </div>
 
@@ -178,10 +181,11 @@ export default function LoginPage() {
                   placeholder="Enter password"
                   required
                   autoComplete="current-password"
+                  suppressHydrationWarning
                 />
               </div>
 
-              <button type="submit" disabled={loading} className="w-full btn btn-primary btn-lg disabled:opacity-60">
+              <button type="submit" disabled={loading} suppressHydrationWarning className="w-full btn btn-primary btn-lg disabled:opacity-60">
                 {loading ? (
                   <span className="flex items-center gap-2">
                     <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
@@ -192,7 +196,7 @@ export default function LoginPage() {
 
               <p className="text-center text-caption text-ink-faint mt-3">
                 Don&apos;t have an account?{' '}
-                <button type="button" onClick={() => switchTab('register')} className="text-primary-600 font-semibold hover:text-primary-700 transition-colors">
+                <button type="button" onClick={() => switchTab('register')} suppressHydrationWarning className="text-primary-600 font-semibold hover:text-primary-700 transition-colors">
                   Register
                 </button>
               </p>
@@ -213,6 +217,7 @@ export default function LoginPage() {
                   placeholder="Your name"
                   required
                   autoComplete="name"
+                  suppressHydrationWarning
                 />
               </div>
 
@@ -227,6 +232,7 @@ export default function LoginPage() {
                   placeholder="you@example.com"
                   required
                   autoComplete="email"
+                  suppressHydrationWarning
                 />
               </div>
 
@@ -242,6 +248,7 @@ export default function LoginPage() {
                   required
                   minLength={6}
                   autoComplete="new-password"
+                  suppressHydrationWarning
                 />
               </div>
 
@@ -257,10 +264,11 @@ export default function LoginPage() {
                   required
                   minLength={6}
                   autoComplete="new-password"
+                  suppressHydrationWarning
                 />
               </div>
 
-              <button type="submit" disabled={loading} className="w-full btn btn-primary btn-lg disabled:opacity-60">
+              <button type="submit" disabled={loading} suppressHydrationWarning className="w-full btn btn-primary btn-lg disabled:opacity-60">
                 {loading ? (
                   <span className="flex items-center gap-2">
                     <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
@@ -271,7 +279,7 @@ export default function LoginPage() {
 
               <p className="text-center text-caption text-ink-faint mt-3">
                 Already have an account?{' '}
-                <button type="button" onClick={() => switchTab('login')} className="text-primary-600 font-semibold hover:text-primary-700 transition-colors">
+                <button type="button" onClick={() => switchTab('login')} suppressHydrationWarning className="text-primary-600 font-semibold hover:text-primary-700 transition-colors">
                   Login
                 </button>
               </p>

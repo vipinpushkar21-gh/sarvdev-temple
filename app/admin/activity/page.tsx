@@ -62,9 +62,9 @@ export default function AdminActivityPage() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Activity Log</h1>
+        <h1 className="admin-page-title">Activity Log</h1>
         <div className="animate-pulse space-y-3">
-          {[...Array(8)].map((_, i) => <div key={i} className="h-16 bg-gray-200 dark:bg-gray-800 rounded-lg" />)}
+          {[...Array(8)].map((_, i) => <div key={i} className="h-16 bg-gray-100 rounded-xl" />)}
         </div>
       </div>
     )
@@ -73,21 +73,21 @@ export default function AdminActivityPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Activity Log</h1>
-        <p className="text-sm text-gray-500 mt-0.5">Track all admin actions across the platform</p>
+        <h1 className="admin-page-title">Activity Log</h1>
+        <p className="admin-section-subtitle">Track all admin actions across the platform</p>
       </div>
 
       {/* Filters */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+      <div className="admin-filter-bar">
         <div className="flex flex-wrap gap-2">
           {['', 'temple', 'devotional', 'blog', 'event', 'user', 'darshan'].map(e => (
             <button
               key={e}
               onClick={() => { setLoading(true); setEntityFilter(e) }}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+              className={`px-3 py-1.5 rounded-xl text-sm font-semibold transition-all duration-200 ${
                 entityFilter === e
-                  ? 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
+                  ? 'admin-badge-orange'
+                  : 'admin-btn admin-btn-ghost'
               }`}
             >
               {e ? `${ENTITY_ICONS[e] || ''} ${e.charAt(0).toUpperCase() + e.slice(1)}` : 'All'}
@@ -97,24 +97,24 @@ export default function AdminActivityPage() {
       </div>
 
       {/* Log entries */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
+      <div className="admin-card">
         {logs.length > 0 ? (
-          <ul className="divide-y divide-gray-100 dark:divide-gray-700">
+          <ul className="divide-y" style={{ borderColor: 'rgba(0,0,0,0.04)' }}>
             {logs.map(log => (
-              <li key={log._id} className="px-5 py-4 flex items-start gap-4 hover:bg-gray-50 dark:hover:bg-gray-700/50">
+              <li key={log._id} className="px-5 py-4 flex items-start gap-4 hover:bg-orange-50/30 transition-colors">
                 <div className="text-2xl flex-shrink-0 mt-0.5">
                   {ENTITY_ICONS[log.entity] || '📋'}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className={`px-2 py-0.5 rounded text-[11px] font-semibold uppercase ${ACTION_COLORS[log.action] || 'bg-gray-100 text-gray-600'}`}>
+                    <span className={`px-2 py-0.5 rounded-lg text-[11px] font-semibold uppercase ${ACTION_COLORS[log.action] || 'bg-gray-100 text-gray-600'}`}>
                       {log.action}
                     </span>
-                    <span className="text-sm font-medium text-gray-900 dark:text-white">
+                    <span className="text-sm font-medium text-gray-900">
                       {log.entity}
                     </span>
                     {log.entityTitle && (
-                      <span className="text-sm text-gray-600 dark:text-gray-300 truncate">
+                      <span className="text-sm text-gray-500 truncate">
                         — {log.entityTitle}
                       </span>
                     )}
