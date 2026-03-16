@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import ImageUpload from "../../../../components/ImageUpload"
 
 type FormState = {
   name: string
@@ -306,8 +307,12 @@ export default function AdminNewTemplePage() {
               {errors.timings && <p className={errorCls}>{errors.timings}</p>}
             </div>
             <div>
-              <label className={labelCls}>Image URL</label>
-              <input value={form.imageUrl} onChange={e => onChange("imageUrl", e.target.value)} placeholder="https://example.com/temple.jpg" className={`${inputCls} ${errors.imageUrl ? 'border-red-400 dark:border-red-600' : ''}`} />
+              <ImageUpload
+                label="Temple Image"
+                value={form.imageUrl}
+                onChange={url => onChange("imageUrl", url)}
+                folder="sarvdev/temples"
+              />
               {errors.imageUrl && <p className={errorCls}>{errors.imageUrl}</p>}
             </div>
           </div>

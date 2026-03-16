@@ -78,12 +78,8 @@ export default function EventDetailPage() {
   return (
     <>
       {/* ─── Page Header ─── */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-surface-sunken via-surface to-primary-50/15 border-b border-surface-border">
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-0 right-[20%] w-48 h-48 bg-primary/[0.04] rounded-full blur-3xl" />
-          <div className="absolute bottom-0 left-[10%] w-36 h-36 bg-accent/[0.04] rounded-full blur-3xl" />
-        </div>
-        <div className="page-container py-10 md:py-14 relative z-10">
+      <div className="page-header">
+        <div className="page-header-inner">
           {/* Breadcrumb */}
           <nav className="flex items-center gap-2 text-body-sm text-ink-muted mb-4">
             <Link href="/" className="hover:text-primary-600 transition-colors no-underline hover:no-underline">Home</Link>
@@ -105,7 +101,7 @@ export default function EventDetailPage() {
           </div>
 
           {/* Title */}
-          <h1 className="text-display-lg font-serif text-secondary-800 leading-tight">{event.title}</h1>
+          <h1>{event.title}</h1>
           <p className="text-h4 text-ink-muted font-medium mt-1">{event.titleHi}</p>
 
           {/* Date & Location */}
@@ -123,7 +119,6 @@ export default function EventDetailPage() {
               <span className="text-body-sm">{event.location} · {event.state}</span>
             </div>
           </div>
-          <div className="mt-5 w-16 h-1 rounded-full bg-gradient-to-r from-primary to-accent" />
         </div>
       </div>
 
@@ -177,8 +172,7 @@ export default function EventDetailPage() {
           <div className="space-y-6">
 
             {/* Quick Info Card */}
-            <div className="relative card overflow-hidden p-6 sticky top-28">
-              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-accent to-primary" />
+            <div className="card p-6 sticky top-28">
               <h3 className="text-h4 font-serif text-secondary-800 mb-4">Quick Info</h3>
 
               <div className="space-y-3">
@@ -262,10 +256,7 @@ export default function EventDetailPage() {
         {/* ─── Related Events ─── */}
         {relatedEvents.length > 0 && (
           <section className="mt-12 pt-10 border-t border-surface-border">
-            <div className="mb-8">
-              <h2 className="text-h2 font-serif text-secondary-800">Related Events</h2>
-              <div className="mt-3 w-16 h-1 rounded-full bg-gradient-to-r from-primary to-accent" />
-            </div>
+            <h2 className="text-h2 font-serif text-secondary-800 mb-6">Related Events</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {relatedEvents.map(rel => (
                 <RelatedEventCard key={rel.id} event={rel} />
@@ -308,9 +299,8 @@ function RelatedEventCard({ event }: { event: HinduEvent }) {
             </svg>
             <span className="truncate">{event.location}</span>
           </div>
-          <span className="mt-3 inline-flex items-center gap-1 text-caption text-primary-600 font-semibold group-hover:text-primary-700 transition-colors">
+          <span className="mt-3 text-caption text-primary-600 font-medium group-hover:text-primary-700 transition-colors block">
             View Details
-            <svg className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" /></svg>
           </span>
         </div>
       </article>

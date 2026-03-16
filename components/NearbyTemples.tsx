@@ -72,30 +72,18 @@ export default function NearbyTemples() {
   if (status === 'idle') {
     return (
       <section className="section-sm">
-        <div className="page-container">
-          <div className="relative card overflow-hidden text-center py-12 px-6">
-            <div className="absolute inset-0 bg-gradient-to-br from-primary-50/40 via-transparent to-accent-50/30 pointer-events-none" />
-            <div className="relative z-10">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center mx-auto mb-5 shadow-lg shadow-primary/20">
-                <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
-                </svg>
-              </div>
-              <h2 className="text-h2 font-serif text-secondary-800 mb-2">
-                {language === 'hi' ? 'आपके पास के मंदिर' : 'Temples Near You'}
-              </h2>
-              <p className="text-body-sm text-ink-muted mb-6 max-w-md mx-auto">
-                {language === 'hi'
-                  ? 'अपने नज़दीकी मंदिर खोजने के लिए स्थान की अनुमति दें।'
-                  : 'Allow location access to discover temples close to you.'}
-              </p>
-              <button onClick={locate} className="btn btn-primary" suppressHydrationWarning>
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" /></svg>
-                {language === 'hi' ? 'स्थान खोजें' : 'Find My Location'}
-              </button>
-            </div>
-          </div>
+        <div className="page-container text-center">
+          <h2 className="text-h2 font-serif text-secondary-800 mb-2">
+            {language === 'hi' ? 'आपके पास के मंदिर' : 'Temples Near You'}
+          </h2>
+          <p className="text-body-sm text-ink-muted mb-6">
+            {language === 'hi'
+              ? 'अपने नज़दीकी मंदिर खोजने के लिए स्थान की अनुमति दें।'
+              : 'Allow location access to discover temples close to you.'}
+          </p>
+          <button onClick={locate} className="btn btn-outline" suppressHydrationWarning>
+            {language === 'hi' ? 'स्थान खोजें' : 'Find My Location'}
+          </button>
         </div>
       </section>
     )
@@ -105,10 +93,7 @@ export default function NearbyTemples() {
     return (
       <section className="section-sm">
         <div className="page-container text-center">
-          <div className="flex items-center justify-center gap-3">
-            <div className="w-5 h-5 border-2 border-primary-400 border-t-transparent rounded-full animate-spin" />
-            <p className="text-body text-ink-muted">{language === 'hi' ? 'स्थान प्राप्त हो रहा है...' : 'Getting your location...'}</p>
-          </div>
+          <p className="text-body text-ink-muted">{language === 'hi' ? 'स्थान प्राप्त हो रहा है...' : 'Getting your location...'}</p>
         </div>
       </section>
     )
@@ -143,35 +128,28 @@ export default function NearbyTemples() {
   return (
     <section className="section-sm">
       <div className="page-container">
-        <div className="text-center mb-10">
-          <h2 className="section-title">
-            {language === 'hi' ? 'आपके पास के मंदिर' : 'Temples Near You'}
-          </h2>
-          <div className="mt-3 mx-auto w-16 h-1 rounded-full bg-gradient-to-r from-primary to-accent" />
-        </div>
+        <h2 className="text-h2 font-serif text-secondary-800 text-center mb-8">
+          {language === 'hi' ? 'आपके पास के मंदिर' : 'Temples Near You'}
+        </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {temples.map((temple) => (
             <Link
               key={temple._id}
               href={`/temples/${slugify(temple.title)}`}
-              className="card-interactive no-underline hover:no-underline group overflow-hidden"
+              className="card-interactive no-underline hover:no-underline group"
             >
-              <div className="relative h-44 w-full bg-surface-sunken overflow-hidden img-zoom">
+              <div className="relative h-40 w-full bg-surface-sunken rounded-t-card overflow-hidden">
                 <TempleImage image={temple.image} alt={temple.title} />
               </div>
-              <div className="p-5">
+              <div className="p-4">
                 <h3 className="text-h4 text-secondary-700 group-hover:text-primary-600 transition-colors">
                   {temple.title}
                 </h3>
                 {temple.city && temple.state && (
-                  <p className="text-body-sm text-ink-muted mt-1.5 flex items-center gap-1.5">
-                    <svg className="w-3.5 h-3.5 text-ink-faint" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" /></svg>
-                    {temple.city}, {temple.state}
-                  </p>
+                  <p className="text-body-sm text-ink-muted mt-1">{temple.city}, {temple.state}</p>
                 )}
                 {temple.distance != null && (
-                  <p className="inline-flex items-center gap-1.5 text-caption font-semibold text-primary-600 mt-2 bg-primary-50 px-2.5 py-1 rounded-full">
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" /></svg>
+                  <p className="text-caption text-primary-600 font-medium mt-1">
                     {temple.distance < 1
                       ? `${(temple.distance * 1000).toFixed(0)} m ${language === 'hi' ? 'दूर' : 'away'}`
                       : `${temple.distance.toFixed(1)} km ${language === 'hi' ? 'दूर' : 'away'}`}

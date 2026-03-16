@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import ImageUpload from "../../../../../components/ImageUpload"
 
 type FormState = {
   title: string
@@ -227,8 +228,12 @@ export default function EditTemplePage({ params }: { params: Promise<{ id: strin
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1">🖼️ Image URL</label>
-              <input value={form.image} onChange={(e) => onChange("image", e.target.value)} className="admin-input w-full" />
+              <ImageUpload
+                label="🖼️ Temple Image"
+                value={form.image}
+                onChange={url => onChange("image", url)}
+                folder="sarvdev/temples"
+              />
             </div>
           </div>
         </div>
