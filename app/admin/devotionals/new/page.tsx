@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import ImageUpload from '../../../../components/ImageUpload'
 
 export default function NewDevotionalPage() {
   const router = useRouter()
@@ -12,6 +13,7 @@ export default function NewDevotionalPage() {
     category: 'Bhajan',
     language: 'Hindi',
     deity: '',
+    image: '',
     audio: '',
     lyrics: '',
     duration: '',
@@ -120,6 +122,12 @@ export default function NewDevotionalPage() {
 
         <div className="admin-card p-6 space-y-5">
           <h2 className="admin-section-title">Media & Content</h2>
+          <ImageUpload
+            value={formData.image}
+            onChange={url => setFormData(prev => ({ ...prev, image: url }))}
+            folder="sarvdev/devotionals"
+            label="Cover Image (Header pe dikhegi)"
+          />
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-1">Audio URL</label>
             <input type="url" name="audio" value={formData.audio} onChange={handleChange} className="admin-input w-full" placeholder="https://example.com/audio.mp3" />

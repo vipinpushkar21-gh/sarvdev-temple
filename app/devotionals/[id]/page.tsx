@@ -5,8 +5,9 @@ import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { TextToSpeech } from '../components/TextToSpeech'
 import { renderBilingualTitle, isDevanagari } from '../utils/bilingual'
-import Hero from '../../../components/Hero'
 import BookmarkButton from '../../../components/BookmarkButton'
+
+const DEFAULT_DEVOTIONAL_IMAGE = 'https://res.cloudinary.com/dc2qg7bwr/image/upload/v1773744527/sarvdev/temples/avno1ltpdyzpzsby1mll.jpg'
 
 type Devotional = {
   _id: string
@@ -15,6 +16,7 @@ type Devotional = {
   category?: string
   language?: string
   deity?: string
+  image?: string
   audio?: string
   lyrics?: string
   duration?: string
@@ -97,7 +99,7 @@ export default function DevotionalDetailPage() {
   if (loading) {
     return (
       <>
-        <Hero title="Loading..." />
+        <div className="relative w-full h-32 bg-gradient-to-br from-surface-sunken to-surface border-b border-surface-border" />
         <main className="page-container section-sm">
           <div className="max-w-3xl mx-auto">
             <div className="card p-8 animate-pulse space-y-6">
@@ -122,7 +124,12 @@ export default function DevotionalDetailPage() {
   if (!devotional) {
     return (
       <>
-        <Hero title="Not Found" subtitle="This devotional could not be found." />
+        <div className="relative w-full py-12 bg-gradient-to-br from-surface-sunken to-surface border-b border-surface-border">
+          <div className="page-container">
+            <h1 className="text-h1 font-serif text-secondary-800">Not Found</h1>
+            <p className="mt-2 text-body text-ink-muted">This devotional could not be found.</p>
+          </div>
+        </div>
         <main className="page-container section-sm">
           <div className="max-w-3xl mx-auto text-center">
             <div className="card p-12">
@@ -144,9 +151,37 @@ export default function DevotionalDetailPage() {
     return 'en-IN'
   })()
 
+  const heroImage = devotional.image || DEFAULT_DEVOTIONAL_IMAGE
+
   return (
     <>
-      <Hero title={bt.primary} subtitle={showTransliteration && bt.secondary ? bt.secondary : undefined} />
+      {/* ── Image Hero Header ── */}
+      <div className="relative w-full overflow-hidden" style={{ height: '320px' }}>
+        <img
+          src={heroImage}
+          alt={bt.primary}
+          className="absolute inset-0 w-full h-full object-cover"
+          onError={e => { (e.target as HTMLImageElement).src = DEFAULT_DEVOTIONAL_IMAGE }}
+        />
+        {/* Dark gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-secondary-900/90 via-secondary-900/50 to-transparent" />
+        {/* Saffron-gold top accent line */}
+        <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-accent-600 via-primary to-accent" />
+        {/* Title content */}
+        <div className="absolute bottom-0 left-0 right-0 page-container pb-8 pt-4">
+          {devotional.category && (
+            <span className="inline-block mb-2 px-3 py-1 rounded-full text-caption font-semibold bg-primary/90 text-white backdrop-blur-sm">
+              {devotional.category}
+            </span>
+          )}
+          <h1 className="text-h1 md:text-display font-serif text-white leading-tight drop-shadow-lg">
+            {bt.primary}
+          </h1>
+          {showTransliteration && bt.secondary && (
+            <p className="mt-1 text-body text-orange-100/80 font-devanagari">{bt.secondary}</p>
+          )}
+        </div>
+      </div>
       <main className="page-container section-sm min-h-screen">
         <div className="max-w-3xl mx-auto">
 
