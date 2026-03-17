@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 
+const DEFAULT_IMAGE = 'https://res.cloudinary.com/dc2qg7bwr/image/upload/v1773744527/sarvdev/temples/avno1ltpdyzpzsby1mll.jpg'
+
 type Blog = {
   _id: string
   title: string
@@ -94,11 +96,14 @@ export default function BlogPostPage() {
           <div className="mt-4 w-16 h-1 rounded-full bg-gradient-to-r from-primary to-accent" />
         </header>
 
-        {post.image && (
-          <div className="rounded-xl overflow-hidden mb-8 shadow-lg">
-            <img src={post.image} alt={post.title} className="w-full h-auto object-cover" />
-          </div>
-        )}
+        <div className="rounded-xl overflow-hidden mb-8 shadow-lg">
+          <img
+            src={post.image || DEFAULT_IMAGE}
+            alt={post.title}
+            className="w-full h-64 object-cover"
+            onError={e => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE }}
+          />
+        </div>
 
         {post.body && (
           <section className="prose max-w-none text-body text-ink-muted leading-relaxed">

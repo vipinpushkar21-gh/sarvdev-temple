@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Hero from '../../components/Hero'
 
+const DEFAULT_IMAGE = 'https://res.cloudinary.com/dc2qg7bwr/image/upload/v1773744527/sarvdev/temples/avno1ltpdyzpzsby1mll.jpg'
+
 type Blog = {
   _id: string
   title: string
@@ -76,11 +78,14 @@ export default function BlogIndexPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {posts.map((p: Blog) => (
               <article key={p._id} className="group card-interactive overflow-hidden">
-                {p.image && (
-                  <div className="relative h-48 overflow-hidden">
-                    <img src={p.image} alt={p.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                  </div>
-                )}
+                <div className="relative h-48 overflow-hidden">
+                  <img
+                    src={p.image || DEFAULT_IMAGE}
+                    alt={p.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    onError={e => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE }}
+                  />
+                </div>
                 <div className="p-5">
                   {p.date && (
                     <div className="text-caption text-primary-600 font-semibold mb-2">
