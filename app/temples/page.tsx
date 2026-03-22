@@ -54,8 +54,6 @@ export default function TemplesPage() {
   const [temples, setTemples] = useState<Temple[]>([])
   const [filteredTemples, setFilteredTemples] = useState<Temple[]>([])
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
-  const [selectedState, setSelectedState] = useState<string>('all')
-  const [selectedDeity, setSelectedDeity] = useState<string>('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [showDropdown, setShowDropdown] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -108,26 +106,17 @@ export default function TemplesPage() {
     fetchTemples()
   }, [])
 
-  // Derive unique states and deities from loaded temples
-  const allStates = Array.from(new Set(temples.map(t => t.state).filter(Boolean))).sort() as string[]
-  const allDeities = Array.from(new Set(temples.map(t => t.deity).filter(Boolean))).sort() as string[]
-
-  const activeFilters = [selectedCategory !== 'all', selectedState !== 'all', selectedDeity !== 'all'].filter(Boolean).length
-
-  const clearAllFilters = () => { setSelectedCategory('all'); setSelectedState('all'); setSelectedDeity('all') }
-
   useEffect(() => {
     let result = temples
 
+    // Filter by category
     if (selectedCategory !== 'all') {
-      result = result.filter(t => t.categories && t.categories.includes(selectedCategory))
+      result = result.filter(t => 
+        t.categories && t.categories.includes(selectedCategory)
+      )
     }
-    if (selectedState !== 'all') {
-      result = result.filter(t => t.state === selectedState)
-    }
-    if (selectedDeity !== 'all') {
-      result = result.filter(t => t.deity === selectedDeity)
-    }
+
+    // Filter by search query — split into words, every word must match somewhere
     if (searchQuery.trim()) {
       const words = searchQuery.toLowerCase().split(/\s+/).filter(Boolean)
       result = result.filter(t => {
@@ -141,7 +130,7 @@ export default function TemplesPage() {
 
     setFilteredTemples(result)
     setCurrentPage(1)
-  }, [selectedCategory, selectedState, selectedDeity, searchQuery, temples])
+  }, [selectedCategory, searchQuery, temples])
 
   if (loading) {
     return (
@@ -251,73 +240,48 @@ export default function TemplesPage() {
 
       <main className="page-container py-12">
 
-      {/* Filters — Bento Style */}
+      {/* Category Filter — Bento Style */}
       <div ref={templeGridRef} className="bento-card mb-10 p-6">
-        <div className="flex items-center justify-between gap-3 mb-5">
-          <div className="flex items-center gap-3">
-            <div className="bento-icon w-10 h-10 text-base">🔍</div>
-            <div>
-              <p className="text-body-sm font-semibold text-ink">Filter Temples</p>
-              <p className="text-caption text-ink-muted">Category, State, Deity se filter karo</p>
-            </div>
+        <div className="flex items-center gap-3 mb-4">
+          <div className="bento-icon w-10 h-10 text-base">🔍</div>
+          <div>
+            <p className="text-body-sm font-semibold text-ink">Filter by Sacred Category</p>
+            <p className="text-caption text-ink-muted">Explore temples by their sacred grouping</p>
           </div>
-          {activeFilters > 0 && (
-            <button onClick={clearAllFilters} className="btn btn-ghost btn-sm gap-1.5 text-red-500 hover:text-red-700">
+        </div>
+        <select 
+          value={selectedCategory}
+          onChange={(e) => setSelectedCategory(e.target.value)}
+          className="input rounded-xl"
+        >
+          <option value="all">All Temples ({temples.length})</option>
+          {sacredCategories.map(category => {
+            const count = temples.filter(t => t.categories?.includes(category)).length
+            if (count > 0) {
+              return (
+                <option key={category} value={category}>
+                  {category} ({count})
+                </option>
+              )
+            }
+            return null
+          })}
+        </select>
+        
+        {selectedCategory !== 'all' && (
+          <div className="mt-4 flex items-center justify-between gap-4 p-3 rounded-xl" style={{ background: 'linear-gradient(135deg, rgba(255,153,51,0.06), rgba(255,215,0,0.04))' }}>
+            <p className="text-body-sm text-ink">
+              Showing <span className="font-bold text-primary-600">{filteredTemples.length}</span> temple{filteredTemples.length !== 1 ? 's' : ''} in <span className="font-semibold text-secondary-600">{selectedCategory}</span>
+            </p>
+            <button 
+              onClick={() => setSelectedCategory('all')}
+              className="btn btn-ghost btn-sm gap-1.5"
+            >
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
               </svg>
-              Clear All ({activeFilters})
+              Clear
             </button>
-          )}
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {/* Category */}
-          <div>
-            <label className="block text-caption font-medium text-ink-muted mb-1.5">Sacred Category</label>
-            <select value={selectedCategory} onChange={e => setSelectedCategory(e.target.value)} className="input rounded-xl w-full">
-              <option value="all">All Categories ({temples.length})</option>
-              {sacredCategories.map(category => {
-                const count = temples.filter(t => t.categories?.includes(category)).length
-                return count > 0 ? <option key={category} value={category}>{category} ({count})</option> : null
-              })}
-            </select>
-          </div>
-
-          {/* State */}
-          <div>
-            <label className="block text-caption font-medium text-ink-muted mb-1.5">State</label>
-            <select value={selectedState} onChange={e => setSelectedState(e.target.value)} className="input rounded-xl w-full">
-              <option value="all">All States</option>
-              {allStates.map(s => (
-                <option key={s} value={s}>{s} ({temples.filter(t => t.state === s).length})</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Deity */}
-          <div>
-            <label className="block text-caption font-medium text-ink-muted mb-1.5">Deity</label>
-            <select value={selectedDeity} onChange={e => setSelectedDeity(e.target.value)} className="input rounded-xl w-full">
-              <option value="all">All Deities</option>
-              {allDeities.map(d => (
-                <option key={d} value={d}>{d} ({temples.filter(t => t.deity === d).length})</option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        {activeFilters > 0 && (
-          <div className="mt-4 flex items-center gap-2 p-3 rounded-xl" style={{ background: 'linear-gradient(135deg, rgba(255,153,51,0.06), rgba(255,215,0,0.04))' }}>
-            <svg className="w-4 h-4 text-primary-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z" />
-            </svg>
-            <p className="text-body-sm text-ink">
-              <span className="font-bold text-primary-600">{filteredTemples.length}</span> temple{filteredTemples.length !== 1 ? 's' : ''} found
-              {selectedCategory !== 'all' && <span className="text-ink-muted"> in <span className="font-medium text-secondary-600">{selectedCategory}</span></span>}
-              {selectedState !== 'all' && <span className="text-ink-muted">, <span className="font-medium text-secondary-600">{selectedState}</span></span>}
-              {selectedDeity !== 'all' && <span className="text-ink-muted">, deity: <span className="font-medium text-secondary-600">{selectedDeity}</span></span>}
-            </p>
           </div>
         )}
       </div>

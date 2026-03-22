@@ -46,7 +46,7 @@ export function TempleDataProvider({ children }: { children: ReactNode }) {
       for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
         try {
           const ctrl = new AbortController()
-          const timer = setTimeout(() => ctrl.abort(), 10000)
+          const timer = setTimeout(() => ctrl.abort(new DOMException('Timeout', 'AbortError')), 10000)
           const res = await fetch('/api/temples', { signal: ctrl.signal })
           clearTimeout(timer)
           if (!res.ok) throw new Error(`API ${res.status}`)
@@ -57,7 +57,8 @@ export function TempleDataProvider({ children }: { children: ReactNode }) {
           }
           return // success
         } catch (err) {
-          console.error(`TempleDataProvider fetch attempt ${attempt}/${MAX_RETRIES}:`, err)
+          const isAbort = err instanceof DOMException && err.name === 'AbortError'
+          if (!isAbort) console.error(`TempleDataProvider fetch attempt ${attempt}/${MAX_RETRIES}:`, err)
           if (attempt < MAX_RETRIES && !cancelled) {
             await new Promise(r => setTimeout(r, 1000 * attempt))
           } else if (!cancelled) {

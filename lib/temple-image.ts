@@ -5,8 +5,8 @@
  * has no `image` field or its URL fails to load at runtime.
  */
 
-/** Default Cloudinary image used when a temple has no image */
-export const TEMPLE_PLACEHOLDER = 'https://res.cloudinary.com/dc2qg7bwr/image/upload/v1773744527/sarvdev/temples/avno1ltpdyzpzsby1mll.jpg'
+/** Path to the local placeholder SVG served from public/ */
+export const TEMPLE_PLACEHOLDER = '/images/temple-placeholder.svg'
 
 /**
  * Returns the temple's image URL, falling back to the local placeholder

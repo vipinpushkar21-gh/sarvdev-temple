@@ -23,28 +23,28 @@ module.exports = {
           900: '#7A3D10',
         },
         secondary: {
-          50:  '#FDF3F3',
-          100: '#FAE2E2',
-          200: '#F4BBBB',
-          300: '#E88080',
-          400: '#CC3A3A',
-          DEFAULT: '#9B1C1C',  // Sacred Maroon — kumkum/sindoor (dharmik)
-          500: '#9B1C1C',
-          600: '#7D1616',
-          700: '#601111',
-          800: '#420C0C',
-          900: '#2C0707',  // Deep sacred maroon — navbar bg
+          50:  '#F5F0ED',
+          100: '#E8DDD6',
+          200: '#D1BBAD',
+          300: '#B09480',
+          400: '#8A6B55',
+          DEFAULT: '#5C4033',  // Warm earth brown — grounding tone
+          500: '#5C4033',
+          600: '#4A3329',
+          700: '#382620',
+          800: '#261A16',
+          900: '#1A110F',
         },
         accent: {
           50:  '#FFFDF0',
-          100: '#FFF8D6',
-          200: '#FFEDA8',
-          300: '#F5D060',
-          DEFAULT: '#D4AF37',  // Temple Gold — traditional, divine
-          400: '#D4AF37',
-          500: '#BF9B2F',
-          600: '#A38522',
-          700: '#8A7018',
+          100: '#FFF9D6',
+          200: '#FFF2A8',
+          300: '#FFE970',
+          DEFAULT: '#FFD700',  // Ritual gold
+          400: '#FFD700',
+          500: '#E6C200',
+          600: '#CCA800',
+          700: '#997E00',
         },
         surface: {
           DEFAULT: '#FAF9F6',  // Warm paper white — page bg

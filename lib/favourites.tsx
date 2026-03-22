@@ -4,8 +4,7 @@ import { createContext, useContext, useState, useEffect, useCallback } from 'rea
 
 export type BookmarkItem = {
   id: string
-  type: 'temple' | 'devotional' | 'darshan'
-  subtitle?: string
+  type: 'temple' | 'devotional'
   title: string
   slug: string
   image?: string

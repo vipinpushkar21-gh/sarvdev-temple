@@ -105,12 +105,12 @@ export default function Header() {
       <header
         className={`sticky top-0 z-50 transition-all duration-500 ${
           scrolled
-            ? 'bg-secondary-900/85 backdrop-blur-2xl shadow-[0_1px_30px_rgba(44,7,7,0.4)]'
-            : 'bg-secondary-900 backdrop-blur-xl'
+            ? 'bg-secondary-900/80 backdrop-blur-2xl shadow-[0_1px_30px_rgba(0,0,0,0.15)]'
+            : 'bg-secondary-900/95 backdrop-blur-xl'
         }`}
       >
         {/* Gradient accent line */}
-        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-accent-600 via-primary to-accent opacity-90" />
+        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-primary via-accent to-primary opacity-80" />
 
         <div className="page-container py-2.5 flex items-center justify-between">
           {/* Logo */}
@@ -123,7 +123,7 @@ export default function Header() {
               <span className="text-[1.1rem] font-serif font-bold text-white tracking-tight group-hover:text-accent transition-colors duration-300">
                 Sarvdev
               </span>
-              <span className="text-[9px] font-medium text-amber-400/60 tracking-[0.15em] uppercase leading-none -mt-0.5 hidden sm:block">
+              <span className="text-[9px] font-medium text-secondary-400 tracking-[0.15em] uppercase leading-none -mt-0.5 hidden sm:block">
                 Temple & Devotional Hub
               </span>
             </div>
@@ -140,8 +140,8 @@ export default function Header() {
                     href={item.href}
                     className={`relative px-2 py-1.5 rounded-lg text-[10.5px] font-semibold no-underline hover:no-underline whitespace-nowrap transition-all duration-300 ${
                       active
-                        ? 'text-white bg-gradient-to-r from-primary-600 to-primary shadow-md shadow-primary/40'
-                        : 'text-orange-100/75 hover:text-white hover:bg-white/[0.10]'
+                        ? 'text-secondary-900 bg-gradient-to-r from-primary to-accent shadow-md shadow-primary/30'
+                        : 'text-secondary-300 hover:text-white hover:bg-white/[0.08]'
                     }`}
                   >
                     {t(item.label)}
@@ -156,7 +156,7 @@ export default function Header() {
                 <div className="relative" ref={userMenuRef}>
                   <button
                     onClick={() => setUserMenuOpen(s => !s)}
-                    className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl text-xs text-orange-100/75 hover:text-white hover:bg-white/[0.10] transition-all duration-300"
+                    className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl text-xs text-secondary-300 hover:text-white hover:bg-white/[0.08] transition-all duration-300"
                     aria-label="User menu"
                   >
                     <span className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary to-accent text-white text-[10px] font-bold flex items-center justify-center shadow-md shadow-primary/25 ring-2 ring-white/10">
@@ -212,7 +212,7 @@ export default function Header() {
               aria-label={open ? 'Close menu' : 'Open menu'}
               aria-expanded={open}
               onClick={() => setOpen((s) => !s)}
-              className="relative p-2.5 rounded-xl text-orange-100/80 hover:text-white hover:bg-white/[0.10] transition-all duration-300"
+              className="relative p-2.5 rounded-xl text-secondary-300 hover:text-white hover:bg-white/[0.08] transition-all duration-300"
             >
               <div className="w-5 h-5 flex flex-col justify-center items-center gap-[5px]">
                 <span className={`block h-[2px] w-5 bg-current rounded-full transition-all duration-400 origin-center ${open ? 'rotate-45 translate-y-[7px]' : ''}`} />

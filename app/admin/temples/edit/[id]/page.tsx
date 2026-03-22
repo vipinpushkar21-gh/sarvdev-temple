@@ -8,10 +8,12 @@ import ImageUpload from "../../../../../components/ImageUpload"
 type FormState = {
   title: string
   location: string
+  mapsLink: string
   city: string
   state: string
   pincode: string
   description: string
+  descriptionHi: string
   deity: string
   establishedYear: string
   templeType: string
@@ -47,8 +49,8 @@ export default function EditTemplePage({ params }: { params: Promise<{ id: strin
   const router = useRouter()
   const [id, setId] = useState<string>("")
   const [form, setForm] = useState<FormState>({ 
-    title: "", location: "", city: "", state: "", pincode: "", description: "", 
-    deity: "", establishedYear: "", templeType: "", speciality: "",
+    title: "", location: "", mapsLink: "", city: "", state: "", pincode: "", description: "", 
+    descriptionHi: "", deity: "", establishedYear: "", templeType: "", speciality: "",
     image: "", timings: "", contact: "", phone: "", email: "", website: "", 
     facebook: "", instagram: "", status: "pending"
   })
@@ -64,7 +66,14 @@ export default function EditTemplePage({ params }: { params: Promise<{ id: strin
 
   async function fetchTemple(templeId: string) {
     try {
-      const res = await fetch('/api/temples')
+      const res = await fetch(`/api/temples?t=${Date.now()}`, { 
+        cache: 'no-store',
+        headers: { 
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+      })
       if (res.ok) {
         const temples = await res.json()
         const temple = temples.find((t: any) => t._id === templeId)
@@ -72,10 +81,12 @@ export default function EditTemplePage({ params }: { params: Promise<{ id: strin
           setForm({
             title: temple.title || "",
             location: temple.location || "",
+            mapsLink: temple.mapsLink || "",
             city: temple.city || "",
             state: temple.state || "",
             pincode: temple.pincode || "",
             description: temple.description || "",
+            descriptionHi: temple.descriptionHi || "",
             deity: temple.deity || "",
             establishedYear: temple.establishedYear || "",
             templeType: temple.templeType || "",
@@ -90,6 +101,10 @@ export default function EditTemplePage({ params }: { params: Promise<{ id: strin
             instagram: temple.instagram || "",
             status: temple.status || "pending"
           })
+          console.log('Admin Edit Form Debug:', JSON.stringify(temple, null, 2))
+          console.log('Description available:', temple.description ? 'YES' : 'NO')
+          console.log('Hindi description available:', temple.descriptionHi ? 'YES' : 'NO')
+          console.log('Hindi description text:', temple.descriptionHi || 'EMPTY')
         }
       }
     } catch (error) {
@@ -107,19 +122,38 @@ export default function EditTemplePage({ params }: { params: Promise<{ id: strin
     e.preventDefault()
     setSaving(true)
     try {
+      const submitData = { id, ...form }
+      
+      // Alert to show what's being submitted
+      console.log('Submitting temple data:', JSON.stringify(submitData, null, 2))
+      console.log('Description length:', form.description?.length || 0)
+      console.log('Hindi description length:', form.descriptionHi?.length || 0)
+      console.log('Hindi description text:', form.descriptionHi || 'EMPTY')
+      
       const res = await fetch('/api/temples', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, ...form }),
+        body: JSON.stringify(submitData),
       })
       
       if (res.ok) {
-        alert('Temple updated successfully!')
-        router.push('/admin/temples')
+        const updatedTemple = await res.json()
+        console.log('API Response - Updated Temple:', JSON.stringify(updatedTemple, null, 2))
+        console.log('API Response - DescriptionHi field:', updatedTemple.descriptionHi || 'MISSING')
+        console.log('Original Form Data - DescriptionHi:', form.descriptionHi || 'EMPTY')
+        alert('Temple updated successfully! Hindi content should now persist.')
+        
+        // Refresh form data to verify Hindi content is saved
+        setTimeout(() => {
+          fetchTemple(id)
+        }, 1000)
       } else {
-        alert('Failed to update temple')
+        const error = await res.json()
+        console.error('Update failed:', error)
+        alert('Failed to update temple: ' + error.error)
       }
     } catch (error) {
+      console.error('Network error:', error)
       alert('Network error. Please try again.')
     } finally {
       setSaving(false)
@@ -174,6 +208,11 @@ export default function EditTemplePage({ params }: { params: Promise<{ id: strin
             <textarea value={form.description} onChange={(e) => onChange("description", e.target.value)} rows={4} className="admin-input w-full" />
           </div>
 
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1">Description (Hindi)</label>
+            <textarea value={form.descriptionHi} onChange={(e) => onChange("descriptionHi", e.target.value)} rows={4} placeholder="मंदिर का विवरण हिंदी में दर्ज करें..." className="admin-input w-full" />
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-600 mb-1">📅 Established Year</label>
@@ -194,6 +233,17 @@ export default function EditTemplePage({ params }: { params: Promise<{ id: strin
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-1">Street Address</label>
             <input value={form.location} onChange={(e) => onChange("location", e.target.value)} className="admin-input w-full" />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1">🗺️ Google Maps Link</label>
+            <input 
+              value={form.mapsLink} 
+              onChange={(e) => onChange("mapsLink", e.target.value)} 
+              placeholder="https://maps.app.goo.gl/..." 
+              className="admin-input w-full" 
+            />
+            <p className="mt-1 text-xs text-gray-500">Paste Google Maps URL for this temple location</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

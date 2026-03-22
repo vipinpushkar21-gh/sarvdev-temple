@@ -55,13 +55,28 @@ export async function PUT(req: NextRequest) {
   try {
     await connectDB();
     const { id, ...update } = await req.json();
+    console.log('API PUT Request - ID:', id);
+    console.log('API PUT Request - Update Data:', JSON.stringify(update, null, 2));
+    console.log('API PUT Request - DescriptionHi in update:', update.descriptionHi || 'MISSING');
+    console.log('API PUT Request - Update Data Keys:', Object.keys(update));
+    
     const temple = await Temple.findByIdAndUpdate(id, update, { new: true });
     if (!temple) {
       return NextResponse.json({ error: 'Temple not found' }, { status: 404 });
     }
-    _cache = null;
+    
+    console.log('API PUT Response - Updated Temple:', JSON.stringify(temple, null, 2));
+    console.log('API PUT Response - DescriptionHi in result:', temple.descriptionHi || 'MISSING');
+    console.log('API PUT Response - Temple Keys:', Object.keys(temple.toObject()));
+    
+    // Verify database save
+    const verifyTemple = await Temple.findById(id);
+    console.log('Database Verification - DescriptionHi:', verifyTemple?.descriptionHi || 'MISSING');
+    
+    _cache = null; // Clear cache to force refresh
     return NextResponse.json(temple);
   } catch (error) {
+    console.error('Update temple error:', error);
     return NextResponse.json({ error: 'Failed to update temple' }, { status: 500 });
   }
 }

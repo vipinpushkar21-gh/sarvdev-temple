@@ -69,14 +69,26 @@ export default function TemplePage({ params }: Props) {
     
     async function fetchTemple() {
       try {
-        const res = await fetch('/api/temples', { cache: 'no-store' })
+        const res = await fetch(`/api/temples?t=${Date.now()}`, { 
+          cache: 'no-store',
+          headers: { 
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+          }
+        })
         if (!res.ok) {
-          setTemple(null)
           setLoading(false)
           return
         }
         const temples = await res.json()
         const found = temples.find((t: any) => slugify(t.title) === slug)
+        if (found) {
+          console.log('Temple Data Debug:', JSON.stringify(found, null, 2))
+          console.log('Description available:', found.description ? 'YES' : 'NO')
+          console.log('Hindi description available:', found.descriptionHi ? 'YES' : 'NO')
+          console.log('Hindi description text:', found.descriptionHi || 'EMPTY')
+        }
         setTemple(found || null)
       } catch (error) {
         console.error('Error fetching temple:', error)
@@ -124,9 +136,9 @@ export default function TemplePage({ params }: Props) {
     )
   }
 
-  // Extract Google Maps link from location field if present
-  const mapsLinkMatch = temple.location?.match(/(https?:\/\/maps\.app\.goo\.gl\/[^\s,]+)/)
-  const mapsLink = mapsLinkMatch ? mapsLinkMatch[1] : null
+  // Extract Google Maps link from mapsLink field or location field
+  const mapsLink = temple.mapsLink || 
+    (temple.location?.match(/(https?:\/\/maps\.app\.goo\.gl\/[^\s,]+)/)?.[1]) || null
   const displayLocation = temple.location?.replace(/(https?:\/\/maps\.app\.goo\.gl\/[^\s,]+)/g, '').trim()
 
   // Collect bento items
@@ -212,10 +224,10 @@ export default function TemplePage({ params }: Props) {
       </div>
 
       {/* ── Main Content ── */}
-      <main className="max-w-page mx-auto px-4 sm:px-6 lg:px-8 -mt-8 relative z-20 pb-16">
+      <main className="max-w-page mx-auto px-4 sm:px-6 lg:px-8 -mt-4 relative z-30 pb-16">
 
         {/* About Section — Glass card overlapping hero */}
-        <section className="glass-card-2030 p-6 sm:p-8 md:p-10 mb-10 reveal-up">
+        <section className="glass-card-2030 p-10 sm:p-12 md:p-14 mb-10 mt-16 reveal-up">
           <div className="section-heading-2030">
             <h2>{t('temple.about')}</h2>
           </div>
@@ -243,22 +255,7 @@ export default function TemplePage({ params }: Props) {
                   className={item.span ? 'md:col-span-2 lg:col-span-3' : ''}
                 />
               ))}
-              {/* Maps link inside bento if available */}
-              {mapsLink && temple.city && temple.state && (
-                <BentoInfoCard icon="🗺️" label={t('temple.viewOnMaps')} className="md:col-span-1">
-                  <a
-                    href={mapsLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="contact-link-2030 mt-1"
-                  >
-                    Open in Google Maps
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
-                    </svg>
-                  </a>
-                </BentoInfoCard>
-              )}
+              {/* Maps link inside bento if available - REMOVED */}
             </div>
           </section>
         )}
@@ -280,34 +277,30 @@ export default function TemplePage({ params }: Props) {
           </section>
         )}
 
-        {/* Map CTA */}
+        {/* Google Maps Embed */}
         {mapsLink && (
           <section className="mb-10 reveal-up">
-            <a
-              href={mapsLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="map-cta-2030 flex items-center justify-between gap-6 no-underline group"
-            >
-              <div className="relative z-10">
-                <p className="text-white/80 text-caption font-semibold uppercase tracking-wider mb-1">{t('temple.locationMap')}</p>
-                <p className="text-white text-h3 font-serif">
-                  {displayLocation || 'View on Maps'}
-                </p>
-                <span className="inline-flex items-center gap-2 mt-3 text-white/90 text-body-sm font-medium group-hover:translate-x-1 transition-transform">
-                  {t('temple.openInMaps')}
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M17.25 8.25L21 12m0 0l-3.75 3.75M21 12H3" />
-                  </svg>
-                </span>
+            <div className="section-heading-2030">
+              <h2>{t('temple.locationMap')}</h2>
+            </div>
+            <div className="bento-card p-6">
+              <div className="relative w-full h-80 rounded-xl overflow-hidden">
+                <iframe
+                  src={mapsLink.includes('maps.app.goo.gl') ? 
+                    `https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d3727.604395007016!2d70.4012569!3d20.8879899!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3bfd329f0417cb75%3A0x2f5a510de9857963!2sShree%20Somnath%20Temple!5e0!3m2!1sen!2sin!4v1773769840240!5m2!1sen!2sin` :
+                    mapsLink.includes('google.com/maps/embed') ? mapsLink :
+                    `https://www.google.com/maps/embed?pb=${mapsLink}`
+                  }
+                  width="100%"
+                  height="100%"
+                  style={{ border: 0 }}
+                  allowFullScreen
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  className="rounded-xl"
+                />
               </div>
-              <div className="relative z-10 hidden sm:flex items-center justify-center w-16 h-16 rounded-2xl bg-white/15 backdrop-blur-sm">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
-                </svg>
-              </div>
-            </a>
+            </div>
           </section>
         )}
 
