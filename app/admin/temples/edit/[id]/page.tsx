@@ -101,10 +101,6 @@ export default function EditTemplePage({ params }: { params: Promise<{ id: strin
             instagram: temple.instagram || "",
             status: temple.status || "pending"
           })
-          console.log('Admin Edit Form Debug:', JSON.stringify(temple, null, 2))
-          console.log('Description available:', temple.description ? 'YES' : 'NO')
-          console.log('Hindi description available:', temple.descriptionHi ? 'YES' : 'NO')
-          console.log('Hindi description text:', temple.descriptionHi || 'EMPTY')
         }
       }
     } catch (error) {
@@ -124,12 +120,6 @@ export default function EditTemplePage({ params }: { params: Promise<{ id: strin
     try {
       const submitData = { id, ...form }
       
-      // Alert to show what's being submitted
-      console.log('Submitting temple data:', JSON.stringify(submitData, null, 2))
-      console.log('Description length:', form.description?.length || 0)
-      console.log('Hindi description length:', form.descriptionHi?.length || 0)
-      console.log('Hindi description text:', form.descriptionHi || 'EMPTY')
-      
       const res = await fetch('/api/temples', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -137,16 +127,7 @@ export default function EditTemplePage({ params }: { params: Promise<{ id: strin
       })
       
       if (res.ok) {
-        const updatedTemple = await res.json()
-        console.log('API Response - Updated Temple:', JSON.stringify(updatedTemple, null, 2))
-        console.log('API Response - DescriptionHi field:', updatedTemple.descriptionHi || 'MISSING')
-        console.log('Original Form Data - DescriptionHi:', form.descriptionHi || 'EMPTY')
-        alert('Temple updated successfully! Hindi content should now persist.')
-        
-        // Refresh form data to verify Hindi content is saved
-        setTimeout(() => {
-          fetchTemple(id)
-        }, 1000)
+        router.push('/admin/temples')
       } else {
         const error = await res.json()
         console.error('Update failed:', error)

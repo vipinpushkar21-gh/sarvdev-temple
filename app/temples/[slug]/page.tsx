@@ -44,7 +44,7 @@ function BentoInfoCard({ icon, label, value, className = '', children }: {
         </div>
         <div className="min-w-0 flex-1">
           <p className="text-caption font-semibold text-ink-muted uppercase tracking-wider mb-1">{label}</p>
-          {value && <p className="text-body font-medium text-ink leading-relaxed">{value}</p>}
+          {value && <p className="text-body font-medium text-ink leading-relaxed whitespace-pre-line">{value}</p>}
           {children}
         </div>
       </div>
@@ -83,12 +83,6 @@ export default function TemplePage({ params }: Props) {
         }
         const temples = await res.json()
         const found = temples.find((t: any) => slugify(t.title) === slug)
-        if (found) {
-          console.log('Temple Data Debug:', JSON.stringify(found, null, 2))
-          console.log('Description available:', found.description ? 'YES' : 'NO')
-          console.log('Hindi description available:', found.descriptionHi ? 'YES' : 'NO')
-          console.log('Hindi description text:', found.descriptionHi || 'EMPTY')
-        }
         setTemple(found || null)
       } catch (error) {
         console.error('Error fetching temple:', error)
@@ -148,7 +142,10 @@ export default function TemplePage({ params }: Props) {
     bentoItems.push({ icon: '📍', label: t('temple.location'), value: `${temple.city}, ${temple.state}${temple.pincode ? ` — ${temple.pincode}` : ''}` })
   if (temple.templeType) bentoItems.push({ icon: '🏛️', label: t('temple.templeType'), value: temple.templeType })
   if (temple.establishedYear) bentoItems.push({ icon: '📅', label: t('temple.established'), value: temple.establishedYear })
-  if (temple.timings) bentoItems.push({ icon: '⏰', label: t('temple.timings'), value: temple.timings })
+  const timingValue = temple.timingSlots?.length > 0
+    ? temple.timingSlots.join('\n')
+    : temple.timings
+  if (timingValue) bentoItems.push({ icon: '⏰', label: t('temple.timings'), value: timingValue })
   if (temple.speciality) bentoItems.push({ icon: '✨', label: t('temple.speciality'), value: temple.speciality, span: true })
 
   return (
@@ -231,12 +228,16 @@ export default function TemplePage({ params }: Props) {
           <div className="section-heading-2030">
             <h2>{t('temple.about')}</h2>
           </div>
-          <p className="text-body text-ink leading-[1.85] max-w-content">
-            {language === 'hi' && temple.descriptionHi 
-              ? temple.descriptionHi 
+          <div className="space-y-4 max-w-content">
+            {(language === 'hi' && temple.descriptionHi
+              ? temple.descriptionHi
               : temple.description || t('temple.noDescription')
-            }
-          </p>
+            ).split(/\n\n+/).filter(Boolean).map((para: string, idx: number) => (
+              <p key={idx} className="text-body text-ink leading-[1.85] whitespace-pre-line">
+                {para}
+              </p>
+            ))}
+          </div>
         </section>
 
         {/* Bento Grid — Temple Info */}
@@ -272,6 +273,32 @@ export default function TemplePage({ params }: Props) {
                   <span className="w-1.5 h-1.5 rounded-full bg-primary inline-block" />
                   {cat}
                 </span>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Festivals Section */}
+        {temple.festivals && temple.festivals.length > 0 && (
+          <section className="mb-10 reveal-up">
+            <div className="section-heading-2030">
+              <h2>Temple Festivals</h2>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 stagger-children">
+              {temple.festivals.map((festival: { name: string; description: string }, idx: number) => (
+                <div key={idx} className="bento-card gradient-shimmer p-6">
+                  <div className="flex items-start gap-3">
+                    <div className="bento-icon flex-shrink-0">
+                      <span className="text-xl">🎉</span>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-body font-semibold text-ink mb-1">{festival.name}</p>
+                      {festival.description && (
+                        <p className="text-body-sm text-ink-muted leading-relaxed">{festival.description}</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
               ))}
             </div>
           </section>

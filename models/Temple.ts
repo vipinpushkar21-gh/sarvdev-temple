@@ -20,6 +20,8 @@ const TempleSchema = new Schema({
   speciality: { type: String },
   categories: { type: [String], default: [] },
   timings: { type: String },
+  timingSlots: { type: [String], default: [] },
+  festivals: { type: [{ name: { type: String }, description: { type: String } }], default: [] },
   contact: { type: String },
   phone: { type: String },
   email: { type: String },

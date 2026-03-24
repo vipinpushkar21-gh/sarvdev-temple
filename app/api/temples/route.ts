@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/db';
 import Temple from '@/models/Temple';
+import Event from '@/models/Event';
 import { verifyToken, AUTH_COOKIE_NAME } from '@/lib/auth';
 
 function isAdmin(req: NextRequest): boolean {
@@ -21,7 +22,7 @@ export async function GET() {
       return NextResponse.json(_cache.data);
     }
     await connectDB();
-    const temples = await Temple.find({}, { descriptionHi: 0, __v: 0 }).sort({ createdAt: -1 }).lean();
+    const temples = await Temple.find({}, { __v: 0 }).sort({ createdAt: -1 }).lean();
     _cache = { data: temples, ts: Date.now() };
     return NextResponse.json(temples);
   } catch (error) {
@@ -41,6 +42,23 @@ export async function POST(req: NextRequest) {
     }
     const temple = await Temple.create(data);
     _cache = null;
+    
+    // Auto-create events for each festival
+    if (data.festivals && Array.isArray(data.festivals) && data.festivals.length > 0) {
+      const eventPromises = data.festivals
+        .filter((f: { name: string }) => f.name?.trim())
+        .map((festival: { name: string; description: string }) =>
+          Event.create({
+            title: `${festival.name} — ${temple.title}`,
+            description: festival.description || '',
+            temple: temple.title,
+            location: temple.city ? `${temple.city}, ${temple.state || ''}`.trim().replace(/,\s*$/, '') : (temple.location || ''),
+            status: data.status === 'approved' ? 'approved' : 'pending',
+          })
+        );
+      await Promise.allSettled(eventPromises);
+    }
+    
     return NextResponse.json(temple, { status: 201 });
   } catch (error) {
     return NextResponse.json({ error: 'Failed to create temple' }, { status: 500 });
@@ -55,24 +73,10 @@ export async function PUT(req: NextRequest) {
   try {
     await connectDB();
     const { id, ...update } = await req.json();
-    console.log('API PUT Request - ID:', id);
-    console.log('API PUT Request - Update Data:', JSON.stringify(update, null, 2));
-    console.log('API PUT Request - DescriptionHi in update:', update.descriptionHi || 'MISSING');
-    console.log('API PUT Request - Update Data Keys:', Object.keys(update));
-    
     const temple = await Temple.findByIdAndUpdate(id, update, { new: true });
     if (!temple) {
       return NextResponse.json({ error: 'Temple not found' }, { status: 404 });
     }
-    
-    console.log('API PUT Response - Updated Temple:', JSON.stringify(temple, null, 2));
-    console.log('API PUT Response - DescriptionHi in result:', temple.descriptionHi || 'MISSING');
-    console.log('API PUT Response - Temple Keys:', Object.keys(temple.toObject()));
-    
-    // Verify database save
-    const verifyTemple = await Temple.findById(id);
-    console.log('Database Verification - DescriptionHi:', verifyTemple?.descriptionHi || 'MISSING');
-    
     _cache = null; // Clear cache to force refresh
     return NextResponse.json(temple);
   } catch (error) {
