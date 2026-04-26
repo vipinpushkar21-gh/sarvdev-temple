@@ -147,21 +147,35 @@ export default function LoginPage() {
     }
   }
 
-  const inputCls = "w-full pl-10 pr-4 py-3 rounded-xl text-sm text-gray-900 border border-gray-200 bg-gray-50 focus:bg-white focus:border-orange-400 focus:ring-2 focus:ring-orange-100 outline-none transition-all placeholder:text-gray-400"
-  const Spinner = () => <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+  // ─── Styles ─────────────────────────────────────────
+  const IC = "w-full pl-10 pr-4 py-3 rounded-xl text-sm text-gray-900 border border-gray-200 bg-gray-50 focus:bg-white focus:border-orange-400 focus:ring-2 focus:ring-orange-100 outline-none transition-all placeholder:text-gray-400"
+  const Spin = () => <svg className="w-4 h-4 animate-spin flex-shrink-0" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+  const BtnPrimary = "w-full flex items-center justify-center gap-2 py-3.5 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90 active:scale-[0.99] disabled:opacity-60"
+
+  // ─── Icon helpers ────────────────────────────────────
+  const IconEmail = () => <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"/></svg>
+  const IconLock = () => <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"/></svg>
+  const IconUser = () => <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/></svg>
+  const IconPhone = () => <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z"/></svg>
+  const IconPin = () => <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"/><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z"/></svg>
+  const IconCheck = () => <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
 
   return (
-    <div className="min-h-screen flex" style={{ background: '#F8F7F4' }}>
+    <div className="min-h-screen flex">
 
-      {/* ── LEFT: Temple Hero (lg+) ── */}
+      {/* ══════════════════════════════════
+          LEFT — Temple Hero Panel (lg+)
+      ══════════════════════════════════ */}
       <div className="hidden lg:flex lg:w-[44%] xl:w-1/2 flex-col relative overflow-hidden"
         style={{ background: 'linear-gradient(160deg,#1A0800 0%,#2C0A00 40%,#3D1200 70%,#1A0800 100%)' }}>
+        {/* Glows */}
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 80% 60% at 15% 10%,rgba(255,153,51,0.22) 0%,transparent 70%)' }}/>
           <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 70% 50% at 85% 90%,rgba(212,175,55,0.18) 0%,transparent 70%)' }}/>
-          <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'repeating-linear-gradient(45deg,rgba(255,153,51,1) 0px,rgba(255,153,51,1) 1px,transparent 1px,transparent 14px)' }}/>
+          <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'repeating-linear-gradient(45deg,rgba(255,153,51,1) 0,rgba(255,153,51,1) 1px,transparent 1px,transparent 14px)' }}/>
         </div>
         <div className="relative z-10 flex flex-col h-full p-10 xl:p-14">
+          {/* Brand */}
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background:'linear-gradient(135deg,#FF9933,#E67E22)' }}>
               <span className="text-white font-bold font-serif text-lg">S</span>
@@ -171,6 +185,7 @@ export default function LoginPage() {
               <p className="text-[10px] uppercase tracking-widest" style={{ color:'rgba(255,153,51,0.55)' }}>Sacred Digital Space</p>
             </div>
           </div>
+          {/* OM + tagline */}
           <div className="flex-1 flex flex-col items-center justify-center text-center px-4">
             <div className="text-8xl xl:text-[108px] mb-5 select-none leading-none" style={{
               background:'linear-gradient(135deg,#FF9933 0%,#D4AF37 50%,#FF9933 100%)',
@@ -181,13 +196,14 @@ export default function LoginPage() {
               Your Gateway to<br/>Sacred India
             </h2>
             <p className="text-sm xl:text-base leading-relaxed max-w-[280px]" style={{ color:'rgba(255,255,255,0.45)' }}>
-              Discover temples, explore devotional content, connect with pandits &amp; celebrate the divine.
+              Discover temples, devotional content, pandits &amp; celebrate the divine.
             </p>
             <div className="mt-8 px-6 py-4 rounded-2xl" style={{ background:'rgba(255,153,51,0.07)', border:'1px solid rgba(255,153,51,0.14)' }}>
               <p className="text-sm font-serif" style={{ color:'rgba(212,175,55,0.9)' }}>"सर्वे भवन्तु सुखिनः"</p>
               <p className="text-[11px] mt-1" style={{ color:'rgba(255,255,255,0.3)' }}>May all be happy &amp; free from illness</p>
             </div>
           </div>
+          {/* Stats */}
           <div className="grid grid-cols-3 gap-4 pt-8" style={{ borderTop:'1px solid rgba(255,255,255,0.07)' }}>
             {[['500+','Temples'],['1200+','Devotionals'],['50+','Cities']].map(([n,l]) => (
               <div key={l} className="text-center">
@@ -199,7 +215,9 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* ── RIGHT: Form Panel ── */}
+      {/* ══════════════════════════════════
+          RIGHT — Form Panel
+      ══════════════════════════════════ */}
       <div className="flex-1 flex flex-col overflow-y-auto bg-white">
         <div className="flex-1 flex flex-col justify-center px-6 sm:px-10 xl:px-14 py-10 max-w-lg mx-auto w-full">
 
@@ -223,7 +241,7 @@ export default function LoginPage() {
 
           {/* Google button */}
           <button type="button"
-            onClick={() => alert('Google Sign-in — OAuth setup required. Use email & password for now.')}
+            onClick={() => setError('Google Sign-in coming soon — use email & password for now')}
             className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-xl font-semibold text-sm text-gray-700 hover:bg-gray-50 transition-all mb-5"
             style={{ border:'1.5px solid #E5E7EB', background:'#fff', boxShadow:'0 1px 4px rgba(0,0,0,0.07)' }}>
             <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24">
@@ -238,7 +256,7 @@ export default function LoginPage() {
           {/* Divider */}
           <div className="flex items-center gap-3 mb-5">
             <div className="flex-1 h-px bg-gray-200"/>
-            <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">or continue with email</span>
+            <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">or with email</span>
             <div className="flex-1 h-px bg-gray-200"/>
           </div>
 
@@ -246,7 +264,7 @@ export default function LoginPage() {
           <div className="flex rounded-xl p-1 mb-6" style={{ background:'#F3F4F6' }}>
             {(['login','register'] as const).map(t => (
               <button key={t} type="button" onClick={() => switchTab(t)}
-                className={`flex-1 py-2.5 text-sm font-bold rounded-lg transition-all duration-200 capitalize ${t === tab ? 'bg-white text-gray-900 shadow' : 'text-gray-500 hover:text-gray-700'}`}>
+                className={`flex-1 py-2.5 text-sm font-bold rounded-lg transition-all duration-200 ${t === tab ? 'bg-white text-gray-900 shadow' : 'text-gray-500 hover:text-gray-700'}`}>
                 {t === 'login' ? 'Sign In' : 'Register'}
               </button>
             ))}
@@ -265,197 +283,194 @@ export default function LoginPage() {
             <form onSubmit={handleLogin} className="space-y-4">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1.5">Email address</label>
-                <div className="relative">
-                  <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"/></svg>
-                  <input type="email" value={loginEmail} onChange={e => setLoginEmail(e.target.value)}
-                    className={inputCls} placeholder="you@example.com" required autoComplete="email" suppressHydrationWarning/>
+                <div className="relative"><IconEmail/>
+                  <input type="email" value={loginEmail} onChange={e => setLoginEmail(e.target.value)} className={IC} placeholder="you@example.com" required autoComplete="email" suppressHydrationWarning/>
                 </div>
               </div>
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1.5">Password</label>
-                <div className="relative">
-                  <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"/></svg>
-                  <input type="password" value={loginPassword} onChange={e => setLoginPassword(e.target.value)}
-                    className={inputCls} placeholder="Enter your password" required autoComplete="current-password" suppressHydrationWarning/>
+                <div className="relative"><IconLock/>
+                  <input type="password" value={loginPassword} onChange={e => setLoginPassword(e.target.value)} className={IC} placeholder="Enter your password" required autoComplete="current-password" suppressHydrationWarning/>
                 </div>
               </div>
-              <button type="submit" disabled={loading}
-                className="w-full flex items-center justify-center gap-2 py-3.5 px-6 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90 active:scale-[0.99] disabled:opacity-60 mt-2"
+              <button type="submit" disabled={loading} className={BtnPrimary}
                 style={{ background:'linear-gradient(135deg,#FF9933,#E67E22)', boxShadow:'0 4px 14px rgba(255,153,51,0.35)' }}>
-                {loading ? <><Spinner/>Signing in...</> : 'Sign In →'}
+                {loading ? <><Spin/>Signing in...</> : 'Sign In →'}
               </button>
-              <p className="text-center text-sm text-gray-500 pt-2">
+              <p className="text-center text-sm text-gray-500 pt-1">
                 New to Sarvdev?{' '}
-                <button type="button" onClick={() => switchTab('register')} className="font-bold text-orange-500 hover:text-orange-600 transition-colors">
-                  Create account
-                </button>
+                <button type="button" onClick={() => switchTab('register')} className="font-bold text-orange-500 hover:text-orange-600 transition-colors">Create account</button>
               </p>
             </form>
           )}
 
-          {/* ── Register Form ── */}
+          {/* ── REGISTER FORM ── */}
           {tab === 'register' && (
             <>
-              {/* Pending success state */}
               {pendingSuccess ? (
-                <div className="text-center py-4">
-                  <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ background: '#FEF3C7' }}>
-                    <span className="text-3xl">⏳</span>
+                <div className="text-center py-8">
+                  <div className="w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-5" style={{ background:'linear-gradient(135deg,#FEF3C7,#FDE68A)' }}>
+                    <span className="text-4xl">⏳</span>
                   </div>
-                  <h3 className="text-lg font-bold text-gray-900 mb-2">Request Submitted!</h3>
-                  <p className="text-sm text-gray-600 mb-5">{pendingSuccess}</p>
-                  <button onClick={() => switchTab('login')} className="btn btn-primary px-6 py-2 text-sm">Go to Login</button>
+                  <h3 className="text-xl font-extrabold text-gray-900 mb-2">Request Submitted!</h3>
+                  <p className="text-sm text-gray-500 mb-6 max-w-xs mx-auto">{pendingSuccess}</p>
+                  <button onClick={() => switchTab('login')} className="px-8 py-3 rounded-xl text-sm font-bold text-white"
+                    style={{ background:'linear-gradient(135deg,#FF9933,#E67E22)' }}>
+                    Go to Sign In →
+                  </button>
                 </div>
               ) : (
                 <form onSubmit={handleRegister} className="space-y-5">
-                  {/* Role selector */}
+
+                  {/* Role cards */}
                   <div>
-                    <p className="label mb-2">Register as</p>
+                    <p className="text-sm font-semibold text-gray-700 mb-2">Register as</p>
                     <div className="grid grid-cols-3 gap-2">
                       {ROLE_CONFIG.map(r => (
-                        <button
-                          key={r.key}
-                          type="button"
-                          onClick={() => setRegRole(r.key)}
-                          className={`flex flex-col items-center gap-1 p-3 rounded-xl border-2 transition-all text-center ${regRole === r.key ? 'border-primary-500 bg-primary-50' : 'border-gray-200 hover:border-gray-300'}`}
-                        >
+                        <button key={r.key} type="button" onClick={() => setRegRole(r.key)}
+                          className="flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all text-center"
+                          style={{ borderColor: regRole===r.key ? '#FF9933':'#E5E7EB', background: regRole===r.key ? '#FFF7ED':'#fff' }}>
                           <span className="text-2xl">{r.icon}</span>
-                          <span className={`text-[11px] font-bold leading-tight ${regRole === r.key ? 'text-primary-700' : 'text-gray-600'}`}>{r.labelHi}</span>
-                          <span className="text-[9px] text-gray-400 leading-tight hidden sm:block">{r.label}</span>
+                          <span className="text-[11px] font-bold leading-tight" style={{ color: regRole===r.key ? '#C2410C':'#4B5563' }}>{r.labelHi}</span>
+                          <span className="text-[9px] text-gray-400 hidden sm:block">{r.label}</span>
                         </button>
                       ))}
                     </div>
                     {regRole !== 'user' && (
-                      <p className="text-[11px] text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mt-2 flex items-start gap-1.5">
-                        <span>⚠️</span>
-                        <span>{regRole === 'temple' ? 'Temple Manager' : 'Pandit'} accounts need admin approval before login access.</span>
+                      <p className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mt-2 flex items-start gap-1.5">
+                        <span className="flex-shrink-0">⚠️</span>
+                        <span>{regRole==='temple' ? 'Temple Manager' : 'Pandit'} accounts need admin approval before login.</span>
                       </p>
                     )}
                   </div>
 
                   {/* Common fields */}
-                  <div className="grid grid-cols-1 gap-4">
+                  <div className="space-y-3">
                     <div>
-                      <label className="label">Full Name *</label>
-                      <input type="text" value={regName} onChange={e => setRegName(e.target.value)} className="input" placeholder="Your full name" required suppressHydrationWarning />
-                    </div>
-                    <div>
-                      <label className="label">Email *</label>
-                      <input type="email" value={regEmail} onChange={e => setRegEmail(e.target.value)} className="input" placeholder="you@example.com" required suppressHydrationWarning />
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="label">Password *</label>
-                        <input type="password" value={regPassword} onChange={e => setRegPassword(e.target.value)} className="input" placeholder="Min 6 chars" required minLength={6} suppressHydrationWarning />
+                      <label className="block text-sm font-semibold text-gray-700 mb-1.5">Full Name *</label>
+                      <div className="relative"><IconUser/>
+                        <input type="text" value={regName} onChange={e => setRegName(e.target.value)} className={IC} placeholder="Your full name" required suppressHydrationWarning/>
                       </div>
-                      <div>
-                        <label className="label">Confirm *</label>
-                        <input type="password" value={regConfirm} onChange={e => setRegConfirm(e.target.value)} className="input" placeholder="Re-enter" required minLength={6} suppressHydrationWarning />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1.5">Email *</label>
+                      <div className="relative"><IconEmail/>
+                        <input type="email" value={regEmail} onChange={e => setRegEmail(e.target.value)} className={IC} placeholder="you@example.com" required suppressHydrationWarning/>
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="label">Phone</label>
-                        <input type="tel" value={regPhone} onChange={e => setRegPhone(e.target.value)} className="input" placeholder="+91 XXXXX XXXXX" suppressHydrationWarning />
+                        <label className="block text-sm font-semibold text-gray-700 mb-1.5">Password *</label>
+                        <div className="relative"><IconLock/>
+                          <input type="password" value={regPassword} onChange={e => setRegPassword(e.target.value)} className={IC} placeholder="Min 6 chars" required minLength={6} suppressHydrationWarning/>
+                        </div>
                       </div>
                       <div>
-                        <label className="label">City</label>
-                        <input type="text" value={regCity} onChange={e => setRegCity(e.target.value)} className="input" placeholder="City" suppressHydrationWarning />
+                        <label className="block text-sm font-semibold text-gray-700 mb-1.5">Confirm *</label>
+                        <div className="relative"><IconCheck/>
+                          <input type="password" value={regConfirm} onChange={e => setRegConfirm(e.target.value)} className={IC} placeholder="Re-enter" required minLength={6} suppressHydrationWarning/>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-1.5">Phone</label>
+                        <div className="relative"><IconPhone/>
+                          <input type="tel" value={regPhone} onChange={e => setRegPhone(e.target.value)} className={IC} placeholder="+91 XXXXX" suppressHydrationWarning/>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-1.5">City</label>
+                        <div className="relative"><IconPin/>
+                          <input type="text" value={regCity} onChange={e => setRegCity(e.target.value)} className={IC} placeholder="City" suppressHydrationWarning/>
+                        </div>
                       </div>
                     </div>
                   </div>
 
-                  {/* Temple-specific fields */}
+                  {/* Temple fields */}
                   {regRole === 'temple' && (
-                    <div className="space-y-3 p-4 rounded-xl border border-orange-200 bg-orange-50/50">
+                    <div className="space-y-3 p-4 rounded-2xl" style={{ background:'#FFF7ED', border:'1.5px solid #FED7AA' }}>
                       <p className="text-xs font-bold text-orange-700 uppercase tracking-wide">🛕 Temple Details</p>
                       <div>
-                        <label className="label">Temple Name *</label>
-                        <input type="text" value={templeName} onChange={e => setTempleName(e.target.value)} className="input" placeholder="e.g. Shri Ram Mandir, Ayodhya" required={regRole === 'temple'} suppressHydrationWarning />
+                        <label className="block text-sm font-semibold text-gray-700 mb-1.5">Temple Name *</label>
+                        <input type="text" value={templeName} onChange={e => setTempleName(e.target.value)} className={IC.replace('pl-10','pl-4')} placeholder="e.g. Shri Ram Mandir, Ayodhya" required suppressHydrationWarning/>
                       </div>
                       <div>
-                        <label className="label">Your Designation</label>
-                        <select value={designation} onChange={e => setDesignation(e.target.value)} className="input" suppressHydrationWarning>
-                          <option value="">Select role</option>
-                          <option>Pujari / Head Priest</option>
-                          <option>Temple Manager</option>
-                          <option>Trustee</option>
-                          <option>Secretary</option>
-                          <option>Committee Member</option>
-                          <option>Owner</option>
+                        <label className="block text-sm font-semibold text-gray-700 mb-1.5">Your Designation</label>
+                        <select value={designation} onChange={e => setDesignation(e.target.value)} className={IC.replace('pl-10','pl-4')} suppressHydrationWarning>
+                          <option value="">Select your role</option>
+                          {['Pujari / Head Priest','Temple Manager','Trustee','Secretary','Committee Member','Owner'].map(o => <option key={o}>{o}</option>)}
                         </select>
                       </div>
-                      <p className="text-[11px] text-gray-500">If your temple is already listed, admin will link your account after verification. You can also claim it from the temple page after approval.</p>
+                      <p className="text-[11px] text-gray-500">Admin links your account after verification. You can also claim from the temple page post-approval.</p>
                     </div>
                   )}
 
-                  {/* Pandit-specific fields */}
+                  {/* Pandit fields */}
                   {regRole === 'pandit' && (
-                    <div className="space-y-3 p-4 rounded-xl border border-purple-200 bg-purple-50/30">
+                    <div className="space-y-3 p-4 rounded-2xl" style={{ background:'#FAF5FF', border:'1.5px solid #E9D5FF' }}>
                       <p className="text-xs font-bold text-purple-700 uppercase tracking-wide">🕉️ Pandit Details</p>
                       <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <label className="label">Experience (Years)</label>
-                          <input type="number" value={experience} onChange={e => setExperience(e.target.value)} className="input" placeholder="e.g. 10" min={0} max={60} suppressHydrationWarning />
+                          <label className="block text-sm font-semibold text-gray-700 mb-1.5">Experience (yrs)</label>
+                          <input type="number" value={experience} onChange={e => setExperience(e.target.value)} className={IC.replace('pl-10','pl-4')} placeholder="e.g. 10" min={0} max={60} suppressHydrationWarning/>
                         </div>
                         <div>
-                          <label className="label">State</label>
-                          <input type="text" value={regState} onChange={e => setRegState(e.target.value)} className="input" placeholder="State" suppressHydrationWarning />
+                          <label className="block text-sm font-semibold text-gray-700 mb-1.5">State</label>
+                          <input type="text" value={regState} onChange={e => setRegState(e.target.value)} className={IC.replace('pl-10','pl-4')} placeholder="State" suppressHydrationWarning/>
                         </div>
                       </div>
                       <div>
-                        <label className="label mb-1">Languages you perform in</label>
+                        <p className="text-sm font-semibold text-gray-700 mb-1.5">Languages</p>
                         <div className="flex flex-wrap gap-1.5">
                           {PANDIT_LANGS.map(l => (
                             <button key={l} type="button" onClick={() => toggleLang(l)}
-                              className={`text-[11px] px-2.5 py-1 rounded-full border font-medium transition-all ${selectedLangs.includes(l) ? 'bg-purple-600 text-white border-purple-600' : 'border-gray-300 text-gray-600 hover:border-purple-400'}`}>
+                              className="text-[11px] px-2.5 py-1 rounded-full border font-medium transition-all"
+                              style={{ background:selectedLangs.includes(l)?'#7C3AED':'#fff', color:selectedLangs.includes(l)?'#fff':'#6B7280', borderColor:selectedLangs.includes(l)?'#7C3AED':'#D1D5DB' }}>
                               {l}
                             </button>
                           ))}
                         </div>
                       </div>
                       <div>
-                        <label className="label mb-1">Services Offered</label>
+                        <p className="text-sm font-semibold text-gray-700 mb-1.5">Services Offered</p>
                         <div className="flex flex-wrap gap-1.5">
                           {PANDIT_SERVICES.map(s => (
                             <button key={s} type="button" onClick={() => toggleService(s)}
-                              className={`text-[11px] px-2.5 py-1 rounded-full border font-medium transition-all ${selectedServices.includes(s) ? 'bg-orange-500 text-white border-orange-500' : 'border-gray-300 text-gray-600 hover:border-orange-400'}`}>
+                              className="text-[11px] px-2.5 py-1 rounded-full border font-medium transition-all"
+                              style={{ background:selectedServices.includes(s)?'#EA580C':'#fff', color:selectedServices.includes(s)?'#fff':'#6B7280', borderColor:selectedServices.includes(s)?'#EA580C':'#D1D5DB' }}>
                               {s}
                             </button>
                           ))}
                         </div>
                       </div>
                       <div>
-                        <label className="label">Short Bio</label>
-                        <textarea value={panditBio} onChange={e => setPanditBio(e.target.value)} className="input resize-none" rows={2} placeholder="Brief about yourself, specialization..." suppressHydrationWarning />
+                        <label className="block text-sm font-semibold text-gray-700 mb-1.5">Short Bio</label>
+                        <textarea value={panditBio} onChange={e => setPanditBio(e.target.value)}
+                          className="w-full px-4 py-3 rounded-xl text-sm border border-gray-200 bg-gray-50 focus:bg-white focus:border-orange-400 focus:ring-2 focus:ring-orange-100 outline-none transition-all resize-none"
+                          rows={2} placeholder="Brief about yourself..." suppressHydrationWarning/>
                       </div>
                     </div>
                   )}
 
-                  <button type="submit" disabled={loading} suppressHydrationWarning className="w-full btn btn-primary btn-lg disabled:opacity-60">
-                    {loading ? (
-                      <span className="flex items-center justify-center gap-2">
-                        <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
-                        {regRole === 'user' ? 'Creating account...' : 'Submitting for approval...'}
-                      </span>
-                    ) : regRole === 'user' ? 'Create Account' : 'Submit for Approval →'}
+                  <button type="submit" disabled={loading} className={BtnPrimary}
+                    style={{ background:'linear-gradient(135deg,#FF9933,#E67E22)', boxShadow:'0 4px 14px rgba(255,153,51,0.35)' }}>
+                    {loading ? <><Spin/>{regRole==='user'?'Creating account...':'Submitting...'}</> : regRole==='user'?'Create Account →':'Submit for Approval →'}
                   </button>
 
-                  <p className="text-center text-caption text-ink-faint mt-3">
+                  <p className="text-center text-sm text-gray-500">
                     Already have an account?{' '}
-                    <button type="button" onClick={() => switchTab('login')} suppressHydrationWarning className="text-primary-600 font-semibold hover:text-primary-700 transition-colors">Login</button>
+                    <button type="button" onClick={() => switchTab('login')} className="font-bold text-orange-500 hover:text-orange-600 transition-colors">Sign In</button>
                   </p>
                 </form>
               )}
             </>
           )}
 
-          {/* Footer */}
-          <p className="text-center text-xs text-gray-400 mt-6">
-            Temple Directory &amp; Devotional Hub · <a href="/" className="hover:text-orange-500 transition-colors">Sarvdev.com</a>
-          </p>
-        </div>{/* end inner */}
-      </div>{/* end right panel */}
+          <p className="text-center text-xs text-gray-400 mt-8 pb-2">Sarvdev · Temple Directory &amp; Devotional Hub</p>
+        </div>
+      </div>
     </div>
   )
 }

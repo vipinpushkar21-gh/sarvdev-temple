@@ -107,7 +107,7 @@ export default function Header() {
   return (
     <>
       <header
-        className={`sticky top-0 z-50 transition-all duration-500 ${
+        className={`sticky top-0 z-50 overflow-hidden transition-all duration-500 ${
           scrolled
             ? 'bg-secondary-900/80 backdrop-blur-2xl shadow-[0_1px_30px_rgba(0,0,0,0.15)]'
             : 'bg-secondary-900/95 backdrop-blur-xl'
@@ -134,8 +134,8 @@ export default function Header() {
           </Link>
 
           {/* Desktop nav */}
-          <nav className="hidden xl:flex items-center" aria-label="Main navigation">
-            <div className="flex items-center gap-px bg-white/[0.06] rounded-2xl px-1 py-0.5 border border-white/[0.08] max-w-[calc(100vw-320px)] overflow-x-auto scrollbar-none">
+          <nav className="hidden xl:flex items-center flex-1 min-w-0 justify-end gap-0.5" aria-label="Main navigation">
+            <div className="flex items-center gap-px bg-white/[0.06] rounded-2xl px-1 py-0.5 border border-white/[0.08] overflow-x-auto scrollbar-none min-w-0 flex-1 max-w-fit">
               {navItems.map((item) => {
                 const active = isActive(item.href)
                 return (
