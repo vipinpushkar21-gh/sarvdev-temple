@@ -23,6 +23,32 @@ self.addEventListener('activate', (e) => {
   )
 })
 
+self.addEventListener('push', (e) => {
+  const data = e.data?.json() || {}
+  const title = data.title || 'Sarvdev'
+  const options = {
+    body: data.body || '',
+    icon: data.icon || '/icon.svg',
+    badge: '/icon.svg',
+    data: { url: data.url || '/' },
+    vibrate: [200, 100, 200],
+  }
+  e.waitUntil(self.registration.showNotification(title, options))
+})
+
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close()
+  const url = e.notification.data?.url || '/'
+  e.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
+      for (const client of list) {
+        if (client.url === url && 'focus' in client) return client.focus()
+      }
+      if (clients.openWindow) return clients.openWindow(url)
+    })
+  )
+})
+
 self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET') return
   const url = new URL(e.request.url)

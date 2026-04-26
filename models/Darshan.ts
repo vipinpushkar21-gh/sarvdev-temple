@@ -9,6 +9,8 @@ const DarshanSchema = new Schema({
   time: { type: String },
   date: { type: String },
   video: { type: String },
+  youtubeId: { type: String },
+  isLive: { type: Boolean, default: false },
   status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
   createdAt: { type: Date, default: Date.now }
 });

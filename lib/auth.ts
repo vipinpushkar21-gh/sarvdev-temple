@@ -38,7 +38,7 @@ interface TokenPayload {
   id: string
   name: string
   email: string
-  role: 'guest' | 'admin'
+  role: 'guest' | 'user' | 'temple' | 'pandit' | 'admin'
   exp: number
 }
 
@@ -59,7 +59,7 @@ export function createToken(user: { _id: string; name: string; email: string; ro
     id: String(user._id),
     name: user.name,
     email: user.email,
-    role: user.role as 'guest' | 'admin',
+    role: user.role as TokenPayload['role'],
     exp: Math.floor(Date.now() / 1000) + TOKEN_MAX_AGE,
   }
   const encoded = base64url(JSON.stringify(payload))

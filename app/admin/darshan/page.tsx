@@ -10,6 +10,8 @@ type DarshanRow = {
   media?: string
   time?: string
   date?: string
+  youtubeId?: string
+  isLive?: boolean
   status?: 'approved' | 'pending' | 'rejected'
 }
 
@@ -71,6 +73,11 @@ export default function AdminDarshanPage() {
   const approve = async (id: string) => { const res = await fetch('/api/darshan', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, status: 'approved' }) }); if (res.ok) setRows(r => r.map(x => x._id === id ? { ...x, status: 'approved' } : x)) }
   const reject = async (id: string) => { const res = await fetch('/api/darshan', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, status: 'rejected' }) }); if (res.ok) setRows(r => r.map(x => x._id === id ? { ...x, status: 'rejected' } : x)) }
   const remove = async (id: string) => { if (!confirm('Delete this darshan?')) return; const res = await fetch('/api/darshan', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) }); if (res.ok) setRows(r => r.filter(x => x._id !== id)) }
+  const [liveEdit, setLiveEdit] = useState<{ id: string; youtubeId: string } | null>(null)
+  const saveLive = async (id: string, youtubeId: string, isLive: boolean) => {
+    const res = await fetch('/api/darshan', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, youtubeId, isLive }) })
+    if (res.ok) { setRows(r => r.map(x => x._id === id ? { ...x, youtubeId, isLive } : x)); setLiveEdit(null) }
+  }
 
   if (loading) return <div className="space-y-5"><h1 className="admin-page-title">Darshan</h1><div className="animate-pulse space-y-3">{[...Array(5)].map((_, i) => <div key={i} className="h-12 bg-gray-100 rounded-xl" />)}</div></div>
 
@@ -120,6 +127,7 @@ export default function AdminDarshanPage() {
                 <th>Temple</th>
                 <th>Time</th>
                 <th>Date</th>
+                <th>YouTube / Live</th>
                 <th>Status</th>
                 <th>Actions</th>
               </tr>
@@ -132,6 +140,31 @@ export default function AdminDarshanPage() {
                   <td className="text-gray-500">{r.temple}</td>
                   <td className="text-gray-500">{r.time}</td>
                   <td className="text-gray-500">{r.date}</td>
+                  <td>
+                    {liveEdit?.id === r._id ? (
+                      <div className="flex items-center gap-1.5">
+                        <input
+                          type="text"
+                          value={liveEdit.youtubeId}
+                          onChange={e => setLiveEdit({ id: r._id, youtubeId: e.target.value })}
+                          placeholder="YouTube ID"
+                          className="admin-input text-xs w-28"
+                        />
+                        <button onClick={() => saveLive(r._id, liveEdit.youtubeId, true)} className="admin-btn admin-btn-success text-xs">Go Live</button>
+                        <button onClick={() => saveLive(r._id, liveEdit.youtubeId, false)} className="admin-btn admin-btn-ghost text-xs">Save</button>
+                        <button onClick={() => setLiveEdit(null)} className="admin-btn admin-btn-ghost text-xs">✕</button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1.5">
+                        {r.isLive && <span className="admin-badge-red flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />LIVE</span>}
+                        {r.youtubeId && !r.isLive && <span className="text-xs text-gray-400 font-mono">{r.youtubeId.slice(0, 8)}…</span>}
+                        <button onClick={() => setLiveEdit({ id: r._id, youtubeId: r.youtubeId || '' })} className="admin-btn admin-btn-ghost text-xs">
+                          {r.isLive ? '⏹ Stop' : '▶ Set Live'}
+                        </button>
+                        {r.isLive && <button onClick={() => saveLive(r._id, r.youtubeId || '', false)} className="admin-btn admin-btn-danger text-xs">Stop Live</button>}
+                      </div>
+                    )}
+                  </td>
                   <td><span className={r.status === 'approved' ? 'admin-badge-green' : r.status === 'pending' ? 'admin-badge-yellow' : 'admin-badge-red'}>{r.status || 'pending'}</span></td>
                   <td>
                     <div className="flex gap-1.5">

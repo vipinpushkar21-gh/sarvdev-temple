@@ -5,6 +5,26 @@ import type { NextRequest } from 'next/server'
 const TOKEN_SECRET = process.env.AUTH_TOKEN || 'sarvdev_secure_token_2025'
 
 /* ── Web Crypto HMAC-SHA256 (Edge Runtime compatible) ── */
+async function getTokenPayload(token: string): Promise<Record<string, any> | null> {
+  try {
+    if (token === process.env.AUTH_TOKEN) return { role: 'admin' }
+    const dotIdx = token.lastIndexOf('.')
+    if (dotIdx === -1) return null
+    const encoded = token.slice(0, dotIdx)
+    const sig = token.slice(dotIdx + 1)
+    if (!encoded || !sig) return null
+    const enc = new TextEncoder()
+    const key = await crypto.subtle.importKey('raw', enc.encode(TOKEN_SECRET), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'])
+    const sigBuf = await crypto.subtle.sign('HMAC', key, enc.encode(encoded))
+    const expected = btoa(String.fromCharCode(...new Uint8Array(sigBuf))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '')
+    if (sig !== expected) return null
+    const payloadJson = atob(encoded.replace(/-/g, '+').replace(/_/g, '/'))
+    const payload = JSON.parse(payloadJson)
+    if (payload.exp < Math.floor(Date.now() / 1000)) return null
+    return payload
+  } catch { return null }
+}
+
 async function verifyTokenEdge(token: string): Promise<boolean> {
   try {
     // Old-style static token (backwards compat)
@@ -58,23 +78,32 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL('/maintenance', request.url))
     }
   }
-  // Allow local development (localhost/127.0.0.1) to access the site without the auth gate.
-  // EXCEPT for /admin routes which always require admin authentication.
   const host = request.headers.get('host') || request.nextUrl.hostname || ''
   const isLocalhost = host.includes('localhost') || host.includes('127.0.0.1')
   const isAdminRoute = request.nextUrl.pathname.startsWith('/admin')
+  const path = request.nextUrl.pathname
 
-  if (isLocalhost && !isAdminRoute) {
+  // Admin routes — always require admin token (even on localhost)
+  if (isAdminRoute) {
+    const authCookie = request.cookies.get('auth_token')
+    const payload = authCookie?.value ? await getTokenPayload(authCookie.value) : null
+    if (!payload) return NextResponse.redirect(new URL('/login', request.url))
+    if (payload.role !== 'admin') return NextResponse.redirect(new URL('/', request.url))
     return NextResponse.next()
   }
 
-  // Admin routes require authentication even on localhost
-  if (isAdminRoute) {
+  // Portal routes — always require specific role (even on localhost)
+  if (path.startsWith('/temple-portal') || path.startsWith('/pandit-portal') || path.startsWith('/user/dashboard')) {
     const authCookie = request.cookies.get('auth_token')
-    const isAuth = authCookie?.value ? await verifyTokenEdge(authCookie.value) : false
-    if (!isAuth) {
-      return NextResponse.redirect(new URL('/login', request.url))
-    }
+    const payload = authCookie?.value ? await getTokenPayload(authCookie.value) : null
+    if (!payload) return NextResponse.redirect(new URL('/login', request.url))
+    if (path.startsWith('/temple-portal') && payload.role !== 'temple') return NextResponse.redirect(new URL('/', request.url))
+    if (path.startsWith('/pandit-portal') && payload.role !== 'pandit') return NextResponse.redirect(new URL('/', request.url))
+    return NextResponse.next()
+  }
+
+  // Allow local development to bypass auth for non-protected routes
+  if (isLocalhost) {
     return NextResponse.next()
   }
 

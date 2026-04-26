@@ -24,11 +24,25 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 })
     }
 
+    // Block pending/rejected accounts
+    if (user.status === 'pending') {
+      return NextResponse.json({
+        error: 'Your account is pending admin approval. You will be notified once approved.',
+        pending: true,
+      }, { status: 403 })
+    }
+    if (user.status === 'rejected') {
+      return NextResponse.json({
+        error: 'Your account registration was not approved. Contact support for details.',
+        rejected: true,
+      }, { status: 403 })
+    }
+
     const token = createToken(user)
 
     const res = NextResponse.json({
       success: true,
-      user: { id: user._id, name: user.name, email: user.email, role: user.role },
+      user: { id: user._id, name: user.name, email: user.email, role: user.role, status: user.status },
     })
     res.headers.set('Set-Cookie', `${AUTH_COOKIE_NAME}=${token}; ${AUTH_COOKIE_OPTIONS}`)
     return res

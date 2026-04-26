@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Hero from '../../components/Hero'
 import BookmarkButton from '../../components/BookmarkButton'
+import Link from 'next/link'
 
 const DEFAULT_IMAGE = 'https://res.cloudinary.com/dc2qg7bwr/image/upload/v1773744527/sarvdev/temples/avno1ltpdyzpzsby1mll.jpg'
 
@@ -12,6 +13,8 @@ type Darshan = {
   description?: string
   time?: string
   video?: string
+  youtubeId?: string
+  isLive?: boolean
   temple?: string
   status?: string
 }
@@ -20,15 +23,17 @@ export default function DailyDarshanPage() {
   const [items, setItems] = useState<Darshan[]>([])
   const [loading, setLoading] = useState(true)
 
+  const [liveItems, setLiveItems] = useState<Darshan[]>([])
+
   useEffect(() => {
     async function fetchDarshan() {
       try {
         const res = await fetch('/api/darshan')
         if (res.ok) {
           const data = await res.json()
-          // Only show approved darshan
           const approved = data.filter((d: Darshan) => d.status === 'approved')
           setItems(approved)
+          setLiveItems(approved.filter((d: Darshan) => d.isLive && d.youtubeId))
         }
       } catch (error) {
         console.error('Failed to fetch darshan:', error)
@@ -65,6 +70,27 @@ export default function DailyDarshanPage() {
     <>
       <Hero title="Daily Darshan" subtitle="Live and recorded darshan from our temple network" />
       <main className="page-container section-sm">
+
+      {/* Live Now Banner */}
+      {liveItems.length > 0 && (
+        <div className="mb-8 rounded-2xl overflow-hidden border border-red-200 bg-gradient-to-r from-red-50 to-rose-50">
+          <div className="flex items-center gap-3 px-5 py-3 bg-gradient-to-r from-red-600 to-red-500">
+            <span className="w-2.5 h-2.5 rounded-full bg-white animate-pulse" />
+            <span className="text-white font-bold text-sm">LIVE DARSHAN</span>
+            <span className="ml-auto text-white/70 text-xs">{liveItems.length} live stream{liveItems.length > 1 ? 's' : ''}</span>
+          </div>
+          <div className="p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div>
+              <p className="font-semibold text-secondary-700">{liveItems[0].title}</p>
+              {liveItems[0].temple && <p className="text-body-sm text-ink-muted">{liveItems[0].temple}</p>}
+            </div>
+            <Link href="/live-darshan" className="btn btn-primary btn-sm no-underline hover:no-underline shrink-0">
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+              Live Darshan Dekhein
+            </Link>
+          </div>
+        </div>
+      )}
 
       <section>
         {items.length === 0 ? (

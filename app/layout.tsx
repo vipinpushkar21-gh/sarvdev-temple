@@ -14,6 +14,7 @@ import AuthGuard from '../components/AuthGuard'
 import { ToastProvider } from '../components/Toast'
 import ScrollToTop from '../components/ScrollToTop'
 import AudioPlayerBar from '../components/AudioPlayerBar'
+import SpiritualChatbot from '../components/SpiritualChatbot'
 import { ThemeProvider } from '../lib/theme'
 import PWARegister from '../components/PWARegister'
 import ScrollRevealInit from '../components/ScrollRevealInit'
@@ -80,6 +81,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <Footer />
             <AudioPlayerBar />
             <ScrollToTop />
+            <SpiritualChatbot />
             <ScrollRevealInit />
           </ToastProvider>
           </AudioPlayerProvider>

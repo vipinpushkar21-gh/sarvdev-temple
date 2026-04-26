@@ -6,6 +6,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useTranslation } from '../lib/translation'
 import LanguageSwitcher from './LanguageSwitcher'
 import { useTheme } from '../lib/theme'
+import PushNotificationBell from './PushNotificationBell'
 
 const navItems = [
   { label: 'nav.home', href: '/', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0h4' },
@@ -19,6 +20,7 @@ const navItems = [
   { label: 'nav.panchang', href: '/panchang', icon: 'M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z' },
   { label: 'nav.bookmarks', href: '/bookmarks', icon: 'M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z' },
   { label: 'nav.listTemple', href: '/list-temple', icon: 'M12 4v16m8-8H4' },
+  { label: 'nav.forum', href: '/forum', icon: 'M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z' },
 ]
 
 interface AuthUser {
@@ -151,6 +153,9 @@ export default function Header() {
                 )
               })}
             </div>
+
+            {/* Push Notification Bell */}
+            <PushNotificationBell />
 
             {/* Dark Mode Toggle */}
             <button

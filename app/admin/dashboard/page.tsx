@@ -10,6 +10,7 @@ type Stats = {
     temples: number; approvedTemples: number; pendingTemples: number
     devotionals: number; blogs: number; events: number; users: number
     visitors: number; todayVisitors: number; weekVisitors: number; monthVisitors: number
+    pendingUsers: number
   }
   growth: { visitors: number; visitorsMonth: number; users: number }
   categoryCounts: { _id: string; count: number }[]
@@ -51,7 +52,8 @@ const KPI_META = [
   { key: 'users',         label: 'Registered Users',icon: '👤', from: '#6366F1', to: '#4F46E5', href: '/admin/users'      },
   { key: 'visitors',      label: 'Total Visitors',  icon: '👁', from: '#0EA5E9', to: '#0284C7', href: '/admin/analytics'  },
   { key: 'todayVisitors', label: 'Today Visitors',  icon: '📈', from: '#F59E0B', to: '#D97706', href: undefined           },
-  { key: 'pendingTemples',label: 'Pending Review',  icon: '⏳', from: '#EF4444', to: '#DC2626', href: '/admin/temples'    },
+  { key: 'pendingTemples',label: 'Pending Temples', icon: '⏳', from: '#EF4444', to: '#DC2626', href: '/admin/temples'    },
+  { key: 'pendingUsers',  label: 'Pending Users',   icon: '👥', from: '#F59E0B', to: '#D97706', href: '/admin/users'      },
 ]
 
 function timeAgo(dateStr: string) {
@@ -232,6 +234,7 @@ export default function AdminDashboardPage() {
   const { counts, growth, categoryCounts, pendingList, recent, dailyVisitors, monthlyVisitors, topPages, health } = stats
   const chartData      = range === '7d' ? dailyVisitors : monthlyVisitors
   const visiblePending = pendingList.filter(t => !dismissed.has(t._id))
+  const totalPendingApprovals = (counts.pendingUsers || 0) + visiblePending.length
   const maxCat         = Math.max(...categoryCounts.map(c => c.count), 1)
 
   const exportCSV = (rows: (string | number)[][], filename: string) => {
@@ -266,8 +269,8 @@ export default function AdminDashboardPage() {
           </p>
           <h1 className="text-2xl font-bold text-white">{getGreeting()} 🙏</h1>
           <p className="text-sm mt-0.5" style={{ color: 'rgba(255,255,255,0.45)' }}>
-            {counts.pendingTemples > 0
-              ? `${counts.pendingTemples} temple${counts.pendingTemples > 1 ? 's' : ''} awaiting your review`
+            {totalPendingApprovals > 0
+              ? `${counts.pendingTemples > 0 ? `${counts.pendingTemples} temple${counts.pendingTemples > 1 ? 's' : ''}` : ''}${counts.pendingTemples > 0 && counts.pendingUsers > 0 ? ' · ' : ''}${counts.pendingUsers > 0 ? `${counts.pendingUsers} user account${counts.pendingUsers > 1 ? 's' : ''}` : ''} awaiting your review`
               : 'All caught up — Sarvdev is running smoothly'}
           </p>
         </div>

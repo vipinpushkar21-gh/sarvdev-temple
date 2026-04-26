@@ -10,6 +10,7 @@ import Breadcrumbs from '../../../components/Breadcrumbs'
 import ShareButtons from '../../../components/ShareButtons'
 import { DetailPageSkeleton } from '../../../components/Skeleton'
 import ReviewSection from '../../../components/ReviewSection'
+import ClaimTempleButton from '../../../components/ClaimTempleButton'
 
 type Props = {
   params: Promise<{ slug: string }>
@@ -468,6 +469,9 @@ export default function TemplePage({ params }: Props) {
 
         {/* ── Ratings & Reviews ── */}
         <ReviewSection templeSlug={slug} />
+
+        {/* Claim Temple — visible to temple role users */}
+        <ClaimTempleButton templeId={temple._id} templeName={temple.title} />
 
         {/* Bottom Share Bar */}
         <div className="bento-card p-5 flex items-center justify-between flex-wrap gap-4 reveal-up">
