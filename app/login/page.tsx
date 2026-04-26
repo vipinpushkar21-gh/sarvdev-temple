@@ -148,30 +148,32 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="min-h-screen flex items-start justify-center px-4 py-10 relative bg-gradient-to-br from-surface-sunken via-surface to-primary-50/20">
+    <main className="h-screen flex items-center justify-center px-4 py-4 relative bg-gradient-to-br from-surface-sunken via-surface to-primary-50/20">
       {/* Decorative background */}
       <div className="fixed inset-0 pointer-events-none -z-10 overflow-hidden">
         <div className="absolute top-20 right-[15%] w-80 h-80 bg-primary/[0.06] rounded-full blur-3xl" />
         <div className="absolute bottom-20 left-[10%] w-64 h-64 bg-accent/[0.05] rounded-full blur-3xl" />
       </div>
 
-      <div className="w-full max-w-md relative z-10">
-        <div className="card p-8 md:p-10 shadow-elevated border-surface-border/50">
-          {/* Header */}
-          <div className="text-center mb-8">
-            <div className="flex items-center justify-center gap-2.5 mb-4">
-              <span className="flex items-center justify-center w-11 h-11 rounded-xl bg-gradient-to-br from-primary to-accent shadow-lg shadow-primary/25">
-                <span className="text-secondary-900 font-serif font-bold text-xl leading-none">S</span>
-              </span>
-            </div>
-            <h1 className="text-h2 font-serif text-secondary-800">Sarvdev</h1>
-            <p className="mt-1.5 text-body-sm text-ink-muted">
-              {tab === 'login' ? 'Welcome back! Login to your account' : 'Join the community — create your account'}
-            </p>
-          </div>
+      <div className="w-full max-w-md relative z-10 flex flex-col" style={{ maxHeight: 'calc(100vh - 32px)' }}>
+        <div className="card flex flex-col overflow-hidden shadow-elevated border-surface-border/50">
 
-          {/* Tabs */}
-          <div className="flex rounded-xl bg-surface-sunken p-1 mb-7">
+          {/* ── Fixed top: header + tabs ── */}
+          <div className="px-7 pt-7 pb-0 flex-shrink-0">
+            <div className="text-center mb-5">
+              <div className="flex items-center justify-center gap-2.5 mb-3">
+                <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent shadow-lg shadow-primary/25">
+                  <span className="text-secondary-900 font-serif font-bold text-xl leading-none">S</span>
+                </span>
+              </div>
+              <h1 className="text-h2 font-serif text-secondary-800">Sarvdev</h1>
+              <p className="mt-1 text-body-sm text-ink-muted">
+                {tab === 'login' ? 'Welcome back! Login to your account' : 'Join the community — create your account'}
+              </p>
+            </div>
+
+            {/* Tabs */}
+            <div className="flex rounded-xl bg-surface-sunken p-1 mb-4">
             <button
               type="button"
               onClick={() => switchTab('login')}
@@ -197,10 +199,14 @@ export default function LoginPage() {
               Register
             </button>
           </div>
+          </div>{/* end pinned header */}
+
+          {/* ── Scrollable body ── */}
+          <div className="flex-1 overflow-y-auto px-7 pb-7 pt-4">
 
           {/* Error */}
           {error && (
-            <div className="mb-5 flex items-center gap-2.5 border border-red-200 text-semantic-error bg-red-50 px-4 py-3 rounded-xl text-body-sm">
+            <div className="mb-4 flex items-center gap-2.5 border border-red-200 text-semantic-error bg-red-50 px-4 py-3 rounded-xl text-body-sm">
               <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" /></svg>
               {error}
             </div>
@@ -413,13 +419,12 @@ export default function LoginPage() {
               )}
             </>
           )}
-        </div>
-
-        {/* Footer text */}
-        <p className="text-center text-caption text-ink-faint mt-6">
-          Temple Directory & Devotional Hub
-        </p>
-      </div>
-    </main>
+        </div>{/* end scrollable body */}
+      </div>{/* end card */}
+      <p className="text-center text-caption text-ink-faint mt-4">
+        Temple Directory &amp; Devotional Hub
+      </p>
+    </div>{/* end max-w-md */}
+  </main>
   )
 }
