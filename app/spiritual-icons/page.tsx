@@ -91,18 +91,16 @@ export default function SpiritualIconsPage() {
   return (
     <>
       {/* ═══ Hero Section with Stats ═══ */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-surface-sunken via-surface to-primary-50/20 border-b border-surface-border">
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-0 right-[15%] w-72 h-72 bg-primary/[0.06] rounded-full blur-[80px]" />
-          <div className="absolute bottom-0 left-[5%] w-56 h-56 bg-accent/[0.05] rounded-full blur-[60px]" />
-          <div className="absolute inset-0 bg-dots opacity-[0.02]" />
-        </div>
+      <section className="relative overflow-hidden border-b border-surface-border">
+        <div className="absolute inset-0 bg-cover bg-center bg-no-repeat" style={{ backgroundImage: `url('https://res.cloudinary.com/dc2qg7bwr/image/upload/v1774363519/hero-bg.jpg.jpg')` }} />
+        <div className="absolute inset-0 bg-black/60" />
+        <div className="absolute inset-0 bg-gradient-to-br from-secondary-900/40 via-transparent to-primary/20" />
 
         <div className="page-container py-14 md:py-20 relative z-10">
-          <h1 className="text-display-lg font-serif text-secondary-800 leading-tight">
+          <h1 className="text-display-lg font-serif text-white leading-tight">
             Spiritual Icons
           </h1>
-          <p className="mt-3 text-body text-ink-muted max-w-2xl">
+          <p className="mt-3 text-body text-white/75 max-w-2xl">
             Discover revered Katha Vachaks, Bhajan Gayaks, and Pandits who keep our spiritual traditions alive worldwide.
           </p>
           <div className="mt-4 w-16 h-1 rounded-full bg-gradient-to-r from-primary to-accent" />

@@ -355,14 +355,16 @@ export default function ClientPage() {
       {/* ════════════════════════════════════════════════════════
           SECTION 1: Immersive Hero with Search & Stats
          ════════════════════════════════════════════════════════ */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-surface-sunken via-surface to-primary-50/20 border-b border-surface-border">
-        {/* Decorative mesh */}
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-0 right-[15%] w-72 h-72 bg-primary/[0.06] rounded-full blur-[80px]" />
-          <div className="absolute bottom-0 left-[5%] w-56 h-56 bg-accent/[0.05] rounded-full blur-[60px]" />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-secondary/[0.02] rounded-full blur-[100px]" />
-          <div className="absolute inset-0 bg-dots opacity-[0.02]" />
-        </div>
+      <section className="relative overflow-hidden border-b border-surface-border">
+        {/* Background image */}
+        <div
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{ backgroundImage: `url('https://res.cloudinary.com/dc2qg7bwr/image/upload/v1774363519/hero-bg.jpg.jpg')` }}
+        />
+        {/* Dark overlay */}
+        <div className="absolute inset-0 bg-black/60" />
+        {/* Warm saffron tint */}
+        <div className="absolute inset-0 bg-gradient-to-br from-secondary-900/40 via-transparent to-primary/20" />
 
         <div className="page-container py-14 md:py-20 relative z-10">
           <motion.div
@@ -371,10 +373,10 @@ export default function ClientPage() {
             transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
           >
             {/* Title */}
-            <h1 className="text-display-lg font-serif text-secondary-800 leading-tight">
+            <h1 className="text-display-lg font-serif text-white leading-tight">
               Devotionals
             </h1>
-            <p className="mt-3 text-body text-ink-muted max-w-2xl">
+            <p className="mt-3 text-body text-white/75 max-w-2xl">
               Explore a sacred collection of mantras, bhajans, stotras, aartis, and more — curated for your daily spiritual practice.
             </p>
             <div className="mt-4 w-16 h-1 rounded-full bg-gradient-to-r from-primary to-accent" />

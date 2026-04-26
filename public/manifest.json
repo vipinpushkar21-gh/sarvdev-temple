@@ -1,0 +1,26 @@
+{
+  "name": "Sarvdev — Temple & Devotional Hub",
+  "short_name": "Sarvdev",
+  "description": "Discover temples, devotionals, events and sacred traditions across India.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1A1210",
+  "theme_color": "#FF9933",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["religion", "lifestyle", "education"],
+  "lang": "en-IN",
+  "dir": "ltr",
+  "shortcuts": [
+    { "name": "Temples", "url": "/temples", "description": "Browse temples" },
+    { "name": "Devotionals", "url": "/devotionals", "description": "Listen to devotionals" },
+    { "name": "Daily Darshan", "url": "/daily-darshan", "description": "Today's darshan" }
+  ]
+}

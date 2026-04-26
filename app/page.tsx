@@ -11,6 +11,8 @@ import PanchangToday from '../components/PanchangToday'
 import DevotionalTeaser from '../components/DevotionalTeaser'
 import { useTranslation } from '../lib/translation'
 import Link from 'next/link'
+import FloatingOm from '../components/FloatingOm'
+import CountUp from '../components/CountUp'
 
 const features = [
   {
@@ -63,16 +65,19 @@ export default function HomePage() {
   }, [])
 
   return (
-    <div suppressHydrationWarning>
+    <div className="page-enter" suppressHydrationWarning>
       {/* ─── Hero Section ─── */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-surface-sunken via-surface to-primary-50/20 border-b border-surface-border">
-        {/* Decorative background elements */}
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-20 right-[10%] w-72 h-72 bg-primary/[0.06] rounded-full blur-3xl" />
-          <div className="absolute bottom-10 left-[5%] w-56 h-56 bg-accent/[0.05] rounded-full blur-3xl" />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/[0.02] rounded-full blur-3xl" />
-          <div className="absolute inset-0 bg-dots opacity-[0.03]" />
-        </div>
+      <section className="relative overflow-hidden border-b border-surface-border">
+        <FloatingOm count={7} />
+        {/* Background image */}
+        <div
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{ backgroundImage: `url('https://res.cloudinary.com/dc2qg7bwr/image/upload/v1774363519/hero-bg.jpg.jpg')` }}
+        />
+        {/* Dark overlay for text readability */}
+        <div className="absolute inset-0 bg-black/55" />
+        {/* Warm saffron tint overlay */}
+        <div className="absolute inset-0 bg-gradient-to-br from-secondary-900/40 via-transparent to-primary/20" />
 
         <div className="page-container py-20 md:py-32 relative z-10">
           <div className="max-w-3xl">
@@ -82,10 +87,10 @@ export default function HomePage() {
               Temple Directory & Devotional Hub
             </div>
 
-            <h1 className="text-display-lg font-serif text-secondary-800 leading-tight fade-up delay-1">
+            <h1 className="text-display-lg font-serif text-white leading-tight fade-up delay-1">
               {t('home.title')}
             </h1>
-            <p className="mt-5 text-body text-ink-muted max-w-xl leading-relaxed fade-up delay-2">
+            <p className="mt-5 text-body text-white/80 max-w-xl leading-relaxed fade-up delay-2">
               {t('home.subtitle')}
             </p>
 
@@ -103,18 +108,33 @@ export default function HomePage() {
               </Link>
             </div>
 
-            {/* Quick stats */}
+            {/* Quick stats — CountUp */}
             <div className="mt-12 flex flex-wrap gap-8 fade-up delay-5">
-              {[
-                { value: stats.temples > 0 ? stats.temples.toLocaleString() + '+' : '—', label: 'Temples' },
-                { value: stats.devotionals > 0 ? stats.devotionals.toLocaleString() + '+' : '—', label: 'Devotionals' },
-                { value: stats.categories > 0 ? stats.categories.toLocaleString() + '+' : '—', label: 'Categories' },
-              ].map((stat) => (
-                <div key={stat.label} className="flex items-center gap-3">
-                  <span className="text-h2 font-serif font-bold text-gradient">{stat.value}</span>
-                  <span className="text-caption text-ink-muted uppercase tracking-wider">{stat.label}</span>
+              {stats.temples > 0 ? (
+                <>
+                  <div className="flex items-center gap-3">
+                    <CountUp target={stats.temples} suffix="+" className="text-h2 font-serif font-bold text-primary-300" />
+                    <span className="text-caption text-white/60 uppercase tracking-wider">Temples</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <CountUp target={stats.devotionals} suffix="+" className="text-h2 font-serif font-bold text-primary-300" />
+                    <span className="text-caption text-white/60 uppercase tracking-wider">Devotionals</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <CountUp target={stats.categories} suffix="+" className="text-h2 font-serif font-bold text-primary-300" />
+                    <span className="text-caption text-white/60 uppercase tracking-wider">Categories</span>
+                  </div>
+                </>
+              ) : (
+                <div className="flex gap-8">
+                  {['Temples', 'Devotionals', 'Categories'].map(l => (
+                    <div key={l} className="flex items-center gap-3">
+                      <span className="text-h2 font-serif font-bold text-primary-300">—</span>
+                      <span className="text-caption text-white/60 uppercase tracking-wider">{l}</span>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              )}
             </div>
           </div>
         </div>

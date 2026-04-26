@@ -53,16 +53,15 @@ export default function BookmarksPage() {
 
   return (
     <main>
-      <div className="relative overflow-hidden bg-gradient-to-br from-surface-sunken via-surface to-primary-50/15 border-b border-surface-border">
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-0 right-[20%] w-48 h-48 bg-primary/[0.04] rounded-full blur-3xl" />
-          <div className="absolute bottom-0 left-[10%] w-36 h-36 bg-accent/[0.04] rounded-full blur-3xl" />
-        </div>
+      <div className="relative overflow-hidden border-b border-surface-border">
+        <div className="absolute inset-0 bg-cover bg-center bg-no-repeat" style={{ backgroundImage: `url('https://res.cloudinary.com/dc2qg7bwr/image/upload/v1774363519/hero-bg.jpg.jpg')` }} />
+        <div className="absolute inset-0 bg-black/60" />
+        <div className="absolute inset-0 bg-gradient-to-br from-secondary-900/40 via-transparent to-primary/20" />
         <div className="page-container py-12 md:py-16 relative z-10">
-          <h1 className="text-display-lg font-serif text-secondary-800 leading-tight">
+          <h1 className="text-display-lg font-serif text-white leading-tight">
             {language === 'hi' ? 'मेरे बुकमार्क' : 'My Bookmarks'}
           </h1>
-          <p className="mt-3 text-body text-ink-muted max-w-2xl">
+          <p className="mt-3 text-body text-white/75 max-w-2xl">
             {language === 'hi'
               ? 'आपके सहेजे गए मंदिर, भक्ति सामग्री और दर्शन।'
               : 'Your saved temples, devotionals, and darshan content.'}
@@ -71,7 +70,7 @@ export default function BookmarksPage() {
             <div className="w-16 h-1 rounded-full bg-gradient-to-r from-primary to-accent" />
             {!isEmpty && (
               <span className="text-caption text-ink-muted">
-                {bookmarks.length} {language === 'hi' ? 'आइटम सहेजे गए' : 'items saved'}
+                <span className="text-white/60">{bookmarks.length} {language === 'hi' ? 'आइटम सहेजे गए' : 'items saved'}</span>
               </span>
             )}
           </div>

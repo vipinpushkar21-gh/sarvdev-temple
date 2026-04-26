@@ -9,9 +9,60 @@ import BookmarkButton from '../../../components/BookmarkButton'
 import Breadcrumbs from '../../../components/Breadcrumbs'
 import ShareButtons from '../../../components/ShareButtons'
 import { DetailPageSkeleton } from '../../../components/Skeleton'
+import ReviewSection from '../../../components/ReviewSection'
 
 type Props = {
   params: Promise<{ slug: string }>
+}
+
+const TEMPLE_TYPE_HI: Record<string, string> = {
+  'Ancient': 'प्राचीन',
+  'Modern': 'आधुनिक',
+  'Heritage': 'विरासत',
+  'Char Dham': 'चार धाम',
+  'Jyotirlinga': 'ज्योतिर्लिंग',
+  'Shakti Peeth': 'शक्तिपीठ',
+  'ISKCON': 'इस्कॉन',
+  'Buddhist': 'बौद्ध',
+  'Jain': 'जैन',
+  'Sikh': 'सिख',
+  'Famous': 'प्रसिद्ध',
+  'Regional': 'क्षेत्रीय',
+  'Tribal': 'जनजातीय',
+  'Panch Kedar': 'पंच केदार',
+  'Panch Badri': 'पंच बद्री',
+  'Divya Desam': 'दिव्य देसम',
+}
+
+const DEITY_HI: Record<string, string> = {
+  'Shiva': 'शिव',
+  'Lord Shiva': 'भगवान शिव',
+  'Mahadev': 'महादेव',
+  'Vishnu': 'विष्णु',
+  'Lord Vishnu': 'भगवान विष्णु',
+  'Brahma': 'ब्रह्मा',
+  'Ganesha': 'गणेश',
+  'Ganesh': 'गणेश',
+  'Durga': 'दुर्गा',
+  'Maa Durga': 'माँ दुर्गा',
+  'Lakshmi': 'लक्ष्मी',
+  'Saraswati': 'सरस्वती',
+  'Hanuman': 'हनुमान',
+  'Ram': 'राम',
+  'Lord Ram': 'भगवान राम',
+  'Krishna': 'कृष्ण',
+  'Lord Krishna': 'भगवान कृष्ण',
+  'Kali': 'काली',
+  'Maa Kali': 'माँ काली',
+  'Parvati': 'पार्वती',
+  'Surya': 'सूर्य',
+  'Balaji': 'बालाजी',
+  'Venkateswara': 'वेंकटेश्वर',
+  'Murugan': 'मुरुगन',
+  'Ayyappa': 'अय्यप्पा',
+  'Nataraj': 'नटराज',
+  'Nataraja': 'नटराज',
+  'Rama': 'राम',
 }
 
 function slugify(text: string): string {
@@ -137,10 +188,16 @@ export default function TemplePage({ params }: Props) {
 
   // Collect bento items
   const bentoItems: { icon: string; label: string; value: string; span?: boolean }[] = []
-  if (temple.deity) bentoItems.push({ icon: '🕉️', label: t('temple.deity'), value: temple.deity })
+  const deityValue = temple.deity
+    ? (language === 'hi' ? (DEITY_HI[temple.deity] || temple.deity) : temple.deity)
+    : null
+  if (deityValue) bentoItems.push({ icon: '🕉️', label: t('temple.deity'), value: deityValue })
   if (temple.city && temple.state && !temple.city.includes('http'))
     bentoItems.push({ icon: '📍', label: t('temple.location'), value: `${temple.city}, ${temple.state}${temple.pincode ? ` — ${temple.pincode}` : ''}` })
-  if (temple.templeType) bentoItems.push({ icon: '🏛️', label: t('temple.templeType'), value: temple.templeType })
+  const templeTypeValue = temple.templeType
+    ? (language === 'hi' ? (TEMPLE_TYPE_HI[temple.templeType] || temple.templeType) : temple.templeType)
+    : null
+  if (templeTypeValue) bentoItems.push({ icon: '🏛️', label: t('temple.templeType'), value: templeTypeValue })
   if (temple.establishedYear) bentoItems.push({ icon: '📅', label: t('temple.established'), value: temple.establishedYear })
   const timingValue = temple.timingSlots?.length > 0
     ? temple.timingSlots.join('\n')
@@ -165,9 +222,9 @@ export default function TemplePage({ params }: Props) {
             {/* Breadcrumb over hero */}
             <nav className="mb-4 fade-in">
               <ol className="flex items-center gap-1.5 text-body-sm text-white/70 flex-wrap">
-                <li><Link href="/" className="hover:text-white transition-colors text-white/70">Home</Link></li>
+                <li><Link href="/" className="hover:text-white transition-colors text-white/70">{t('nav.home')}</Link></li>
                 <li className="text-white/40">/</li>
-                <li><Link href="/temples" className="hover:text-white transition-colors text-white/70">Temples</Link></li>
+                <li><Link href="/temples" className="hover:text-white transition-colors text-white/70">{t('nav.temples')}</Link></li>
                 <li className="text-white/40">/</li>
                 <li className="text-white font-medium truncate max-w-[250px]">{temple.title}</li>
               </ol>
@@ -180,14 +237,14 @@ export default function TemplePage({ params }: Props) {
                   <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
-                  Verified Temple
+                  {t('temple.verified')}
                 </span>
               ) : (
                 <span className="unverified-badge-2030">
                   <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                   </svg>
-                  Not Verified
+                  {t('temple.notVerified')}
                 </span>
               )}
             </div>
@@ -244,7 +301,7 @@ export default function TemplePage({ params }: Props) {
         {bentoItems.length > 0 && (
           <section className="mb-10">
             <div className="section-heading-2030 reveal-up">
-              <h2>Temple Details</h2>
+              <h2>{t('temple.details')}</h2>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 stagger-children">
               {bentoItems.map((item, idx) => (
@@ -265,7 +322,7 @@ export default function TemplePage({ params }: Props) {
         {temple.categories && temple.categories.length > 0 && (
           <section className="mb-10 reveal-up">
             <div className="section-heading-2030">
-              <h2>Sacred Categories</h2>
+              <h2>{t('temple.sacredCategories')}</h2>
             </div>
             <div className="flex flex-wrap gap-3">
               {temple.categories.map((cat: string, idx: number) => (
@@ -282,7 +339,7 @@ export default function TemplePage({ params }: Props) {
         {temple.festivals && temple.festivals.length > 0 && (
           <section className="mb-10 reveal-up">
             <div className="section-heading-2030">
-              <h2>Temple Festivals</h2>
+              <h2>{t('temple.festivals')}</h2>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 stagger-children">
               {temple.festivals.map((festival: { name: string; description: string }, idx: number) => (
@@ -403,20 +460,20 @@ export default function TemplePage({ params }: Props) {
               </svg>
             </div>
             <div>
-              <p className="text-body-sm font-semibold text-ink mb-1">Verification Pending</p>
-              <p className="text-body-sm text-ink-muted leading-relaxed">
-                This temple information has not been verified yet. Details may be incomplete or inaccurate. 
-                Please verify timings and other details before visiting.
-              </p>
+              <p className="text-body-sm font-semibold text-ink mb-1">{t('temple.verificationPending')}</p>
+              <p className="text-body-sm text-ink-muted leading-relaxed">{t('temple.verificationPendingDesc')}</p>
             </div>
           </div>
         )}
+
+        {/* ── Ratings & Reviews ── */}
+        <ReviewSection templeSlug={slug} />
 
         {/* Bottom Share Bar */}
         <div className="bento-card p-5 flex items-center justify-between flex-wrap gap-4 reveal-up">
           <div className="flex items-center gap-3">
             <div className="bento-icon w-10 h-10 text-base">🙏</div>
-            <p className="text-body-sm font-medium text-ink">Share this sacred place with others</p>
+            <p className="text-body-sm font-medium text-ink">{t('temple.sharePrompt')}</p>
           </div>
           <ShareButtons title={temple.title} />
         </div>

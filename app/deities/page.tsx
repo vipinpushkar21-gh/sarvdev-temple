@@ -1403,21 +1403,25 @@ export default function DeitiesPage() {
   return (
     <>
       {/* Hero */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-surface-sunken via-surface to-primary-50/20 border-b border-surface-border">
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-0 right-[15%] w-72 h-72 bg-primary/[0.06] rounded-full blur-[80px]" />
-          <div className="absolute bottom-0 left-[5%] w-56 h-56 bg-accent/[0.05] rounded-full blur-[60px]" />
-          <div className="absolute inset-0 bg-dots opacity-[0.02]" />
-        </div>
+      <section className="relative overflow-hidden border-b border-surface-border">
+        {/* Background image */}
+        <div
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{ backgroundImage: `url('https://res.cloudinary.com/dc2qg7bwr/image/upload/v1774363519/hero-bg.jpg.jpg')` }}
+        />
+        {/* Dark overlay */}
+        <div className="absolute inset-0 bg-black/60" />
+        {/* Warm saffron tint */}
+        <div className="absolute inset-0 bg-gradient-to-br from-secondary-900/40 via-transparent to-primary/20" />
         <div className="page-container py-14 md:py-20 relative z-10">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
-            <h1 className="text-display-lg font-serif text-secondary-800 leading-tight">
-              देवी-देवता <span className="text-primary">Deities</span>
+            <h1 className="text-display-lg font-serif text-white leading-tight">
+              देवी-देवता <span className="text-primary-300">Deities</span>
             </h1>
-            <p className="mt-3 text-body text-ink-muted max-w-3xl">
+            <p className="mt-3 text-body text-white/75 max-w-3xl">
               Hindu dharma mein 33 Koti (33 prakar/types) devi-devta maane jate hain — Explore the divine pantheon of Hindu deities organized by their sacred categories.
             </p>
-            <p className="mt-1 text-body-sm text-ink-muted max-w-3xl font-devanagari">
+            <p className="mt-1 text-body-sm text-white/60 max-w-3xl font-devanagari">
               हिन्दू धर्म में ३३ कोटि (३३ प्रकार) देवी-देवता माने जाते हैं — सभी प्रमुख और पूज्य देवी-देवताओं की विस्तृत सूची
             </p>
             <div className="mt-4 w-16 h-1 rounded-full bg-gradient-to-r from-primary to-accent" />

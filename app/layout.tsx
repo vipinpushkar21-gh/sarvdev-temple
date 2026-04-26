@@ -14,6 +14,15 @@ import AuthGuard from '../components/AuthGuard'
 import { ToastProvider } from '../components/Toast'
 import ScrollToTop from '../components/ScrollToTop'
 import AudioPlayerBar from '../components/AudioPlayerBar'
+import { ThemeProvider } from '../lib/theme'
+import PWARegister from '../components/PWARegister'
+import ScrollRevealInit from '../components/ScrollRevealInit'
+
+export const viewport = {
+  themeColor: '#FF9933',
+  width: 'device-width',
+  initialScale: 1,
+}
 
 export const metadata = {
   title: 'Sarvdev — Temple Directory & Devotional Hub',
@@ -33,6 +42,13 @@ export const metadata = {
   },
   icons: {
     icon: '/icon.svg',
+    apple: '/icon.svg',
+  },
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'Sarvdev',
   },
 }
 
@@ -40,9 +56,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" suppressHydrationWarning>
       <body className="min-h-screen flex flex-col" suppressHydrationWarning>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('sarvdev-theme');if(t==='dark')document.documentElement.setAttribute('data-theme','dark')}catch(e){}})()`,
+          }}
+        />
         {process.env.NEXT_PUBLIC_GA_ID && (
           <GoogleAnalytics GA_MEASUREMENT_ID={process.env.NEXT_PUBLIC_GA_ID} />
         )}
+        <ThemeProvider>
         <TranslationProvider>
           <TempleDataProvider>
           <FavouritesProvider>
@@ -58,11 +80,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <Footer />
             <AudioPlayerBar />
             <ScrollToTop />
+            <ScrollRevealInit />
           </ToastProvider>
           </AudioPlayerProvider>
           </FavouritesProvider>
           </TempleDataProvider>
         </TranslationProvider>
+        </ThemeProvider>
+        <PWARegister />
         <Analytics />
       </body>
     </html>

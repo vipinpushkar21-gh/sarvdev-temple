@@ -30,20 +30,127 @@
   --transition-smooth: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* ─── Dark Mode CSS Variables ─── */
+[data-theme="dark"] {
+  --color-primary:   #FF9933;
+  --color-secondary: #D4736A;
+  --color-accent:    #D4AF37;
+  --color-surface:   #1A1210;
+  --color-ink:       #F0EAE0;
+  --color-ink-muted: #A89880;
+  --color-border:    #3A2A22;
+  --glass-bg: rgba(26, 18, 16, 0.85);
+  --glass-border: rgba(255, 153, 51, 0.15);
+  --shadow-glow: 0 0 40px rgba(255, 153, 51, 0.18);
+}
+
+/* ─── Dark Mode Scroll Reveal ─── */
+.reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+.reveal.revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ─── Page transition ─── */
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.page-enter {
+  animation: fadeSlideIn 0.35s ease both;
+}
+
+/* ─── CountUp ─── */
+@keyframes countPulse {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.06); }
+  100% { transform: scale(1); }
+}
+.count-pulse {
+  animation: countPulse 0.3s ease;
+}
+
+/* ─── Floating Om ─── */
+@keyframes floatUp {
+  0%   { opacity: 0; transform: translateY(0) scale(0.7) rotate(-10deg); }
+  20%  { opacity: 0.35; }
+  80%  { opacity: 0.2; }
+  100% { opacity: 0; transform: translateY(-120px) scale(1.1) rotate(10deg); }
+}
+.om-float {
+  position: fixed;
+  pointer-events: none;
+  z-index: 0;
+  font-family: 'Noto Serif Devanagari', serif;
+  color: var(--color-primary);
+  animation: floatUp linear infinite;
+  user-select: none;
+}
+
 /* ─── Base Layer ─── */
 @layer base {
   html {
     scroll-behavior: smooth;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
 
   body {
-    @apply font-sans text-body text-ink bg-surface;
+    @apply font-sans text-body text-ink;
+    background-color: var(--color-surface);
+    background-image:
+      /* Sacred symbols tile — Om, Swastik, Bell */
+      url('/images/sacred-pattern.svg'),
+      /* Fine horizontal paper grain lines */
+      repeating-linear-gradient(
+        180deg,
+        transparent 0px,
+        transparent 3px,
+        rgba(180, 140, 80, 0.018) 3px,
+        rgba(180, 140, 80, 0.018) 4px
+      ),
+      /* Diagonal paper fiber texture */
+      repeating-linear-gradient(
+        47deg,
+        transparent 0px,
+        transparent 10px,
+        rgba(160, 120, 60, 0.012) 10px,
+        rgba(160, 120, 60, 0.012) 11px
+      ),
+      /* Saffron top glow — sacred warmth */
+      radial-gradient(ellipse 110% 50% at 50% 0%, rgba(255, 153, 51, 0.05) 0%, transparent 70%),
+      /* Temple gold bottom-right */
+      radial-gradient(ellipse 60% 50% at 95% 95%, rgba(212, 175, 55, 0.04) 0%, transparent 60%),
+      /* Sacred maroon left accent */
+      radial-gradient(ellipse 45% 70% at 2% 50%, rgba(155, 28, 28, 0.025) 0%, transparent 60%);
+    background-size: 400px 400px, 400px 400px, 400px 400px, 100% 100%, 100% 100%, 100% 100%;
+    background-repeat: repeat, repeat, repeat, no-repeat, no-repeat, no-repeat;
+    background-attachment: fixed;
     margin: 0;
     padding: 0;
     overflow-x: hidden;
   }
+
+  [data-theme="dark"] body {
+    background-color: #1A1210;
+    background-image:
+      url('/images/sacred-pattern.svg'),
+      radial-gradient(ellipse 110% 50% at 50% 0%, rgba(255, 153, 51, 0.07) 0%, transparent 70%),
+      radial-gradient(ellipse 60% 50% at 95% 95%, rgba(212, 175, 55, 0.05) 0%, transparent 60%),
+      radial-gradient(ellipse 45% 70% at 2% 50%, rgba(155, 28, 28, 0.04) 0%, transparent 60%);
+    background-size: 400px 400px, 100% 100%, 100% 100%, 100% 100%;
+    background-repeat: repeat, no-repeat, no-repeat, no-repeat;
+  }
+
+  [data-theme="dark"] h1 { color: #F0EAE0; }
+  [data-theme="dark"] h2 { color: #E0D5C5; }
+  [data-theme="dark"] h3 { color: #D4C9B5; }
+  [data-theme="dark"] h4 { color: #C8BCA5; }
 
   h1 { @apply text-h1 text-secondary-800 font-serif; }
   h2 { @apply text-h2 text-secondary-700 font-serif; }
