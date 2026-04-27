@@ -30,6 +30,10 @@ const TempleSchema = new Schema({
   instagram: { type: String },
   status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
   verified: { type: String, enum: ['verified', 'not-verified'], default: 'not-verified' },
+  metaTitle: { type: String },
+  metaDescription: { type: String },
+  metaKeywords: { type: String },
+  ogImage: { type: String },
   createdAt: { type: Date, default: Date.now }
 });
 

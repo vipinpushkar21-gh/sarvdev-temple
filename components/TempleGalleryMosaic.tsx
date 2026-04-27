@@ -292,17 +292,25 @@ export default function TempleGalleryMosaic() {
   const desktopRows = chunkRows(cells, 4)
 
   return (
-    <section className="section-sm overflow-hidden">
+    <section className="section-sm overflow-hidden bg-white">
       <div className="page-container">
         {/* Section header */}
-        <div className="mb-10 md:mb-12 text-center">
-          <h2 className="section-title">
-            {language === 'hi' ? 'प्रमुख मंदिर' : 'Highlighted Temples'}
-          </h2>
-          <p className="section-subtitle">
-            {language === 'hi' ? 'सम्पूर्ण विश्व के पवित्र स्थलों की खोज करें।' : 'Explore sacred destinations across the world — hover to discover.'}
-          </p>
-          <div className="mt-4 mx-auto w-16 h-1 rounded-full bg-gradient-to-r from-primary to-accent" />
+        <div className="mb-10 md:mb-12 flex items-baseline justify-between gap-4">
+          <div>
+            <h2 className="section-title">
+              {language === 'hi' ? 'प्रमुख मंदिर' : 'Highlighted Temples'}
+            </h2>
+            <p className="section-subtitle">
+              {language === 'hi' ? 'सम्पूर्ण विश्व के पवित्र स्थलों की खोज करें।' : 'Explore sacred destinations across the world — hover to discover.'}
+            </p>
+          </div>
+          <Link
+            href="/temples"
+            className="shrink-0 inline-flex items-center gap-1.5 text-body-sm font-semibold text-gray-900 border-b-2 border-gray-900 hover:border-primary hover:text-primary transition-colors no-underline hover:no-underline whitespace-nowrap"
+          >
+            {language === 'hi' ? 'सभी देखें' : 'View all'}
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" /></svg>
+          </Link>
         </div>
 
         {/* Desktop mosaic (hidden on small screens) */}
@@ -329,18 +337,6 @@ export default function TempleGalleryMosaic() {
           />
         </div>
 
-        {/* "View all" link */}
-        <div className="mt-8 md:mt-10 text-center">
-          <Link
-            href="/temples"
-            className="btn btn-primary no-underline hover:no-underline inline-flex items-center gap-2 group"
-          >
-            {language === 'hi' ? 'सभी मंदिर देखें' : 'View All Temples'}
-            <svg className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-            </svg>
-          </Link>
-        </div>
       </div>
     </section>
   )

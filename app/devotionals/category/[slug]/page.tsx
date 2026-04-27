@@ -58,29 +58,30 @@ type Devotional = {
   artist?: string
   status?: string
   names?: { sanskrit?: string; mantra?: string; english?: string }[]
+  image?: string
 }
 
-// Category mapping
-const CATEGORY_MAP: { [key: string]: { label: string; hindi: string } } = {
-  'mantra': { label: 'Mantra', hindi: 'मंत्र' },
-  'bhajan': { label: 'Bhajan', hindi: 'भजन' },
-  'stotra': { label: 'Stotra/Suktam', hindi: 'स्तोत्र/सूक्त' },
-  'aarti': { label: 'Aarti', hindi: 'आरती' },
-  'chalisa': { label: 'Chalisa', hindi: 'चालीसा' },
-  'stuti': { label: 'Stuti', hindi: 'स्तुति' },
-  'shloka': { label: 'Shloka', hindi: 'श्लोक' },
-  'ek-shloki': { label: 'Ek Shloki', hindi: 'एक श्लोकी' },
-  'ashtaka': { label: 'Ashtaka', hindi: 'अष्टक' },
-  'path': { label: 'Path', hindi: 'पाठ' },
-  'rashi': { label: 'Rashi', hindi: 'राशि' },
-  'vastu': { label: 'Vastu', hindi: 'वास्तु' },
-  'durga': { label: 'Durga', hindi: 'दुर्गा' },
-  'kuber': { label: 'Kuber', hindi: 'कुबेर' },
-  'namavali': { label: 'Namavali', hindi: 'नामावली' },
-  'kavacham': { label: 'Kavacham', hindi: 'कवचम्' },
-  'prarthana': { label: 'Prarthana', hindi: 'प्रार्थना' },
-  'vrat-katha': { label: 'Vrat Katha', hindi: 'व्रत कथा' },
-  'other': { label: 'Other', hindi: 'अन्य' }
+// Category mapping with images
+const CATEGORY_MAP: { [key: string]: { label: string; hindi: string; image?: string } } = {
+  'mantra': { label: 'Mantra', hindi: 'मंत्र', image: 'https://res.cloudinary.com/dc2qg7bwr/image/upload/v1773744527/sarvdev/mantra.jpg' },
+  'bhajan': { label: 'Bhajan', hindi: 'भजन', image: 'https://res.cloudinary.com/dc2qg7bwr/image/upload/v1773744527/sarvdev/bhajan.jpg' },
+  'stotra': { label: 'Stotra/Suktam', hindi: 'स्तोत्र/सूक्त', image: 'https://res.cloudinary.com/dc2qg7bwr/image/upload/v1773744527/sarvdev/stotra.jpg' },
+  'aarti': { label: 'Aarti', hindi: 'आरती', image: 'https://res.cloudinary.com/dc2qg7bwr/image/upload/v1773744527/sarvdev/aarti.jpg' },
+  'chalisa': { label: 'Chalisa', hindi: 'चालीसा', image: 'https://res.cloudinary.com/dc2qg7bwr/image/upload/v1773744527/sarvdev/chalisa.jpg' },
+  'stuti': { label: 'Stuti', hindi: 'स्तुति', image: 'https://res.cloudinary.com/dc2qg7bwr/image/upload/v1773744527/sarvdev/stuti.jpg' },
+  'shloka': { label: 'Shloka', hindi: 'श्लोक', image: 'https://res.cloudinary.com/dc2qg7bwr/image/upload/v1773744527/sarvdev/shloka.jpg' },
+  'ek-shloki': { label: 'Ek Shloki', hindi: 'एक श्लोकी', image: 'https://res.cloudinary.com/dc2qg7bwr/image/upload/v1773744527/sarvdev/shloka.jpg' },
+  'ashtaka': { label: 'Ashtaka', hindi: 'अष्टक', image: 'https://res.cloudinary.com/dc2qg7bwr/image/upload/v1773744527/sarvdev/ashtaka.jpg' },
+  'path': { label: 'Path', hindi: 'पाठ', image: 'https://res.cloudinary.com/dc2qg7bwr/image/upload/v1773744527/sarvdev/path.jpg' },
+  'rashi': { label: 'Rashi', hindi: 'राशि', image: 'https://res.cloudinary.com/dc2qg7bwr/image/upload/v1773744527/sarvdev/rashi.jpg' },
+  'vastu': { label: 'Vastu', hindi: 'वास्तु', image: 'https://res.cloudinary.com/dc2qg7bwr/image/upload/v1773744527/sarvdev/vastu.jpg' },
+  'durga': { label: 'Durga', hindi: 'दुर्गा', image: 'https://res.cloudinary.com/dc2qg7bwr/image/upload/v1773744527/sarvdev/durga.jpg' },
+  'kuber': { label: 'Kuber', hindi: 'कुबेर', image: 'https://res.cloudinary.com/dc2qg7bwr/image/upload/v1773744527/sarvdev/kuber.jpg' },
+  'namavali': { label: 'Namavali', hindi: 'नामावली', image: 'https://res.cloudinary.com/dc2qg7bwr/image/upload/v1773744527/sarvdev/namavali.jpg' },
+  'kavacham': { label: 'Kavacham', hindi: 'कवचम्', image: 'https://res.cloudinary.com/dc2qg7bwr/image/upload/v1773744527/sarvdev/kavacham.jpg' },
+  'prarthana': { label: 'Prarthana', hindi: 'प्रार्थना', image: 'https://res.cloudinary.com/dc2qg7bwr/image/upload/v1773744527/sarvdev/prarthana.jpg' },
+  'vrat-katha': { label: 'Vrat Katha', hindi: 'व्रत कथा', image: 'https://res.cloudinary.com/dc2qg7bwr/image/upload/v1773744527/sarvdev/vrat-katha.jpg' },
+  'other': { label: 'Other', hindi: 'अन्य', image: 'https://res.cloudinary.com/dc2qg7bwr/image/upload/v1773744527/sarvdev/temples/avno1ltpdyzpzsby1mll.jpg' }
 }
 
 export default function CategoryPage() {
@@ -314,46 +315,64 @@ export default function CategoryPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredByDeity.map((d: Devotional) => (
-              <Link 
-                key={d._id}
-                href={`/devotionals/${createSlug(d.title || '')}`}
-                className="card-interactive p-5 flex flex-col"
-              >
-                <div className="flex items-start justify-between mb-3">
-                  <h3 className="text-h4 font-serif text-secondary-700 leading-tight pr-2">
-                    {(function(){
-                      const bt = renderBilingualTitle(d.title || '');
-                      return (
-                        <span>
-                          {bt.primary}
-                          {bt.secondary && <span> ({bt.secondary})</span>}
-                        </span>
-                      );
-                    })()}
-                  </h3>
-                  <span className="badge badge-primary shrink-0">
-                    {d.category}
-                  </span>
-                </div>
+            {filteredByDeity.map((d: Devotional) => {
+              const categoryKey = d.category?.toLowerCase().replace(/\s+/g, '-') || 'other'
+              const categoryImage = CATEGORY_MAP[categoryKey]?.image || CATEGORY_MAP['other']?.image
+              const fallbackImage = categoryImage || 'https://res.cloudinary.com/dc2qg7bwr/image/upload/v1773744527/sarvdev/temples/avno1ltpdyzpzsby1mll.jpg'
+              
+              return (
+                <Link 
+                  key={d._id}
+                  href={`/devotionals/${createSlug(d.title || '')}`}
+                  className="card-interactive overflow-hidden flex flex-col"
+                >
+                  <div className="relative h-40 bg-surface-sunken overflow-hidden">
+                    <img
+                      src={d.image || fallbackImage}
+                      alt={d.title || ''}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = fallbackImage
+                      }}
+                    />
+                  </div>
+                  <div className="p-5 flex flex-col flex-grow">
+                    <div className="flex items-start justify-between mb-3">
+                      <h3 className="text-h4 font-serif text-secondary-700 leading-tight pr-2">
+                        {(function(){
+                          const bt = renderBilingualTitle(d.title || '');
+                          return (
+                            <span>
+                              {bt.primary}
+                              {bt.secondary && <span> ({bt.secondary})</span>}
+                            </span>
+                          );
+                        })()}
+                      </h3>
+                      <span className="badge badge-primary shrink-0">
+                        {d.category}
+                      </span>
+                    </div>
 
-                {d.deity && (
-                  <p className="text-body-sm text-primary-600 font-medium mb-2">{d.deity}</p>
-                )}
+                    {d.deity && (
+                      <p className="text-body-sm text-primary-600 font-medium mb-2">{d.deity}</p>
+                    )}
 
-                {d.description && (
-                  <p className="mt-2 text-body-sm text-ink-muted flex-grow line-clamp-3">
-                    {d.description}
-                  </p>
-                )}
+                    {d.description && (
+                      <p className="mt-2 text-body-sm text-ink-muted flex-grow line-clamp-3">
+                        {d.description}
+                      </p>
+                    )}
 
-                <div className="mt-3 flex items-center gap-3 text-caption text-ink-faint flex-wrap">
-                  {d.artist && <span>{d.artist}</span>}
-                  {d.duration && <span>{d.duration}</span>}
-                  {d.language && <span>{d.language}</span>}
-                </div>
-              </Link>
-            ))}
+                    <div className="mt-3 flex items-center gap-3 text-caption text-ink-faint flex-wrap">
+                      {d.artist && <span>{d.artist}</span>}
+                      {d.duration && <span>{d.duration}</span>}
+                      {d.language && <span>{d.language}</span>}
+                    </div>
+                  </div>
+                </Link>
+              )
+            })}
           </div>
         )}
       </section>

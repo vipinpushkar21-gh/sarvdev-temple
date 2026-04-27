@@ -27,6 +27,10 @@ type FormState = {
   facebook: string
   instagram: string
   status: string
+  metaTitle: string
+  metaDescription: string
+  metaKeywords: string
+  ogImage: string
 }
 
 const indianStates = [
@@ -52,7 +56,8 @@ export default function EditTemplePage({ params }: { params: Promise<{ id: strin
     title: "", location: "", mapsLink: "", city: "", state: "", pincode: "", description: "", 
     descriptionHi: "", deity: "", establishedYear: "", templeType: "", speciality: "",
     image: "", timings: "", contact: "", phone: "", email: "", website: "", 
-    facebook: "", instagram: "", status: "pending"
+    facebook: "", instagram: "", status: "pending",
+    metaTitle: "", metaDescription: "", metaKeywords: "", ogImage: ""
   })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -99,7 +104,11 @@ export default function EditTemplePage({ params }: { params: Promise<{ id: strin
             website: temple.website || "",
             facebook: temple.facebook || "",
             instagram: temple.instagram || "",
-            status: temple.status || "pending"
+            status: temple.status || "pending",
+            metaTitle: temple.metaTitle || "",
+            metaDescription: temple.metaDescription || "",
+            metaKeywords: temple.metaKeywords || "",
+            ogImage: temple.ogImage || "",
           })
         }
       }
@@ -303,6 +312,43 @@ export default function EditTemplePage({ params }: { params: Promise<{ id: strin
               <label className="block text-sm font-medium text-gray-600 mb-1">📱 Instagram</label>
               <input type="url" value={form.instagram} onChange={(e) => onChange("instagram", e.target.value)} className="admin-input w-full" />
             </div>
+          </div>
+        </div>
+
+        {/* SEO */}
+        <div className="admin-card p-6 space-y-5">
+          <div>
+            <h2 className="admin-section-title">SEO &amp; Social Sharing</h2>
+            <p className="text-xs text-gray-400 mt-0.5">Leave blank to auto-generate from title / description</p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1">
+              Meta Title <span className="font-normal text-gray-400">(max 60 chars)</span>
+            </label>
+            <input value={form.metaTitle} onChange={e => onChange("metaTitle", e.target.value)} maxLength={60} placeholder="Custom title for search engines..." className="admin-input w-full" />
+            <p className="mt-1 text-xs text-gray-400">{form.metaTitle.length}/60 characters</p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1">
+              Meta Description <span className="font-normal text-gray-400">(max 160 chars)</span>
+            </label>
+            <textarea value={form.metaDescription} onChange={e => onChange("metaDescription", e.target.value)} rows={3} maxLength={160} placeholder="Brief description shown in search results..." className="admin-input w-full" />
+            <p className="mt-1 text-xs text-gray-400">{form.metaDescription.length}/160 characters</p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1">Keywords</label>
+            <input value={form.metaKeywords} onChange={e => onChange("metaKeywords", e.target.value)} placeholder="temple, shiva, varanasi, kashi vishwanath" className="admin-input w-full" />
+            <p className="mt-1 text-xs text-gray-400">Comma-separated keywords</p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1">
+              OG Image URL <span className="font-normal text-gray-400">(Social sharing — 1200×630px recommended)</span>
+            </label>
+            <input value={form.ogImage} onChange={e => onChange("ogImage", e.target.value)} placeholder="https://... (leave blank to use temple image)" className="admin-input w-full" />
           </div>
         </div>
 

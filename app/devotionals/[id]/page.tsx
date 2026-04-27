@@ -152,9 +152,39 @@ export default function DevotionalDetailPage() {
   })()
 
   const heroImage = devotional.image || DEFAULT_DEVOTIONAL_IMAGE
+  const slug = params.id as string
+
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'MusicRecording',
+    name: devotional.title,
+    description: devotional.description || undefined,
+    inLanguage: detectedLang,
+    url: `https://sarvdev.com/devotionals/${slug}`,
+    image: heroImage,
+    ...(devotional.duration ? { duration: devotional.duration } : {}),
+    ...(devotional.artist ? { byArtist: { '@type': 'Person', name: devotional.artist } } : {}),
+    ...(devotional.audio ? {
+      associatedMedia: {
+        '@type': 'AudioObject',
+        contentUrl: devotional.audio,
+        encodingFormat: 'audio/mpeg',
+      },
+    } : {}),
+    genre: devotional.category || 'Devotional',
+    publisher: {
+      '@type': 'Organization',
+      name: 'Sarvdev',
+      url: 'https://sarvdev.com',
+    },
+  }
 
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       {/* ── Image Hero Header ── */}
       <div className="relative w-full overflow-hidden" style={{ height: '320px' }}>
         <img
@@ -204,7 +234,6 @@ export default function DevotionalDetailPage() {
                 type: 'devotional',
                 title: bt.primary,
                 slug: params.id as string,
-                subtitle: devotional.category || undefined,
               }}
             />
           </div>

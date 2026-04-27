@@ -321,7 +321,6 @@ export default function ClientPage() {
               type: 'devotional',
               title: bt.primary,
               slug: devSlug,
-              subtitle: d.category || undefined,
             }}
             size="sm"
             className="bg-white/80 backdrop-blur-sm shadow-sm hover:bg-white"

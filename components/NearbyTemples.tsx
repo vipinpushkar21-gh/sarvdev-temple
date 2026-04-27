@@ -71,14 +71,14 @@ export default function NearbyTemples() {
 
   if (status === 'idle') {
     return (
-      <section className="section-sm">
-        <div className="page-container text-center">
-          <h2 className="text-h2 font-serif text-secondary-800 mb-2">
+      <section className="section-sm bg-white">
+        <div className="page-container">
+          <h2 className="section-title mb-2">
             {language === 'hi' ? 'आपके पास के मंदिर' : 'Temples Near You'}
           </h2>
-          <p className="text-body-sm text-ink-muted mb-6">
+          <p className="section-subtitle mb-8">
             {language === 'hi'
-              ? 'अपने नज़दीकी मंदिर खोजने के लिए स्थान की अनुमति दें।'
+              ? 'अपने नज़़दीकी मंदिर खोजने के लिए स्थान की अनुमति दें।'
               : 'Allow location access to discover temples close to you.'}
           </p>
           <button onClick={locate} className="btn btn-outline" suppressHydrationWarning>
@@ -126,30 +126,37 @@ export default function NearbyTemples() {
   }
 
   return (
-    <section className="section-sm">
+    <section className="section-sm bg-white">
       <div className="page-container">
-        <h2 className="text-h2 font-serif text-secondary-800 text-center mb-8">
-          {language === 'hi' ? 'आपके पास के मंदिर' : 'Temples Near You'}
-        </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="mb-10 flex items-baseline justify-between gap-4">
+          <div>
+            <h2 className="section-title">
+              {language === 'hi' ? 'आपके पास के मंदिर' : 'Temples Near You'}
+            </h2>
+            <p className="section-subtitle">
+              {language === 'hi' ? 'आपके स्थान के नज़़दीक मंदिर' : 'Sacred places near your current location'}
+            </p>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {temples.map((temple) => (
             <Link
               key={temple._id}
               href={`/temples/${slugify(temple.title)}`}
-              className="card-interactive no-underline hover:no-underline group"
+              className="group bg-white border border-gray-100 rounded-2xl overflow-hidden hover:border-gray-200 hover:shadow-md transition-all duration-300 no-underline hover:no-underline"
             >
-              <div className="relative h-40 w-full bg-surface-sunken rounded-t-card overflow-hidden">
+              <div className="relative h-44 w-full bg-gray-50 overflow-hidden">
                 <TempleImage image={temple.image} alt={temple.title} />
               </div>
               <div className="p-4">
-                <h3 className="text-h4 text-secondary-700 group-hover:text-primary-600 transition-colors">
+                <h3 className="text-h4 font-serif text-gray-900 group-hover:text-primary transition-colors mb-1">
                   {temple.title}
                 </h3>
                 {temple.city && temple.state && (
-                  <p className="text-body-sm text-ink-muted mt-1">{temple.city}, {temple.state}</p>
+                  <p className="text-body-sm text-gray-400">{temple.city}, {temple.state}</p>
                 )}
                 {temple.distance != null && (
-                  <p className="text-caption text-primary-600 font-medium mt-1">
+                  <p className="text-caption text-primary font-semibold mt-2">
                     {temple.distance < 1
                       ? `${(temple.distance * 1000).toFixed(0)} m ${language === 'hi' ? 'दूर' : 'away'}`
                       : `${temple.distance.toFixed(1)} km ${language === 'hi' ? 'दूर' : 'away'}`}

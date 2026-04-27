@@ -206,8 +206,40 @@ export default function TemplePage({ params }: Props) {
   if (timingValue) bentoItems.push({ icon: '⏰', label: t('temple.timings'), value: timingValue })
   if (temple.speciality) bentoItems.push({ icon: '✨', label: t('temple.speciality'), value: temple.speciality, span: true })
 
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'PlaceOfWorship',
+    name: temple.title,
+    description: temple.description || undefined,
+    image: temple.image || undefined,
+    url: `https://sarvdev.com/temples/${slug}`,
+    ...(temple.city || temple.state ? {
+      address: {
+        '@type': 'PostalAddress',
+        addressLocality: temple.city || undefined,
+        addressRegion: temple.state || undefined,
+        addressCountry: temple.country || 'IN',
+        postalCode: temple.pincode || undefined,
+      },
+    } : {}),
+    ...(temple.latitude && temple.longitude ? {
+      geo: {
+        '@type': 'GeoCoordinates',
+        latitude: temple.latitude,
+        longitude: temple.longitude,
+      },
+    } : {}),
+    ...(temple.timings ? { openingHours: temple.timings } : {}),
+    ...(temple.phone ? { telephone: temple.phone } : {}),
+    ...(temple.website ? { sameAs: temple.website } : {}),
+  }
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       {/* ── Immersive Hero Section ── */}
       <div ref={heroRef} className="temple-hero-2030">
         <div

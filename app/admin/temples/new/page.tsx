@@ -28,6 +28,10 @@ type FormState = {
   website: string
   facebook: string
   instagram: string
+  metaTitle: string
+  metaDescription: string
+  metaKeywords: string
+  ogImage: string
 }
 
 type Festival = { name: string; description: string }
@@ -79,7 +83,8 @@ const emptyForm = (): FormState => ({
   name: "", location: "", mapsLink: "", city: "", state: "", country: "India", pincode: "",
   description: "", descriptionHi: "", deity: "", establishedYear: "", templeType: "",
   speciality: "", categories: [], imageUrl: "", contact: "", phone: "", email: "",
-  website: "", facebook: "", instagram: ""
+  website: "", facebook: "", instagram: "",
+  metaTitle: "", metaDescription: "", metaKeywords: "", ogImage: ""
 })
 
 export default function AdminNewTemplePage() {
@@ -187,7 +192,11 @@ export default function AdminNewTemplePage() {
           website: form.website,
           facebook: form.facebook,
           instagram: form.instagram,
-          status: 'approved'
+          status: 'approved',
+          metaTitle: form.metaTitle,
+          metaDescription: form.metaDescription,
+          metaKeywords: form.metaKeywords,
+          ogImage: form.ogImage
         }),
       })
       if (res.ok) {
@@ -469,6 +478,37 @@ export default function AdminNewTemplePage() {
               <label className={l}>{T.instagram}</label>
               <input type="url" value={form.instagram} onChange={ev => onChange("instagram", ev.target.value)} placeholder="https://instagram.com/templepage" className={i} />
             </div>
+          </div>
+        </div>
+
+        {/* SEO */}
+        <div className="admin-card p-6 space-y-5">
+          <div>
+            <h2 className="admin-section-title">SEO &amp; Social Sharing</h2>
+            <p className="text-xs text-gray-400 mt-0.5">Leave blank to auto-generate from title / description</p>
+          </div>
+
+          <div>
+            <label className={l}>Meta Title <span className="font-normal text-gray-400">(max 60 chars)</span></label>
+            <input value={form.metaTitle} onChange={ev => onChange("metaTitle", ev.target.value)} maxLength={60} placeholder="Custom title for search engines..." className={i} />
+            <p className="mt-1 text-xs text-gray-400">{form.metaTitle.length}/60 characters</p>
+          </div>
+
+          <div>
+            <label className={l}>Meta Description <span className="font-normal text-gray-400">(max 160 chars)</span></label>
+            <textarea value={form.metaDescription} onChange={ev => onChange("metaDescription", ev.target.value)} rows={3} maxLength={160} placeholder="Brief description shown in search results..." className={i} />
+            <p className="mt-1 text-xs text-gray-400">{form.metaDescription.length}/160 characters</p>
+          </div>
+
+          <div>
+            <label className={l}>Keywords</label>
+            <input value={form.metaKeywords} onChange={ev => onChange("metaKeywords", ev.target.value)} placeholder="temple, shiva, varanasi, kashi vishwanath" className={i} />
+            <p className="mt-1 text-xs text-gray-400">Comma-separated keywords</p>
+          </div>
+
+          <div>
+            <label className={l}>OG Image URL <span className="font-normal text-gray-400">(Social sharing — 1200×630px recommended)</span></label>
+            <input value={form.ogImage} onChange={ev => onChange("ogImage", ev.target.value)} placeholder="https://... (leave blank to use temple image)" className={i} />
           </div>
         </div>
 

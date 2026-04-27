@@ -106,7 +106,7 @@ function AreaChart({ data }: { data: { _id: string; count: number }[] }) {
   const W = 600; const H = 160
   const max = Math.max(...data.map(d => d.count), 1)
   const pts = data.map((d, i) => ({
-    x: (i / (data.length - 1)) * W,
+    x: data.length > 1 ? (i / (data.length - 1)) * W : W / 2,
     y: H - 12 - ((d.count / max) * (H - 24)),
     count: d.count,
     label: d._id.slice(5),

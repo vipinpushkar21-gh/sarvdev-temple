@@ -77,14 +77,22 @@ export async function POST(req: NextRequest) {
     const data = await res.json()
 
     if (!res.ok) {
-      console.error(`Gemini API error [${res.status}]:`, JSON.stringify(data))
+      const errMsg = data?.error?.message || data?.error?.status || JSON.stringify(data)
+      console.error(`Gemini API error [${res.status}]:`, errMsg)
       if (res.status === 429) {
+        const isQuota = errMsg?.toLowerCase().includes('quota') || errMsg?.toLowerCase().includes('exhausted')
+        if (isQuota) {
+          return NextResponse.json({ reply: 'Is API key ka daily quota khatam ho gaya hai. Naya key lagayein ya kal try karein. 🙏' })
+        }
         return NextResponse.json({ reply: 'Bahut zyada requests aayi hain. 1-2 minute baad dobara try karein. 🙏' })
       }
       if (res.status === 400) {
-        return NextResponse.json({ reply: 'Request mein koi samasya hai. Naya sawaal poochein. 🙏' })
+        return NextResponse.json({ reply: `Request error: ${errMsg}` })
       }
-      return NextResponse.json({ reply: `Gemini error ${res.status}. Thodi der baad try karein. 🙏` })
+      if (res.status === 403) {
+        return NextResponse.json({ reply: 'API key valid nahi hai ya Generative Language API enable nahi hai Google Cloud Console mein. 🙏' })
+      }
+      return NextResponse.json({ reply: `Gemini error ${res.status}: ${errMsg}` })
     }
 
     const candidate = data.candidates?.[0]

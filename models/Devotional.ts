@@ -12,6 +12,10 @@ const DevotionalSchema = new Schema({
   duration: { type: String },
   artist: { type: String },
   status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
+  metaTitle: { type: String },
+  metaDescription: { type: String },
+  metaKeywords: { type: String },
+  ogImage: { type: String },
   createdAt: { type: Date, default: Date.now }
 });
 

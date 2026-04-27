@@ -23,7 +23,11 @@ export default function EditDevotionalPage() {
     lyrics: '',
     duration: '',
     artist: '',
-    status: 'approved'
+    status: 'approved',
+    metaTitle: '',
+    metaDescription: '',
+    metaKeywords: '',
+    ogImage: ''
   })
 
   useEffect(() => {
@@ -45,6 +49,10 @@ export default function EditDevotionalPage() {
               duration: found.duration || '',
               artist: found.artist || '',
               status: found.status || 'approved',
+              metaTitle: found.metaTitle || '',
+              metaDescription: found.metaDescription || '',
+              metaKeywords: found.metaKeywords || '',
+              ogImage: found.ogImage || '',
             })
           } else {
             alert('Devotional not found')
@@ -205,6 +213,37 @@ export default function EditDevotionalPage() {
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-1">Lyrics</label>
             <textarea name="lyrics" value={formData.lyrics} onChange={handleChange} rows={12} className="admin-input w-full font-mono text-sm" placeholder="Devotional lyrics..." />
+          </div>
+        </div>
+
+        {/* SEO */}
+        <div className="admin-card p-6 space-y-5">
+          <div>
+            <h2 className="admin-section-title">SEO &amp; Social Sharing</h2>
+            <p className="text-xs text-gray-400 mt-0.5">Leave blank to auto-generate from title / description</p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1">Meta Title <span className="font-normal text-gray-400">(max 60 chars)</span></label>
+            <input type="text" name="metaTitle" value={formData.metaTitle} onChange={handleChange} maxLength={60} placeholder="Custom title for search engines..." className="admin-input w-full" />
+            <p className="mt-1 text-xs text-gray-400">{formData.metaTitle.length}/60 characters</p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1">Meta Description <span className="font-normal text-gray-400">(max 160 chars)</span></label>
+            <textarea name="metaDescription" value={formData.metaDescription} onChange={handleChange} rows={3} maxLength={160} placeholder="Brief description shown in search results..." className="admin-input w-full" />
+            <p className="mt-1 text-xs text-gray-400">{formData.metaDescription.length}/160 characters</p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1">Keywords</label>
+            <input type="text" name="metaKeywords" value={formData.metaKeywords} onChange={handleChange} placeholder="bhajan, shiva, stotra, hindi devotional" className="admin-input w-full" />
+            <p className="mt-1 text-xs text-gray-400">Comma-separated keywords</p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1">OG Image URL <span className="font-normal text-gray-400">(Social sharing — 1200×630px recommended)</span></label>
+            <input type="text" name="ogImage" value={formData.ogImage} onChange={handleChange} placeholder="https://... (leave blank to use cover image)" className="admin-input w-full" />
           </div>
         </div>
 

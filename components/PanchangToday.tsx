@@ -68,47 +68,46 @@ export default function PanchangToday() {
   return (
     <section className="section-sm">
       <div className="page-container">
-        <div className="relative card overflow-hidden">
-          {/* Decorative top gradient */}
-          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-accent to-primary" />
-
-          <div className="p-6 md:p-7">
+        <div className="border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
+          <div className="p-6 md:p-8">
             <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-md shadow-primary/20">
-                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
-                  </svg>
-                </div>
-                <div>
-                  <h2 className="text-h3 font-serif text-secondary-800">
-                    {language === 'hi' ? 'आज का पंचांग' : "Today's Panchang"}
-                  </h2>
-                </div>
+              <div>
+                <p className="text-overline uppercase tracking-[0.12em] text-gray-400 mb-1">
+                  {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}
+                </p>
+                <h2 className="text-h2 font-serif text-gray-900">
+                  {language === 'hi' ? 'आज का पंचांग' : "Today's Panchang"}
+                </h2>
               </div>
-              <span className="badge badge-primary">{data.date}</span>
+              <Link
+                href="/panchang"
+                className="hidden sm:inline-flex items-center gap-1.5 text-body-sm font-semibold text-gray-900 border-b-2 border-gray-900 hover:border-primary hover:text-primary transition-colors duration-200 no-underline hover:no-underline"
+              >
+                {language === 'hi' ? 'पूरा पंचांग' : 'Full Panchang'}
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" /></svg>
+              </Link>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
               {items.map((item, idx) => (
                 <div
                   key={item.label}
-                  className="group relative p-4 rounded-xl bg-gradient-to-br from-surface-sunken to-surface border border-surface-border hover:border-primary-200 hover:shadow-md transition-all duration-300 text-center"
+                  className="p-4 rounded-xl bg-gray-50 border border-gray-100 hover:border-gray-200 hover:bg-white transition-all duration-200 text-center"
                 >
-                  <span className="text-lg mb-1.5 block opacity-60 group-hover:opacity-100 group-hover:scale-110 transition-all duration-300">{icons[idx]}</span>
-                  <p className="text-caption text-ink-muted mb-1 font-medium">{item.label}</p>
-                  <p className="text-body-sm font-semibold text-ink truncate">{item.value || '-'}</p>
+                  <span className="text-xl mb-2 block">{icons[idx]}</span>
+                  <p className="text-overline text-gray-400 mb-1 uppercase tracking-wider">{item.label}</p>
+                  <p className="text-body-sm font-semibold text-gray-900 truncate">{item.value || '–'}</p>
                 </div>
               ))}
             </div>
 
-            <div className="mt-5 text-center">
+            <div className="mt-4 sm:hidden">
               <Link
                 href="/panchang"
-                className="inline-flex items-center gap-1.5 text-body-sm font-semibold text-primary-600 hover:text-primary-700 no-underline hover:no-underline transition-colors group"
+                className="inline-flex items-center gap-1.5 text-body-sm font-semibold text-gray-900 border-b-2 border-gray-900 hover:border-primary hover:text-primary transition-colors no-underline hover:no-underline"
               >
                 {language === 'hi' ? 'पूरा पंचांग देखें' : 'View Full Panchang'}
-                <svg className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" /></svg>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" /></svg>
               </Link>
             </div>
           </div>

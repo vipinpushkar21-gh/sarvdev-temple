@@ -90,12 +90,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     )
   }
 
-  // Breadcrumb from pathname
+  // Breadcrumb from pathname (skip MongoDB ObjectId segments)
+  const isObjectId = (s: string) => /^[a-f0-9]{24}$/i.test(s)
   const segments = pathname.split('/').filter(Boolean)
-  const breadcrumbs = segments.map((seg, i) => ({
-    label: seg.charAt(0).toUpperCase() + seg.slice(1).replace(/-/g, ' '),
-    href: '/' + segments.slice(0, i + 1).join('/'),
-  }))
+  const breadcrumbs = segments
+    .filter(seg => !isObjectId(seg))
+    .map((seg, i, arr) => ({
+      label: seg.charAt(0).toUpperCase() + seg.slice(1).replace(/-/g, ' '),
+      href: '/' + segments.slice(0, segments.indexOf(arr[i]) + 1).join('/'),
+    }))
 
   // Current page title
   const pageTitle = breadcrumbs[breadcrumbs.length - 1]?.label || 'Dashboard'

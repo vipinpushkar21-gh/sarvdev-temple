@@ -74,8 +74,31 @@ export default function BlogPostPage() {
     )
   }
 
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    headline: post.title,
+    description: post.excerpt || undefined,
+    image: post.image || DEFAULT_IMAGE,
+    url: `https://sarvdev.com/blog/${slug}`,
+    datePublished: post.date ? new Date(post.date).toISOString() : undefined,
+    publisher: {
+      '@type': 'Organization',
+      name: 'Sarvdev',
+      url: 'https://sarvdev.com',
+    },
+    mainEntityOfPage: {
+      '@type': 'WebPage',
+      '@id': `https://sarvdev.com/blog/${slug}`,
+    },
+  }
+
   return (
     <main className="content-container section-sm">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <article className="max-w-3xl mx-auto">
         {/* Breadcrumb */}
         <nav className="flex items-center gap-2 text-body-sm text-ink-muted mb-6">

@@ -77,6 +77,7 @@ export default function AdminBlogsPage() {
           <h1 className="admin-page-title">Blogs</h1>
           <p className="admin-section-subtitle">{rows.length} total · {filtered.length} shown</p>
         </div>
+        <Link href="/admin/blogs/new" className="admin-btn admin-btn-primary px-4 py-2 text-sm">+ New Post</Link>
       </div>
 
       <div className="admin-filter-bar">
@@ -123,6 +124,7 @@ export default function AdminBlogsPage() {
                 <td className="text-gray-500">{r.date ? new Date(r.date).toLocaleDateString() : '—'}</td>
                 <td>
                   <div className="flex gap-1.5">
+                    <Link href={`/admin/blogs/${r._id}/edit`} className="admin-btn admin-btn-ghost">Edit</Link>
                     <button onClick={() => approve(r._id)} className="admin-btn admin-btn-success">Approve</button>
                     <button onClick={() => reject(r._id)} className="admin-btn admin-btn-danger">Reject</button>
                     <button onClick={() => remove(r._id)} className="admin-btn" style={{ background: '#1F2937', color: 'white' }}>Del</button>

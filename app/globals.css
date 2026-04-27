@@ -14,10 +14,10 @@
   --color-primary:   #FF9933;
   --color-secondary: #5C4033;
   --color-accent:    #FFD700;
-  --color-surface:   #FAF9F6;
-  --color-ink:       #2C2C2C;
-  --color-ink-muted: #6B6560;
-  --color-border:    #E5E0D5;
+  --color-surface:   #FFFFFF;
+  --color-ink:       #1a1a1a;
+  --color-ink-muted: #6B6B6B;
+  --color-border:    #E8E8E8;
   --radius-card:     0.75rem;
   --radius-btn:      0.5rem;
 
@@ -74,6 +74,16 @@
   animation: countPulse 0.3s ease;
 }
 
+/* ─── Ken Burns (TempleOfTheDay) ─── */
+@keyframes kenBurns {
+  0%   { transform: scale(1)    translate(0, 0); }
+  50%  { transform: scale(1.06) translate(-1%, -0.5%); }
+  100% { transform: scale(1)    translate(0, 0); }
+}
+.ken-burns {
+  animation: kenBurns 12s ease-in-out infinite;
+}
+
 /* ─── Floating Om ─── */
 @keyframes floatUp {
   0%   { opacity: 0; transform: translateY(0) scale(0.7) rotate(-10deg); }
@@ -102,49 +112,14 @@
 
   body {
     @apply font-sans text-body text-ink;
-    background-color: var(--color-surface);
-    background-image:
-      /* Sacred symbols tile — Om, Swastik, Bell */
-      url('/images/sacred-pattern.svg'),
-      /* Fine horizontal paper grain lines */
-      repeating-linear-gradient(
-        180deg,
-        transparent 0px,
-        transparent 3px,
-        rgba(180, 140, 80, 0.018) 3px,
-        rgba(180, 140, 80, 0.018) 4px
-      ),
-      /* Diagonal paper fiber texture */
-      repeating-linear-gradient(
-        47deg,
-        transparent 0px,
-        transparent 10px,
-        rgba(160, 120, 60, 0.012) 10px,
-        rgba(160, 120, 60, 0.012) 11px
-      ),
-      /* Saffron top glow — sacred warmth */
-      radial-gradient(ellipse 110% 50% at 50% 0%, rgba(255, 153, 51, 0.05) 0%, transparent 70%),
-      /* Temple gold bottom-right */
-      radial-gradient(ellipse 60% 50% at 95% 95%, rgba(212, 175, 55, 0.04) 0%, transparent 60%),
-      /* Sacred maroon left accent */
-      radial-gradient(ellipse 45% 70% at 2% 50%, rgba(155, 28, 28, 0.025) 0%, transparent 60%);
-    background-size: 400px 400px, 400px 400px, 400px 400px, 100% 100%, 100% 100%, 100% 100%;
-    background-repeat: repeat, repeat, repeat, no-repeat, no-repeat, no-repeat;
-    background-attachment: fixed;
+    background-color: #FFFFFF;
     margin: 0;
     padding: 0;
     overflow-x: hidden;
   }
 
   [data-theme="dark"] body {
-    background-color: #1A1210;
-    background-image:
-      url('/images/sacred-pattern.svg'),
-      radial-gradient(ellipse 110% 50% at 50% 0%, rgba(255, 153, 51, 0.07) 0%, transparent 70%),
-      radial-gradient(ellipse 60% 50% at 95% 95%, rgba(212, 175, 55, 0.05) 0%, transparent 60%),
-      radial-gradient(ellipse 45% 70% at 2% 50%, rgba(155, 28, 28, 0.04) 0%, transparent 60%);
-    background-size: 400px 400px, 100% 100%, 100% 100%, 100% 100%;
-    background-repeat: repeat, no-repeat, no-repeat, no-repeat;
+    background-color: #0a0a0a;
   }
 
   [data-theme="dark"] h1 { color: #F0EAE0; }
@@ -334,10 +309,10 @@
 
   /* ─── Section Title ─── */
   .section-title {
-    @apply text-h1 font-serif text-secondary-800 text-center;
+    @apply text-h1 font-serif text-gray-900;
   }
   .section-subtitle {
-    @apply text-body text-ink-muted text-center mt-2 max-w-xl mx-auto;
+    @apply text-body text-ink-muted mt-2 max-w-2xl;
   }
 
   /* ─── Glass Header ─── */

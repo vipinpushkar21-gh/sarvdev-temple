@@ -56,17 +56,17 @@ export default function FestivalCountdown() {
   ]
 
   return (
-    <section className="bg-secondary-800 text-white" aria-label={t('countdown.label')}>
-      <div className="page-container py-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+    <section className="bg-white border-y border-gray-100" aria-label={t('countdown.label')}>
+      <div className="page-container py-5 flex flex-col sm:flex-row items-center justify-between gap-6">
         {/* Festival Info */}
-        <div className="text-center sm:text-left">
-          <p className="text-overline uppercase tracking-wider text-secondary-400 mb-1">
+        <div className="border-l-4 border-primary pl-4">
+          <p className="text-overline uppercase tracking-[0.12em] text-gray-400 mb-1">
             {language === 'hi' ? 'आगामी त्योहार' : 'Next Festival'}
           </p>
-          <h3 className="text-h3 font-serif text-white">
+          <h3 className="text-h3 font-serif text-gray-900">
             {language === 'hi' ? festival.titleHi : festival.title}
           </h3>
-          <p className="text-body-sm text-secondary-200 mt-0.5">
+          <p className="text-body-sm text-gray-400 mt-0.5">
             {new Date(festival.date).toLocaleDateString(language === 'hi' ? 'hi-IN' : 'en-IN', {
               day: 'numeric',
               month: 'long',
@@ -77,15 +77,15 @@ export default function FestivalCountdown() {
 
         {/* Countdown Boxes */}
         <div className="flex items-center gap-2 sm:gap-3">
-          {units.map((u) => (
-            <div
-              key={u.label}
-              className="flex flex-col items-center bg-secondary-700 rounded-btn px-3 py-2 min-w-[3.5rem]"
-            >
-              <span className="text-h3 font-sans font-bold tabular-nums text-accent">
-                {String(u.value).padStart(2, '0')}
-              </span>
-              <span className="text-caption text-secondary-300 mt-0.5">{u.label}</span>
+          {units.map((u, i) => (
+            <div key={u.label} className="flex items-center gap-2 sm:gap-3">
+              {i > 0 && <span className="text-gray-200 text-h3 font-light">:</span>}
+              <div className="flex flex-col items-center bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 min-w-[3.5rem]">
+                <span className="text-h2 font-sans font-bold tabular-nums text-gray-900">
+                  {String(u.value).padStart(2, '0')}
+                </span>
+                <span className="text-overline text-gray-400 mt-0.5 uppercase tracking-wider">{u.label}</span>
+              </div>
             </div>
           ))}
         </div>
@@ -93,9 +93,10 @@ export default function FestivalCountdown() {
         {/* CTA */}
         <Link
           href={`/events#${festival.slug}`}
-          className="btn btn-primary btn-sm no-underline hover:no-underline whitespace-nowrap"
+          className="inline-flex items-center gap-2 text-body-sm font-semibold text-gray-900 border-b-2 border-gray-900 hover:border-primary hover:text-primary transition-colors duration-200 no-underline hover:no-underline whitespace-nowrap"
         >
           {language === 'hi' ? 'विवरण देखें' : 'View Details'}
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" /></svg>
         </Link>
       </div>
     </section>
