@@ -61,27 +61,29 @@ type Devotional = {
   image?: string
 }
 
-// Category mapping with images
-const CATEGORY_MAP: { [key: string]: { label: string; hindi: string; image?: string } } = {
-  'mantra': { label: 'Mantra', hindi: 'मंत्र', image: 'https://res.cloudinary.com/dc2qg7bwr/image/upload/v1773744527/sarvdev/mantra.jpg' },
-  'bhajan': { label: 'Bhajan', hindi: 'भजन', image: 'https://res.cloudinary.com/dc2qg7bwr/image/upload/v1773744527/sarvdev/bhajan.jpg' },
-  'stotra': { label: 'Stotra/Suktam', hindi: 'स्तोत्र/सूक्त', image: 'https://res.cloudinary.com/dc2qg7bwr/image/upload/v1773744527/sarvdev/stotra.jpg' },
-  'aarti': { label: 'Aarti', hindi: 'आरती', image: 'https://res.cloudinary.com/dc2qg7bwr/image/upload/v1773744527/sarvdev/aarti.jpg' },
-  'chalisa': { label: 'Chalisa', hindi: 'चालीसा', image: 'https://res.cloudinary.com/dc2qg7bwr/image/upload/v1773744527/sarvdev/chalisa.jpg' },
-  'stuti': { label: 'Stuti', hindi: 'स्तुति', image: 'https://res.cloudinary.com/dc2qg7bwr/image/upload/v1773744527/sarvdev/stuti.jpg' },
-  'shloka': { label: 'Shloka', hindi: 'श्लोक', image: 'https://res.cloudinary.com/dc2qg7bwr/image/upload/v1773744527/sarvdev/shloka.jpg' },
-  'ek-shloki': { label: 'Ek Shloki', hindi: 'एक श्लोकी', image: 'https://res.cloudinary.com/dc2qg7bwr/image/upload/v1773744527/sarvdev/shloka.jpg' },
-  'ashtaka': { label: 'Ashtaka', hindi: 'अष्टक', image: 'https://res.cloudinary.com/dc2qg7bwr/image/upload/v1773744527/sarvdev/ashtaka.jpg' },
-  'path': { label: 'Path', hindi: 'पाठ', image: 'https://res.cloudinary.com/dc2qg7bwr/image/upload/v1773744527/sarvdev/path.jpg' },
-  'rashi': { label: 'Rashi', hindi: 'राशि', image: 'https://res.cloudinary.com/dc2qg7bwr/image/upload/v1773744527/sarvdev/rashi.jpg' },
-  'vastu': { label: 'Vastu', hindi: 'वास्तु', image: 'https://res.cloudinary.com/dc2qg7bwr/image/upload/v1773744527/sarvdev/vastu.jpg' },
-  'durga': { label: 'Durga', hindi: 'दुर्गा', image: 'https://res.cloudinary.com/dc2qg7bwr/image/upload/v1773744527/sarvdev/durga.jpg' },
-  'kuber': { label: 'Kuber', hindi: 'कुबेर', image: 'https://res.cloudinary.com/dc2qg7bwr/image/upload/v1773744527/sarvdev/kuber.jpg' },
-  'namavali': { label: 'Namavali', hindi: 'नामावली', image: 'https://res.cloudinary.com/dc2qg7bwr/image/upload/v1773744527/sarvdev/namavali.jpg' },
-  'kavacham': { label: 'Kavacham', hindi: 'कवचम्', image: 'https://res.cloudinary.com/dc2qg7bwr/image/upload/v1773744527/sarvdev/kavacham.jpg' },
-  'prarthana': { label: 'Prarthana', hindi: 'प्रार्थना', image: 'https://res.cloudinary.com/dc2qg7bwr/image/upload/v1773744527/sarvdev/prarthana.jpg' },
-  'vrat-katha': { label: 'Vrat Katha', hindi: 'व्रत कथा', image: 'https://res.cloudinary.com/dc2qg7bwr/image/upload/v1773744527/sarvdev/vrat-katha.jpg' },
-  'other': { label: 'Other', hindi: 'अन्य', image: 'https://res.cloudinary.com/dc2qg7bwr/image/upload/v1773744527/sarvdev/temples/avno1ltpdyzpzsby1mll.jpg' }
+const FALLBACK_IMAGE = 'https://res.cloudinary.com/dc2qg7bwr/image/upload/image_2_xljqwa'
+
+// Category mapping with gradient fallbacks (used when no image is uploaded)
+const CATEGORY_MAP: { [key: string]: { label: string; hindi: string; gradient: string; symbol: string } } = {
+  'mantra':    { label: 'Mantra',       hindi: 'मंत्र',       gradient: 'linear-gradient(135deg,#7c3aed,#4f46e5)', symbol: 'ॐ' },
+  'bhajan':    { label: 'Bhajan',       hindi: 'भजन',         gradient: 'linear-gradient(135deg,#db2777,#9333ea)', symbol: '♪' },
+  'stotra':    { label: 'Stotra/Suktam',hindi: 'स्तोत्र/सूक्त',gradient: 'linear-gradient(135deg,#b45309,#92400e)', symbol: '🕉' },
+  'aarti':     { label: 'Aarti',        hindi: 'आरती',        gradient: 'linear-gradient(135deg,#ea580c,#dc2626)', symbol: '🪔' },
+  'chalisa':   { label: 'Chalisa',      hindi: 'चालीसा',      gradient: 'linear-gradient(135deg,#0369a1,#1d4ed8)', symbol: '📖' },
+  'stuti':     { label: 'Stuti',        hindi: 'स्तुति',      gradient: 'linear-gradient(135deg,#be185d,#7c3aed)', symbol: '🙏' },
+  'shloka':    { label: 'Shloka',       hindi: 'श्लोक',       gradient: 'linear-gradient(135deg,#065f46,#0369a1)', symbol: 'ॐ' },
+  'ek-shloki': { label: 'Ek Shloki',   hindi: 'एक श्लोकी',   gradient: 'linear-gradient(135deg,#065f46,#0369a1)', symbol: 'ॐ' },
+  'ashtaka':   { label: 'Ashtaka',      hindi: 'अष्टक',       gradient: 'linear-gradient(135deg,#92400e,#b45309)', symbol: '८' },
+  'path':      { label: 'Path',         hindi: 'पाठ',          gradient: 'linear-gradient(135deg,#1e40af,#065f46)', symbol: '📜' },
+  'rashi':     { label: 'Rashi',        hindi: 'राशि',         gradient: 'linear-gradient(135deg,#0f172a,#1e3a5f)', symbol: '♈' },
+  'vastu':     { label: 'Vastu',        hindi: 'वास्तु',       gradient: 'linear-gradient(135deg,#166534,#14532d)', symbol: '🏠' },
+  'durga':     { label: 'Durga',        hindi: 'दुर्गा',       gradient: 'linear-gradient(135deg,#9f1239,#7c3aed)', symbol: '🔱' },
+  'kuber':     { label: 'Kuber',        hindi: 'कुबेर',        gradient: 'linear-gradient(135deg,#854d0e,#713f12)', symbol: '💰' },
+  'namavali':  { label: 'Namavali',     hindi: 'नामावली',      gradient: 'linear-gradient(135deg,#7c2d12,#92400e)', symbol: '🌸' },
+  'kavacham':  { label: 'Kavacham',     hindi: 'कवचम्',        gradient: 'linear-gradient(135deg,#1e3a5f,#0f172a)', symbol: '🛡' },
+  'prarthana': { label: 'Prarthana',    hindi: 'प्रार्थना',    gradient: 'linear-gradient(135deg,#831843,#9f1239)', symbol: '🙏' },
+  'vrat-katha':{ label: 'Vrat Katha',   hindi: 'व्रत कथा',     gradient: 'linear-gradient(135deg,#78350f,#92400e)', symbol: '📿' },
+  'other':     { label: 'Other',        hindi: 'अन्य',          gradient: 'linear-gradient(135deg,#374151,#1f2937)', symbol: 'ॐ' },
 }
 
 export default function CategoryPage() {
@@ -317,24 +319,25 @@ export default function CategoryPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredByDeity.map((d: Devotional) => {
               const categoryKey = d.category?.toLowerCase().replace(/\s+/g, '-') || 'other'
-              const categoryImage = CATEGORY_MAP[categoryKey]?.image || CATEGORY_MAP['other']?.image
-              const fallbackImage = categoryImage || 'https://res.cloudinary.com/dc2qg7bwr/image/upload/v1773744527/sarvdev/temples/avno1ltpdyzpzsby1mll.jpg'
-              
+              const catInfo = CATEGORY_MAP[categoryKey] || CATEGORY_MAP['other']
+
               return (
                 <Link 
                   key={d._id}
                   href={`/devotionals/${createSlug(d.title || '')}`}
                   className="card-interactive overflow-hidden flex flex-col"
                 >
-                  <div className="relative h-40 bg-surface-sunken overflow-hidden">
+                  <div className="relative h-40 overflow-hidden">
                     <img
-                      src={d.image || fallbackImage}
-                      alt={d.title || ''}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = fallbackImage
-                      }}
-                    />
+                        src={d.image || FALLBACK_IMAGE}
+                        alt={d.title || ''}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement
+                          target.src = FALLBACK_IMAGE
+                        }}
+                      />
                   </div>
                   <div className="p-5 flex flex-col flex-grow">
                     <div className="flex items-start justify-between mb-3">

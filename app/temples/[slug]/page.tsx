@@ -11,6 +11,7 @@ import ShareButtons from '../../../components/ShareButtons'
 import { DetailPageSkeleton } from '../../../components/Skeleton'
 import ReviewSection from '../../../components/ReviewSection'
 import ClaimTempleButton from '../../../components/ClaimTempleButton'
+import AdminEditBar from '../../../components/AdminEditBar'
 
 type Props = {
   params: Promise<{ slug: string }>
@@ -514,6 +515,7 @@ export default function TemplePage({ params }: Props) {
           <ShareButtons title={temple.title} />
         </div>
       </main>
+      <AdminEditBar editHref={`/admin/temples/edit/${temple._id}`} label="Edit Temple" />
     </>
   )
 }

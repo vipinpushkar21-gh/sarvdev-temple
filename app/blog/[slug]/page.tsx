@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
+import AdminEditBar from '../../../components/AdminEditBar'
 
 const DEFAULT_IMAGE = 'https://res.cloudinary.com/dc2qg7bwr/image/upload/v1773744527/sarvdev/temples/avno1ltpdyzpzsby1mll.jpg'
 
@@ -141,6 +142,7 @@ export default function BlogPostPage() {
           </Link>
         </footer>
       </article>
+      {post && <AdminEditBar editHref={`/admin/blogs/${post._id}/edit`} label="Edit Post" />}
     </main>
   )
 }

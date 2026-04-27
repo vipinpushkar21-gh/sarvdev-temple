@@ -6,8 +6,9 @@ import Link from 'next/link'
 import { TextToSpeech } from '../components/TextToSpeech'
 import { renderBilingualTitle, isDevanagari } from '../utils/bilingual'
 import BookmarkButton from '../../../components/BookmarkButton'
+import AdminEditBar from '../../../components/AdminEditBar'
 
-const DEFAULT_DEVOTIONAL_IMAGE = 'https://res.cloudinary.com/dc2qg7bwr/image/upload/v1773744527/sarvdev/temples/avno1ltpdyzpzsby1mll.jpg'
+const DEFAULT_DEVOTIONAL_IMAGE = 'https://res.cloudinary.com/dc2qg7bwr/image/upload/image_2_xljqwa'
 
 type Devotional = {
   _id: string
@@ -452,6 +453,7 @@ export default function DevotionalDetailPage() {
 
         </div>
       </main>
+      <AdminEditBar editHref={`/admin/devotionals/${devotional._id}/edit`} label="Edit Devotional" />
     </>
   )
 }

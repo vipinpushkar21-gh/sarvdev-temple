@@ -7,6 +7,7 @@ const DevotionalSchema = new Schema({
   category: { type: String, enum: ['Bhajan', 'Stotra', 'Aarti', 'Mantra', 'Chalisa', 'Stuti', 'Shloka', 'Ek Shloki', 'Ashtaka', 'Path', 'Namavali', '108 Namavali', 'Kavacham', 'Prarthana', 'Vrat Katha', 'Rashi', 'Vastu', 'Durga', 'Kuber', 'Stotra/Suktam', 'Other'], default: 'Other' },
   language: { type: String, default: 'Hindi' },
   deity: { type: String },
+  image: { type: String },
   audio: { type: String },
   lyrics: { type: String },
   duration: { type: String },

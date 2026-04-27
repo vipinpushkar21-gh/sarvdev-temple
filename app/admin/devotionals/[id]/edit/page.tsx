@@ -1,17 +1,32 @@
 "use client"
 
 import { useEffect, useState } from 'react'
-import { useRouter, useParams } from 'next/navigation'
+import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import ImageUpload from '../../../../../components/ImageUpload'
 
+function createSlug(title: string): string {
+  const englishMatch = title.match(/\(([^)]+)\)/)
+  let text = englishMatch ? englishMatch[1] : title
+  let slug = text.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').trim()
+  if (!slug || slug === '-') {
+    slug = title.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').trim()
+  }
+  return slug || 'devotional'
+}
+
 export default function EditDevotionalPage() {
-  const router = useRouter()
   const params = useParams()
   const id = params.id as string
 
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [toast, setToast] = useState<{ type: 'success' | 'error'; msg: string } | null>(null)
+
+  function showToast(type: 'success' | 'error', msg: string) {
+    setToast({ type, msg })
+    setTimeout(() => setToast(null), 4000)
+  }
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -31,6 +46,7 @@ export default function EditDevotionalPage() {
   })
 
   useEffect(() => {
+    if (!id) return
     async function fetchDevotional() {
       try {
         const res = await fetch(`/api/devotionals?id=${id}`)
@@ -55,24 +71,60 @@ export default function EditDevotionalPage() {
               ogImage: found.ogImage || '',
             })
           } else {
-            alert('Devotional not found')
-            router.push('/admin/devotionals')
+            showToast('error', 'Devotional not found')
           }
         } else {
-          alert('Failed to load devotional')
-          router.push('/admin/devotionals')
+          showToast('error', 'Failed to load devotional')
         }
       } catch {
-        alert('Failed to load devotional')
+        showToast('error', 'Failed to load devotional')
       } finally {
         setLoading(false)
       }
     }
     fetchDevotional()
-  }, [id, router])
+  }, [id])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value })
+  }
+
+  const autoGenerateSEO = () => {
+    // Extract English title from parentheses if present, else use full title
+    const englishMatch = formData.title.match(/\(([^)]+)\)/)
+    const cleanTitle = englishMatch ? englishMatch[1] : formData.title.replace(/[^\x00-\x7F]/g, '').trim() || formData.title
+
+    const deity = formData.deity || ''
+    const category = formData.category || ''
+    const language = formData.language || 'Hindi'
+
+    // Meta Title (max 60)
+    const rawMetaTitle = deity
+      ? `${cleanTitle} — ${deity} ${category} | Sarvdev`
+      : `${cleanTitle} — ${category} | Sarvdev`
+    const metaTitle = rawMetaTitle.slice(0, 60)
+
+    // Meta Description (max 160)
+    const metaDescription = deity
+      ? `Read and listen to ${cleanTitle} — a ${language} ${category} dedicated to ${deity}. Lyrics, meaning and audio on Sarvdev.`
+      : `Read and listen to ${cleanTitle} — a ${language} ${category}. Full lyrics and audio available on Sarvdev.`
+
+    // Keywords
+    const titleWords = cleanTitle.toLowerCase().replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter(w => w.length > 2)
+    const keywordSet = [
+      ...titleWords,
+      ...(deity ? [deity.toLowerCase(), `${deity.toLowerCase()} ${category.toLowerCase()}`] : []),
+      category.toLowerCase(),
+      `${language.toLowerCase()} ${category.toLowerCase()}`,
+      `${category.toLowerCase()} lyrics`,
+      'sarvdev devotional',
+    ]
+    const metaKeywords = [...new Set(keywordSet)].join(', ')
+
+    // OG Image — use cover image if available
+    const ogImage = formData.ogImage || formData.image || ''
+
+    setFormData(prev => ({ ...prev, metaTitle, metaDescription: metaDescription.slice(0, 160), metaKeywords, ogImage }))
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -85,12 +137,37 @@ export default function EditDevotionalPage() {
         body: JSON.stringify({ id, ...formData })
       })
       if (res.ok) {
-        router.push('/admin/devotionals')
+        // Re-fetch from DB to confirm what actually saved
+        const fresh = await fetch(`/api/devotionals?id=${id}`)
+        if (fresh.ok) {
+          const found = await fresh.json()
+          if (found) {
+            setFormData({
+              title: found.title || '',
+              description: found.description || '',
+              category: found.category || '',
+              language: found.language || '',
+              deity: found.deity || '',
+              image: found.image || '',
+              audio: found.audio || '',
+              lyrics: found.lyrics || '',
+              duration: found.duration || '',
+              artist: found.artist || '',
+              status: found.status || 'approved',
+              metaTitle: found.metaTitle || '',
+              metaDescription: found.metaDescription || '',
+              metaKeywords: found.metaKeywords || '',
+              ogImage: found.ogImage || '',
+            })
+          }
+        }
+        showToast('success', 'Changes saved successfully!')
       } else {
-        alert('Failed to save changes')
+        const err = await res.json().catch(() => ({}))
+        showToast('error', err?.error || 'Failed to save changes')
       }
     } catch {
-      alert('Error saving changes')
+      showToast('error', 'Network error, try again')
     } finally {
       setSaving(false)
     }
@@ -109,12 +186,40 @@ export default function EditDevotionalPage() {
 
   return (
     <div className="max-w-3xl space-y-6">
+      {/* Toast Notification */}
+      {toast && (
+        <div className={`fixed top-5 right-5 z-50 flex items-center gap-3 px-5 py-3.5 rounded-xl shadow-lg text-sm font-medium transition-all animate-in slide-in-from-right-4 ${
+          toast.type === 'success'
+            ? 'bg-green-600 text-white'
+            : 'bg-red-600 text-white'
+        }`}>
+          {toast.type === 'success' ? (
+            <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+          ) : (
+            <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+          )}
+          {toast.msg}
+          <button onClick={() => setToast(null)} className="ml-1 opacity-75 hover:opacity-100">
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+        </div>
+      )}
+
       <div className="flex items-center justify-between">
         <div>
           <h1 className="admin-page-title">Edit Devotional</h1>
           <p className="admin-section-subtitle truncate max-w-sm text-gray-400">{formData.title}</p>
         </div>
-        <Link href="/admin/devotionals" className="admin-btn admin-btn-ghost px-4 py-2 text-sm">← Back</Link>
+        <div className="flex items-center gap-2">
+          {formData.title && (
+            <a href={`/devotionals/${createSlug(formData.title)}`} target="_blank" rel="noopener noreferrer"
+              className="admin-btn admin-btn-ghost px-4 py-2 text-sm flex items-center gap-1.5 text-green-700 border-green-200 hover:bg-green-50">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" /></svg>
+              View Live
+            </a>
+          )}
+          <Link href="/admin/devotionals" className="admin-btn admin-btn-ghost px-4 py-2 text-sm">← Back</Link>
+        </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -218,9 +323,19 @@ export default function EditDevotionalPage() {
 
         {/* SEO */}
         <div className="admin-card p-6 space-y-5">
-          <div>
-            <h2 className="admin-section-title">SEO &amp; Social Sharing</h2>
-            <p className="text-xs text-gray-400 mt-0.5">Leave blank to auto-generate from title / description</p>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h2 className="admin-section-title">SEO &amp; Social Sharing</h2>
+              <p className="text-xs text-gray-400 mt-0.5">Leave blank to auto-generate from title / description</p>
+            </div>
+            <button
+              type="button"
+              onClick={autoGenerateSEO}
+              className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-primary/10 text-primary-700 border border-primary/30 hover:bg-primary/20 transition-colors"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" /></svg>
+              Auto-Generate
+            </button>
           </div>
 
           <div>

@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
 import Link from "next/link"
 import ImageUpload from "../../../../../components/ImageUpload"
 
@@ -49,8 +48,11 @@ const deities = [
 
 const templeTypes = ["North Indian", "South Indian", "Modern", "Ancient", "Cave Temple", "Hill Temple"]
 
+function slugify(text: string): string {
+  return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+}
+
 export default function EditTemplePage({ params }: { params: Promise<{ id: string }> }) {
-  const router = useRouter()
   const [id, setId] = useState<string>("")
   const [form, setForm] = useState<FormState>({ 
     title: "", location: "", mapsLink: "", city: "", state: "", pincode: "", description: "", 
@@ -61,6 +63,12 @@ export default function EditTemplePage({ params }: { params: Promise<{ id: strin
   })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [toast, setToast] = useState<{ type: 'success' | 'error'; msg: string } | null>(null)
+
+  function showToast(type: 'success' | 'error', msg: string) {
+    setToast({ type, msg })
+    setTimeout(() => setToast(null), 4000)
+  }
 
   useEffect(() => {
     params.then(p => {
@@ -136,15 +144,13 @@ export default function EditTemplePage({ params }: { params: Promise<{ id: strin
       })
       
       if (res.ok) {
-        router.push('/admin/temples')
+        showToast('success', 'Temple updated successfully!')
       } else {
-        const error = await res.json()
-        console.error('Update failed:', error)
-        alert('Failed to update temple: ' + error.error)
+        const error = await res.json().catch(() => ({}))
+        showToast('error', error?.error || 'Failed to update temple')
       }
-    } catch (error) {
-      console.error('Network error:', error)
-      alert('Network error. Please try again.')
+    } catch {
+      showToast('error', 'Network error. Please try again.')
     } finally {
       setSaving(false)
     }
@@ -156,12 +162,38 @@ export default function EditTemplePage({ params }: { params: Promise<{ id: strin
 
   return (
     <div className="max-w-3xl space-y-6" suppressHydrationWarning>
+      {/* Toast Notification */}
+      {toast && (
+        <div className={`fixed top-5 right-5 z-50 flex items-center gap-3 px-5 py-3.5 rounded-xl shadow-lg text-sm font-medium ${
+          toast.type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
+        }`}>
+          {toast.type === 'success' ? (
+            <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+          ) : (
+            <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+          )}
+          {toast.msg}
+          <button onClick={() => setToast(null)} className="ml-1 opacity-75 hover:opacity-100">
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+        </div>
+      )}
+
       <div className="flex items-center justify-between">
         <div>
           <h1 className="admin-page-title">Edit Temple</h1>
           <p className="admin-section-subtitle">Update temple details below</p>
         </div>
-        <Link href="/admin/temples" className="admin-btn admin-btn-ghost px-4 py-2 text-sm">← Back to Temples</Link>
+        <div className="flex items-center gap-2">
+          {form.title && (
+            <a href={`/temples/${slugify(form.title)}`} target="_blank" rel="noopener noreferrer"
+              className="admin-btn admin-btn-ghost px-4 py-2 text-sm flex items-center gap-1.5 text-green-700 border-green-200 hover:bg-green-50">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" /></svg>
+              View Live
+            </a>
+          )}
+          <Link href="/admin/temples" className="admin-btn admin-btn-ghost px-4 py-2 text-sm">← Back to Temples</Link>
+        </div>
       </div>
 
       <form onSubmit={onSubmit} noValidate className="space-y-6">

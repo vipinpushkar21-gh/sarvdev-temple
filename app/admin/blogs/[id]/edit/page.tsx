@@ -5,6 +5,10 @@ import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import ImageUpload from '../../../../../components/ImageUpload'
 
+function slugify(text: string): string {
+  return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+}
+
 export default function EditBlogPage() {
   const router = useRouter()
   const params = useParams()
@@ -103,7 +107,16 @@ export default function EditBlogPage() {
           <h1 className="admin-page-title">Edit Blog Post</h1>
           <p className="admin-section-subtitle truncate max-w-sm text-gray-400">{formData.title}</p>
         </div>
-        <Link href="/admin/blogs" className="admin-btn admin-btn-ghost px-4 py-2 text-sm">← Back to Blogs</Link>
+        <div className="flex items-center gap-2">
+          {formData.title && (
+            <a href={`/blog/${slugify(formData.title)}`} target="_blank" rel="noopener noreferrer"
+              className="admin-btn admin-btn-ghost px-4 py-2 text-sm flex items-center gap-1.5 text-green-700 border-green-200 hover:bg-green-50">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" /></svg>
+              View Live
+            </a>
+          )}
+          <Link href="/admin/blogs" className="admin-btn admin-btn-ghost px-4 py-2 text-sm">← Back to Blogs</Link>
+        </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
