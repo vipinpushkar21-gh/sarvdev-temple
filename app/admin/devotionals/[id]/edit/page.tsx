@@ -30,6 +30,7 @@ export default function EditDevotionalPage() {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
+    descriptionHi: '',
     category: '',
     language: '',
     deity: '',
@@ -56,6 +57,7 @@ export default function EditDevotionalPage() {
             setFormData({
               title: found.title || '',
               description: found.description || '',
+              descriptionHi: found.descriptionHi || '',
               category: found.category || '',
               language: found.language || '',
               deity: found.deity || '',
@@ -145,6 +147,7 @@ export default function EditDevotionalPage() {
             setFormData({
               title: found.title || '',
               description: found.description || '',
+              descriptionHi: found.descriptionHi || '',
               category: found.category || '',
               language: found.language || '',
               deity: found.deity || '',
@@ -311,8 +314,13 @@ export default function EditDevotionalPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-600 mb-1">Description</label>
+            <label className="block text-sm font-medium text-gray-600 mb-1">Description <span className="text-gray-400 font-normal">(English)</span></label>
             <textarea name="description" value={formData.description} onChange={handleChange} rows={3} className="admin-input w-full" placeholder="Brief description of the devotional" />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1">Description <span className="text-orange-500 font-normal">(हिन्दी)</span></label>
+            <textarea name="descriptionHi" value={formData.descriptionHi} onChange={handleChange} rows={3} className="admin-input w-full" placeholder="संक्षिप्त विवरण हिन्दी में..." />
           </div>
 
           <div>

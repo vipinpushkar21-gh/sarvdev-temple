@@ -825,6 +825,7 @@
     content: '';
     @apply absolute inset-0 opacity-0 transition-opacity duration-500;
     background: linear-gradient(135deg, rgba(255,153,51,0.05), rgba(255,215,0,0.03), transparent);
+    pointer-events: none;
   }
   .gradient-shimmer:hover::after {
     @apply opacity-100;

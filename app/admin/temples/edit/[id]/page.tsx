@@ -6,17 +6,25 @@ import ImageUpload from "../../../../../components/ImageUpload"
 
 type FormState = {
   title: string
+  titleHi: string
   location: string
+  locationHi: string
   mapsLink: string
   city: string
+  cityHi: string
   state: string
+  stateHi: string
   pincode: string
+  pincodeHi: string
   description: string
   descriptionHi: string
   deity: string
   establishedYear: string
+  establishedYearHi: string
   templeType: string
+  templeTypes: string[]
   speciality: string
+  specialityHi: string
   image: string
   timings: string
   contact: string
@@ -55,8 +63,8 @@ function slugify(text: string): string {
 export default function EditTemplePage({ params }: { params: Promise<{ id: string }> }) {
   const [id, setId] = useState<string>("")
   const [form, setForm] = useState<FormState>({ 
-    title: "", location: "", mapsLink: "", city: "", state: "", pincode: "", description: "", 
-    descriptionHi: "", deity: "", establishedYear: "", templeType: "", speciality: "",
+    title: "", titleHi: "", location: "", locationHi: "", mapsLink: "", city: "", cityHi: "", state: "", stateHi: "", pincode: "", pincodeHi: "",
+    description: "", descriptionHi: "", deity: "", establishedYear: "", establishedYearHi: "", templeType: "", templeTypes: [], speciality: "", specialityHi: "",
     image: "", timings: "", contact: "", phone: "", email: "", website: "", 
     facebook: "", instagram: "", status: "pending",
     metaTitle: "", metaDescription: "", metaKeywords: "", ogImage: ""
@@ -93,17 +101,27 @@ export default function EditTemplePage({ params }: { params: Promise<{ id: strin
         if (temple) {
           setForm({
             title: temple.title || "",
+            titleHi: temple.titleHi || "",
             location: temple.location || "",
+            locationHi: temple.locationHi || "",
             mapsLink: temple.mapsLink || "",
             city: temple.city || "",
+            cityHi: temple.cityHi || "",
             state: temple.state || "",
+            stateHi: temple.stateHi || "",
             pincode: temple.pincode || "",
+            pincodeHi: temple.pincodeHi || "",
             description: temple.description || "",
             descriptionHi: temple.descriptionHi || "",
             deity: temple.deity || "",
             establishedYear: temple.establishedYear || "",
+            establishedYearHi: temple.establishedYearHi || "",
             templeType: temple.templeType || "",
+            templeTypes: Array.isArray(temple.templeTypes) && temple.templeTypes.length > 0
+              ? temple.templeTypes
+              : (temple.templeType ? [temple.templeType] : []),
             speciality: temple.speciality || "",
+            specialityHi: temple.specialityHi || "",
             image: temple.image || "",
             timings: temple.timings || "",
             contact: temple.contact || "",
@@ -131,6 +149,47 @@ export default function EditTemplePage({ params }: { params: Promise<{ id: strin
     setForm((s) => ({ ...s, [key]: value }))
   }
 
+  function toggleTempleType(type: string) {
+    setForm(s => ({
+      ...s,
+      templeTypes: s.templeTypes.includes(type)
+        ? s.templeTypes.filter(t => t !== type)
+        : [...s.templeTypes, type]
+    }))
+  }
+
+  function autoGenerateSEO() {
+    const title = form.title || ''
+    const deity = form.deity || ''
+    const city = form.city || ''
+    const state = form.state || ''
+    const type = form.templeType || ''
+
+    const rawMetaTitle = deity
+      ? `${title} — ${deity} Temple, ${city} | Sarvdev`
+      : `${title} — ${city}, ${state} | Sarvdev`
+    const metaTitle = rawMetaTitle.slice(0, 60)
+
+    const metaDescription = (
+      deity
+        ? `Visit ${title}, a sacred ${type || 'temple'} dedicated to ${deity} in ${city}, ${state}. Explore timings, photos and more on Sarvdev.`
+        : `Explore ${title} in ${city}, ${state}. Find timings, location, photos and history on Sarvdev.`
+    ).slice(0, 160)
+
+    const titleWords = title.toLowerCase().replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter((w: string) => w.length > 2)
+    const keywordSet = [
+      ...titleWords,
+      ...(deity ? [deity.toLowerCase(), `${deity.toLowerCase()} temple`] : []),
+      ...(city ? [city.toLowerCase()] : []),
+      ...(state ? [state.toLowerCase()] : []),
+      'temple', 'india', 'sarvdev',
+    ]
+    const metaKeywords = [...new Set(keywordSet)].join(', ')
+    const ogImage = form.ogImage || form.image || ''
+
+    setForm(prev => ({ ...prev, metaTitle, metaDescription, metaKeywords, ogImage }))
+  }
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
     setSaving(true)
@@ -145,6 +204,8 @@ export default function EditTemplePage({ params }: { params: Promise<{ id: strin
       
       if (res.ok) {
         showToast('success', 'Temple updated successfully!')
+        // Re-fetch to confirm saved data
+        await fetchTemple(id)
       } else {
         const error = await res.json().catch(() => ({}))
         showToast('error', error?.error || 'Failed to update temple')
@@ -205,6 +266,7 @@ export default function EditTemplePage({ params }: { params: Promise<{ id: strin
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-1">Temple Name*</label>
             <input value={form.title} onChange={(e) => onChange("title", e.target.value)} className="admin-input w-full" />
+            <input value={form.titleHi} onChange={(e) => onChange("titleHi", e.target.value)} className="admin-input w-full mt-2" placeholder="मंदिर का नाम हिन्दी में" />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -217,11 +279,24 @@ export default function EditTemplePage({ params }: { params: Promise<{ id: strin
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1">🏛️ Temple Type</label>
-              <select value={form.templeType} onChange={(e) => onChange("templeType", e.target.value)} className="admin-input w-full">
-                <option value="">Select Type</option>
-                {templeTypes.map(t => <option key={t} value={t}>{t}</option>)}
-              </select>
+              <label className="block text-sm font-medium text-gray-600 mb-2">🏛️ Temple Type <span className="text-gray-400 font-normal">(ek ya zyada select karo)</span></label>
+              <div className="flex flex-wrap gap-2">
+                {templeTypes.map(t => (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => toggleTempleType(t)}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${
+                      form.templeTypes.includes(t)
+                        ? 'bg-primary text-white border-primary shadow-sm'
+                        : 'bg-white text-gray-600 border-gray-200 hover:border-primary/50 hover:text-primary'
+                    }`}
+                  >
+                    {form.templeTypes.includes(t) && <span className="mr-1">✓</span>}{t}
+                  </button>
+                ))}
+              </div>
+              {form.templeTypes.length === 0 && <p className="mt-1 text-xs text-gray-400">Koi type select nahi hai</p>}
             </div>
           </div>
 
@@ -237,13 +312,15 @@ export default function EditTemplePage({ params }: { params: Promise<{ id: strin
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1">📅 Established Year</label>
-              <input type="number" value={form.establishedYear} onChange={(e) => onChange("establishedYear", e.target.value)} className="admin-input w-full" />
+              <label className="block text-sm font-medium text-gray-600 mb-1">📅 Established Year / Era</label>
+              <textarea value={form.establishedYear} onChange={(e) => onChange("establishedYear", e.target.value)} rows={3} className="admin-input w-full" placeholder="e.g. 1970 OR Ancient (Inscriptional evidence dates back to 2nd Century AD...)" />
+              <textarea value={form.establishedYearHi} onChange={(e) => onChange("establishedYearHi", e.target.value)} rows={2} className="admin-input w-full mt-2" placeholder="हिन्दी में स्थापना वर्ष / काल" />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-600 mb-1">🌟 Speciality</label>
               <input value={form.speciality} onChange={(e) => onChange("speciality", e.target.value)} className="admin-input w-full" />
+              <input value={form.specialityHi} onChange={(e) => onChange("specialityHi", e.target.value)} className="admin-input w-full mt-2" placeholder="विशेषता हिन्दी में" />
             </div>
           </div>
         </div>
@@ -255,23 +332,38 @@ export default function EditTemplePage({ params }: { params: Promise<{ id: strin
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-1">Street Address</label>
             <input value={form.location} onChange={(e) => onChange("location", e.target.value)} className="admin-input w-full" />
+            <input value={form.locationHi} onChange={(e) => onChange("locationHi", e.target.value)} className="admin-input w-full mt-2" placeholder="पता हिन्दी में" />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-600 mb-1">🗺️ Google Maps Link</label>
-            <input 
-              value={form.mapsLink} 
-              onChange={(e) => onChange("mapsLink", e.target.value)} 
-              placeholder="https://maps.app.goo.gl/..." 
-              className="admin-input w-full" 
+            <label className="block text-sm font-medium text-gray-600 mb-1">🗺️ Google Maps Embed</label>
+            <textarea
+              value={form.mapsLink}
+              rows={3}
+              onChange={(e) => {
+                const val = e.target.value
+                // Auto-extract src URL if user pastes full <iframe> HTML
+                const srcMatch = val.match(/src="([^"]*google\.com\/maps\/embed[^"]*)"/)
+                onChange("mapsLink", srcMatch ? srcMatch[1] : val)
+              }}
+              placeholder={'Yahan poora <iframe> code paste karo — URL apne aap extract ho jaayega\nYA sirf src URL paste karo: https://www.google.com/maps/embed?pb=...'}
+              className="admin-input w-full font-mono text-xs"
             />
-            <p className="mt-1 text-xs text-gray-500">Paste Google Maps URL for this temple location</p>
+            <p className="mt-1 text-xs text-gray-500">
+              Google Maps → Location → <strong>Share → Embed a map</strong> → poora iframe code copy karke yahan paste karo
+            </p>
+            {form.mapsLink && form.mapsLink.includes('google.com/maps/embed') && (
+              <div className="mt-3 rounded-xl overflow-hidden border border-gray-200" style={{ height: '220px' }}>
+                <iframe src={form.mapsLink} width="100%" height="100%" style={{ border: 0 }} allowFullScreen loading="lazy" referrerPolicy="no-referrer-when-downgrade" />
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-600 mb-1">📍 City*</label>
               <input value={form.city} onChange={(e) => onChange("city", e.target.value)} className="admin-input w-full" />
+              <input value={form.cityHi} onChange={(e) => onChange("cityHi", e.target.value)} className="admin-input w-full mt-2" placeholder="शहर हिन्दी में" />
             </div>
 
             <div>
@@ -280,11 +372,13 @@ export default function EditTemplePage({ params }: { params: Promise<{ id: strin
                 <option value="">Select State</option>
                 {indianStates.map(s => <option key={s} value={s}>{s}</option>)}
               </select>
+              <input value={form.stateHi} onChange={(e) => onChange("stateHi", e.target.value)} className="admin-input w-full mt-2" placeholder="राज्य हिन्दी में" />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-600 mb-1">📮 Pincode</label>
               <input type="number" value={form.pincode} onChange={(e) => onChange("pincode", e.target.value)} className="admin-input w-full" />
+              <input value={form.pincodeHi} onChange={(e) => onChange("pincodeHi", e.target.value)} className="admin-input w-full mt-2" placeholder="पिनकोड हिन्दी में (वैकल्पिक)" />
             </div>
           </div>
         </div>
@@ -349,9 +443,19 @@ export default function EditTemplePage({ params }: { params: Promise<{ id: strin
 
         {/* SEO */}
         <div className="admin-card p-6 space-y-5">
-          <div>
-            <h2 className="admin-section-title">SEO &amp; Social Sharing</h2>
-            <p className="text-xs text-gray-400 mt-0.5">Leave blank to auto-generate from title / description</p>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h2 className="admin-section-title">SEO &amp; Social Sharing</h2>
+              <p className="text-xs text-gray-400 mt-0.5">Leave blank to auto-generate from title / description</p>
+            </div>
+            <button
+              type="button"
+              onClick={autoGenerateSEO}
+              className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-primary/10 text-primary-700 hover:bg-primary/20 transition-colors"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" /></svg>
+              Auto-generate
+            </button>
           </div>
 
           <div>

@@ -3,7 +3,7 @@ import { connectDB } from '@/lib/db'
 import Blog from '@/models/Blog'
 
 const BASE = 'https://sarvdev.com'
-const DEFAULT_IMAGE = 'https://res.cloudinary.com/dc2qg7bwr/image/upload/v1773744527/sarvdev/temples/avno1ltpdyzpzsby1mll.jpg'
+const DEFAULT_IMAGE = 'https://res.cloudinary.com/dc2qg7bwr/image/upload/image_2_xljqwa'
 
 export async function generateMetadata(
   { params }: { params: Promise<{ slug: string }> }

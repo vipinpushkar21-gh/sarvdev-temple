@@ -183,10 +183,9 @@ export default function TemplePage({ params }: Props) {
     )
   }
 
-  // Extract Google Maps link from mapsLink field or location field
-  const mapsLink = temple.mapsLink || 
-    (temple.location?.match(/(https?:\/\/maps\.app\.goo\.gl\/[^\s,]+)/)?.[1]) || null
-  const displayLocation = temple.location?.replace(/(https?:\/\/maps\.app\.goo\.gl\/[^\s,]+)/g, '').trim()
+  // Use mapsLink embed URL stored in DB
+  const mapsLink = (temple.mapsLink && temple.mapsLink.includes('google.com/maps/embed')) ? temple.mapsLink : null
+  const displayLocation = ((language === 'hi' && temple.locationHi) ? temple.locationHi : temple.location)?.trim()
 
   // Collect bento items
   const bentoItems: { icon: string; label: string; value: string; span?: boolean }[] = []
@@ -194,18 +193,26 @@ export default function TemplePage({ params }: Props) {
     ? (language === 'hi' ? (DEITY_HI[temple.deity] || temple.deity) : temple.deity)
     : null
   if (deityValue) bentoItems.push({ icon: '🕉️', label: t('temple.deity'), value: deityValue })
+  const cityVal = (language === 'hi' && temple.cityHi) ? temple.cityHi : temple.city
+  const stateVal = (language === 'hi' && temple.stateHi) ? temple.stateHi : temple.state
+  const pincodeVal = (language === 'hi' && temple.pincodeHi) ? temple.pincodeHi : temple.pincode
   if (temple.city && temple.state && !temple.city.includes('http'))
-    bentoItems.push({ icon: '📍', label: t('temple.location'), value: `${temple.city}, ${temple.state}${temple.pincode ? ` — ${temple.pincode}` : ''}` })
-  const templeTypeValue = temple.templeType
-    ? (language === 'hi' ? (TEMPLE_TYPE_HI[temple.templeType] || temple.templeType) : temple.templeType)
+    bentoItems.push({ icon: '📍', label: t('temple.location'), value: `${cityVal}, ${stateVal}${pincodeVal ? ` — ${pincodeVal}` : ''}` })
+  const allTempleTypes: string[] = (Array.isArray(temple.templeTypes) && temple.templeTypes.length > 0)
+    ? temple.templeTypes
+    : (temple.templeType ? [temple.templeType] : [])
+  const templeTypeValue = allTempleTypes.length > 0
+    ? allTempleTypes.map((tt: string) => language === 'hi' ? (TEMPLE_TYPE_HI[tt] || tt) : tt).join(' · ')
     : null
   if (templeTypeValue) bentoItems.push({ icon: '🏛️', label: t('temple.templeType'), value: templeTypeValue })
-  if (temple.establishedYear) bentoItems.push({ icon: '📅', label: t('temple.established'), value: temple.establishedYear })
+  const establishedVal = (language === 'hi' && temple.establishedYearHi) ? temple.establishedYearHi : temple.establishedYear
+  if (establishedVal) bentoItems.push({ icon: '📅', label: t('temple.established'), value: establishedVal })
   const timingValue = temple.timingSlots?.length > 0
     ? temple.timingSlots.join('\n')
     : temple.timings
   if (timingValue) bentoItems.push({ icon: '⏰', label: t('temple.timings'), value: timingValue })
-  if (temple.speciality) bentoItems.push({ icon: '✨', label: t('temple.speciality'), value: temple.speciality, span: true })
+  const specialityVal = (language === 'hi' && temple.specialityHi) ? temple.specialityHi : temple.speciality
+  if (specialityVal) bentoItems.push({ icon: '✨', label: t('temple.speciality'), value: specialityVal, span: true })
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -260,7 +267,7 @@ export default function TemplePage({ params }: Props) {
                 <li className="text-white/40">/</li>
                 <li><Link href="/temples" className="hover:text-white transition-colors text-white/70">{t('nav.temples')}</Link></li>
                 <li className="text-white/40">/</li>
-                <li className="text-white font-medium truncate max-w-[250px]">{temple.title}</li>
+                <li className="text-white font-medium truncate max-w-[250px]">{(language === 'hi' && temple.titleHi) ? temple.titleHi : temple.title}</li>
               </ol>
             </nav>
 
@@ -285,7 +292,7 @@ export default function TemplePage({ params }: Props) {
 
             {/* Temple title */}
             <h1 className="text-display-lg text-white font-serif reveal-up" style={{ animationDelay: '100ms', textShadow: '0 2px 20px rgba(0,0,0,0.3)' }}>
-              {temple.title}
+              {(language === 'hi' && temple.titleHi) ? temple.titleHi : temple.title}
             </h1>
             {displayLocation && (
               <p className="mt-3 text-body text-white/80 flex items-center gap-2 reveal-up" style={{ animationDelay: '200ms' }}>
@@ -404,11 +411,7 @@ export default function TemplePage({ params }: Props) {
             <div className="bento-card p-6">
               <div className="relative w-full h-80 rounded-xl overflow-hidden">
                 <iframe
-                  src={mapsLink.includes('maps.app.goo.gl') ? 
-                    `https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d3727.604395007016!2d70.4012569!3d20.8879899!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3bfd329f0417cb75%3A0x2f5a510de9857963!2sShree%20Somnath%20Temple!5e0!3m2!1sen!2sin!4v1773769840240!5m2!1sen!2sin` :
-                    mapsLink.includes('google.com/maps/embed') ? mapsLink :
-                    `https://www.google.com/maps/embed?pb=${mapsLink}`
-                  }
+                  src={mapsLink}
                   width="100%"
                   height="100%"
                   style={{ border: 0 }}
@@ -441,7 +444,7 @@ export default function TemplePage({ params }: Props) {
               )}
               {temple.website && (
                 <BentoInfoCard icon="🌐" label={t('temple.website')}>
-                  <a href={temple.website} target="_blank" rel="noopener noreferrer" className="contact-link-2030 mt-1">
+                  <a href={temple.website.startsWith('http') ? temple.website : `https://${temple.website}`} target="_blank" rel="noopener noreferrer" className="contact-link-2030 mt-1">
                     {t('temple.visitWebsite')}
                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />

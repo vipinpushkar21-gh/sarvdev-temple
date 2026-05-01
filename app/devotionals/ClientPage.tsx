@@ -85,6 +85,7 @@ type Devotional = {
   status?: string
   type?: string
   createdAt?: string
+  image?: string
   names?: { sanskrit?: string; mantra?: string; english?: string }[]
 }
 
@@ -341,6 +342,7 @@ export default function ClientPage() {
             descriptionNode={d.description ? highlightText(d.description, debouncedSearch) : undefined}
             hasAudio={!!d.audio}
             isFeatured={opts?.showFeatured}
+            image={d.image}
           />
         </Link>
       </div>

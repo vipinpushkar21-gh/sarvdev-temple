@@ -11,7 +11,6 @@ import PanchangToday from '../components/PanchangToday'
 import DevotionalTeaser from '../components/DevotionalTeaser'
 import { useTranslation } from '../lib/translation'
 import Link from 'next/link'
-import TempleOfTheDay from '../components/TempleOfTheDay'
 import CountUp from '../components/CountUp'
 
 const features = [
@@ -165,9 +164,6 @@ export default function HomePage() {
 
       {/* ─── Sacred Category Showcase ─── */}
       <HomeCategoryShowcase />
-
-      {/* ─── Temple of the Day ─── */}
-      <TempleOfTheDay />
 
       {/* ─── Highlighted Temples Mosaic ─── */}
       <TempleGalleryMosaic />

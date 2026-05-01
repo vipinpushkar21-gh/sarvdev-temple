@@ -1,5 +1,7 @@
 import React from 'react';
 
+const FALLBACK_IMAGE = 'https://res.cloudinary.com/dc2qg7bwr/image/upload/image_2_xljqwa'
+
 export type DevotionalCardProps = {
   title: string;
   titleNode?: React.ReactNode;
@@ -11,6 +13,7 @@ export type DevotionalCardProps = {
   descriptionNode?: React.ReactNode;
   hasAudio?: boolean;
   isFeatured?: boolean;
+  image?: string;
   onClick?: () => void;
 };
 
@@ -29,16 +32,28 @@ export const DevotionalCard: React.FC<DevotionalCardProps> = ({
   descriptionNode,
   hasAudio,
   isFeatured,
+  image,
   onClick,
 }) => (
   <div
-    className="devotional-card-2026 p-5 cursor-pointer group"
+    className="devotional-card-2026 cursor-pointer group overflow-hidden"
     tabIndex={0}
     aria-label={title}
     onClick={onClick}
     role="button"
   >
-    <div className="flex flex-col gap-2.5">
+    {/* Card image */}
+    <div className="relative h-40 overflow-hidden">
+      <img
+        src={image || FALLBACK_IMAGE}
+        alt={title}
+        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+        loading="lazy"
+        onError={(e) => { (e.target as HTMLImageElement).src = FALLBACK_IMAGE }}
+      />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+    </div>
+    <div className="flex flex-col gap-2.5 p-5">
       {/* Title row */}
       <div className="flex items-start justify-between gap-2">
         <h3 className="text-h4 font-serif text-secondary-700 group-hover:text-primary-700 transition-colors duration-200 leading-snug">

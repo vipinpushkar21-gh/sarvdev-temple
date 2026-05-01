@@ -73,7 +73,7 @@ export async function PUT(req: NextRequest) {
   try {
     await connectDB();
     const { id, ...update } = await req.json();
-    const temple = await Temple.findByIdAndUpdate(id, update, { new: true });
+    const temple = await Temple.findByIdAndUpdate(id, { $set: update }, { new: true, strict: false });
     if (!temple) {
       return NextResponse.json({ error: 'Temple not found' }, { status: 404 });
     }

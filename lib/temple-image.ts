@@ -6,7 +6,7 @@
  */
 
 /** Path to the local placeholder SVG served from public/ */
-export const TEMPLE_PLACEHOLDER = '/images/temple-placeholder.svg'
+export const TEMPLE_PLACEHOLDER = 'https://res.cloudinary.com/dc2qg7bwr/image/upload/image_2_xljqwa'
 
 /**
  * Returns the temple's image URL, falling back to the local placeholder

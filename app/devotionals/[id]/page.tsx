@@ -7,6 +7,7 @@ import { TextToSpeech } from '../components/TextToSpeech'
 import { renderBilingualTitle, isDevanagari } from '../utils/bilingual'
 import BookmarkButton from '../../../components/BookmarkButton'
 import AdminEditBar from '../../../components/AdminEditBar'
+import { useTranslation } from '../../../lib/translation'
 
 const DEFAULT_DEVOTIONAL_IMAGE = 'https://res.cloudinary.com/dc2qg7bwr/image/upload/image_2_xljqwa'
 
@@ -14,6 +15,7 @@ type Devotional = {
   _id: string
   title: string
   description?: string
+  descriptionHi?: string
   category?: string
   language?: string
   deity?: string
@@ -30,6 +32,7 @@ type Devotional = {
 export default function DevotionalDetailPage() {
   const params = useParams()
   const router = useRouter()
+  const { language } = useTranslation()
   const [devotional, setDevotional] = useState<Devotional | null>(null)
   const [loading, setLoading] = useState(true)
   const [generatedAudioUrl, setGeneratedAudioUrl] = useState<string | null>(null)
@@ -290,10 +293,14 @@ export default function DevotionalDetailPage() {
             </div>
 
             {/* Description */}
-            {devotional.description && (
+            {(devotional.description || devotional.descriptionHi) && (
               <>
                 <div className="divider my-5" />
-                <p className="text-body text-ink-muted leading-relaxed">{devotional.description}</p>
+                <p className="text-body text-ink-muted leading-relaxed">
+                  {language === 'hi' && devotional.descriptionHi
+                    ? devotional.descriptionHi
+                    : devotional.description}
+                </p>
               </>
             )}
           </div>
