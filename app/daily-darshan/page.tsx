@@ -71,6 +71,141 @@ export default function DailyDarshanPage() {
       <Hero title="Daily Darshan" subtitle="Live and recorded darshan from our temple network" />
       <main className="page-container section-sm">
 
+      {/* Featured Videos */}
+      <div className="mb-8 rounded-2xl overflow-hidden border border-gray-200 bg-surface-sunken">
+        <div className="p-4 md:p-6">
+          <h2 className="text-h4 text-secondary-700 font-serif mb-4">Featured Darshan</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div>
+              <Link href="/temples/vitthal-temple-pandharpur" className="text-body-sm font-medium text-primary-600 hover:text-primary-700 mb-2 inline-block">श्री विठ्ठल दर्शन पंढरपूर</Link>
+              <div className="relative w-full aspect-video rounded-xl overflow-hidden">
+                <iframe
+                  src="https://www.youtube.com/embed/OHF9DiR60G8?si=bMznBYMIPl2ah-z2"
+                  title="YouTube video player"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  referrerPolicy="strict-origin-when-cross-origin"
+                  allowFullScreen
+                  className="w-full h-full"
+                />
+              </div>
+            </div>
+            <div>
+              <Link href="/temples/mahakaleshwar-jyotirlinga-temple-ujjain" className="text-body-sm font-medium text-primary-600 hover:text-primary-700 mb-2 inline-block">Mahakaleshwar Jyotirlinga Temple</Link>
+              <div className="relative w-full aspect-video rounded-xl overflow-hidden">
+                <iframe
+                  src="https://www.youtube.com/embed/AWzzP7_ZsQY?si=NVBVTYVrlaU0IO0z"
+                  title="YouTube video player"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  referrerPolicy="strict-origin-when-cross-origin"
+                  allowFullScreen
+                  className="w-full h-full"
+                />
+              </div>
+            </div>
+            <div>
+              <Link href="/temples/kashi-vishwanath-temple-varanasi" className="text-body-sm font-medium text-primary-600 hover:text-primary-700 mb-2 inline-block">Kashi Vishwanath Temple</Link>
+              <div className="relative w-full aspect-video rounded-xl overflow-hidden">
+                <iframe
+                  src="https://www.youtube.com/embed/djAqGUJEvuc?si=IsFooLfp6JTG6eUC"
+                  title="YouTube video player"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  referrerPolicy="strict-origin-when-cross-origin"
+                  allowFullScreen
+                  className="w-full h-full"
+                />
+              </div>
+            </div>
+            <div>
+              <Link href="/temples/shirdi-sai-baba-temple" className="text-body-sm font-medium text-primary-600 hover:text-primary-700 mb-2 inline-block">Shirdi Sai Baba Darshan</Link>
+              <div className="relative w-full aspect-video rounded-xl overflow-hidden">
+                <iframe
+                  src="https://www.youtube.com/embed/SezNZqScc0Y?si=rcRVoA5KqDVIv12X"
+                  title="YouTube video player"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  referrerPolicy="strict-origin-when-cross-origin"
+                  allowFullScreen
+                  className="w-full h-full"
+                />
+              </div>
+            </div>
+            <div>
+              <Link href="/temples/siddhivinayak-temple-mumbai" className="text-body-sm font-medium text-primary-600 hover:text-primary-700 mb-2 inline-block">Siddhivinayak Live Darshan</Link>
+              <div className="relative w-full aspect-video rounded-xl overflow-hidden">
+                <iframe
+                  src="https://www.youtube.com/embed/q5zTnhvPBHQ?si=FzRvj2LqFIfRJwho"
+                  title="YouTube video player"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  referrerPolicy="strict-origin-when-cross-origin"
+                  allowFullScreen
+                  className="w-full h-full"
+                />
+              </div>
+            </div>
+            <div>
+              <Link href="/temples/kasthbhanjan-hanuman-mandir-salangpur" className="text-body-sm font-medium text-primary-600 hover:text-primary-700 mb-2 inline-block">Shree KasthBhanjandev Hanumanji Mandir Salangpur</Link>
+              <div className="relative w-full aspect-video rounded-xl overflow-hidden">
+                <iframe
+                  src="https://www.youtube.com/embed/SrDCZCWmz1U?si=UNuKd20tiU-pHdYq"
+                  title="YouTube video player"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  referrerPolicy="strict-origin-when-cross-origin"
+                  allowFullScreen
+                  className="w-full h-full"
+                />
+              </div>
+            </div>
+            <div>
+              <Link href="/temples/salasar-balaji-temple" className="text-body-sm font-medium text-primary-600 hover:text-primary-700 mb-2 inline-block">सालासर बालाजी लाइव दर्शन</Link>
+              <div className="relative w-full aspect-video rounded-xl overflow-hidden">
+                <iframe
+                  src="https://www.youtube.com/embed/wIScZcVMgYk?si=qpUcmkzBXo-aZbIP"
+                  title="YouTube video player"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  referrerPolicy="strict-origin-when-cross-origin"
+                  allowFullScreen
+                  className="w-full h-full"
+                />
+              </div>
+            </div>
+            <div>
+              <Link href="/temples/banke-bihari-temple-vrindavan" className="text-body-sm font-medium text-primary-600 hover:text-primary-700 mb-2 inline-block">ठाकुरजी श्री बॉंकेबिहारी जी मंदिर</Link>
+              <div className="relative w-full aspect-video rounded-xl overflow-hidden">
+                <iframe
+                  src="https://www.youtube.com/embed/_TreAwpnfyI?si=b1QJ4yLFggEenZ2e"
+                  title="YouTube video player"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  referrerPolicy="strict-origin-when-cross-origin"
+                  allowFullScreen
+                  className="w-full h-full"
+                />
+              </div>
+            </div>
+            <div>
+              <p className="text-body-sm font-medium text-ink-muted mb-2">Daily Darshan</p>
+              <div className="relative w-full aspect-video rounded-xl overflow-hidden">
+                <iframe
+                  src="https://www.youtube.com/embed/mhazhZtzzoI?si=MDME3LNDE5ns01tg"
+                  title="YouTube video player"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  referrerPolicy="strict-origin-when-cross-origin"
+                  allowFullScreen
+                  className="w-full h-full"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Live Now Banner */}
       {liveItems.length > 0 && (
         <div className="mb-8 rounded-2xl overflow-hidden border border-red-200 bg-gradient-to-r from-red-50 to-rose-50">

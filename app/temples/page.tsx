@@ -32,7 +32,7 @@ const ITEMS_PER_PAGE = 20
 const sacredCategories = [
   "Dwadash Jyotirlinga (12 Jyotirlingas)",
   "Shakti Peeth (51 Shakti Peethas)",
-  "Char Dham",
+  "Bharat ke Char Dham",
   "Chota Char Dham (Uttarakhand)",
   "Panch Kedar",
   "Panch Prayag",

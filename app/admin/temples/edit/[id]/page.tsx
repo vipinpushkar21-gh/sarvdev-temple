@@ -272,10 +272,7 @@ export default function EditTemplePage({ params }: { params: Promise<{ id: strin
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-600 mb-1">🕉️ Deity</label>
-              <select value={form.deity} onChange={(e) => onChange("deity", e.target.value)} className="admin-input w-full">
-                <option value="">Select Deity</option>
-                {deities.map(d => <option key={d} value={d}>{d}</option>)}
-              </select>
+              <input value={form.deity} onChange={(e) => onChange("deity", e.target.value)} className="admin-input w-full" placeholder="e.g. Shiva, Vishnu, Durga..." />
             </div>
 
             <div>
