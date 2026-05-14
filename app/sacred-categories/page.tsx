@@ -27,6 +27,7 @@ type Temple = {
   city?: string
   state?: string
   categories?: string[]
+  sacredCategories?: string[]
   status?: string
 }
 
@@ -53,7 +54,12 @@ export default function SacredCategoriesPage() {
   }, [])
 
   function getTemplesForCategory(categoryName: string) {
-    return temples.filter(t => t.categories?.includes(categoryName))
+    const filtered = temples.filter(t => t.sacredCategories?.includes(categoryName) || t.categories?.includes(categoryName))
+    // Remove duplicates based on temple ID
+    const uniqueTemples = filtered.filter((temple, index, self) => 
+      index === self.findIndex(t => t._id === temple._id)
+    )
+    return uniqueTemples
   }
 
   if (loading) {

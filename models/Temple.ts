@@ -25,6 +25,7 @@ const TempleSchema = new Schema({
   establishedYearHi: { type: String },
   templeType: { type: String },
   templeTypes: { type: [String], default: [] },
+  sacredCategories: { type: [String], default: [] },
   speciality: { type: String },
   specialityHi: { type: String },
   categories: { type: [String], default: [] },

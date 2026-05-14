@@ -23,6 +23,7 @@ type FormState = {
   establishedYearHi: string
   templeType: string
   templeTypes: string[]
+  sacredCategories: string[]
   speciality: string
   specialityHi: string
   image: string
@@ -56,6 +57,23 @@ const deities = [
 
 const templeTypes = ["North Indian", "South Indian", "Modern", "Ancient", "Cave Temple", "Hill Temple"]
 
+const sacredCategories = [
+  "Dwadash Jyotirlinga (12 Jyotirlingas)",
+  "Shakti Peeth (51 Shakti Peethas)",
+  "Char Dham",
+  "Chota Char Dham (Uttarakhand)",
+  "Panch Kedar",
+  "Panch Prayag",
+  "Arupadai Veedu (6 Abodes of Murugan)",
+  "Navagraha Temples",
+  "Divya Desam (108 Vishnu Temples)",
+  "Pancha Bhoota Stalam",
+  "Ashta Vinayak",
+  "Sapta Puri (7 Sacred Cities)",
+  "108 Shiva Temples",
+  "Other Sacred Group"
+]
+
 function slugify(text: string): string {
   return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
 }
@@ -64,7 +82,7 @@ export default function EditTemplePage({ params }: { params: Promise<{ id: strin
   const [id, setId] = useState<string>("")
   const [form, setForm] = useState<FormState>({ 
     title: "", titleHi: "", location: "", locationHi: "", mapsLink: "", city: "", cityHi: "", state: "", stateHi: "", pincode: "", pincodeHi: "",
-    description: "", descriptionHi: "", deity: "", establishedYear: "", establishedYearHi: "", templeType: "", templeTypes: [], speciality: "", specialityHi: "",
+    description: "", descriptionHi: "", deity: "", establishedYear: "", establishedYearHi: "", templeType: "", templeTypes: [], sacredCategories: [], speciality: "", specialityHi: "",
     image: "", timings: "", contact: "", phone: "", email: "", website: "", 
     facebook: "", instagram: "", status: "pending",
     metaTitle: "", metaDescription: "", metaKeywords: "", ogImage: ""
@@ -120,6 +138,9 @@ export default function EditTemplePage({ params }: { params: Promise<{ id: strin
             templeTypes: Array.isArray(temple.templeTypes) && temple.templeTypes.length > 0
               ? temple.templeTypes
               : (temple.templeType ? [temple.templeType] : []),
+            sacredCategories: Array.isArray(temple.sacredCategories) && temple.sacredCategories.length > 0
+              ? temple.sacredCategories
+              : [],
             speciality: temple.speciality || "",
             specialityHi: temple.specialityHi || "",
             image: temple.image || "",
@@ -155,6 +176,15 @@ export default function EditTemplePage({ params }: { params: Promise<{ id: strin
       templeTypes: s.templeTypes.includes(type)
         ? s.templeTypes.filter(t => t !== type)
         : [...s.templeTypes, type]
+    }))
+  }
+
+  function toggleSacredCategory(category: string) {
+    setForm(s => ({
+      ...s,
+      sacredCategories: s.sacredCategories.includes(category)
+        ? s.sacredCategories.filter(c => c !== category)
+        : [...s.sacredCategories, category]
     }))
   }
 
@@ -320,6 +350,30 @@ export default function EditTemplePage({ params }: { params: Promise<{ id: strin
               <input value={form.specialityHi} onChange={(e) => onChange("specialityHi", e.target.value)} className="admin-input w-full mt-2" placeholder="विशेषता हिन्दी में" />
             </div>
           </div>
+        </div>
+
+        {/* Sacred Categories */}
+        <div className="admin-card p-6 space-y-5">
+          <h2 className="admin-section-title">Sacred Categories</h2>
+          <p className="text-xs text-gray-400 mt-0.5">Sacred pilgrimage groups and temple categories (select multiple if applicable)</p>
+          
+          <div className="flex flex-wrap gap-2">
+            {sacredCategories.map(cat => (
+              <button
+                key={cat}
+                type="button"
+                onClick={() => toggleSacredCategory(cat)}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${
+                  form.sacredCategories.includes(cat)
+                    ? 'bg-primary text-white border-primary shadow-sm'
+                    : 'bg-white text-gray-600 border-gray-200 hover:border-primary/50 hover:text-primary'
+                }`}
+              >
+                {form.sacredCategories.includes(cat) && <span className="mr-1">✓</span>}{cat}
+              </button>
+            ))}
+          </div>
+          {form.sacredCategories.length === 0 && <p className="mt-1 text-xs text-gray-400">No sacred categories selected</p>}
         </div>
 
         {/* Location Details */}
