@@ -140,7 +140,9 @@ export default function EditTemplePage({ params }: { params: Promise<{ id: strin
               : (temple.templeType ? [temple.templeType] : []),
             sacredCategories: Array.isArray(temple.sacredCategories) && temple.sacredCategories.length > 0
               ? temple.sacredCategories
-              : [],
+              : (Array.isArray(temple.categories) && temple.categories.length > 0
+                  ? temple.categories
+                  : []),
             speciality: temple.speciality || "",
             specialityHi: temple.specialityHi || "",
             image: temple.image || "",
@@ -224,14 +226,19 @@ export default function EditTemplePage({ params }: { params: Promise<{ id: strin
     e.preventDefault()
     setSaving(true)
     try {
-      const submitData = { id, ...form }
-      
+      // Sync both categories and sacredCategories fields
+      const submitData = {
+        id,
+        ...form,
+        categories: form.sacredCategories, // Keep both fields in sync
+      }
+
       const res = await fetch('/api/temples', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(submitData),
       })
-      
+
       if (res.ok) {
         showToast('success', 'Temple updated successfully!')
         // Re-fetch to confirm saved data

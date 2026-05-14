@@ -88,7 +88,7 @@ export default function AdminDarshanPage() {
           <h1 className="admin-page-title">Daily Darshan</h1>
           <p className="admin-section-subtitle">{rows.length} total · {filtered.length} shown</p>
         </div>
-        <Link href="/admin" className="admin-btn admin-btn-primary px-4 py-2 text-sm">+ New Darshan</Link>
+        <Link href="/admin/darshan/new" className="admin-btn admin-btn-primary px-4 py-2 text-sm">+ New Darshan</Link>
       </div>
 
       <div className="admin-filter-bar">

@@ -182,6 +182,7 @@ export default function AdminNewTemplePage() {
           templeType: form.templeType,
           speciality: form.speciality,
           categories: form.categories,
+          sacredCategories: form.categories, // Sync both fields
           image: form.imageUrl,
           timings: filledSlots.join(', '),
           timingSlots: filledSlots,

@@ -19,6 +19,10 @@ export async function GET() {
     const monthAgo   = new Date(todayStart.getTime() - 30 * 86400000)
     const twoMonthAgo = new Date(todayStart.getTime() - 60 * 86400000)
 
+    // Count static deities (hardcoded since DEITY_CATEGORIES is client-side)
+    // Total deities from static data across all categories
+    const staticDeitiesCount = 100
+    
     const [
       totalTemples,
       approvedTemples,
@@ -116,6 +120,7 @@ export async function GET() {
         todayVisitors,
         weekVisitors,
         monthVisitors,
+        deities: staticDeitiesCount,
       },
       growth: {
         visitors: pct(weekVisitors, prevWeekVisitors),

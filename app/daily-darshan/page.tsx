@@ -12,8 +12,10 @@ type Darshan = {
   title: string
   description?: string
   time?: string
+  date?: string
   video?: string
   youtubeId?: string
+  media?: string
   isLive?: boolean
   temple?: string
   status?: string
@@ -70,6 +72,23 @@ export default function DailyDarshanPage() {
     <>
       <Hero title="Daily Darshan" subtitle="Live and recorded darshan from our temple network" />
       <main className="page-container section-sm">
+
+      {/* Ad Banner */}
+      <div className="mb-8 rounded-2xl overflow-hidden border border-gray-200 bg-white">
+        <div className="p-4 md:p-6">
+          <div className="relative w-full max-w-3xl mx-auto aspect-video rounded-xl overflow-hidden">
+            <iframe
+              src="https://www.youtube.com/embed/Publ3XPOCpQ?si=QhKZyRB9x50931Pc"
+              title="YouTube video player"
+              frameBorder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              referrerPolicy="strict-origin-when-cross-origin"
+              allowFullScreen
+              className="w-full h-full"
+            />
+          </div>
+        </div>
+      </div>
 
       {/* Featured Videos */}
       <div className="mb-8 rounded-2xl overflow-hidden border border-gray-200 bg-surface-sunken">
@@ -253,8 +272,20 @@ export default function DailyDarshanPage() {
                   />
                 </div>
                 <div className="relative w-full h-48 bg-surface-sunken overflow-hidden">
-                  {d.video ? (
+                  {d.youtubeId ? (
+                    <iframe
+                      src={`https://www.youtube.com/embed/${d.youtubeId}`}
+                      title={d.title}
+                      frameBorder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      referrerPolicy="strict-origin-when-cross-origin"
+                      allowFullScreen
+                      className="w-full h-48 object-cover"
+                    />
+                  ) : d.video ? (
                     <video controls src={d.video} className="w-full h-48 object-cover" />
+                  ) : d.media ? (
+                    <video controls src={d.media} className="w-full h-48 object-cover" />
                   ) : (
                     <img
                       src={DEFAULT_IMAGE}
@@ -262,6 +293,12 @@ export default function DailyDarshanPage() {
                       className="w-full h-48 object-cover"
                       onError={e => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE }}
                     />
+                  )}
+                  {d.isLive && (
+                    <div className="absolute top-2 left-2 flex items-center gap-1.5 px-2.5 py-1 bg-red-600 text-white text-xs font-bold rounded-full">
+                      <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                      LIVE
+                    </div>
                   )}
                 </div>
 
@@ -280,6 +317,12 @@ export default function DailyDarshanPage() {
                       <span className="inline-flex items-center gap-1 text-caption text-ink-muted bg-surface-sunken px-2.5 py-1 rounded-full">
                         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" /></svg>
                         {d.temple}
+                      </span>
+                    )}
+                    {d.date && (
+                      <span className="inline-flex items-center gap-1 text-caption text-ink-muted bg-surface-sunken px-2.5 py-1 rounded-full">
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" /></svg>
+                        {d.date}
                       </span>
                     )}
                   </div>
