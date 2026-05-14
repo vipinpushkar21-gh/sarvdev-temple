@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import OpenAI from 'openai'
 
 const SYSTEM_PROMPT = `You are Guru, a wise and compassionate spiritual guide on Sarvdev — a Hindu temple directory and devotional hub.
 
@@ -35,77 +36,60 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Message required' }, { status: 400 })
     }
 
-    if (!process.env.GEMINI_API_KEY) {
+    const apiKey = process.env.OPENAI_API_KEY
+    if (!apiKey) {
       return NextResponse.json({
         reply:
-          'Pranam 🙏 Abhi AI Guru configure nahi hua hai. Kripya admin se GEMINI_API_KEY set karwayein .env.local mein aistudio.google.com se (free hai).',
+          'Pranam 🙏 Abhi AI Guru configure nahi hua hai. Kripya admin se OPENAI_API_KEY set karwayein .env.local mein.',
       })
     }
 
-    // Gemini requires conversation to start with 'user' role — drop leading bot messages
+    const openai = new OpenAI({ apiKey })
+
+    // Convert history to OpenAI format (drop initial bot greeting)
     const validHistory = (history as HistoryItem[]).filter(
       (h, i, arr) => !(h.role === 'bot' && arr.slice(0, i).every(x => x.role === 'bot'))
     )
-    // Drop first item if it's still a bot message (initial greeting)
     const trimmedHistory = validHistory[0]?.role === 'bot' ? validHistory.slice(1) : validHistory
 
-    const contents = [
+    const messages: Array<{ role: 'user' | 'assistant'; content: string }> = [
+      { role: 'system', content: SYSTEM_PROMPT },
       ...trimmedHistory.map((h) => ({
-        role: h.role === 'user' ? 'user' : 'model',
-        parts: [{ text: h.text }],
+        role: h.role === 'user' ? 'user' : 'assistant',
+        content: h.text,
       })),
-      { role: 'user', parts: [{ text: message }] },
+      { role: 'user', content: message },
     ]
 
-    const apiKey = process.env.GEMINI_API_KEY
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`
-
-    const res = await fetch(geminiUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
-        contents,
-        generationConfig: {
-          maxOutputTokens: 600,
-          temperature: 0.7,
-          topP: 0.9,
-        },
-      }),
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages,
+      max_tokens: 600,
+      temperature: 0.7,
+      top_p: 0.9,
     })
 
-    const data = await res.json()
-
-    if (!res.ok) {
-      const errMsg = data?.error?.message || data?.error?.status || JSON.stringify(data)
-      console.error(`Gemini API error [${res.status}]:`, errMsg)
-      if (res.status === 429) {
-        const isQuota = errMsg?.toLowerCase().includes('quota') || errMsg?.toLowerCase().includes('exhausted')
-        if (isQuota) {
-          return NextResponse.json({ reply: 'Is API key ka daily quota khatam ho gaya hai. Naya key lagayein ya kal try karein. 🙏' })
-        }
-        return NextResponse.json({ reply: 'Bahut zyada requests aayi hain. 1-2 minute baad dobara try karein. 🙏' })
-      }
-      if (res.status === 400) {
-        return NextResponse.json({ reply: `Request error: ${errMsg}` })
-      }
-      if (res.status === 403) {
-        return NextResponse.json({ reply: 'API key valid nahi hai ya Generative Language API enable nahi hai Google Cloud Console mein. 🙏' })
-      }
-      return NextResponse.json({ reply: `Gemini error ${res.status}: ${errMsg}` })
-    }
-
-    const candidate = data.candidates?.[0]
-    const reply = candidate?.content?.parts?.[0]?.text
+    const reply = completion.choices[0]?.message?.content
 
     if (!reply) {
-      console.error('Gemini empty response:', JSON.stringify(data))
+      console.error('OpenAI empty response:', JSON.stringify(completion))
       return NextResponse.json({ reply: 'Kripya dobara poochein. 🙏' })
     }
 
     return NextResponse.json({ reply })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Chatbot error:', error)
-    return NextResponse.json({ error: 'Internal error' }, { status: 500 })
+    
+    if (error?.status === 401) {
+      return NextResponse.json({ reply: 'API key valid nahi hai. Kripya OPENAI_API_KEY check karein. 🙏' })
+    }
+    if (error?.status === 429) {
+      return NextResponse.json({ reply: 'API quota limit cross ho gaya hai. Thodi der baad try karein. 🙏' })
+    }
+    if (error?.status === 500) {
+      return NextResponse.json({ reply: 'OpenAI server issue hai. Kripya dobara try karein. 🙏' })
+    }
+    
+    return NextResponse.json({ reply: 'Kuch error aaya. Kripya dobara try karein. 🙏' })
   }
 }
