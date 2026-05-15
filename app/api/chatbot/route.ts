@@ -52,9 +52,9 @@ export async function POST(req: NextRequest) {
     )
     const trimmedHistory = validHistory[0]?.role === 'bot' ? validHistory.slice(1) : validHistory
 
-    const messages: Array<{ role: 'user' | 'assistant'; content: string }> = [
+    const messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
       { role: 'system', content: SYSTEM_PROMPT },
-      ...trimmedHistory.map((h) => ({
+      ...trimmedHistory.map((h): { role: 'user' | 'assistant'; content: string } => ({
         role: h.role === 'user' ? 'user' : 'assistant',
         content: h.text,
       })),

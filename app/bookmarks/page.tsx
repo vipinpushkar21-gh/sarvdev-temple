@@ -7,7 +7,7 @@ import Image from 'next/image'
 import { useState } from 'react'
 import { TEMPLE_PLACEHOLDER } from '../../lib/temple-image'
 
-const TYPE_CONFIG: Record<BookmarkItem['type'], {
+const TYPE_CONFIG: Record<'temple' | 'devotional' | 'darshan', {
   labelEn: string
   labelHi: string
   sectionEn: string
@@ -39,7 +39,7 @@ const TYPE_CONFIG: Record<BookmarkItem['type'], {
   },
 }
 
-const TYPES: BookmarkItem['type'][] = ['temple', 'devotional', 'darshan']
+const TYPES: Array<'temple' | 'devotional' | 'darshan'> = ['temple', 'devotional', 'darshan']
 
 export default function BookmarksPage() {
   const { bookmarks, remove, clear } = useFavourites()

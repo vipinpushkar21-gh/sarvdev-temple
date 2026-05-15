@@ -58,32 +58,29 @@ type Devotional = {
   artist?: string
   status?: string
   names?: { sanskrit?: string; mantra?: string; english?: string }[]
-  image?: string
 }
 
-const FALLBACK_IMAGE = 'https://res.cloudinary.com/dc2qg7bwr/image/upload/image_2_xljqwa'
-
-// Category mapping with gradient fallbacks (used when no image is uploaded)
-const CATEGORY_MAP: { [key: string]: { label: string; hindi: string; gradient: string; symbol: string } } = {
-  'mantra':    { label: 'Mantra',       hindi: 'मंत्र',       gradient: 'linear-gradient(135deg,#7c3aed,#4f46e5)', symbol: 'ॐ' },
-  'bhajan':    { label: 'Bhajan',       hindi: 'भजन',         gradient: 'linear-gradient(135deg,#db2777,#9333ea)', symbol: '♪' },
-  'stotra':    { label: 'Stotra/Suktam',hindi: 'स्तोत्र/सूक्त',gradient: 'linear-gradient(135deg,#b45309,#92400e)', symbol: '🕉' },
-  'aarti':     { label: 'Aarti',        hindi: 'आरती',        gradient: 'linear-gradient(135deg,#ea580c,#dc2626)', symbol: '🪔' },
-  'chalisa':   { label: 'Chalisa',      hindi: 'चालीसा',      gradient: 'linear-gradient(135deg,#0369a1,#1d4ed8)', symbol: '📖' },
-  'stuti':     { label: 'Stuti',        hindi: 'स्तुति',      gradient: 'linear-gradient(135deg,#be185d,#7c3aed)', symbol: '🙏' },
-  'shloka':    { label: 'Shloka',       hindi: 'श्लोक',       gradient: 'linear-gradient(135deg,#065f46,#0369a1)', symbol: 'ॐ' },
-  'ek-shloki': { label: 'Ek Shloki',   hindi: 'एक श्लोकी',   gradient: 'linear-gradient(135deg,#065f46,#0369a1)', symbol: 'ॐ' },
-  'ashtaka':   { label: 'Ashtaka',      hindi: 'अष्टक',       gradient: 'linear-gradient(135deg,#92400e,#b45309)', symbol: '८' },
-  'path':      { label: 'Path',         hindi: 'पाठ',          gradient: 'linear-gradient(135deg,#1e40af,#065f46)', symbol: '📜' },
-  'rashi':     { label: 'Rashi',        hindi: 'राशि',         gradient: 'linear-gradient(135deg,#0f172a,#1e3a5f)', symbol: '♈' },
-  'vastu':     { label: 'Vastu',        hindi: 'वास्तु',       gradient: 'linear-gradient(135deg,#166534,#14532d)', symbol: '🏠' },
-  'durga':     { label: 'Durga',        hindi: 'दुर्गा',       gradient: 'linear-gradient(135deg,#9f1239,#7c3aed)', symbol: '🔱' },
-  'kuber':     { label: 'Kuber',        hindi: 'कुबेर',        gradient: 'linear-gradient(135deg,#854d0e,#713f12)', symbol: '💰' },
-  'namavali':  { label: 'Namavali',     hindi: 'नामावली',      gradient: 'linear-gradient(135deg,#7c2d12,#92400e)', symbol: '🌸' },
-  'kavacham':  { label: 'Kavacham',     hindi: 'कवचम्',        gradient: 'linear-gradient(135deg,#1e3a5f,#0f172a)', symbol: '🛡' },
-  'prarthana': { label: 'Prarthana',    hindi: 'प्रार्थना',    gradient: 'linear-gradient(135deg,#831843,#9f1239)', symbol: '🙏' },
-  'vrat-katha':{ label: 'Vrat Katha',   hindi: 'व्रत कथा',     gradient: 'linear-gradient(135deg,#78350f,#92400e)', symbol: '📿' },
-  'other':     { label: 'Other',        hindi: 'अन्य',          gradient: 'linear-gradient(135deg,#374151,#1f2937)', symbol: 'ॐ' },
+// Category mapping
+const CATEGORY_MAP: { [key: string]: { label: string; hindi: string } } = {
+  'mantra': { label: 'Mantra', hindi: 'मंत्र' },
+  'bhajan': { label: 'Bhajan', hindi: 'भजन' },
+  'stotra': { label: 'Stotra/Suktam', hindi: 'स्तोत्र/सूक्त' },
+  'aarti': { label: 'Aarti', hindi: 'आरती' },
+  'chalisa': { label: 'Chalisa', hindi: 'चालीसा' },
+  'stuti': { label: 'Stuti', hindi: 'स्तुति' },
+  'shloka': { label: 'Shloka', hindi: 'श्लोक' },
+  'ek-shloki': { label: 'Ek Shloki', hindi: 'एक श्लोकी' },
+  'ashtaka': { label: 'Ashtaka', hindi: 'अष्टक' },
+  'path': { label: 'Path', hindi: 'पाठ' },
+  'rashi': { label: 'Rashi', hindi: 'राशि' },
+  'vastu': { label: 'Vastu', hindi: 'वास्तु' },
+  'durga': { label: 'Durga', hindi: 'दुर्गा' },
+  'kuber': { label: 'Kuber', hindi: 'कुबेर' },
+  'namavali': { label: 'Namavali', hindi: 'नामावली' },
+  'kavacham': { label: 'Kavacham', hindi: 'कवचम्' },
+  'prarthana': { label: 'Prarthana', hindi: 'प्रार्थना' },
+  'vrat-katha': { label: 'Vrat Katha', hindi: 'व्रत कथा' },
+  'other': { label: 'Other', hindi: 'अन्य' }
 }
 
 export default function CategoryPage() {
@@ -317,65 +314,46 @@ export default function CategoryPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredByDeity.map((d: Devotional) => {
-              const categoryKey = d.category?.toLowerCase().replace(/\s+/g, '-') || 'other'
-              const catInfo = CATEGORY_MAP[categoryKey] || CATEGORY_MAP['other']
+            {filteredByDeity.map((d: Devotional) => (
+              <Link 
+                key={d._id}
+                href={`/devotionals/${createSlug(d.title || '')}`}
+                className="card-interactive p-5 flex flex-col"
+              >
+                <div className="flex items-start justify-between mb-3">
+                  <h3 className="text-h4 font-serif text-secondary-700 leading-tight pr-2">
+                    {(function(){
+                      const bt = renderBilingualTitle(d.title || '');
+                      return (
+                        <span>
+                          {bt.primary}
+                          {bt.secondary && <span> ({bt.secondary})</span>}
+                        </span>
+                      );
+                    })()}
+                  </h3>
+                  <span className="badge badge-primary shrink-0">
+                    {d.category}
+                  </span>
+                </div>
 
-              return (
-                <Link 
-                  key={d._id}
-                  href={`/devotionals/${createSlug(d.title || '')}`}
-                  className="card-interactive overflow-hidden flex flex-col"
-                >
-                  <div className="relative h-40 overflow-hidden">
-                    <img
-                        src={d.image || FALLBACK_IMAGE}
-                        alt={d.title || ''}
-                        className="w-full h-full object-cover"
-                        loading="lazy"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement
-                          target.src = FALLBACK_IMAGE
-                        }}
-                      />
-                  </div>
-                  <div className="p-5 flex flex-col flex-grow">
-                    <div className="flex items-start justify-between mb-3">
-                      <h3 className="text-h4 font-serif text-secondary-700 leading-tight pr-2">
-                        {(function(){
-                          const bt = renderBilingualTitle(d.title || '');
-                          return (
-                            <span>
-                              {bt.primary}
-                              {bt.secondary && <span> ({bt.secondary})</span>}
-                            </span>
-                          );
-                        })()}
-                      </h3>
-                      <span className="badge badge-primary shrink-0">
-                        {d.category}
-                      </span>
-                    </div>
+                {d.deity && (
+                  <p className="text-body-sm text-primary-600 font-medium mb-2">{d.deity}</p>
+                )}
 
-                    {d.deity && (
-                      <p className="text-body-sm text-primary-600 font-medium mb-2">{d.deity}</p>
-                    )}
+                {d.description && (
+                  <p className="mt-2 text-body-sm text-ink-muted flex-grow line-clamp-3">
+                    {d.description}
+                  </p>
+                )}
 
-                    {d.description && (
-                      <p className="mt-2 text-body-sm text-ink-muted flex-grow line-clamp-3">
-                        {d.description}
-                      </p>
-                    )}
-
-                    <div className="mt-3 flex items-center gap-3 text-caption text-ink-faint flex-wrap">
-                      {d.artist && <span>{d.artist}</span>}
-                      {d.duration && <span>{d.duration}</span>}
-                      {d.language && <span>{d.language}</span>}
-                    </div>
-                  </div>
-                </Link>
-              )
-            })}
+                <div className="mt-3 flex items-center gap-3 text-caption text-ink-faint flex-wrap">
+                  {d.artist && <span>{d.artist}</span>}
+                  {d.duration && <span>{d.duration}</span>}
+                  {d.language && <span>{d.language}</span>}
+                </div>
+              </Link>
+            ))}
           </div>
         )}
       </section>

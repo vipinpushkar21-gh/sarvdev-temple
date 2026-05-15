@@ -47,15 +47,15 @@ module.exports = {
           700: '#997E00',
         },
         surface: {
-          DEFAULT: '#FFFFFF',  // White — page bg
+          DEFAULT: '#FAF9F6',  // Warm paper white — page bg
           raised:  '#FFFFFF',  // Cards / elevated surfaces
-          sunken:  '#F7F7F7',  // Inset panels, sidebar bg
-          border:  '#E8E8E8',  // Default border
+          sunken:  '#F3F1EC',  // Inset panels, sidebar bg
+          border:  '#E5E0D5',  // Default border
         },
         ink: {
-          DEFAULT: '#1a1a1a',  // Body text
-          muted:   '#6B6B6B',  // Secondary / caption text
-          faint:   '#A0A0A0',  // Placeholder, disabled
+          DEFAULT: '#2C2C2C',  // Body text
+          muted:   '#6B6560',  // Secondary / caption text
+          faint:   '#A09A92',  // Placeholder, disabled
         },
         semantic: {
           success: '#2E7D32',

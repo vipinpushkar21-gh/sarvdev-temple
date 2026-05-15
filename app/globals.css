@@ -14,10 +14,10 @@
   --color-primary:   #FF9933;
   --color-secondary: #5C4033;
   --color-accent:    #FFD700;
-  --color-surface:   #FFFFFF;
-  --color-ink:       #1a1a1a;
-  --color-ink-muted: #6B6B6B;
-  --color-border:    #E8E8E8;
+  --color-surface:   #FAF9F6;
+  --color-ink:       #2C2C2C;
+  --color-ink-muted: #6B6560;
+  --color-border:    #E5E0D5;
   --radius-card:     0.75rem;
   --radius-btn:      0.5rem;
 
@@ -30,102 +30,20 @@
   --transition-smooth: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* ─── Dark Mode CSS Variables ─── */
-[data-theme="dark"] {
-  --color-primary:   #FF9933;
-  --color-secondary: #D4736A;
-  --color-accent:    #D4AF37;
-  --color-surface:   #1A1210;
-  --color-ink:       #F0EAE0;
-  --color-ink-muted: #A89880;
-  --color-border:    #3A2A22;
-  --glass-bg: rgba(26, 18, 16, 0.85);
-  --glass-border: rgba(255, 153, 51, 0.15);
-  --shadow-glow: 0 0 40px rgba(255, 153, 51, 0.18);
-}
-
-/* ─── Dark Mode Scroll Reveal ─── */
-.reveal {
-  opacity: 0;
-  transform: translateY(28px);
-  transition: opacity 0.6s ease, transform 0.6s ease;
-}
-.reveal.revealed {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-/* ─── Page transition ─── */
-@keyframes fadeSlideIn {
-  from { opacity: 0; transform: translateY(12px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-.page-enter {
-  animation: fadeSlideIn 0.35s ease both;
-}
-
-/* ─── CountUp ─── */
-@keyframes countPulse {
-  0%   { transform: scale(1); }
-  50%  { transform: scale(1.06); }
-  100% { transform: scale(1); }
-}
-.count-pulse {
-  animation: countPulse 0.3s ease;
-}
-
-/* ─── Ken Burns (TempleOfTheDay) ─── */
-@keyframes kenBurns {
-  0%   { transform: scale(1)    translate(0, 0); }
-  50%  { transform: scale(1.06) translate(-1%, -0.5%); }
-  100% { transform: scale(1)    translate(0, 0); }
-}
-.ken-burns {
-  animation: kenBurns 12s ease-in-out infinite;
-}
-
-/* ─── Floating Om ─── */
-@keyframes floatUp {
-  0%   { opacity: 0; transform: translateY(0) scale(0.7) rotate(-10deg); }
-  20%  { opacity: 0.35; }
-  80%  { opacity: 0.2; }
-  100% { opacity: 0; transform: translateY(-120px) scale(1.1) rotate(10deg); }
-}
-.om-float {
-  position: fixed;
-  pointer-events: none;
-  z-index: 0;
-  font-family: 'Noto Serif Devanagari', serif;
-  color: var(--color-primary);
-  animation: floatUp linear infinite;
-  user-select: none;
-}
-
 /* ─── Base Layer ─── */
 @layer base {
   html {
     scroll-behavior: smooth;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    transition: background-color 0.3s ease, color 0.3s ease;
   }
 
   body {
-    @apply font-sans text-body text-ink;
-    background-color: #FFFFFF;
+    @apply font-sans text-body text-ink bg-surface;
     margin: 0;
     padding: 0;
     overflow-x: hidden;
   }
-
-  [data-theme="dark"] body {
-    background-color: #0a0a0a;
-  }
-
-  [data-theme="dark"] h1 { color: #F0EAE0; }
-  [data-theme="dark"] h2 { color: #E0D5C5; }
-  [data-theme="dark"] h3 { color: #D4C9B5; }
-  [data-theme="dark"] h4 { color: #C8BCA5; }
 
   h1 { @apply text-h1 text-secondary-800 font-serif; }
   h2 { @apply text-h2 text-secondary-700 font-serif; }
@@ -309,10 +227,10 @@
 
   /* ─── Section Title ─── */
   .section-title {
-    @apply text-h1 font-serif text-gray-900;
+    @apply text-h1 font-serif text-secondary-800 text-center;
   }
   .section-subtitle {
-    @apply text-body text-ink-muted mt-2 max-w-2xl;
+    @apply text-body text-ink-muted text-center mt-2 max-w-xl mx-auto;
   }
 
   /* ─── Glass Header ─── */
@@ -825,7 +743,6 @@
     content: '';
     @apply absolute inset-0 opacity-0 transition-opacity duration-500;
     background: linear-gradient(135deg, rgba(255,153,51,0.05), rgba(255,215,0,0.03), transparent);
-    pointer-events: none;
   }
   .gradient-shimmer:hover::after {
     @apply opacity-100;

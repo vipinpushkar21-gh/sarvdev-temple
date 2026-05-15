@@ -7,9 +7,9 @@ export type BookmarkItem = {
   type: 'temple' | 'devotional' | 'darshan'
   title: string
   slug: string
-  subtitle?: string
   image?: string
   addedAt: number
+  subtitle?: string
 }
 
 type FavouritesContextType = {
