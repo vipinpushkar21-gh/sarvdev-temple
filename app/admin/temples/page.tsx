@@ -114,6 +114,24 @@ export default function AdminTemplesPage() {
     if (res.ok) setRows(r => r.filter(x => x._id !== id))
   }
 
+  const exportCSV = () => {
+    const header = ['Title', 'Location', 'State', 'Deity', 'Type', 'Status', 'Verified']
+    const csvRows = [
+      header.join(','),
+      ...filtered.map(r =>
+        [r.title, r.location || '', r.state || '', r.deity || '', r.type || '', r.status || 'approved', r.verified || 'not-verified']
+          .map(v => `"${String(v).replace(/"/g, '""')}"`)
+          .join(',')
+      ),
+    ]
+    const blob = new Blob([csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' })
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(blob)
+    a.download = `sarvdev-temples-${new Date().toISOString().slice(0, 10)}.csv`
+    a.click()
+    URL.revokeObjectURL(a.href)
+  }
+
   if (loading) {
     return (
       <div className="space-y-5">
@@ -132,7 +150,10 @@ export default function AdminTemplesPage() {
           <h1 className="admin-page-title">Temples</h1>
           <p className="admin-section-subtitle">{rows.length} total · {filtered.length} shown</p>
         </div>
-        <Link href="/admin/temples/new" className="admin-btn admin-btn-primary px-4 py-2 text-sm">+ New Temple</Link>
+        <div className="flex gap-2">
+          <button onClick={exportCSV} className="admin-btn admin-btn-ghost px-4 py-2 text-sm">⬇ CSV</button>
+          <Link href="/admin/temples/new" className="admin-btn admin-btn-primary px-4 py-2 text-sm">+ New Temple</Link>
+        </div>
       </div>
 
       {/* Filters */}

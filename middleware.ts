@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 // Lightweight HMAC verification for Edge runtime (mirrors lib/auth.ts logic)
-const TOKEN_SECRET = process.env.AUTH_TOKEN || 'sarvdev_secure_token_2025'
+const TOKEN_SECRET = process.env.AUTH_TOKEN ?? ''
 
 /* ── Web Crypto HMAC-SHA256 (Edge Runtime compatible) ── */
 async function getTokenPayload(token: string): Promise<Record<string, any> | null> {

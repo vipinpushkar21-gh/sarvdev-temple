@@ -14,13 +14,33 @@ function isAdmin(req: NextRequest): boolean {
 let _cache: { data: any[]; ts: number } | null = null;
 const CACHE_TTL = 60_000;
 
-// GET all blogs
-export async function GET() {
+// GET blogs — supports optional pagination via ?page=&limit=
+export async function GET(req: NextRequest) {
   try {
+    const { searchParams } = new URL(req.url)
+    const pageParam = searchParams.get('page')
+    const limitParam = searchParams.get('limit')
+
+    await connectDB()
+
+    // ─── Paginated mode ───
+    if (pageParam) {
+      const page = Math.max(1, parseInt(pageParam, 10) || 1)
+      const limit = Math.min(100, Math.max(1, parseInt(limitParam || '20', 10)))
+      const skip = (page - 1) * limit
+
+      const [items, total] = await Promise.all([
+        Blog.find({}, { body: 0, __v: 0 }).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+        Blog.countDocuments(),
+      ])
+
+      return NextResponse.json({ items, total, page, pages: Math.ceil(total / limit), limit })
+    }
+
+    // ─── Legacy mode ───
     if (_cache && Date.now() - _cache.ts < CACHE_TTL) {
       return NextResponse.json(_cache.data);
     }
-    await connectDB();
     const blogs = await Blog.find({}, { body: 0, __v: 0 }).sort({ createdAt: -1 }).lean();
     _cache = { data: blogs, ts: Date.now() };
     return NextResponse.json(blogs);

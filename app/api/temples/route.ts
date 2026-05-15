@@ -15,19 +15,59 @@ function isAdmin(req: NextRequest): boolean {
 let _cache: { data: any[]; ts: number } | null = null;
 const CACHE_TTL = 60_000;
 
-// GET all temples
-export async function GET() {
+// GET temples — supports optional pagination via ?page=&limit=&search=
+export async function GET(req: NextRequest) {
   try {
-    if (_cache && Date.now() - _cache.ts < CACHE_TTL) {
-      return NextResponse.json(_cache.data);
+    const { searchParams } = new URL(req.url)
+    const pageParam = searchParams.get('page')
+    const limitParam = searchParams.get('limit')
+    const search = searchParams.get('search') || searchParams.get('q') || ''
+    const category = searchParams.get('category') || ''
+
+    await connectDB()
+
+    // Build filter
+    const filter: Record<string, any> = {}
+    if (category) filter.categories = category
+    if (search) filter.$text = { $search: search }
+
+    // ─── Paginated mode (when page param is present) ───
+    if (pageParam) {
+      const page = Math.max(1, parseInt(pageParam, 10) || 1)
+      const limit = Math.min(100, Math.max(1, parseInt(limitParam || '20', 10)))
+      const skip = (page - 1) * limit
+
+      const [items, total] = await Promise.all([
+        Temple.find(filter, { __v: 0 })
+          .sort(search ? { score: { $meta: 'textScore' }, createdAt: -1 } : { createdAt: -1 })
+          .skip(skip)
+          .limit(limit)
+          .lean(),
+        Temple.countDocuments(filter),
+      ])
+
+      return NextResponse.json({
+        items,
+        total,
+        page,
+        pages: Math.ceil(total / limit),
+        limit,
+      })
     }
-    await connectDB();
-    const temples = await Temple.find({}, { __v: 0 }).sort({ createdAt: -1 }).lean();
-    _cache = { data: temples, ts: Date.now() };
-    return NextResponse.json(temples);
+
+    // ─── Legacy mode (no pagination — returns all, used by TempleDataProvider) ───
+    if (_cache && !search && !category && Date.now() - _cache.ts < CACHE_TTL) {
+      return NextResponse.json(_cache.data)
+    }
+
+    const temples = await Temple.find(filter, { __v: 0 }).sort({ createdAt: -1 }).lean()
+    if (!search && !category) {
+      _cache = { data: temples, ts: Date.now() }
+    }
+    return NextResponse.json(temples)
   } catch (error) {
-    console.error('Temple API Error:', error);
-    return NextResponse.json({ error: 'Failed to fetch temples' }, { status: 500 });
+    console.error('Temple API Error:', error)
+    return NextResponse.json({ error: 'Failed to fetch temples' }, { status: 500 })
   }
 }
 
@@ -72,8 +112,17 @@ export async function PUT(req: NextRequest) {
   }
   try {
     await connectDB();
-    const { id, ...update } = await req.json();
-    const temple = await Temple.findByIdAndUpdate(id, { $set: update }, { new: true, strict: false });
+    const { id, ...rawUpdate } = await req.json();
+    const ALLOWED_FIELDS = [
+      'title','description','descriptionHi','image','images','location',
+      'latitude','longitude','city','state','country','pincode','deity',
+      'establishedYear','templeType','speciality','categories','timings',
+      'contact','phone','email','website','facebook','instagram','status','verified'
+    ] as const;
+    const update = Object.fromEntries(
+      Object.entries(rawUpdate).filter(([k]) => (ALLOWED_FIELDS as readonly string[]).includes(k))
+    );
+    const temple = await Temple.findByIdAndUpdate(id, { $set: update }, { new: true });
     if (!temple) {
       return NextResponse.json({ error: 'Temple not found' }, { status: 404 });
     }

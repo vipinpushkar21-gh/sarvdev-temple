@@ -2,8 +2,7 @@
 /*  Sarvdev Design System — Global Styles (Modern)        */
 /* ─────────────────────────────────────────────────────── */
 
-/* Fonts: Inter (UI text) + Noto Serif Devanagari (headings, Hindi) */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Noto+Serif+Devanagari:wght@400;600;700&family=Noto+Serif:wght@400;600;700&display=swap');
+/* Fonts: loaded via next/font in layout.tsx — CSS variables --font-inter and --font-devanagari */
 
 @tailwind base;
 @tailwind components;

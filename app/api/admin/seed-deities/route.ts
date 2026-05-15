@@ -42,9 +42,9 @@ export async function POST(request: Request) {
             results.push({ slug: deity.slug, action: 'created', order: orderIndex })
           }
           orderIndex++
-        } catch (error) {
+        } catch (error: any) {
           console.error(`Error processing deity ${deity.slug}:`, error)
-          results.push({ slug: deity.slug, action: 'failed', error: error.message })
+          results.push({ slug: deity.slug, action: 'failed', error: error?.message })
         }
       }
     }
@@ -54,8 +54,8 @@ export async function POST(request: Request) {
       message: `Processed ${results.length} deities`,
       results,
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Seed deities error:', error)
-    return NextResponse.json({ error: 'Failed to seed deities', details: error.message }, { status: 500 })
+    return NextResponse.json({ error: 'Failed to seed deities', details: error?.message }, { status: 500 })
   }
 }

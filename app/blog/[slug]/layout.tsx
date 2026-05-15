@@ -54,6 +54,40 @@ export async function generateMetadata(
   }
 }
 
-export default function BlogSlugLayout({ children }: { children: React.ReactNode }) {
-  return children
+export default async function BlogSlugLayout({
+  children,
+  params,
+}: {
+  children: React.ReactNode
+  params: Promise<{ slug: string }>
+}) {
+  let breadcrumbLd: object | null = null
+  try {
+    const { slug } = await params
+    await connectDB()
+    const blog = await Blog.findById(slug).lean() as any
+    if (blog) {
+      breadcrumbLd = {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'Home', item: BASE },
+          { '@type': 'ListItem', position: 2, name: 'Blog', item: `${BASE}/blog` },
+          { '@type': 'ListItem', position: 3, name: blog.title, item: `${BASE}/blog/${slug}` },
+        ],
+      }
+    }
+  } catch { /* silent */ }
+
+  return (
+    <>
+      {breadcrumbLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
+        />
+      )}
+      {children}
+    </>
+  )
 }

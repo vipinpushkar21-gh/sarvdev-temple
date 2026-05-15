@@ -4,6 +4,33 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Hero from '../../components/Hero'
 
+const FAQ_ITEMS: { q: string; a: string }[] = [
+  {
+    q: 'What is Sarvdev?',
+    a: 'Sarvdev is a free temple directory and devotional hub that helps devotees discover Hindu temples across India and the world, along with devotional content like bhajans, aartis, chalisas, and mantras.',
+  },
+  {
+    q: 'Is Sarvdev free to use?',
+    a: 'Yes, Sarvdev is completely free. We do not charge for temple listings, devotional content, or any platform features. Our mission is spiritual accessibility for everyone.',
+  },
+  {
+    q: 'How can I list my temple on Sarvdev?',
+    a: 'You can list your temple by visiting the "List a Temple" page and filling out the submission form. Our team will review and approve your listing.',
+  },
+  {
+    q: 'What types of devotional content are available?',
+    a: 'We offer aartis, bhajans, chalisas, mantras, stotras, and other devotional music in Hindi, Sanskrit, and English with audio playback and lyrics.',
+  },
+  {
+    q: 'How do I find temples near me?',
+    a: 'Use the temple directory search to find temples by city, state, deity, or sacred category. You can also browse state-wise and deity-wise temple listings.',
+  },
+  {
+    q: 'Is the temple information verified?',
+    a: 'All temple listings go through a review process. Verified temples are marked with a verification badge. We continuously update information for accuracy.',
+  },
+]
+
 export default function AboutPage() {
   const [stats, setStats] = useState({ temples: 0, devotionals: 0, categories: 0 })
 
@@ -105,6 +132,33 @@ export default function AboutPage() {
                 </div>
               ))}
             </div>
+          </section>
+
+          {/* FAQ */}
+          <section>
+            <h2 className="text-h2 font-serif text-secondary-800 mb-6">Frequently Asked Questions</h2>
+            <div className="space-y-4">
+              {FAQ_ITEMS.map((faq, i) => (
+                <div key={i} className="card p-5">
+                  <h3 className="text-body font-semibold text-secondary-700 mb-2">{faq.q}</h3>
+                  <p className="text-body-sm text-ink-muted leading-relaxed">{faq.a}</p>
+                </div>
+              ))}
+            </div>
+            <script
+              type="application/ld+json"
+              dangerouslySetInnerHTML={{
+                __html: JSON.stringify({
+                  '@context': 'https://schema.org',
+                  '@type': 'FAQPage',
+                  mainEntity: FAQ_ITEMS.map(faq => ({
+                    '@type': 'Question',
+                    name: faq.q,
+                    acceptedAnswer: { '@type': 'Answer', text: faq.a },
+                  })),
+                }),
+              }}
+            />
           </section>
 
           {/* CTA */}

@@ -3,9 +3,16 @@ import { NextRequest, NextResponse } from 'next/server'
 import { connectDB } from '@/lib/db'
 import User from '@/models/User'
 import { verifyPassword, createToken, AUTH_COOKIE_NAME, AUTH_COOKIE_OPTIONS } from '@/lib/auth'
+import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
 
 export async function POST(req: NextRequest) {
   try {
+    const ip = getClientIp(req)
+    const { ok } = checkRateLimit(`login:${ip}`, 5, 60_000)
+    if (!ok) {
+      return NextResponse.json({ error: 'Too many login attempts. Please try again in 1 minute.' }, { status: 429 })
+    }
+
     const { email, password } = await req.json()
 
     if (!email?.trim() || !password) {

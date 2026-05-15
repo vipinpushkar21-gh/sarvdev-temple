@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
+import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
 
 const SYSTEM_PROMPT = `You are Guru, a wise and compassionate spiritual guide on Sarvdev — a Hindu temple directory and devotional hub.
 
@@ -30,6 +31,12 @@ interface HistoryItem {
 
 export async function POST(req: NextRequest) {
   try {
+    const ip = getClientIp(req)
+    const { ok } = checkRateLimit(`chatbot:${ip}`, 10, 60_000)
+    if (!ok) {
+      return NextResponse.json({ reply: 'Aap bahut tez pooch rahe hain. Kripya 1 minute baad try karein. 🙏' })
+    }
+
     const { message, history = [] } = await req.json()
 
     if (!message?.trim()) {

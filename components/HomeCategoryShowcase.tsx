@@ -21,8 +21,10 @@ const CATEGORIES = [
   { name: "108 Shiva Temples", short: "108 Shiva" },
 ]
 
-export default function HomeCategoryShowcase() {
-  const { temples: allTemples, loading } = useTempleData()
+export default function HomeCategoryShowcase({ initialTemples }: { initialTemples?: any[] } = {}) {
+  const { temples: ctxTemples, loading: ctxLoading } = useTempleData()
+  const allTemples = initialTemples && initialTemples.length > 0 ? initialTemples : ctxTemples
+  const loading = initialTemples && initialTemples.length > 0 ? false : ctxLoading
   const { language } = useTranslation()
   const scrollRef = useRef<HTMLDivElement>(null)
   const [canScrollLeft, setCanScrollLeft] = useState(false)

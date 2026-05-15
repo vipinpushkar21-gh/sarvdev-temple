@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/db';
 import mongoose from 'mongoose';
+import { checkRateLimit, getClientIp } from '@/lib/rate-limit';
 
 // Contact message schema (inline — lightweight)
 const ContactSchema = new mongoose.Schema({
@@ -15,6 +16,12 @@ const Contact = mongoose.models.Contact || mongoose.model('Contact', ContactSche
 
 export async function POST(req: NextRequest) {
   try {
+    const ip = getClientIp(req);
+    const { ok } = checkRateLimit(`contact:${ip}`, 3, 300_000);
+    if (!ok) {
+      return NextResponse.json({ error: 'Too many messages. Please try again in 5 minutes.' }, { status: 429 });
+    }
+
     const { name, email, message } = await req.json();
 
     if (!name?.trim() || !email?.trim() || !message?.trim()) {

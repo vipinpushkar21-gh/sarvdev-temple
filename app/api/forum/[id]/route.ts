@@ -2,11 +2,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { connectDB } from '@/lib/db'
 import ForumPost from '@/models/ForumPost'
 
-export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
+type RouteContext = { params: Promise<{ id: string }> }
+
+export async function GET(_req: NextRequest, ctx: RouteContext) {
   try {
+    const { id } = await ctx.params
     await connectDB()
     const post = await ForumPost.findByIdAndUpdate(
-      params.id,
+      id,
       { $inc: { views: 1 } },
       { new: true, fields: { __v: 0 } }
     ).lean()
@@ -17,14 +20,15 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
   }
 }
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, ctx: RouteContext) {
   try {
+    const { id } = await ctx.params
     await connectDB()
     const { content, authorName } = await req.json()
     if (!content?.trim()) return NextResponse.json({ error: 'Content required' }, { status: 400 })
 
     const post = await ForumPost.findByIdAndUpdate(
-      params.id,
+      id,
       {
         $push: {
           replies: {
@@ -44,14 +48,15 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   }
 }
 
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(req: NextRequest, ctx: RouteContext) {
   try {
+    const { id } = await ctx.params
     await connectDB()
     const body = await req.json()
 
     if (body.action === 'like') {
       const post = await ForumPost.findByIdAndUpdate(
-        params.id,
+        id,
         { $inc: { likes: 1 } },
         { new: true, fields: { likes: 1 } }
       ).lean()
@@ -62,7 +67,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     if (body.action === 'admin') {
       const { isPinned, isApproved } = body
       const post = await ForumPost.findByIdAndUpdate(
-        params.id,
+        id,
         { $set: { isPinned, isApproved } },
         { new: true }
       ).lean()
@@ -76,10 +81,11 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   }
 }
 
-export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(_req: NextRequest, ctx: RouteContext) {
   try {
+    const { id } = await ctx.params
     await connectDB()
-    const post = await ForumPost.findByIdAndDelete(params.id)
+    const post = await ForumPost.findByIdAndDelete(id)
     if (!post) return NextResponse.json({ error: 'Post not found' }, { status: 404 })
     return NextResponse.json({ success: true })
   } catch {

@@ -10,7 +10,6 @@
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,css}\""
   },
   "dependencies": {
-    "@types/web-push": "^3.6.4",
     "@vercel/analytics": "^1.6.1",
     "autoprefixer": "^10.4.0",
     "axios": "^1.16.0",
@@ -34,6 +33,7 @@
   "devDependencies": {
     "@types/node": "20.0.0",
     "@types/react": "18.0.28",
+    "@types/web-push": "^3.6.4",
     "@typescript-eslint/eslint-plugin": "^5.62.0",
     "@typescript-eslint/parser": "^5.62.0",
     "eslint": "8.45.0",

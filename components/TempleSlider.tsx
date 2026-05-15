@@ -16,10 +16,12 @@ interface Temple {
   slug?: string
 }
 
-export default function TempleSlider() {
-  const { temples: allTemples, loading: dataLoading } = useTempleData()
+export default function TempleSlider({ initialTemples }: { initialTemples?: Temple[] } = {}) {
+  const { temples: ctxTemples, loading: ctxLoading } = useTempleData()
+  const allTemples = initialTemples && initialTemples.length > 0 ? initialTemples : ctxTemples
+  const dataLoading = initialTemples && initialTemples.length > 0 ? false : ctxLoading
   const { t, language } = useTranslation()
-  const [temples, setTemples] = useState<Temple[]>([])
+  const [temples, setTemples] = useState<Temple[]>(initialTemples?.slice(0, 12) || [])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isAutoPlaying, setIsAutoPlaying] = useState(true)
   const [isTransitioning, setIsTransitioning] = useState(false)

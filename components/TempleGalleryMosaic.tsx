@@ -259,8 +259,10 @@ function MobileScrollRow({
 }
 
 /* ─── Main Component ─── */
-export default function TempleGalleryMosaic() {
-  const { temples: allTemples, loading } = useTempleData()
+export default function TempleGalleryMosaic({ initialTemples }: { initialTemples?: Temple[] } = {}) {
+  const { temples: ctxTemples, loading: ctxLoading } = useTempleData()
+  const allTemples = initialTemples && initialTemples.length > 0 ? initialTemples : ctxTemples
+  const loading = initialTemples && initialTemples.length > 0 ? false : ctxLoading
   const { language } = useTranslation()
   const [hoveredId, setHoveredId] = useState<string | null>(null)
 

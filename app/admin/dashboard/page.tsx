@@ -173,6 +173,8 @@ export default function AdminDashboardPage() {
   const [dismissed, setDismissed] = useState<Set<string>>(new Set())
   const [recentTab, setRecentTab] = useState<'temples' | 'devotionals' | 'blogs' | 'events'>('temples')
   const [spinning, setSpinning]   = useState(false)
+  const [contentHealth, setContentHealth] = useState<{ summary: any; issues: any[] } | null>(null)
+  const [healthLoading, setHealthLoading] = useState(false)
 
   const loadStats = useCallback(() => {
     setLoading(true); setSpinning(true)
@@ -184,6 +186,17 @@ export default function AdminDashboardPage() {
   }, [])
 
   useEffect(() => { loadStats() }, [loadStats])
+
+  const loadContentHealth = useCallback(() => {
+    setHealthLoading(true)
+    fetch('/api/admin/content-health')
+      .then(r => r.json())
+      .then(d => { if (d.summary) setContentHealth(d) })
+      .catch(() => {})
+      .finally(() => setHealthLoading(false))
+  }, [])
+
+  useEffect(() => { loadContentHealth() }, [loadContentHealth])
 
   const handleApproval = async (id: string, action: 'approve' | 'reject') => {
     setApproving(p => ({ ...p, [id]: action }))
@@ -560,6 +573,68 @@ export default function AdminDashboardPage() {
           </div>
         </Card>
       </div>
+
+      {/* ── Content Health Widget ── */}
+      <Card className="p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-base font-bold" style={{ color: C.ink }}>Content Health</h2>
+          <button
+            onClick={loadContentHealth}
+            disabled={healthLoading}
+            className="text-xs font-semibold px-3 py-1.5 rounded-xl transition-colors hover:bg-gray-100 disabled:opacity-50"
+            style={{ color: C.muted, border: `1px solid ${C.border}` }}
+          >
+            {healthLoading ? 'Scanning...' : 'Re-scan'}
+          </button>
+        </div>
+        {contentHealth ? (
+          <>
+            <div className="grid grid-cols-3 gap-4 mb-4">
+              {[
+                { label: 'Temples', total: contentHealth.summary.temples.total, issues: contentHealth.summary.temples.withIssues, color: '#3B82F6' },
+                { label: 'Devotionals', total: contentHealth.summary.devotionals.total, issues: contentHealth.summary.devotionals.withIssues, color: '#FF9933' },
+                { label: 'Blogs', total: contentHealth.summary.blogs.total, issues: contentHealth.summary.blogs.withIssues, color: '#10B981' },
+              ].map(s => {
+                const pct = s.total > 0 ? Math.round(((s.total - s.issues) / s.total) * 100) : 100
+                return (
+                  <div key={s.label} className="text-center p-3 rounded-xl" style={{ background: `${s.color}08`, border: `1px solid ${s.color}20` }}>
+                    <div className="text-2xl font-bold" style={{ color: s.color }}>{pct}%</div>
+                    <div className="text-[11px] font-semibold" style={{ color: C.muted }}>{s.label}</div>
+                    <div className="text-[10px]" style={{ color: C.muted }}>{s.issues} of {s.total} need fixes</div>
+                  </div>
+                )
+              })}
+            </div>
+            {contentHealth.issues.length > 0 && (
+              <details className="text-sm">
+                <summary className="cursor-pointer font-semibold text-xs" style={{ color: C.muted }}>
+                  View {contentHealth.issues.length} issues
+                </summary>
+                <div className="mt-2 max-h-48 overflow-y-auto space-y-1.5">
+                  {contentHealth.issues.slice(0, 20).map((iss: any, i: number) => (
+                    <div key={i} className="flex items-start gap-2 p-2 rounded-lg" style={{ background: '#FEF2F2' }}>
+                      <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded" style={{ background: '#FEE2E2', color: '#DC2626' }}>
+                        {iss.type}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-xs font-medium truncate" style={{ color: C.ink }}>{iss.title}</div>
+                        <div className="text-[10px]" style={{ color: C.muted }}>{iss.issues.join(' · ')}</div>
+                      </div>
+                    </div>
+                  ))}
+                  {contentHealth.issues.length > 20 && (
+                    <p className="text-[10px] text-center" style={{ color: C.muted }}>+{contentHealth.issues.length - 20} more issues</p>
+                  )}
+                </div>
+              </details>
+            )}
+          </>
+        ) : (
+          <div className="text-center py-6 text-sm" style={{ color: C.muted }}>
+            {healthLoading ? 'Scanning content...' : 'No data yet'}
+          </div>
+        )}
+      </Card>
 
       {/* ── Quick Actions + Export ── */}
       <Card className="p-6">

@@ -1,4 +1,5 @@
 import './globals.css'
+import { Inter, Noto_Serif_Devanagari } from 'next/font/google'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
 import Disclaimer from '../components/Disclaimer'
@@ -19,6 +20,19 @@ import { ThemeProvider } from '../lib/theme'
 import PWARegister from '../components/PWARegister'
 import ScrollRevealInit from '../components/ScrollRevealInit'
 
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-inter',
+  display: 'swap',
+})
+
+const notoSerif = Noto_Serif_Devanagari({
+  subsets: ['devanagari'],
+  variable: '--font-devanagari',
+  display: 'swap',
+  weight: ['400', '600', '700'],
+})
+
 export const viewport = {
   themeColor: '#FF9933',
   width: 'device-width',
@@ -34,6 +48,14 @@ export const metadata = {
   },
   description: 'Discover temples across India and the world, explore bhajans, aartis and mantras, and connect with sacred traditions through Sarvdev.',
   metadataBase: new URL('https://sarvdev.com'),
+  alternates: {
+    canonical: 'https://sarvdev.com',
+    languages: {
+      'en-IN': 'https://sarvdev.com',
+      'hi-IN': 'https://sarvdev.com',
+      'x-default': 'https://sarvdev.com',
+    },
+  },
   keywords: [
     'temple directory', 'Hindu temples India', 'mandir', 'darshan',
     'bhajan', 'aarti', 'panchang', 'festival calendar', 'Char Dham',
@@ -62,9 +84,6 @@ export const metadata = {
     capable: true,
     statusBarStyle: 'default',
     title: 'Sarvdev',
-  },
-  alternates: {
-    canonical: 'https://sarvdev.com',
   },
 }
 
@@ -105,7 +124,7 @@ const jsonLd = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className={`${inter.variable} ${notoSerif.variable}`} suppressHydrationWarning>
       <body className="min-h-screen flex flex-col" suppressHydrationWarning>
         <script
           type="application/ld+json"

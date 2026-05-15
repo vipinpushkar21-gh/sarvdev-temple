@@ -5,7 +5,8 @@
 
 import crypto from 'crypto'
 
-const TOKEN_SECRET = process.env.AUTH_TOKEN || 'sarvdev_secure_token_2025'
+const TOKEN_SECRET = process.env.AUTH_TOKEN
+if (!TOKEN_SECRET) throw new Error('FATAL: AUTH_TOKEN environment variable is required. Set it in .env.local')
 const TOKEN_MAX_AGE = 60 * 60 * 24 // 24 hours in seconds
 
 // ─── Password hashing (scrypt) ────────────────────────
@@ -51,7 +52,7 @@ function fromBase64url(b64: string): string {
 }
 
 function hmac(data: string): string {
-  return crypto.createHmac('sha256', TOKEN_SECRET).update(data).digest('base64url')
+  return crypto.createHmac('sha256', TOKEN_SECRET!).update(data).digest('base64url')
 }
 
 export function createToken(user: { _id: string; name: string; email: string; role: string }): string {

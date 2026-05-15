@@ -1,69 +1,102 @@
-"use client"
+import { Metadata } from 'next'
+import { connectDB } from '@/lib/db'
+import Temple from '@/models/Temple'
+import Devotional from '@/models/Devotional'
+import { hinduEvents } from '@/data/events'
 
-import React, { useState, useEffect } from 'react'
-import SmartSearch from '../components/SmartSearch'
+// Client islands — interactive parts that need browser APIs
+import HeroSearch from '@/components/home/HeroSearch'
+import HeroTitle from '@/components/home/HeroTitle'
+import HomeStats from '@/components/home/HomeStats'
+import FeaturesGrid from '@/components/home/FeaturesGrid'
+import FestivalCountdown from '../components/FestivalCountdown'
+import PanchangToday from '../components/PanchangToday'
 import TempleSlider from '../components/TempleSlider'
 import HomeCategoryShowcase from '../components/HomeCategoryShowcase'
 import TempleGalleryMosaic from '../components/TempleGalleryMosaic'
-import FestivalCountdown from '../components/FestivalCountdown'
-import NearbyTemples from '../components/NearbyTemples'
-import PanchangToday from '../components/PanchangToday'
 import DevotionalTeaser from '../components/DevotionalTeaser'
-import { useTranslation } from '../lib/translation'
-import Link from 'next/link'
+import NearbyTemples from '../components/NearbyTemples'
 
-const features = [
-  {
-    titleKey: 'features.templesNear',
-    descKey: 'features.templesDesc',
-    href: '/temples',
-    gradient: 'from-primary/10 to-accent/10',
-    iconBg: 'bg-gradient-to-br from-primary to-primary-600',
-    icon: (
-      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 0h.008v.008h-.008V7.5z" />
-      </svg>
-    ),
-  },
-  {
-    titleKey: 'features.liveDarshan',
-    descKey: 'features.liveDarshanDesc',
-    href: '/daily-darshan',
-    gradient: 'from-accent/10 to-primary/10',
-    iconBg: 'bg-gradient-to-br from-accent to-primary',
-    icon: (
-      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z" />
-      </svg>
-    ),
-  },
-  {
-    titleKey: 'features.community',
-    descKey: 'features.communityDesc',
-    href: '/devotionals',
-    gradient: 'from-secondary/5 to-primary/10',
-    iconBg: 'bg-gradient-to-br from-secondary to-secondary-600',
-    icon: (
-      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
-      </svg>
-    ),
-  },
-]
+// ─── Homepage SEO Metadata ───
+export const metadata: Metadata = {
+  title: 'Sarvdev — Discover Sacred Temples & Devotional Music Across India',
+  description:
+    'Explore 1000+ Hindu temples across India, listen to bhajans, aartis and mantras, track festivals and daily panchang. Your complete spiritual companion.',
+  keywords: [
+    'temple directory India', 'Hindu temples', 'mandir darshan', 'bhajan online',
+    'aarti lyrics', 'panchang today', 'festival calendar 2026', 'Jyotirlinga',
+    'Shakti Peeth', 'Char Dham', 'devotional music', 'spiritual platform',
+  ],
+  alternates: { canonical: 'https://sarvdev.com' },
+}
 
-export default function HomePage() {
-  const { t } = useTranslation()
-  const [stats, setStats] = useState({ temples: 0, devotionals: 0, categories: 0 })
+// ─── Compute next festival from static data (server-side) ───
+function getNextFestival() {
+  const now = new Date()
+  const upcoming = hinduEvents
+    .filter((e) => e.category === 'festival' && new Date(e.date) > now)
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+  return upcoming[0] ?? null
+}
 
-  useEffect(() => {
-    fetch('/api/stats')
-      .then(res => res.json())
-      .then(data => setStats(data))
-      .catch(() => {})
-  }, [])
+export default async function HomePage() {
+  // ─── Server-side data fetches — all content visible to crawlers ───
+  let stats = { temples: 0, devotionals: 0, categories: 0 }
+  let templeList: any[] = []
+  let devotionalList: any[] = []
+
+  try {
+    await connectDB()
+    const [templeCount, devotionalCount, categoryResult, temples, devotionals] = await Promise.all([
+      Temple.countDocuments({ status: 'approved' }),
+      Devotional.countDocuments({ status: 'approved' }),
+      Temple.distinct('categories', { status: 'approved' }),
+      Temple.find({ status: 'approved' })
+        .select('title description image location city state deity categories slug speciality latitude longitude')
+        .limit(50)
+        .lean(),
+      Devotional.find({ status: 'approved', audio: { $exists: true, $ne: '' } })
+        .select('title description category deity audio language')
+        .limit(8)
+        .lean(),
+    ])
+    stats = { temples: templeCount, devotionals: devotionalCount, categories: categoryResult.length }
+    templeList = JSON.parse(JSON.stringify(temples))
+    devotionalList = JSON.parse(JSON.stringify(devotionals.slice(0, 4)))
+  } catch (e) {
+    console.error('Homepage data fetch error:', e)
+  }
+
+  const nextFestival = getNextFestival()
+
+  // ─── Structured Data: ItemList for rich results ───
+  const templeItemList = {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: 'Sacred Temples of India',
+    description: 'A curated directory of Hindu temples across India and the world.',
+    numberOfItems: stats.temples,
+    itemListElement: templeList.slice(0, 10).map((t: any, i: number) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      item: {
+        '@type': 'HinduTemple',
+        name: t.title,
+        description: t.description?.slice(0, 160),
+        address: t.location || [t.city, t.state].filter(Boolean).join(', '),
+        url: `https://sarvdev.com/temples/${t.slug || t.title?.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-')}`,
+      },
+    })),
+  }
 
   return (
-    <div suppressHydrationWarning>
+    <div>
+      {/* Structured data for rich results */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(templeItemList) }}
+      />
+
       {/* ─── Hero Section ─── */}
       <section className="relative overflow-hidden bg-gradient-to-br from-surface-sunken via-surface to-primary-50/20 border-b border-surface-border">
         {/* Decorative background elements */}
@@ -79,107 +112,52 @@ export default function HomePage() {
             {/* Badge */}
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-pill bg-primary-100/80 text-primary-800 text-caption font-semibold mb-6 fade-up">
               <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-              Temple Directory & Devotional Hub
+              Temple Directory &amp; Devotional Hub
             </div>
 
+            {/* SSR h1 + subtitle — visible to crawlers in raw HTML */}
             <h1 className="text-display-lg font-serif text-secondary-800 leading-tight fade-up delay-1">
-              {t('home.title')}
+              Discover Sacred Temples. Deepen Your Devotion.
             </h1>
             <p className="mt-5 text-body text-ink-muted max-w-xl leading-relaxed fade-up delay-2">
-              {t('home.subtitle')}
+              Explore temples across India, listen to devotional music, track festivals and panchang, and connect with sacred traditions through Sarvdev.
             </p>
 
-            <div className="mt-8 max-w-xl fade-up delay-3">
-              <SmartSearch />
-            </div>
+            {/* Client island: overlays translated title for non-English users */}
+            <HeroTitle />
 
-            <div className="mt-8 flex flex-wrap gap-3 fade-up delay-4">
-              <Link href="/events" className="btn btn-primary btn-lg no-underline hover:no-underline group">
-                {t('home.upcomingEvents')}
-                <svg className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" /></svg>
-              </Link>
-              <Link href="/daily-darshan" className="btn btn-outline btn-lg no-underline hover:no-underline">
-                {t('home.virtualDarshan')}
-              </Link>
-            </div>
+            {/* Client island: search bar + CTA buttons */}
+            <HeroSearch />
 
-            {/* Quick stats */}
-            <div className="mt-12 flex flex-wrap gap-8 fade-up delay-5">
-              {[
-                { value: stats.temples > 0 ? stats.temples.toLocaleString() + '+' : '—', label: 'Temples' },
-                { value: stats.devotionals > 0 ? stats.devotionals.toLocaleString() + '+' : '—', label: 'Devotionals' },
-                { value: stats.categories > 0 ? stats.categories.toLocaleString() + '+' : '—', label: 'Categories' },
-              ].map((stat) => (
-                <div key={stat.label} className="flex items-center gap-3">
-                  <span className="text-h2 font-serif font-bold text-gradient">{stat.value}</span>
-                  <span className="text-caption text-ink-muted uppercase tracking-wider">{stat.label}</span>
-                </div>
-              ))}
-            </div>
+            {/* Stats — server-rendered numbers for SEO */}
+            <HomeStats initial={stats} />
           </div>
         </div>
       </section>
 
-      {/* ─── Festival Countdown ─── */}
-      <FestivalCountdown />
+      {/* ─── Festival Countdown (server-computed festival data) ─── */}
+      <FestivalCountdown initialFestival={nextFestival} />
 
       {/* ─── Today's Panchang ─── */}
       <PanchangToday />
 
-      {/* ─── Temple Slider ─── */}
-      <TempleSlider />
+      {/* ─── Temple Slider (server-fetched temples) ─── */}
+      <TempleSlider initialTemples={templeList} />
 
-      {/* ─── Sacred Category Showcase ─── */}
-      <HomeCategoryShowcase />
+      {/* ─── Sacred Category Showcase (server-fetched temples) ─── */}
+      <HomeCategoryShowcase initialTemples={templeList} />
 
-      {/* ─── Highlighted Temples Mosaic ─── */}
-      <TempleGalleryMosaic />
+      {/* ─── Highlighted Temples Mosaic (server-fetched temples) ─── */}
+      <TempleGalleryMosaic initialTemples={templeList} />
 
-      {/* ─── Devotional Music Teaser ─── */}
-      <DevotionalTeaser />
+      {/* ─── Devotional Music Teaser (server-fetched devotionals) ─── */}
+      <DevotionalTeaser initialItems={devotionalList} />
 
-      {/* ─── Nearby Temples — Geolocation ─── */}
+      {/* ─── Nearby Temples — Geolocation (inherently client-side) ─── */}
       <NearbyTemples />
 
-      {/* ─── Features Section ─── */}
-      <section className="section-sm relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary-50/20 to-transparent pointer-events-none" />
-        <div className="page-container relative z-10">
-          <div className="text-center mb-12">
-            <h2 className="section-title">
-              {t('home.exploreFeatures')}
-            </h2>
-            <div className="mt-3 mx-auto w-16 h-1 rounded-full bg-gradient-to-r from-primary to-accent" />
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {features.map((feat, idx) => (
-              <Link
-                key={idx}
-                href={feat.href}
-                className={`group relative card-interactive p-7 no-underline hover:no-underline overflow-hidden`}
-              >
-                {/* Subtle gradient bg on hover */}
-                <div className={`absolute inset-0 bg-gradient-to-br ${feat.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
-
-                <div className="relative z-10">
-                  <div className={`w-11 h-11 rounded-xl ${feat.iconBg} flex items-center justify-center mb-5 shadow-md group-hover:shadow-lg group-hover:scale-110 transition-all duration-300`}>
-                    {feat.icon}
-                  </div>
-                  <h3 className="text-h4 text-secondary-700 mb-2 group-hover:text-secondary-800 transition-colors">{t(feat.titleKey)}</h3>
-                  <p className="text-body-sm text-ink-muted leading-relaxed">{t(feat.descKey)}</p>
-
-                  <div className="mt-4 inline-flex items-center gap-1.5 text-caption font-semibold text-primary-600 opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300">
-                    Explore
-                    <svg className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" /></svg>
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
+      {/* ─── Features Section (client — needs translation) ─── */}
+      <FeaturesGrid />
     </div>
   )
 }

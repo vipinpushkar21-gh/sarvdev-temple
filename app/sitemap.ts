@@ -3,6 +3,7 @@ import { connectDB } from '@/lib/db'
 import Temple from '@/models/Temple'
 import Blog from '@/models/Blog'
 import Devotional from '@/models/Devotional'
+import { hinduEvents } from '@/data/events'
 
 const BASE = 'https://sarvdev.com'
 
@@ -30,52 +31,98 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE}/temples`,         lastModified: now, changeFrequency: 'daily',   priority: 0.9 },
     { url: `${BASE}/devotionals`,     lastModified: now, changeFrequency: 'weekly',  priority: 0.9 },
     { url: `${BASE}/events`,          lastModified: now, changeFrequency: 'weekly',  priority: 0.8 },
+    { url: `${BASE}/upcoming-events`, lastModified: now, changeFrequency: 'weekly',  priority: 0.8 },
     { url: `${BASE}/blog`,            lastModified: now, changeFrequency: 'weekly',  priority: 0.8 },
     { url: `${BASE}/panchang`,        lastModified: now, changeFrequency: 'daily',   priority: 0.8 },
     { url: `${BASE}/daily-darshan`,   lastModified: now, changeFrequency: 'daily',   priority: 0.7 },
     { url: `${BASE}/sacred-categories`, lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
+    { url: `${BASE}/forum`,           lastModified: now, changeFrequency: 'daily',   priority: 0.6 },
     { url: `${BASE}/booking`,         lastModified: now, changeFrequency: 'monthly', priority: 0.6 },
     { url: `${BASE}/deities`,         lastModified: now, changeFrequency: 'monthly', priority: 0.6 },
     { url: `${BASE}/spiritual-icons`, lastModified: now, changeFrequency: 'monthly', priority: 0.6 },
     { url: `${BASE}/about`,           lastModified: now, changeFrequency: 'monthly', priority: 0.5 },
     { url: `${BASE}/contact`,         lastModified: now, changeFrequency: 'monthly', priority: 0.5 },
     { url: `${BASE}/list-temple`,     lastModified: now, changeFrequency: 'monthly', priority: 0.5 },
+    { url: `${BASE}/help`,            lastModified: now, changeFrequency: 'monthly', priority: 0.4 },
+    { url: `${BASE}/stories`,         lastModified: now, changeFrequency: 'weekly',  priority: 0.7 },
+    { url: `${BASE}/stories/top-shiva-temples-in-india`, lastModified: now, changeFrequency: 'weekly', priority: 0.7 },
+    { url: `${BASE}/stories/best-krishna-temples-in-india`, lastModified: now, changeFrequency: 'weekly', priority: 0.7 },
+    { url: `${BASE}/stories/most-powerful-hanuman-temples`, lastModified: now, changeFrequency: 'weekly', priority: 0.7 },
+    { url: `${BASE}/stories/famous-durga-devi-temples`, lastModified: now, changeFrequency: 'weekly', priority: 0.7 },
+    { url: `${BASE}/stories/ancient-temples-of-south-india`, lastModified: now, changeFrequency: 'weekly', priority: 0.7 },
+    { url: `${BASE}/stories/sacred-temples-of-uttarakhand`, lastModified: now, changeFrequency: 'weekly', priority: 0.7 },
+    { url: `${BASE}/stories/holy-temples-of-varanasi`, lastModified: now, changeFrequency: 'weekly', priority: 0.7 },
+    { url: `${BASE}/stories/ganesh-temples-in-india`, lastModified: now, changeFrequency: 'weekly', priority: 0.7 },
+    { url: `${BASE}/stories/ram-temples-in-india`, lastModified: now, changeFrequency: 'weekly', priority: 0.7 },
+    { url: `${BASE}/stories/jyotirlinga-temples`, lastModified: now, changeFrequency: 'weekly', priority: 0.7 },
     { url: `${BASE}/privacy`,         lastModified: now, changeFrequency: 'yearly',  priority: 0.3 },
     { url: `${BASE}/terms`,           lastModified: now, changeFrequency: 'yearly',  priority: 0.3 },
+    { url: `${BASE}/disclaimer`,      lastModified: now, changeFrequency: 'yearly',  priority: 0.3 },
+    { url: `${BASE}/editorial-policy`, lastModified: now, changeFrequency: 'yearly',  priority: 0.4 },
+    { url: `${BASE}/contributors`,     lastModified: now, changeFrequency: 'yearly',  priority: 0.4 },
   ]
+
+  // ── Festival/Event pages from static data ──
+  const festivalPages: MetadataRoute.Sitemap = hinduEvents
+    .filter(e => e.slug)
+    .map(e => ({
+      url: `${BASE}/events/${e.slug}`,
+      lastModified: new Date(e.date),
+      changeFrequency: 'monthly' as const,
+      priority: 0.7,
+    }))
 
   try {
     await connectDB()
 
     const [temples, blogs, devotionals] = await Promise.all([
-      Temple.find({ status: 'approved' }, 'title createdAt').lean() as Promise<any[]>,
-      Blog.find({}, 'title createdAt').lean() as Promise<any[]>,
+      Temple.find({ status: 'approved' }, 'title slug state deity image createdAt').lean() as Promise<any[]>,
+      Blog.find({}, 'title slug createdAt').lean() as Promise<any[]>,
       Devotional.find({ status: 'approved' }, 'title createdAt').lean() as Promise<any[]>,
     ])
 
     const templePages: MetadataRoute.Sitemap = temples.map((t: any) => ({
-      url: `${BASE}/temples/${slugify(t.title)}`,
+      url: `${BASE}/temples/${t.slug || slugify(t.title)}`,
       lastModified: new Date(t.createdAt || now),
-      changeFrequency: 'monthly',
+      changeFrequency: 'monthly' as const,
       priority: 0.8,
+      ...(t.image && { images: [t.image] }),
     }))
 
     const blogPages: MetadataRoute.Sitemap = blogs.map((b: any) => ({
-      url: `${BASE}/blog/${b._id.toString()}`,
+      url: `${BASE}/blog/${b.slug || b._id.toString()}`,
       lastModified: new Date(b.createdAt || now),
       changeFrequency: 'monthly',
       priority: 0.7,
     }))
 
     const devotionalPages: MetadataRoute.Sitemap = devotionals.map((d: any) => ({
-      url: `${BASE}/devotionals/${devotionalSlug(d.title)}`,
+      url: `${BASE}/devotionals/${d._id.toString()}`,
       lastModified: new Date(d.createdAt || now),
       changeFrequency: 'monthly',
       priority: 0.6,
     }))
 
-    return [...staticPages, ...templePages, ...blogPages, ...devotionalPages]
+    // ── State-wise landing pages ──
+    const states = Array.from(new Set(temples.map((t: any) => t.state).filter(Boolean))) as string[]
+    const statePages: MetadataRoute.Sitemap = states.map(s => ({
+      url: `${BASE}/temples/state/${slugify(s)}`,
+      lastModified: now,
+      changeFrequency: 'weekly' as const,
+      priority: 0.8,
+    }))
+
+    // ── Deity-wise landing pages ──
+    const deities = Array.from(new Set(temples.map((t: any) => t.deity).filter(Boolean))) as string[]
+    const deityPages: MetadataRoute.Sitemap = deities.map(d => ({
+      url: `${BASE}/temples/deity/${slugify(d)}`,
+      lastModified: now,
+      changeFrequency: 'weekly' as const,
+      priority: 0.7,
+    }))
+
+    return [...staticPages, ...festivalPages, ...statePages, ...deityPages, ...templePages, ...blogPages, ...devotionalPages]
   } catch {
-    return staticPages
+    return [...staticPages, ...festivalPages]
   }
 }

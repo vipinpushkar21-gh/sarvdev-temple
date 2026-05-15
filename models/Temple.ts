@@ -1,5 +1,5 @@
 // models/Temple.ts
-import mongoose, { Schema, models } from 'mongoose';
+import mongoose, { Schema, Model, models } from 'mongoose';
 
 const TempleSchema = new Schema({
   title: { type: String, required: true },
@@ -28,7 +28,14 @@ const TempleSchema = new Schema({
   instagram: { type: String },
   status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
   verified: { type: String, enum: ['verified', 'not-verified'], default: 'not-verified' },
+  submittedBy: { type: String },
+  submitterEmail: { type: String },
+  moderationNotes: { type: String },
+  reviewedAt: { type: Date },
   createdAt: { type: Date, default: Date.now }
 });
 
-export default models.Temple || mongoose.model('Temple', TempleSchema);
+// Mongoose 8 + strict TS: model() infers a union too complex for this schema size.
+// Cast to any at the call site, then re-type the export.
+const Temple = (models.Temple as any) || (mongoose.model as any)('Temple', TempleSchema);
+export default Temple as Model<any>;

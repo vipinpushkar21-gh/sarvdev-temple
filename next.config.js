@@ -3,7 +3,7 @@ const nextConfig = {
   // Next 15 enables the App Router by default; keep other settings here.
   reactStrictMode: true,
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
   images: {
     remotePatterns: [

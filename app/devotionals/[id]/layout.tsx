@@ -77,6 +77,41 @@ export async function generateMetadata(
   }
 }
 
-export default function DevotionalIdLayout({ children }: { children: React.ReactNode }) {
-  return children
+export default async function DevotionalIdLayout({
+  children,
+  params,
+}: {
+  children: React.ReactNode
+  params: Promise<{ id: string }>
+}) {
+  let breadcrumbLd: object | null = null
+  try {
+    const { id } = await params
+    await connectDB()
+    const devotionals = await Devotional.find({ status: 'approved' }, 'title category').lean() as any[]
+    const devotional = devotionals.find((d: any) => devotionalSlug(d.title) === id)
+    if (devotional) {
+      breadcrumbLd = {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'Home', item: BASE },
+          { '@type': 'ListItem', position: 2, name: 'Devotionals', item: `${BASE}/devotionals` },
+          { '@type': 'ListItem', position: 3, name: devotional.title, item: `${BASE}/devotionals/${id}` },
+        ],
+      }
+    }
+  } catch { /* silent */ }
+
+  return (
+    <>
+      {breadcrumbLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
+        />
+      )}
+      {children}
+    </>
+  )
 }

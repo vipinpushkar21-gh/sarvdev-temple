@@ -26,6 +26,8 @@ type FormState = {
   website: string
   facebook: string
   instagram: string
+  submitterName: string
+  submitterEmail: string
 }
 
 type Festival = { name: string; description: string }
@@ -73,7 +75,7 @@ const emptyForm = (): FormState => ({
   name: "", location: "", mapsLink: "", city: "", state: "", country: "India", pincode: "",
   description: "", descriptionHi: "", deity: "", establishedYear: "", templeType: "",
   speciality: "", categories: [], imageUrl: "", contact: "", phone: "", email: "",
-  website: "", facebook: "", instagram: ""
+  website: "", facebook: "", instagram: "", submitterName: "", submitterEmail: ""
 })
 
 export default function ListTemplePage() {
@@ -220,6 +222,8 @@ export default function ListTemplePage() {
           website: form.website,
           facebook: form.facebook,
           instagram: form.instagram,
+          submittedBy: form.submitterName,
+          submitterEmail: form.submitterEmail,
           status: 'pending'
         }),
       })
@@ -535,6 +539,22 @@ export default function ListTemplePage() {
                 <label className="label">{T.instagram}</label>
                 <input type="url" value={form.instagram} onChange={e => onChange("instagram", e.target.value)} placeholder="https://instagram.com/templepage" className="input" />
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ─── Submitter Info ─── */}
+        <div className="card p-6 md:p-8">
+          <h3 className="text-h4 font-serif text-secondary-800 mb-4">{hi ? 'आपकी जानकारी' : 'Your Information'}</h3>
+          <p className="text-caption text-ink-muted mb-4">{hi ? 'वैकल्पिक — समीक्षा के दौरान हम आपसे संपर्क कर सकते हैं' : 'Optional — we may contact you during the review process'}</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="label">{hi ? 'आपका नाम' : 'Your Name'}</label>
+              <input type="text" value={form.submitterName} onChange={e => onChange("submitterName", e.target.value)} placeholder={hi ? 'नाम दर्ज करें' : 'Enter your name'} className="input" />
+            </div>
+            <div>
+              <label className="label">{hi ? 'आपका ईमेल' : 'Your Email'}</label>
+              <input type="email" value={form.submitterEmail} onChange={e => onChange("submitterEmail", e.target.value)} placeholder={hi ? 'ईमेल दर्ज करें' : 'Enter your email'} className="input" />
             </div>
           </div>
         </div>

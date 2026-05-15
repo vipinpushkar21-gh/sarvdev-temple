@@ -21,16 +21,52 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(null, { status: 404 })
     }
 
-    // ─── Listing: Return cached data if fresh ───
-    if (_cache && Date.now() - _cache.ts < CACHE_TTL) {
+    const pageParam = searchParams.get('page')
+    const limitParam = searchParams.get('limit')
+    const search = searchParams.get('search') || searchParams.get('q') || ''
+    const category = searchParams.get('category') || ''
+
+    await connectDB()
+
+    // Build filter
+    const filter: Record<string, any> = {}
+    if (category) filter.category = category
+    if (search) filter.$text = { $search: search }
+
+    // ─── Paginated mode ───
+    if (pageParam) {
+      const page = Math.max(1, parseInt(pageParam, 10) || 1)
+      const limit = Math.min(100, Math.max(1, parseInt(limitParam || '20', 10)))
+      const skip = (page - 1) * limit
+
+      const [items, total] = await Promise.all([
+        Devotional.find(filter, { lyrics: 0, __v: 0, updatedAt: 0 })
+          .sort(search ? { score: { $meta: 'textScore' }, createdAt: -1 } : { createdAt: -1 })
+          .skip(skip)
+          .limit(limit)
+          .lean(),
+        Devotional.countDocuments(filter),
+      ])
+
+      const trimmed = items.map((d: any) => ({
+        ...d,
+        description: d.description?.length > 200 ? d.description.slice(0, 200) + '…' : d.description,
+      }))
+
+      return NextResponse.json({ items: trimmed, total, page, pages: Math.ceil(total / limit), limit })
+    }
+
+    // ─── Legacy mode (returns all) ───
+    if (_cache && !search && !category && Date.now() - _cache.ts < CACHE_TTL) {
       return NextResponse.json(_cache.data)
     }
 
-    await connectDB()
-    const devotionals = await Devotional.find({}, { lyrics: 0, __v: 0, updatedAt: 0 }).sort({ createdAt: -1 }).lean()
-    // If DB has no devotionals, fall back to local data (useful for dev/local)
+    const devotionals = await Devotional.find(
+      search || category ? filter : {},
+      { lyrics: 0, __v: 0, updatedAt: 0 }
+    ).sort({ createdAt: -1 }).lean()
+
     if (!devotionals || devotionals.length === 0) {
-      // First try fetching from live API (with 3s timeout to avoid hanging)
       try {
         const ctrl = new AbortController()
         const timer = setTimeout(() => ctrl.abort(), 3000)
@@ -41,7 +77,6 @@ export async function GET(request: NextRequest) {
           return NextResponse.json(liveData)
         }
       } catch (_) {}
-      // Fallback to minimal static seed data
       const fallback = (sarvdev.devotionals || []).map((d: any) => ({
         _id: d.id || d._id || Math.random().toString(36).slice(2),
         title: d.title,
@@ -54,16 +89,16 @@ export async function GET(request: NextRequest) {
       }))
       return NextResponse.json(fallback)
     }
-    // Truncate descriptions for listing (cards show max 2 lines)
+
     const trimmed = devotionals.map((d: any) => ({
       ...d,
       description: d.description?.length > 200 ? d.description.slice(0, 200) + '…' : d.description,
     }))
-    // Store in cache
-    _cache = { data: trimmed, ts: Date.now() }
+    if (!search && !category) {
+      _cache = { data: trimmed, ts: Date.now() }
+    }
     return NextResponse.json(trimmed)
   } catch (error) {
-    // On DB error, try live API first (with 3s timeout), then local static data
     try {
       const ctrl = new AbortController()
       const timer = setTimeout(() => ctrl.abort(), 3000)

@@ -1,7 +1,10 @@
 node_modules/
 .next/
 .env
+.env.local
 .DS_Store
 .vscode/
 dist/
 coverage/
+tmp_*
+public/tts/

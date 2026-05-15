@@ -15,18 +15,18 @@ type Devotional = {
   language?: string
 }
 
-export default function DevotionalTeaser() {
+export default function DevotionalTeaser({ initialItems }: { initialItems?: Devotional[] } = {}) {
   const { language } = useTranslation()
   const { play, track, playing, pause, resume } = useAudioPlayer()
-  const [items, setItems] = useState<Devotional[]>([])
-  const [loading, setLoading] = useState(true)
+  const [items, setItems] = useState<Devotional[]>(initialItems || [])
+  const [loading, setLoading] = useState(!initialItems || initialItems.length === 0)
 
   useEffect(() => {
+    if (initialItems && initialItems.length > 0) return
     fetch('/api/devotionals')
       .then((r) => r.json())
       .then((all: Devotional[]) => {
         const approved = all.filter((d) => (d as any).status === 'approved' && d.audio)
-        // pick 4 random
         const shuffled = approved.sort(() => 0.5 - Math.random())
         setItems(shuffled.slice(0, 4))
       })

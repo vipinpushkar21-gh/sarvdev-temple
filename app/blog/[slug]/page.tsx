@@ -77,20 +77,34 @@ export default function BlogPostPage() {
 
   const jsonLd = {
     '@context': 'https://schema.org',
-    '@type': 'BlogPosting',
+    '@type': ['BlogPosting', 'NewsArticle'],
     headline: post.title,
     description: post.excerpt || undefined,
     image: post.image || DEFAULT_IMAGE,
     url: `https://sarvdev.com/blog/${slug}`,
     datePublished: post.date ? new Date(post.date).toISOString() : undefined,
+    dateModified: post.date ? new Date(post.date).toISOString() : undefined,
+    author: {
+      '@type': 'Organization',
+      name: 'Sarvdev Editorial Team',
+      url: 'https://sarvdev.com/about',
+    },
     publisher: {
       '@type': 'Organization',
       name: 'Sarvdev',
       url: 'https://sarvdev.com',
+      logo: {
+        '@type': 'ImageObject',
+        url: 'https://sarvdev.com/icon.svg',
+      },
     },
     mainEntityOfPage: {
       '@type': 'WebPage',
       '@id': `https://sarvdev.com/blog/${slug}`,
+    },
+    speakable: {
+      '@type': 'SpeakableSpecification',
+      cssSelector: ['article h1', 'article .prose'],
     },
   }
 
@@ -118,6 +132,15 @@ export default function BlogPostPage() {
             </div>
           )}
           <div className="mt-4 w-16 h-1 rounded-full bg-gradient-to-r from-primary to-accent" />
+
+          {/* Editorial Trust Signals */}
+          <div className="mt-4 flex flex-wrap items-center gap-3 text-caption text-ink-muted">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary-50 border border-primary-100 text-primary-700 font-medium">
+              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.403 12.652a3 3 0 000-5.304 3 3 0 00-3.75-3.751 3 3 0 00-5.305 0 3 3 0 00-3.751 3.75 3 3 0 000 5.305 3 3 0 003.75 3.751 3 3 0 005.305 0 3 3 0 003.751-3.75zm-2.546-4.46a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clipRule="evenodd" /></svg>
+              Sarvdev Editorial Team
+            </span>
+            <span>Reviewed for accuracy</span>
+          </div>
         </header>
 
         <div className="rounded-xl overflow-hidden mb-8 shadow-lg">

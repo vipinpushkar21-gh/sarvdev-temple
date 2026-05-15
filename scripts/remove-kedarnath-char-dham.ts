@@ -23,7 +23,7 @@ async function removeKedarnathFromCharDham() {
     
     // Remove "Char Dham" from sacredCategories
     if (temple.sacredCategories && temple.sacredCategories.includes('Char Dham')) {
-      temple.sacredCategories = temple.sacredCategories.filter(cat => cat !== 'Char Dham')
+      temple.sacredCategories = temple.sacredCategories.filter((cat: string) => cat !== 'Char Dham')
       await temple.save()
       console.log('✅ Removed "Char Dham" from sacredCategories')
       console.log('📋 Updated sacredCategories:', temple.sacredCategories)

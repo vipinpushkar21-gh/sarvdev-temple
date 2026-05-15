@@ -146,7 +146,7 @@ export default function PanchangPage() {
         </div>
       </section>
 
-      {data && <PanchangCard data={data} language={language} />}
+      {data && <PanchangCard data={data} language={language === 'hi' ? 'hi' : 'en'} />}
     </main>
     </>
   )

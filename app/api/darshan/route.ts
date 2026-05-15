@@ -6,13 +6,33 @@ import Darshan from '@/models/Darshan';
 let _cache: { data: any[]; ts: number } | null = null;
 const CACHE_TTL = 60_000;
 
-// GET all darshan
-export async function GET() {
+// GET darshan — supports optional pagination via ?page=&limit=
+export async function GET(req: NextRequest) {
   try {
+    const { searchParams } = new URL(req.url)
+    const pageParam = searchParams.get('page')
+    const limitParam = searchParams.get('limit')
+
+    await connectDB()
+
+    // ─── Paginated mode ───
+    if (pageParam) {
+      const page = Math.max(1, parseInt(pageParam, 10) || 1)
+      const limit = Math.min(100, Math.max(1, parseInt(limitParam || '20', 10)))
+      const skip = (page - 1) * limit
+
+      const [items, total] = await Promise.all([
+        Darshan.find({}, { __v: 0 }).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+        Darshan.countDocuments(),
+      ])
+
+      return NextResponse.json({ items, total, page, pages: Math.ceil(total / limit), limit })
+    }
+
+    // ─── Legacy mode ───
     if (_cache && Date.now() - _cache.ts < CACHE_TTL) {
       return NextResponse.json(_cache.data);
     }
-    await connectDB();
     const darshan = await Darshan.find({}, { __v: 0 }).sort({ createdAt: -1 }).lean();
     _cache = { data: darshan, ts: Date.now() };
     return NextResponse.json(darshan);

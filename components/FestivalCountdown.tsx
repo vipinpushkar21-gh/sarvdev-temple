@@ -26,13 +26,16 @@ function calcTimeLeft(target: Date): TimeLeft {
   }
 }
 
-export default function FestivalCountdown() {
+export default function FestivalCountdown({ initialFestival }: { initialFestival?: ReturnType<typeof getNextFestival> } = {}) {
   const { t, language } = useTranslation()
-  const [festival, setFestival] = useState<ReturnType<typeof getNextFestival> | null>(null)
-  const [timeLeft, setTimeLeft] = useState<TimeLeft>({ days: 0, hours: 0, minutes: 0, seconds: 0 })
-  const [mounted, setMounted] = useState(false)
+  const [festival, setFestival] = useState<ReturnType<typeof getNextFestival> | null>(initialFestival ?? null)
+  const [timeLeft, setTimeLeft] = useState<TimeLeft>(
+    initialFestival ? calcTimeLeft(new Date(initialFestival.date)) : { days: 0, hours: 0, minutes: 0, seconds: 0 }
+  )
+  const [mounted, setMounted] = useState(!!initialFestival)
 
   useEffect(() => {
+    if (initialFestival) { setMounted(true); return }
     const next = getNextFestival()
     setFestival(next)
     if (next) setTimeLeft(calcTimeLeft(new Date(next.date)))
