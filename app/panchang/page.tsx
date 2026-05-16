@@ -76,7 +76,7 @@ export default function PanchangPage() {
     <>
     <Hero title={language === 'hi' ? 'दैनिक पंचांग' : 'Daily Panchang'} subtitle={language === 'hi'
           ? 'अपने शहर के लिए तिथि, नक्षत्र, योग, करन और सूर्योदय/सूर्यास्त देखें।'
-          : 'View Tithi, Nakshatra, Yoga, Karana and Sunrise/Sunset for your city.'} />
+          : 'View Tithi, Nakshatra, Yoga, Karana and Sunrise/Sunset for your city.'} overline="Hindu Calendar" />
     <main className="page-container section-sm">
 
       <section aria-label={language === 'hi' ? 'चयन' : 'Selection'} className="relative card overflow-hidden mb-8">

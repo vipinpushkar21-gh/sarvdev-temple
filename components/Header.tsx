@@ -154,8 +154,8 @@ export default function Header() {
             : 'bg-secondary-900/95 backdrop-blur-xl'
         }`}
       >
-        {/* Gradient accent line */}
-        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-primary via-accent to-primary opacity-80" />
+        {/* Sacred gold accent line */}
+        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-temple-gold-DEFAULT to-transparent opacity-70" />
 
         <div className="page-container py-2.5 flex items-center justify-between">
           {/* Logo */}
@@ -168,7 +168,7 @@ export default function Header() {
               <span className="text-[1.1rem] font-serif font-bold text-white tracking-tight group-hover:text-accent transition-colors duration-300">
                 Sarvdev
               </span>
-              <span className="text-[9px] font-medium text-secondary-400 tracking-[0.15em] uppercase leading-none -mt-0.5 hidden sm:block">
+              <span className="text-[9px] font-cinzel text-temple-gold-light/70 tracking-[0.18em] uppercase leading-none -mt-0.5 hidden sm:block">
                 Temple & Devotional Hub
               </span>
             </div>

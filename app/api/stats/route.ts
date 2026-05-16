@@ -10,7 +10,9 @@ const CACHE_TTL = 300_000;
 export async function GET() {
   try {
     if (_cache && Date.now() - _cache.ts < CACHE_TTL) {
-      return NextResponse.json(_cache.data);
+      const res = NextResponse.json(_cache.data);
+      res.headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
+      return res;
     }
 
     await connectDB();
@@ -28,7 +30,9 @@ export async function GET() {
     };
 
     _cache = { data: stats, ts: Date.now() };
-    return NextResponse.json(stats);
+    const res = NextResponse.json(stats);
+    res.headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
+    return res;
   } catch (error) {
     console.error('Stats API Error:', error);
     return NextResponse.json({ temples: 0, devotionals: 0, categories: 0 }, { status: 500 });

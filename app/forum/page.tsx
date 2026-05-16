@@ -89,7 +89,7 @@ export default function ForumPage() {
 
   return (
     <>
-      <Hero title="Community Forum" subtitle="Devotees ka manch — apne anubhav, sawaal aur vichar share karein" />
+      <Hero title="Community Forum" subtitle="Devotees ka manch — apne anubhav, sawaal aur vichar share karein" overline="Community" />
 
       <main className="page-container section-sm">
         {submitted && (

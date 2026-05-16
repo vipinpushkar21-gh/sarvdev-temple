@@ -3,7 +3,7 @@ import Hero from '../../components/Hero'
 export default function TermsPage() {
   return (
     <>
-      <Hero title="Terms of Service" subtitle="Please read these terms carefully before using Sarvdev" />
+      <Hero title="Terms of Service" subtitle="Please read these terms carefully before using Sarvdev" overline="Legal" />
       <main className="content-container section-sm">
       
       <div className="relative card overflow-hidden max-w-3xl mx-auto">

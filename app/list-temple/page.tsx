@@ -250,7 +250,7 @@ export default function ListTemplePage() {
 
   return (
     <>
-      <Hero title={T.heroTitle} subtitle={T.heroSubtitle} />
+      <Hero title={T.heroTitle} subtitle={T.heroSubtitle} overline="Submit Temple" />
       <main className="content-container py-12" suppressHydrationWarning>
       <form onSubmit={onSubmit} noValidate className="space-y-8">
 

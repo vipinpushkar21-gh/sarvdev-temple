@@ -1,5 +1,5 @@
 import './globals.css'
-import { Inter, Noto_Serif_Devanagari } from 'next/font/google'
+import { Inter, Noto_Serif_Devanagari, Playfair_Display, Cinzel } from 'next/font/google'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
 import Disclaimer from '../components/Disclaimer'
@@ -32,6 +32,20 @@ const notoSerif = Noto_Serif_Devanagari({
   variable: '--font-devanagari',
   display: 'swap',
   weight: ['400', '600', '700'],
+})
+
+const playfair = Playfair_Display({
+  subsets: ['latin'],
+  variable: '--font-playfair',
+  display: 'swap',
+  weight: ['400', '500', '600', '700'],
+})
+
+const cinzel = Cinzel({
+  subsets: ['latin'],
+  variable: '--font-cinzel',
+  display: 'swap',
+  weight: ['400', '500', '600', '700'],
 })
 
 export const viewport = {
@@ -125,7 +139,12 @@ const jsonLd = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${inter.variable} ${notoSerif.variable}`} suppressHydrationWarning>
+    <html lang="en" className={`${inter.variable} ${notoSerif.variable} ${playfair.variable} ${cinzel.variable}`} suppressHydrationWarning>
+      <head>
+        <link rel="dns-prefetch" href="https://res.cloudinary.com" />
+        <link rel="preconnect" href="https://res.cloudinary.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+      </head>
       <body className="min-h-screen flex flex-col" suppressHydrationWarning>
         <script
           type="application/ld+json"

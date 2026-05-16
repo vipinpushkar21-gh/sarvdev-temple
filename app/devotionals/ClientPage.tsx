@@ -105,10 +105,12 @@ const staggerContainer = {
 
 function SectionHeader({ title, subtitle, id }: { title: string; subtitle?: string; id?: string }) {
   return (
-    <div className="text-center mb-8">
-      <h2 id={id} className="section-title">{title}</h2>
-      {subtitle && <p className="section-subtitle mt-2">{subtitle}</p>}
-      <div className="mt-3 mx-auto w-16 h-1 rounded-full bg-gradient-to-r from-primary to-accent" />
+    <div className="mb-8">
+      <div className="flex items-center gap-3">
+        <h2 id={id} className="text-h1 font-display text-secondary-800">{title}</h2>
+        <span className="flex-1 h-px bg-gradient-to-r from-temple-gold-DEFAULT/30 to-transparent" />
+      </div>
+      {subtitle && <p className="text-body text-ink-muted mt-2">{subtitle}</p>}
     </div>
   )
 }
@@ -356,45 +358,46 @@ export default function ClientPage() {
       {/* ════════════════════════════════════════════════════════
           SECTION 1: Immersive Hero with Search & Stats
          ════════════════════════════════════════════════════════ */}
-      <section className="relative overflow-hidden border-b border-surface-border">
-        {/* Background image */}
-        <div
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-          style={{ backgroundImage: `url('https://res.cloudinary.com/dc2qg7bwr/image/upload/v1774363519/hero-bg.jpg.jpg')` }}
-        />
-        {/* Dark overlay */}
-        <div className="absolute inset-0 bg-black/60" />
-        {/* Warm saffron tint */}
-        <div className="absolute inset-0 bg-gradient-to-br from-secondary-900/40 via-transparent to-primary/20" />
+      <section className="sacred-hero relative">
+        {/* Animated sacred orbs */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute top-[15%] right-[12%] w-72 h-72 bg-primary/[0.06] rounded-full blur-[90px] animate-pulse" />
+          <div className="absolute bottom-[20%] left-[8%] w-56 h-56 bg-accent/[0.05] rounded-full blur-[70px]" />
+          <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-transparent via-primary to-transparent opacity-50" />
+        </div>
 
-        <div className="page-container py-14 md:py-20 relative z-10">
+        <div className="sacred-hero-content page-container py-16 md:py-24">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
           >
+            {/* Cinzel overline */}
+            <div className="flex items-center gap-3 mb-4">
+              <span className="font-cinzel text-overline uppercase tracking-[0.2em] text-temple-gold-light">
+                Sacred Collection
+              </span>
+              <span className="flex-1 h-px bg-gradient-to-r from-temple-gold-DEFAULT/40 to-transparent max-w-[80px]" />
+            </div>
+
             {/* Title */}
-            <h1 className="text-display-lg font-serif text-white leading-tight">
+            <h1 className="text-display-lg font-display text-white leading-tight text-shadow-divine">
               Devotionals
             </h1>
-            <p className="mt-3 text-body text-white/75 max-w-2xl">
+            <p className="mt-3 text-body text-sandstone-300 max-w-2xl">
               Explore a sacred collection of mantras, bhajans, stotras, aartis, and more — curated for your daily spiritual practice.
             </p>
-            <div className="mt-4 w-16 h-1 rounded-full bg-gradient-to-r from-primary to-accent" />
 
             {/* Stats row */}
             <div className="mt-6 flex flex-wrap items-center gap-3">
-              <span className="stat-pill">
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
-                {totalCount} Devotionals
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-caption font-semibold bg-white/10 text-sandstone-200 border border-white/10">
+                🎵 {totalCount} Devotionals
               </span>
-              <span className="stat-pill">
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" /></svg>
-                {categoryCount} Categories
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-caption font-semibold bg-white/10 text-sandstone-200 border border-white/10">
+                📿 {categoryCount} Categories
               </span>
-              <span className="stat-pill">
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" /></svg>
-                {deityCount} Deities
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-caption font-semibold bg-white/10 text-sandstone-200 border border-white/10">
+                🙏 {deityCount} Deities
               </span>
             </div>
 
@@ -413,7 +416,7 @@ export default function ClientPage() {
               <button
                 type="button"
                 onClick={() => categorySectionRef.current?.scrollIntoView({ behavior: 'smooth' })}
-                className="btn btn-primary btn-sm"
+                className="btn-divine btn-sm"
               >
                 Browse Categories
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 13.5L12 21m0 0l-7.5-7.5M12 21V3" /></svg>
@@ -421,7 +424,7 @@ export default function ClientPage() {
               <button
                 type="button"
                 onClick={() => resultsRef.current?.scrollIntoView({ behavior: 'smooth' })}
-                className="btn btn-outline btn-sm"
+                className="btn btn-sm border-2 border-sandstone-400/30 text-sandstone-200 hover:bg-white/10 hover:border-sandstone-300"
               >
                 View All
               </button>
@@ -695,18 +698,18 @@ export default function ClientPage() {
 
 function LoadingHero() {
   return (
-    <div className="relative overflow-hidden bg-gradient-to-br from-surface-sunken via-surface to-primary-50/20 border-b border-surface-border">
-      <div className="page-container py-14 md:py-20">
+    <div className="sacred-hero relative">
+      <div className="sacred-hero-content page-container py-16 md:py-24">
         <div className="animate-pulse space-y-4">
-          <div className="h-12 bg-surface-sunken rounded-lg w-64" />
-          <div className="h-5 bg-surface-sunken rounded w-96 max-w-full" />
-          <div className="h-1 bg-surface-sunken rounded-full w-16 mt-4" />
+          <div className="h-4 bg-white/10 rounded w-32" />
+          <div className="h-14 bg-white/10 rounded-lg w-72" />
+          <div className="h-5 bg-white/10 rounded w-96 max-w-full" />
           <div className="flex gap-3 mt-6">
-            <div className="h-8 bg-surface-sunken rounded-full w-32" />
-            <div className="h-8 bg-surface-sunken rounded-full w-28" />
-            <div className="h-8 bg-surface-sunken rounded-full w-24" />
+            <div className="h-8 bg-white/10 rounded-full w-32" />
+            <div className="h-8 bg-white/10 rounded-full w-28" />
+            <div className="h-8 bg-white/10 rounded-full w-24" />
           </div>
-          <div className="h-14 bg-surface-sunken rounded-2xl w-full max-w-2xl mt-6" />
+          <div className="h-14 bg-white/10 rounded-2xl w-full max-w-2xl mt-6" />
         </div>
       </div>
     </div>

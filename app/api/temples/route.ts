@@ -46,25 +46,25 @@ export async function GET(req: NextRequest) {
         Temple.countDocuments(filter),
       ])
 
-      return NextResponse.json({
-        items,
-        total,
-        page,
-        pages: Math.ceil(total / limit),
-        limit,
-      })
+      const res = NextResponse.json({ items, total, page, pages: Math.ceil(total / limit), limit })
+      res.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=120')
+      return res
     }
 
     // ─── Legacy mode (no pagination — returns all, used by TempleDataProvider) ───
     if (_cache && !search && !category && Date.now() - _cache.ts < CACHE_TTL) {
-      return NextResponse.json(_cache.data)
+      const res = NextResponse.json(_cache.data)
+      res.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300')
+      return res
     }
 
     const temples = await Temple.find(filter, { __v: 0 }).sort({ createdAt: -1 }).lean()
     if (!search && !category) {
       _cache = { data: temples, ts: Date.now() }
     }
-    return NextResponse.json(temples)
+    const res = NextResponse.json(temples)
+    res.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300')
+    return res
   } catch (error) {
     console.error('Temple API Error:', error)
     return NextResponse.json({ error: 'Failed to fetch temples' }, { status: 500 })

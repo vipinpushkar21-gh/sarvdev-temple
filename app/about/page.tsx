@@ -43,7 +43,7 @@ export default function AboutPage() {
 
   return (
     <>
-      <Hero title="About Sarvdev" subtitle="Connecting devotees with temples and spiritual traditions worldwide" />
+      <Hero title="About Sarvdev" subtitle="Connecting devotees with temples and spiritual traditions worldwide" overline="Our Mission" />
       <main className="content-container section-sm">
 
         <div className="space-y-12 max-w-4xl mx-auto">

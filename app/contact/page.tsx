@@ -38,7 +38,7 @@ export default function ContactPage() {
 
   return (
     <>
-      <Hero title="Contact Us" subtitle="We'd love to hear from you! Reach out for questions, feedback, or temple listings." />
+      <Hero title="Contact Us" subtitle="We'd love to hear from you! Reach out for questions, feedback, or temple listings." overline="Get in Touch" />
       <main className="content-container section-sm">
       
       <div className="space-y-10">

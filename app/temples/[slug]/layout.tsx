@@ -3,6 +3,9 @@ import { connectDB } from '@/lib/db'
 import Temple from '@/models/Temple'
 import Review from '@/models/Review'
 
+// ISR: revalidate temple detail pages every 5 minutes
+export const revalidate = 300
+
 const BASE = 'https://sarvdev.com'
 const DEFAULT_IMAGE = 'https://res.cloudinary.com/dc2qg7bwr/image/upload/image_2_xljqwa'
 

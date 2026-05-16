@@ -1,18 +1,20 @@
 // models/Devotional.ts
-import mongoose, { Schema, models } from 'mongoose';
+import mongoose from 'mongoose';
 
-const DevotionalSchema = new Schema({
+const DevotionalSchema = new mongoose.Schema({
   title: { type: String, required: true },
-  description: { type: String },
-  category: { type: String, enum: ['Bhajan', 'Stotra', 'Aarti', 'Mantra', 'Chalisa', 'Stuti', 'Shloka', 'Ek Shloki', 'Ashtaka', 'Path', 'Namavali', '108 Namavali', 'Kavacham', 'Prarthana', 'Vrat Katha', 'Rashi', 'Vastu', 'Durga', 'Kuber', 'Stotra/Suktam', 'Other'], default: 'Other' },
+  description: String,
+  category: { type: String, default: 'Other' },
   language: { type: String, default: 'Hindi' },
-  deity: { type: String },
-  audio: { type: String },
-  lyrics: { type: String },
-  duration: { type: String },
-  artist: { type: String },
+  deity: String,
+  audio: String,
+  lyrics: String,
+  duration: String,
+  artist: String,
   status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
   createdAt: { type: Date, default: Date.now }
 });
 
-export default models.Devotional || mongoose.model('Devotional', DevotionalSchema);
+// @ts-ignore — Mongoose union-type complexity workaround
+const Devotional: mongoose.Model<any> = mongoose.models.Devotional || mongoose.model('Devotional', DevotionalSchema);
+export default Devotional;

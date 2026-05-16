@@ -201,6 +201,31 @@ export default function CategoryPage() {
   }
 
   return (
+    <>
+      {/* Premium Hero Banner */}
+      <section className="sacred-hero relative">
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-[20%] right-[10%] w-64 h-64 bg-primary/[0.06] rounded-full blur-[80px]" />
+          <div className="absolute bottom-[10%] left-[15%] w-48 h-48 bg-accent/[0.05] rounded-full blur-[60px]" />
+        </div>
+        <div className="sacred-hero-content page-container py-14 md:py-20">
+          <nav className="flex items-center gap-2 text-body-sm text-sandstone-400 mb-6">
+            <Link href="/devotionals" className="hover:text-primary-300 transition-colors no-underline hover:no-underline">Devotionals</Link>
+            <span className="text-sandstone-600">/</span>
+            <span className="text-sandstone-200 font-medium">{categoryInfo.hindi} ({categoryInfo.label})</span>
+          </nav>
+          <span className="font-cinzel text-overline uppercase tracking-[0.2em] text-temple-gold-light">
+            Devotional Collection
+          </span>
+          <h1 className="text-display font-display text-white mt-2 text-shadow-divine">
+            {categoryInfo.hindi} <span className="text-primary-300">({categoryInfo.label})</span>
+          </h1>
+          <p className="text-body text-sandstone-300 mt-3">
+            {filteredByDeity.length} {categoryInfo.label}{filteredByDeity.length !== 1 ? 's' : ''} available
+          </p>
+        </div>
+      </section>
+
     <main className="page-container section-sm">
       {/* Ganesh Ashtaka Ad Section */}
       {categorySlug === 'ashtaka' && devotionals.length === 1 && devotionals[0].deity && devotionals[0].deity.toLowerCase().includes('ganesh') && (selectedDeity === 'all' || selectedDeity.toLowerCase().includes('ganesh')) && (
@@ -230,32 +255,14 @@ export default function CategoryPage() {
           <a href="/devotionals/ganeshashtakam" className="inline-block mt-2 px-6 py-2 rounded-full bg-pink-600 text-white font-semibold shadow hover:bg-pink-700 transition">Read Full Ganeshashtakam</a>
         </div>
       )}
-      {/* Breadcrumb */}
-      <nav className="mb-6 text-body-sm text-ink-muted">
-        <Link href="/devotionals" className="hover:text-primary-600 transition-colors">
-          Devotionals
-        </Link>
-        <span className="mx-2">/</span>
-        <span className="text-primary-600 font-medium">{categoryInfo.hindi} ({categoryInfo.label})</span>
-      </nav>
-
-      {/* Header */}
-      <header className="mb-10 text-center">
-        <h1 className="text-h1 font-serif text-secondary-700 mb-3">
-          {categoryInfo.hindi} ({categoryInfo.label})
-        </h1>
-        <p className="text-body text-ink-muted">
-          {filteredByDeity.length} {categoryInfo.label}{filteredByDeity.length !== 1 ? 's' : ''} available
-        </p>
-      </header>
 
       {/* Deity Filter */}
       {deities.length > 1 && (
-        <div className="mb-8">
+        <div className="mb-10">
           <h3 className="text-h4 font-serif text-secondary-700 mb-4 text-center">
             Filter by Deity
           </h3>
-          <div className="flex flex-wrap justify-center gap-3">
+          <div className="flex flex-wrap justify-center gap-2">
             {deities.map(deity => (
               <button
                 key={deity}
@@ -263,11 +270,8 @@ export default function CategoryPage() {
                   setSelectedDeity(deity || 'all')
                   setSelectedSubCategory('all')
                 }}
-                className={`px-5 py-2.5 rounded-full font-medium transition-shadow duration-200 border ${
-                  selectedDeity === deity && selectedSubCategory === 'all'
-                    ? 'bg-primary-100 text-primary-800 border-primary-400 font-semibold shadow-card-hover'
-                    : 'bg-surface-raised text-ink border-surface-border hover:shadow-card'
-                }`}
+                className="deity-chip"
+                data-active={selectedDeity === deity && selectedSubCategory === 'all' ? 'true' : undefined}
               >
                 {deity === 'all' ? 'All Deities' : deity}
               </button>
@@ -280,11 +284,8 @@ export default function CategoryPage() {
                   setSelectedDeity('all')
                   setSelectedSubCategory('rashi')
                 }}
-                className={`px-5 py-2.5 rounded-full font-medium transition-shadow duration-200 border ${
-                  selectedSubCategory === 'rashi'
-                    ? 'bg-primary-100 text-primary-800 border-primary-400 font-semibold shadow-card-hover'
-                    : 'bg-surface-raised text-ink border-surface-border hover:shadow-card'
-                }`}
+                className="deity-chip"
+                data-active={selectedSubCategory === 'rashi' ? 'true' : undefined}
               >
                 Rashi Mantras ({rashiMantras.length})
               </button>
@@ -313,47 +314,51 @@ export default function CategoryPage() {
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredByDeity.map((d: Devotional) => (
-              <Link 
-                key={d._id}
-                href={`/devotionals/${createSlug(d.title || '')}`}
-                className="card-interactive p-5 flex flex-col"
-              >
-                <div className="flex items-start justify-between mb-3">
-                  <h3 className="text-h4 font-serif text-secondary-700 leading-tight pr-2">
-                    {(function(){
-                      const bt = renderBilingualTitle(d.title || '');
-                      return (
-                        <span>
-                          {bt.primary}
-                          {bt.secondary && <span> ({bt.secondary})</span>}
-                        </span>
-                      );
-                    })()}
-                  </h3>
-                  <span className="badge badge-primary shrink-0">
-                    {d.category}
-                  </span>
-                </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 stagger-children">
+            {filteredByDeity.map((d: Devotional) => {
+              const bt = renderBilingualTitle(d.title || '')
+              return (
+                <Link 
+                  key={d._id}
+                  href={`/devotionals/${createSlug(d.title || '')}`}
+                  className="card-divine p-5 flex flex-col group no-underline hover:no-underline"
+                >
+                  {/* Top accent */}
+                  <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-primary/0 via-primary/40 to-primary/0 group-hover:via-primary transition-all duration-500" />
 
-                {d.deity && (
-                  <p className="text-body-sm text-primary-600 font-medium mb-2">{d.deity}</p>
-                )}
+                  <div className="flex items-start justify-between mb-3">
+                    <h3 className="text-h4 font-serif text-secondary-700 leading-tight pr-2 group-hover:text-primary-700 transition-colors">
+                      <span>{bt.primary}</span>
+                      {bt.secondary && <span className="text-body-sm text-ink-muted font-normal"> ({bt.secondary})</span>}
+                    </h3>
+                    <span className="badge badge-primary shrink-0">
+                      {d.category}
+                    </span>
+                  </div>
 
-                {d.description && (
-                  <p className="mt-2 text-body-sm text-ink-muted flex-grow line-clamp-3">
-                    {d.description}
-                  </p>
-                )}
+                  {d.deity && (
+                    <div className="flex items-center gap-1.5 mb-2">
+                      <span className="text-sm">🙏</span>
+                      <span className="text-body-sm text-primary-600 font-medium">{d.deity}</span>
+                    </div>
+                  )}
 
-                <div className="mt-3 flex items-center gap-3 text-caption text-ink-faint flex-wrap">
-                  {d.artist && <span>{d.artist}</span>}
-                  {d.duration && <span>{d.duration}</span>}
-                  {d.language && <span>{d.language}</span>}
-                </div>
-              </Link>
-            ))}
+                  {d.description && (
+                    <p className="mt-1 text-body-sm text-ink-muted flex-grow line-clamp-3">
+                      {d.description}
+                    </p>
+                  )}
+
+                  <div className="mt-4 pt-3 border-t border-surface-border flex items-center justify-between">
+                    <div className="flex items-center gap-3 text-caption text-ink-faint">
+                      {d.artist && <span className="flex items-center gap-1"><span className="text-xs">🎤</span> {d.artist}</span>}
+                      {d.duration && <span className="flex items-center gap-1"><span className="text-xs">⏱️</span> {d.duration}</span>}
+                    </div>
+                    {d.language && <span className="badge text-[10px]">{d.language}</span>}
+                  </div>
+                </Link>
+              )
+            })}
           </div>
         )}
       </section>
@@ -371,5 +376,6 @@ export default function CategoryPage() {
         </Link>
       </div>
     </main>
+    </>
   )
 }

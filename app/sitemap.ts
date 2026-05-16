@@ -44,6 +44,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE}/contact`,         lastModified: now, changeFrequency: 'monthly', priority: 0.5 },
     { url: `${BASE}/list-temple`,     lastModified: now, changeFrequency: 'monthly', priority: 0.5 },
     { url: `${BASE}/help`,            lastModified: now, changeFrequency: 'monthly', priority: 0.4 },
+    { url: `${BASE}/live-darshan`,     lastModified: now, changeFrequency: 'daily',   priority: 0.7 },
     { url: `${BASE}/stories`,         lastModified: now, changeFrequency: 'weekly',  priority: 0.7 },
     { url: `${BASE}/stories/top-shiva-temples-in-india`, lastModified: now, changeFrequency: 'weekly', priority: 0.7 },
     { url: `${BASE}/stories/best-krishna-temples-in-india`, lastModified: now, changeFrequency: 'weekly', priority: 0.7 },
@@ -78,7 +79,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const [temples, blogs, devotionals] = await Promise.all([
       Temple.find({ status: 'approved' }, 'title slug state city deity image createdAt').lean() as Promise<any[]>,
       Blog.find({}, 'title slug createdAt').lean() as Promise<any[]>,
-      Devotional.find({ status: 'approved' }, 'title createdAt').lean() as Promise<any[]>,
+      Devotional.find({ status: 'approved' }, 'title category createdAt').lean() as Promise<any[]>,
     ])
 
     const templePages: MetadataRoute.Sitemap = temples.map((t: any) => ({
@@ -202,7 +203,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.7,
     }]
 
-    return [...staticPages, ...festivalPages, ...statePages, ...deityPages, ...cityPages, ...districtPages, ...pilgrimageHub, ...pilgrimagePages, ...nearMePages, ...regionPages, ...storyPages, ...forumPages, ...templePages, ...blogPages, ...devotionalPages]
+    // ── Devotional category pages ──
+    const devCategories = Array.from(new Set(devotionals.map((d: any) => d.category).filter(Boolean))) as string[]
+    const devCatPages: MetadataRoute.Sitemap = devCategories.map(c => ({
+      url: `${BASE}/devotionals/category/${slugify(c)}`,
+      lastModified: now,
+      changeFrequency: 'weekly' as const,
+      priority: 0.7,
+    }))
+
+    return [...staticPages, ...festivalPages, ...statePages, ...deityPages, ...cityPages, ...districtPages, ...pilgrimageHub, ...pilgrimagePages, ...nearMePages, ...regionPages, ...storyPages, ...forumPages, ...templePages, ...blogPages, ...devotionalPages, ...devCatPages]
   } catch {
     return [...staticPages, ...festivalPages]
   }

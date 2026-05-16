@@ -32,7 +32,7 @@ const faqs = [
 export default function HelpPage() {
   return (
     <>
-      <Hero title="Help Center" subtitle="Find answers to common questions about Sarvdev Temple Directory" />
+      <Hero title="Help Center" subtitle="Find answers to common questions about Sarvdev Temple Directory" overline="Support" />
       <main className="content-container section-sm">
         <div className="space-y-10">
           <div className="text-center">

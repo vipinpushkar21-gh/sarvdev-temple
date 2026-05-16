@@ -2,6 +2,8 @@ import type { Metadata } from 'next'
 import { connectDB } from '@/lib/db'
 import Devotional from '@/models/Devotional'
 
+export const revalidate = 300
+
 const BASE = 'https://sarvdev.com'
 const DEFAULT_IMAGE = 'https://res.cloudinary.com/dc2qg7bwr/image/upload/image_2_xljqwa'
 

@@ -189,30 +189,40 @@ export default function DevotionalDetailPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      {/* ── Image Hero Header ── */}
-      <div className="relative w-full overflow-hidden" style={{ height: '320px' }}>
+      {/* ── Premium Image Hero Header ── */}
+      <div className="relative w-full overflow-hidden" style={{ height: '380px' }}>
         <img
           src={heroImage}
           alt={bt.primary}
-          className="absolute inset-0 w-full h-full object-cover"
+          className="absolute inset-0 w-full h-full object-cover scale-105"
           onError={e => { (e.target as HTMLImageElement).src = DEFAULT_DEVOTIONAL_IMAGE }}
         />
-        {/* Dark gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-secondary-900/90 via-secondary-900/50 to-transparent" />
-        {/* Saffron-gold top accent line */}
-        <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-accent-600 via-primary to-accent" />
+        {/* Multi-layer gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-secondary-900 via-secondary-900/60 to-secondary-900/20" />
+        <div className="absolute inset-0 bg-gradient-to-r from-secondary-900/40 to-transparent" />
+        {/* Sacred gold top accent line */}
+        <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-transparent via-temple-gold-DEFAULT to-transparent opacity-80" />
+        {/* Decorative glow */}
+        <div className="absolute bottom-0 left-[10%] w-64 h-64 bg-primary/10 rounded-full blur-[80px] pointer-events-none" />
         {/* Title content */}
-        <div className="absolute bottom-0 left-0 right-0 page-container pb-8 pt-4">
-          {devotional.category && (
-            <span className="inline-block mb-2 px-3 py-1 rounded-full text-caption font-semibold bg-primary/90 text-white backdrop-blur-sm">
-              {devotional.category}
-            </span>
-          )}
-          <h1 className="text-h1 md:text-display font-serif text-white leading-tight drop-shadow-lg">
+        <div className="absolute bottom-0 left-0 right-0 page-container pb-10 pt-4 z-10">
+          <div className="flex items-center gap-2 mb-3">
+            {devotional.category && (
+              <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-caption font-bold bg-primary/90 text-white backdrop-blur-sm shadow-divine">
+                {devotional.category}
+              </span>
+            )}
+            {devotional.deity && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-caption font-semibold bg-white/15 text-white/90 backdrop-blur-sm border border-white/10">
+                🙏 {devotional.deity}
+              </span>
+            )}
+          </div>
+          <h1 className="text-h1 md:text-display font-display text-white leading-tight text-shadow-divine">
             {bt.primary}
           </h1>
           {showTransliteration && bt.secondary && (
-            <p className="mt-1 text-body text-orange-100/80 font-devanagari">{bt.secondary}</p>
+            <p className="mt-2 text-body text-temple-gold-light/80 font-devanagari">{bt.secondary}</p>
           )}
         </div>
       </div>

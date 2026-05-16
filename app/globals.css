@@ -27,6 +27,16 @@
   --shadow-glow: 0 0 40px rgba(255, 153, 51, 0.12);
   --transition-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   --transition-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Premium sacred colors */
+  --color-sandstone: #B8A07A;
+  --color-ivory: #FFFFF0;
+  --color-maroon: #800020;
+  --color-temple-gold: #C9A84C;
+
+  /* Premium font variables */
+  --font-cinzel: var(--font-cinzel, 'Cinzel');
+  --font-playfair: var(--font-playfair, 'Playfair Display');
 }
 
 /* ─── Base Layer ─── */
@@ -1058,5 +1068,248 @@
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════ */
+/*  SPRINT 8 — PREMIUM SACRED DESIGN SYSTEM              */
+/* ═══════════════════════════════════════════════════════ */
+
+@layer components {
+  /* ─── Sacred Section Divider ─── */
+  .sacred-divider {
+    @apply relative w-full h-8 flex items-center justify-center;
+  }
+  .sacred-divider::before {
+    content: '';
+    @apply absolute left-0 right-0 h-px;
+    background: linear-gradient(90deg, transparent, var(--color-temple-gold), var(--color-primary), var(--color-temple-gold), transparent);
+  }
+  .sacred-divider::after {
+    content: '॥';
+    @apply relative px-4 font-devanagari text-lg bg-surface;
+    color: var(--color-temple-gold);
+  }
+
+  /* ─── Temple Silhouette Separator ─── */
+  .temple-separator {
+    @apply relative w-full overflow-hidden;
+    height: 40px;
+  }
+  .temple-separator::before {
+    content: '';
+    @apply absolute inset-x-0 bottom-0 h-px;
+    background: linear-gradient(90deg, transparent 5%, var(--color-sandstone) 30%, var(--color-temple-gold) 50%, var(--color-sandstone) 70%, transparent 95%);
+  }
+
+  /* ─── Diya Glow Card ─── */
+  .card-diya {
+    @apply card relative overflow-hidden;
+  }
+  .card-diya::before {
+    content: '';
+    @apply absolute -top-8 left-1/2 -translate-x-1/2 w-16 h-16 rounded-full opacity-0 transition-opacity duration-500;
+    background: radial-gradient(circle, rgba(255,153,51,0.25), rgba(255,215,0,0.15), transparent 70%);
+  }
+  .card-diya:hover::before {
+    @apply opacity-100;
+    animation: diyaFlicker 2s ease-in-out infinite;
+  }
+
+  /* ─── Premium Divine Card ─── */
+  .card-divine {
+    @apply relative rounded-2xl overflow-hidden transition-all duration-500;
+    background: linear-gradient(165deg, #FFFFFF 0%, #FFF9F0 50%, #FFF5EB 100%);
+    border: 1px solid rgba(201, 168, 76, 0.15);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(201, 168, 76, 0.06);
+  }
+  .card-divine:hover {
+    @apply -translate-y-1.5;
+    border-color: rgba(255, 153, 51, 0.3);
+    box-shadow: 0 8px 32px rgba(255, 153, 51, 0.12), 0 4px 12px rgba(201, 168, 76, 0.08);
+  }
+  .card-divine::after {
+    content: '';
+    @apply absolute bottom-0 left-0 right-0 h-[2px] opacity-0 transition-opacity duration-500;
+    background: linear-gradient(90deg, var(--color-temple-gold), var(--color-primary), var(--color-temple-gold));
+  }
+  .card-divine:hover::after {
+    @apply opacity-100;
+  }
+
+  /* ─── Glassmorphism Premium ─── */
+  .glass-premium {
+    background: rgba(255, 255, 255, 0.65);
+    backdrop-filter: blur(30px) saturate(1.6);
+    -webkit-backdrop-filter: blur(30px) saturate(1.6);
+    @apply rounded-2xl border border-white/30 shadow-divine;
+  }
+  .glass-premium:hover {
+    background: rgba(255, 255, 255, 0.78);
+    @apply shadow-divine-lg;
+  }
+
+  /* ─── Sacred Hero Section ─── */
+  .sacred-hero {
+    @apply relative overflow-hidden;
+    background: linear-gradient(135deg, #1A110F 0%, #2C1810 30%, #3D1F15 50%, #261A16 70%, #1A110F 100%);
+  }
+  .sacred-hero::before {
+    content: '';
+    @apply absolute inset-0 pointer-events-none opacity-20;
+    background: radial-gradient(ellipse at 30% 40%, rgba(255,153,51,0.3) 0%, transparent 50%),
+                radial-gradient(ellipse at 70% 60%, rgba(201,168,76,0.2) 0%, transparent 50%);
+  }
+  .sacred-hero-content {
+    @apply relative z-10;
+  }
+
+  /* ─── Premium Section Title ─── */
+  .section-title-premium {
+    @apply font-display tracking-tight;
+  }
+  .section-title-premium .title-line {
+    @apply block;
+    background: linear-gradient(135deg, var(--color-secondary) 0%, #8B5A3E 50%, var(--color-primary) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .section-title-premium .title-accent {
+    @apply block;
+    font-family: var(--font-cinzel);
+    letter-spacing: 0.15em;
+    @apply text-overline uppercase text-temple-gold-DEFAULT;
+  }
+
+  /* ─── Deity Chip ─── */
+  .deity-chip {
+    @apply inline-flex items-center gap-2 px-4 py-2 rounded-full text-body-sm font-semibold
+           transition-all duration-300 cursor-pointer select-none;
+    background: linear-gradient(135deg, rgba(255,153,51,0.08), rgba(201,168,76,0.06));
+    border: 1px solid rgba(201,168,76,0.2);
+    color: var(--color-secondary);
+  }
+  .deity-chip:hover {
+    @apply -translate-y-0.5 shadow-divine;
+    border-color: rgba(255,153,51,0.4);
+    background: linear-gradient(135deg, rgba(255,153,51,0.15), rgba(201,168,76,0.1));
+  }
+  .deity-chip[data-active="true"] {
+    background: linear-gradient(135deg, var(--color-primary), #E67E22);
+    border-color: transparent;
+    color: white;
+    @apply shadow-divine;
+  }
+
+  /* ─── Premium CTA Button ─── */
+  .btn-divine {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3
+           text-body-sm font-bold transition-all duration-300;
+    background: linear-gradient(135deg, var(--color-primary) 0%, #E67E22 50%, var(--color-temple-gold) 100%);
+    color: white;
+    box-shadow: 0 4px 16px rgba(255,153,51,0.3), 0 2px 4px rgba(0,0,0,0.1);
+  }
+  .btn-divine:hover {
+    @apply -translate-y-0.5;
+    box-shadow: 0 8px 32px rgba(255,153,51,0.4), 0 4px 8px rgba(0,0,0,0.12);
+    filter: brightness(1.08);
+  }
+
+  /* ─── Maroon sacred button ─── */
+  .btn-sacred {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3
+           text-body-sm font-bold transition-all duration-300;
+    background: linear-gradient(135deg, var(--color-maroon) 0%, #6B001A 100%);
+    color: white;
+    box-shadow: 0 4px 16px rgba(128,0,32,0.25);
+  }
+  .btn-sacred:hover {
+    @apply -translate-y-0.5;
+    box-shadow: 0 8px 24px rgba(128,0,32,0.35);
+    filter: brightness(1.1);
+  }
+
+  /* ─── Sacred Background Patterns ─── */
+  .bg-sacred-pattern {
+    background-image:
+      radial-gradient(circle at 15% 25%, rgba(255,153,51,0.04) 0%, transparent 40%),
+      radial-gradient(circle at 85% 75%, rgba(201,168,76,0.04) 0%, transparent 40%),
+      radial-gradient(circle at 50% 50%, rgba(128,0,32,0.02) 0%, transparent 60%);
+  }
+
+  .bg-divine-gradient {
+    background: linear-gradient(135deg, #FFF9F0 0%, #FFFFF0 25%, #FAF9F6 50%, #FFF5EB 75%, #FFFDF0 100%);
+  }
+
+  .bg-maroon-gradient {
+    background: linear-gradient(135deg, #800020 0%, #6B001A 30%, #520014 60%, #3D000F 100%);
+  }
+
+  /* ─── Trust Signal Badge ─── */
+  .trust-badge {
+    @apply inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-caption font-bold;
+    background: linear-gradient(135deg, rgba(46,125,50,0.08), rgba(46,125,50,0.04));
+    border: 1px solid rgba(46,125,50,0.2);
+    color: #2E7D32;
+  }
+
+  /* ─── Featured Pillar Card ─── */
+  .pillar-card {
+    @apply relative flex flex-col items-center text-center p-6 rounded-2xl
+           transition-all duration-500 group;
+    background: linear-gradient(180deg, #FFFFFF 0%, #FFF9F0 100%);
+    border: 1px solid rgba(201,168,76,0.15);
+  }
+  .pillar-card:hover {
+    @apply -translate-y-2;
+    border-color: rgba(255,153,51,0.3);
+    box-shadow: 0 12px 40px rgba(255,153,51,0.12), 0 4px 12px rgba(0,0,0,0.04);
+  }
+  .pillar-card .pillar-icon {
+    @apply w-16 h-16 rounded-2xl flex items-center justify-center text-2xl mb-4
+           transition-all duration-500 group-hover:scale-110;
+    background: linear-gradient(135deg, rgba(255,153,51,0.12), rgba(201,168,76,0.08));
+    box-shadow: 0 2px 12px rgba(255,153,51,0.08);
+  }
+}
+
+@layer utilities {
+  /* ─── Diya flicker animation ─── */
+  @keyframes diyaFlicker {
+    0%, 100% { opacity: 0.7; transform: translateX(-50%) scale(1); }
+    25% { opacity: 1; transform: translateX(-50%) scale(1.05); }
+    50% { opacity: 0.6; transform: translateX(-50%) scale(0.98); }
+    75% { opacity: 0.9; transform: translateX(-50%) scale(1.03); }
+  }
+
+  /* ─── Sacred glow pulse ─── */
+  .sacred-glow {
+    animation: sacredGlow 3s ease-in-out infinite;
+  }
+  @keyframes sacredGlow {
+    0%, 100% { box-shadow: 0 0 20px rgba(201,168,76,0.1); }
+    50%      { box-shadow: 0 0 40px rgba(255,153,51,0.2), 0 0 80px rgba(201,168,76,0.1); }
+  }
+
+  /* ─── Text shadow for hero readability ─── */
+  .text-shadow-divine {
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3), 0 4px 12px rgba(0,0,0,0.15);
+  }
+  .text-shadow-sm {
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+  }
+
+  /* ─── Gradient border utility ─── */
+  .border-sacred {
+    border-image: linear-gradient(135deg, var(--color-temple-gold), var(--color-primary), var(--color-temple-gold)) 1;
+  }
+
+  /* ─── Cinzel font utility ─── */
+  .font-cinzel {
+    font-family: var(--font-cinzel), 'Cinzel', Georgia, serif;
+  }
+  .font-playfair {
+    font-family: var(--font-playfair), 'Playfair Display', Georgia, serif;
   }
 }

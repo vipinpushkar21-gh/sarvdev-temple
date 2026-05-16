@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 export default function DisclaimerPage() {
   return (
     <>
-      <Hero title="Disclaimer" subtitle="Important information about Sarvdev content and services" />
+      <Hero title="Disclaimer" subtitle="Important information about Sarvdev content and services" overline="Legal" />
       <main className="content-container section-sm">
         <div className="relative card overflow-hidden max-w-3xl mx-auto">
           <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-accent to-primary" />

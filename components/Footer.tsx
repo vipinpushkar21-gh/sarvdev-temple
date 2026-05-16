@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from 'react'
 import Link from 'next/link'
 import { useTranslation } from '../lib/translation'
 
@@ -56,11 +57,34 @@ const legalLinks = [
 
 export default function Footer() {
   const { t } = useTranslation()
+  const [email, setEmail] = useState('')
+  const [subStatus, setSubStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
+  const [subMsg, setSubMsg] = useState('')
+
+  const handleSubscribe = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!email) return
+    setSubStatus('loading')
+    try {
+      const res = await fetch('/api/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, source: 'footer' }),
+      })
+      const data = await res.json()
+      setSubStatus('success')
+      setSubMsg(data.message || 'Subscribed!')
+      setEmail('')
+    } catch {
+      setSubStatus('error')
+      setSubMsg('Something went wrong. Please try again.')
+    }
+  }
 
   return (
     <footer className="relative bg-secondary-900 text-secondary-100 overflow-hidden">
       {/* Decorative elements */}
-      <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
+      <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-temple-gold-DEFAULT/50 to-transparent" />
       <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/[0.03] rounded-full blur-[100px] -translate-y-1/2 translate-x-1/3 pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-80 h-80 bg-accent/[0.03] rounded-full blur-[80px] translate-y-1/2 -translate-x-1/3 pointer-events-none" />
 
@@ -78,7 +102,7 @@ export default function Footer() {
                 <span className="text-h3 font-serif font-bold text-white group-hover:text-accent transition-colors duration-200">
                   Sarvdev
                 </span>
-                <span className="text-[9px] font-medium text-secondary-400 tracking-[0.12em] uppercase -mt-0.5">
+                <span className="text-[9px] font-cinzel text-temple-gold-light/60 tracking-[0.18em] uppercase -mt-0.5">
                   Temple & Devotional Hub
                 </span>
               </div>
@@ -109,7 +133,7 @@ export default function Footer() {
 
           {/* Quick Links */}
           <nav aria-label="Quick links">
-            <h3 className="text-overline uppercase tracking-wider text-accent/70 mb-4">Explore</h3>
+            <h3 className="text-overline font-cinzel uppercase tracking-wider text-temple-gold-DEFAULT/70 mb-4">Explore</h3>
             <ul className="space-y-2.5">
               {quickLinks.map(link => (
                 <li key={link.href}>
@@ -121,7 +145,7 @@ export default function Footer() {
 
           {/* States */}
           <nav aria-label="Popular states">
-            <h3 className="text-overline uppercase tracking-wider text-accent/70 mb-4">Top States</h3>
+            <h3 className="text-overline font-cinzel uppercase tracking-wider text-temple-gold-DEFAULT/70 mb-4">Top States</h3>
             <ul className="space-y-2.5">
               {popularStates.map(link => (
                 <li key={link.href}>
@@ -133,7 +157,7 @@ export default function Footer() {
 
           {/* Deities */}
           <nav aria-label="Popular deities">
-            <h3 className="text-overline uppercase tracking-wider text-accent/70 mb-4">Deities</h3>
+            <h3 className="text-overline font-cinzel uppercase tracking-wider text-temple-gold-DEFAULT/70 mb-4">Deities</h3>
             <ul className="space-y-2.5">
               {popularDeities.map(link => (
                 <li key={link.href}>
@@ -145,7 +169,7 @@ export default function Footer() {
 
           {/* Pilgrimages */}
           <nav aria-label="Pilgrimage circuits">
-            <h3 className="text-overline uppercase tracking-wider text-accent/70 mb-4">Pilgrimages</h3>
+            <h3 className="text-overline font-cinzel uppercase tracking-wider text-temple-gold-DEFAULT/70 mb-4">Pilgrimages</h3>
             <ul className="space-y-2.5">
               {pilgrimageLinks.map(link => (
                 <li key={link.href}>
@@ -154,7 +178,7 @@ export default function Footer() {
               ))}
             </ul>
             <div className="mt-6">
-              <h3 className="text-overline uppercase tracking-wider text-accent/70 mb-3">Legal</h3>
+              <h3 className="text-overline font-cinzel uppercase tracking-wider text-temple-gold-DEFAULT/70 mb-3">Legal</h3>
               <ul className="space-y-2">
                 {legalLinks.slice(0, 4).map(link => (
                   <li key={link.href}>
@@ -164,6 +188,40 @@ export default function Footer() {
               </ul>
             </div>
           </nav>
+        </div>
+      </div>
+
+      {/* Newsletter CTA */}
+      <div className="border-t border-secondary-800/60 relative z-10">
+        <div className="page-container py-8">
+          <div className="max-w-2xl mx-auto text-center">
+            <h3 className="font-cinzel text-overline uppercase tracking-[0.18em] text-temple-gold-light/70 mb-2">Sacred Updates</h3>
+            <p className="text-lg font-serif font-bold text-white mb-1">Join our spiritual community</p>
+            <p className="text-body-sm text-secondary-400 mb-5">Get daily darshan, temple updates, and devotional content delivered to your inbox.</p>
+            {subStatus === 'success' ? (
+              <p className="text-sm font-semibold text-emerald-400">{subMsg}</p>
+            ) : (
+              <form onSubmit={handleSubscribe} className="flex gap-2 max-w-md mx-auto">
+                <input
+                  type="email"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  placeholder="your@email.com"
+                  required
+                  className="flex-1 px-4 py-2.5 rounded-xl text-sm bg-white/[0.06] border border-white/[0.12] text-white placeholder:text-secondary-500 focus:outline-none focus:border-primary/50 transition-colors"
+                />
+                <button
+                  type="submit"
+                  disabled={subStatus === 'loading'}
+                  className="px-5 py-2.5 rounded-xl text-sm font-bold text-white flex-shrink-0 transition-all disabled:opacity-60"
+                  style={{ background: 'linear-gradient(135deg, #FF9933, #E67E22)', boxShadow: '0 4px 14px rgba(255,153,51,0.3)' }}
+                >
+                  {subStatus === 'loading' ? 'Subscribing...' : 'Subscribe'}
+                </button>
+              </form>
+            )}
+            {subStatus === 'error' && <p className="text-xs text-red-400 mt-2">{subMsg}</p>}
+          </div>
         </div>
       </div>
 

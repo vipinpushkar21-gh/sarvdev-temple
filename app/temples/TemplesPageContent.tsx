@@ -135,7 +135,7 @@ export default function TemplesPageContent() {
   if (loading) {
     return (
       <>
-        <Hero title={t('temples.title')} subtitle={t('temples.subtitle')} />
+        <Hero title={t('temples.title')} subtitle={t('temples.subtitle')} overline="Sacred Directory" />
         <main className="page-container section-sm">
           <TempleGridSkeleton count={8} />
         </main>
@@ -153,7 +153,7 @@ export default function TemplesPageContent() {
 
   return (
     <>
-      <Hero title={t('temples.title')} subtitle={t('temples.subtitle')} />
+      <Hero title={t('temples.title')} subtitle={t('temples.subtitle')} overline="Sacred Directory" />
 
       {/* Search Bar — Glassmorphic */}
       <div className="relative bg-mesh-warm border-b border-surface-border">

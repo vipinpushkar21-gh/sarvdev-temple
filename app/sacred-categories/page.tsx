@@ -65,7 +65,7 @@ export default function SacredCategoriesPage() {
   if (loading) {
     return (
       <>
-        <Hero title="Sacred Temple Categories" subtitle="Explore temples by their sacred significance and groupings" />
+        <Hero title="Sacred Temple Categories" subtitle="Explore temples by their sacred significance and groupings" overline="Sacred Groupings" />
         <main className="page-container py-12">
           <div className="text-center">Loading sacred categories...</div>
         </main>
@@ -75,7 +75,7 @@ export default function SacredCategoriesPage() {
 
   return (
     <>
-      <Hero title="Sacred Temple Categories" subtitle="Explore temples by their sacred significance and groupings" />
+      <Hero title="Sacred Temple Categories" subtitle="Explore temples by their sacred significance and groupings" overline="Sacred Groupings" />
       <main className="page-container section-sm">
 
       <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

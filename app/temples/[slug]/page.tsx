@@ -257,6 +257,8 @@ export default function TemplePage({ params }: Props) {
         >
           <TempleDetailImage image={temple.image} alt={temple.title} />
         </div>
+        {/* Sacred gold top accent */}
+        <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-transparent via-temple-gold-DEFAULT to-transparent opacity-70 z-20" />
 
         {/* Hero overlay content */}
         <div className="temple-hero-content">
@@ -264,9 +266,9 @@ export default function TemplePage({ params }: Props) {
             {/* Breadcrumb over hero */}
             <nav className="mb-4 fade-in">
               <ol className="flex items-center gap-1.5 text-body-sm text-white/70 flex-wrap">
-                <li><Link href="/" className="hover:text-white transition-colors text-white/70">{t('nav.home')}</Link></li>
+                <li><Link href="/" className="hover:text-white transition-colors text-white/70 no-underline hover:no-underline">{t('nav.home')}</Link></li>
                 <li className="text-white/40">/</li>
-                <li><Link href="/temples" className="hover:text-white transition-colors text-white/70">{t('nav.temples')}</Link></li>
+                <li><Link href="/temples" className="hover:text-white transition-colors text-white/70 no-underline hover:no-underline">{t('nav.temples')}</Link></li>
                 <li className="text-white/40">/</li>
                 <li className="text-white font-medium truncate max-w-[250px]">{(language === 'hi' && temple.titleHi) ? temple.titleHi : temple.title}</li>
               </ol>
@@ -291,12 +293,21 @@ export default function TemplePage({ params }: Props) {
               )}
             </div>
 
+            {/* Temple type overline */}
+            {templeTypeValue && (
+              <div className="mb-2 reveal-up" style={{ animationDelay: '80ms' }}>
+                <span className="font-cinzel text-overline uppercase tracking-[0.2em] text-temple-gold-light">
+                  {templeTypeValue}
+                </span>
+              </div>
+            )}
+
             {/* Temple title */}
-            <h1 className="text-display-lg text-white font-serif reveal-up" style={{ animationDelay: '100ms', textShadow: '0 2px 20px rgba(0,0,0,0.3)' }}>
+            <h1 className="text-display-lg text-white font-display reveal-up text-shadow-divine" style={{ animationDelay: '100ms' }}>
               {(language === 'hi' && temple.titleHi) ? temple.titleHi : temple.title}
             </h1>
             {displayLocation && (
-              <p className="mt-3 text-body text-white/80 flex items-center gap-2 reveal-up" style={{ animationDelay: '200ms' }}>
+              <p className="mt-3 text-body text-sandstone-300 flex items-center gap-2 reveal-up" style={{ animationDelay: '200ms' }}>
                 <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
                   <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />

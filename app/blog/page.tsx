@@ -41,7 +41,7 @@ export default function BlogIndexPage() {
   if (loading) {
     return (
       <>
-        <Hero title="Blog" subtitle="Articles and guides about temples, rituals, and visiting tips." />
+        <Hero title="Blog" subtitle="Articles and guides about temples, rituals, and visiting tips." overline="Sarvdev Journal" />
         <main className="page-container section-sm">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {Array.from({ length: 6 }).map((_, i) => (
@@ -63,7 +63,7 @@ export default function BlogIndexPage() {
 
   return (
     <>
-      <Hero title="Blog" subtitle="Articles and guides about temples, rituals, and visiting tips." />
+      <Hero title="Blog" subtitle="Articles and guides about temples, rituals, and visiting tips." overline="Sarvdev Journal" />
       <main className="page-container section-sm">
 
       <section>

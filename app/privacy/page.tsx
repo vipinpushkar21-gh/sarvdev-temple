@@ -3,7 +3,7 @@ import Hero from '../../components/Hero'
 export default function PrivacyPage() {
   return (
     <>
-      <Hero title="Privacy Policy" subtitle="Our commitment to your privacy" />
+      <Hero title="Privacy Policy" subtitle="Our commitment to your privacy" overline="Legal" />
       <main className="content-container section-sm">
       
       <div className="relative card overflow-hidden max-w-3xl mx-auto">

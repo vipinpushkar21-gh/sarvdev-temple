@@ -80,6 +80,7 @@ export default function EventsPage() {
       <Hero
         title="Hindu Events & Festivals"
         subtitle="Discover sacred festivals, pilgrimages, cultural programs, and spiritual gatherings worldwide — 2026 &amp; 2027"
+        overline="Sacred Calendar"
       />
 
       {/* Year Selector + Category Tabs */}

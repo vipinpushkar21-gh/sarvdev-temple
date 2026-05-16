@@ -28,7 +28,7 @@ export default function BookingPage() {
 
   return (
     <>
-      <Hero title="Online Booking" subtitle="Reserve pooja and darshan slots at your favourite temples." />
+      <Hero title="Online Booking" subtitle="Reserve pooja and darshan slots at your favourite temples." overline="Temple Services" />
       <main className="page-container section-sm">
 
       <section>

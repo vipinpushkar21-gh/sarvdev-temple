@@ -35,6 +35,7 @@ export default function LiveDarshanPage() {
       <Hero
         title="🔴 Live Darshan"
         subtitle="Temples se seedha live — watch sacred moments in real time"
+        overline="Live Stream"
       />
       <main className="page-container section-sm">
         {loading ? (

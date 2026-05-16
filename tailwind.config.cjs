@@ -46,6 +46,40 @@ module.exports = {
           600: '#CCA800',
           700: '#997E00',
         },
+        sandstone: {
+          50: '#FBF8F3',
+          100: '#F5EFE5',
+          200: '#EDE3D3',
+          300: '#DFD1BA',
+          400: '#C9B48E',
+          DEFAULT: '#B8A07A',
+          500: '#B8A07A',
+          600: '#9E8662',
+          700: '#7D6A4E',
+        },
+        ivory: {
+          DEFAULT: '#FFFFF0',
+          50: '#FFFFFB',
+          100: '#FFFFF5',
+          200: '#FFFFF0',
+        },
+        maroon: {
+          50: '#FDF2F4',
+          100: '#FAE1E5',
+          200: '#F5C0CA',
+          300: '#ED8DA0',
+          400: '#E0566F',
+          DEFAULT: '#800020',
+          500: '#800020',
+          600: '#6B001A',
+          700: '#520014',
+          800: '#3D000F',
+        },
+        'temple-gold': {
+          DEFAULT: '#C9A84C',
+          light: '#E8D48B',
+          dark: '#8B7535',
+        },
         surface: {
           DEFAULT: '#FAF9F6',  // Warm paper white — page bg
           raised:  '#FFFFFF',  // Cards / elevated surfaces
@@ -70,6 +104,9 @@ module.exports = {
         serif: ["'Noto Serif Devanagari'", "'Noto Serif'", 'Georgia', 'serif'],
         sans:  ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
         devanagari: ["'Noto Serif Devanagari'", 'serif'],
+        display: ["'Playfair Display'", "'Noto Serif'", 'Georgia', 'serif'],
+        cinzel: ['Cinzel', 'Georgia', 'serif'],
+        mukta: ['Mukta', 'sans-serif'],
       },
       fontSize: {
         /* Display — Hero / landing headlines */
@@ -109,6 +146,10 @@ module.exports = {
         'card-hover':'0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04)',
         'elevated': '0 8px 24px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.04)',
         'dropdown': '0 4px 16px rgba(0,0,0,0.12)',
+        'divine':   '0 4px 20px rgba(255,153,51,0.15), 0 2px 8px rgba(255,215,0,0.10)',
+        'divine-lg':'0 8px 40px rgba(255,153,51,0.20), 0 4px 16px rgba(255,215,0,0.12)',
+        'sacred':   '0 2px 12px rgba(128,0,32,0.08), 0 1px 4px rgba(0,0,0,0.04)',
+        'inner-glow':'inset 0 1px 4px rgba(255,153,51,0.08)',
       },
       transitionProperty: {
         'height': 'height',
