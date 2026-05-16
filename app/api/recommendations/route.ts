@@ -3,6 +3,7 @@ import { connectDB } from '@/lib/db'
 import Temple from '@/models/Temple'
 import Devotional from '@/models/Devotional'
 import Blog from '@/models/Blog'
+import Event from '@/models/Event'
 
 function slugify(text: string) {
   return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
@@ -98,6 +99,68 @@ export async function GET(req: NextRequest) {
           href: `/blog/${b.slug || b._id.toString()}`,
           subtitle: b.excerpt?.slice(0, 60),
           image: b.image,
+        })
+      }
+    }
+
+    // Related festivals/events (keyword match)
+    const eventKeywords = [deity, city].filter(Boolean)
+    if (eventKeywords.length > 0) {
+      const eventQuery = {
+        status: 'approved',
+        $or: eventKeywords.map(k => ({ title: { $regex: new RegExp(k, 'i') } })),
+      }
+      const events = await Event.find(eventQuery, 'title slug description date')
+        .limit(Math.ceil(limit * 0.15)).lean() as any[]
+
+      for (const e of events) {
+        results.push({
+          type: 'festival',
+          title: e.title,
+          href: `/events/${e.slug || e._id.toString()}`,
+          subtitle: e.date ? new Date(e.date).toLocaleDateString('en-IN', { month: 'long', day: 'numeric' }) : undefined,
+        })
+      }
+    }
+
+    // Pilgrimage cluster suggestions based on deity
+    const pilgrimageMap: Record<string, { slug: string; title: string }[]> = {
+      shiva: [
+        { slug: 'jyotirlinga', title: '12 Jyotirlinga Temples' },
+        { slug: 'panch-kedar', title: 'Panch Kedar' },
+        { slug: '108-shiva-temples', title: '108 Shiva Temples' },
+      ],
+      krishna: [
+        { slug: 'iskcon', title: 'ISKCON Temples' },
+        { slug: 'divya-desam', title: '108 Divya Desam' },
+      ],
+      rama: [
+        { slug: 'ramayana-circuit', title: 'Ramayana Circuit' },
+        { slug: 'sapta-puri', title: 'Sapta Puri' },
+      ],
+      vishnu: [
+        { slug: 'divya-desam', title: '108 Divya Desam' },
+        { slug: 'char-dham', title: 'Char Dham' },
+      ],
+      durga: [
+        { slug: 'shakti-peeth', title: '51 Shakti Peethas' },
+      ],
+      ganesha: [
+        { slug: 'ashta-vinayak', title: 'Ashta Vinayak' },
+      ],
+      murugan: [
+        { slug: 'arupadai-veedu', title: 'Arupadai Veedu' },
+      ],
+    }
+    if (deity) {
+      const key = deity.toLowerCase().replace(/lord\s*/i, '')
+      const clusters = pilgrimageMap[key] || []
+      for (const c of clusters) {
+        results.push({
+          type: 'pilgrimage',
+          title: c.title,
+          href: `/temples/pilgrimage/${c.slug}`,
+          subtitle: 'Pilgrimage Circuit',
         })
       }
     }

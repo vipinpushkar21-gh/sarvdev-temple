@@ -118,8 +118,41 @@ export default function ForumThreadPage() {
     )
   }
 
+  // QAPage schema for question-category posts (Google rich results)
+  const isQuestion = post.category === 'questions'
+  const qaJsonLd = isQuestion && post.replies.length > 0 ? {
+    '@context': 'https://schema.org',
+    '@type': 'QAPage',
+    mainEntity: {
+      '@type': 'Question',
+      name: post.title,
+      text: post.content.slice(0, 500),
+      dateCreated: post.createdAt,
+      author: { '@type': 'Person', name: post.authorName },
+      answerCount: post.replies.length,
+      upvoteCount: post.likes,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: post.replies[0].content.slice(0, 500),
+        dateCreated: post.replies[0].createdAt,
+        author: { '@type': 'Person', name: post.replies[0].authorName },
+        upvoteCount: post.replies[0].likes || 0,
+      },
+      suggestedAnswer: post.replies.slice(1, 5).map(r => ({
+        '@type': 'Answer',
+        text: r.content.slice(0, 500),
+        dateCreated: r.createdAt,
+        author: { '@type': 'Person', name: r.authorName },
+        upvoteCount: r.likes || 0,
+      })),
+    },
+  } : null
+
   return (
     <>
+      {qaJsonLd && (
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(qaJsonLd) }} />
+      )}
       <Hero title="Forum" />
       <main className="page-container section-sm">
         <div className="max-w-3xl mx-auto space-y-6">

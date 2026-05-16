@@ -14,6 +14,7 @@ import VisitorTracker from '../components/VisitorTracker'
 import AuthGuard from '../components/AuthGuard'
 import { ToastProvider } from '../components/Toast'
 import ScrollToTop from '../components/ScrollToTop'
+import MobileBottomNav from '../components/MobileBottomNav'
 import AudioPlayerBar from '../components/AudioPlayerBar'
 import SpiritualChatbot from '../components/SpiritualChatbot'
 import { ThemeProvider } from '../lib/theme'
@@ -153,6 +154,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </div>
             <Footer />
             <AudioPlayerBar />
+            <MobileBottomNav />
             <ScrollToTop />
             <SpiritualChatbot />
             <ScrollRevealInit />

@@ -11,6 +11,8 @@ type UserData = {
 export default function UserDashboardPage() {
   const [user, setUser] = useState<UserData | null>(null)
   const [bookmarks, setBookmarks] = useState<string[]>([])
+  const [journeyCount, setJourneyCount] = useState(0)
+  const [reviewCount, setReviewCount] = useState(0)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -27,6 +29,11 @@ export default function UserDashboardPage() {
       const saved = JSON.parse(localStorage.getItem('sarvdev_bookmarks') || '[]')
       if (Array.isArray(saved)) setBookmarks(saved)
     } catch {}
+
+    // Load journey count
+    fetch('/api/journeys').then(r => r.ok ? r.json() : []).then(j => {
+      if (Array.isArray(j)) setJourneyCount(j.length)
+    }).catch(() => {})
   }, [])
 
   if (loading) {
@@ -57,6 +64,8 @@ export default function UserDashboardPage() {
     { href: '/blog', icon: '📝', label: 'Blog', desc: 'Spiritual articles' },
     { href: '/bookmarks', icon: '🔖', label: 'My Bookmarks', desc: `${bookmarks.length} saved` },
     { href: '/daily-darshan', icon: '🌅', label: 'Daily Darshan', desc: 'Today\'s darshan' },
+    { href: '/list-temple', icon: '➕', label: 'Submit Temple', desc: 'Contribute to directory' },
+    { href: '/temples/pilgrimage', icon: '🚩', label: 'Pilgrimages', desc: `${journeyCount} journeys` },
   ]
 
   return (
@@ -86,7 +95,7 @@ export default function UserDashboardPage() {
               <p className="text-sm text-gray-500">{user.email}</p>
               {user.city && <p className="text-xs text-gray-400 mt-1">📍 {user.city}{user.state && `, ${user.state}`}</p>}
               <span className="inline-block mt-2 text-[11px] font-semibold px-3 py-1 rounded-full bg-orange-100 text-orange-700">
-                श्रद्धालु / Devotee
+                {user.role === 'temple' ? '🛕 Temple Manager' : user.role === 'pandit' ? '🙏 Pandit' : 'श्रद्धालु / Devotee'}
               </span>
             </div>
             <div className="mt-5 space-y-2 text-sm">

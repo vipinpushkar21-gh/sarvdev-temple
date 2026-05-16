@@ -8,7 +8,7 @@ import LanguageSwitcher from './LanguageSwitcher'
 
 const navItems = [
   { label: 'nav.home', href: '/', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0h4' },
-  { label: 'nav.temples', href: '/temples', icon: 'M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4' },
+  { label: 'nav.temples', href: '/temples', icon: 'M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4', mega: 'temples' as const },
   { label: 'nav.dailyDarshan', href: '/daily-darshan', icon: 'M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z' },
   { label: 'nav.events', href: '/events', icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
   { label: 'nav.panchang', href: '/panchang', icon: 'M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z' },
@@ -19,6 +19,49 @@ const navItems = [
   { label: 'nav.listTemple', href: '/list-temple', icon: 'M12 4v16m8-8H4' },
   { label: 'nav.bookmarks', href: '/bookmarks', icon: 'M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z' },
 ]
+
+const megaMenuData = {
+  temples: {
+    columns: [
+      {
+        title: 'By Region',
+        links: [
+          { label: 'North India', href: '/temples/region/north-india' },
+          { label: 'South India', href: '/temples/region/south-india' },
+          { label: 'West India', href: '/temples/region/west-india' },
+          { label: 'East India', href: '/temples/region/east-india' },
+        ],
+      },
+      {
+        title: 'By Deity',
+        links: [
+          { label: 'Shiva Temples', href: '/temples/deity/shiva' },
+          { label: 'Krishna Temples', href: '/temples/deity/krishna' },
+          { label: 'Hanuman Temples', href: '/temples/deity/hanuman' },
+          { label: 'Ganesh Temples', href: '/temples/deity/ganesh' },
+        ],
+      },
+      {
+        title: 'Pilgrimages',
+        links: [
+          { label: 'Char Dham', href: '/temples/pilgrimage/char-dham' },
+          { label: '12 Jyotirlinga', href: '/temples/pilgrimage/jyotirlinga' },
+          { label: 'Shakti Peeth', href: '/temples/pilgrimage/shakti-peeth' },
+          { label: 'All Pilgrimages', href: '/temples/pilgrimage' },
+        ],
+      },
+      {
+        title: 'Popular States',
+        links: [
+          { label: 'Uttar Pradesh', href: '/temples/state/uttar-pradesh' },
+          { label: 'Rajasthan', href: '/temples/state/rajasthan' },
+          { label: 'Tamil Nadu', href: '/temples/state/tamil-nadu' },
+          { label: 'Maharashtra', href: '/temples/state/maharashtra' },
+        ],
+      },
+    ],
+  },
+}
 
 interface AuthUser {
   name: string
@@ -33,6 +76,8 @@ export default function Header() {
   const [user, setUser] = useState<AuthUser | null>(null)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
+  const [megaOpen, setMegaOpen] = useState<string | null>(null)
+  const megaTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const menuRef = useRef<HTMLDivElement | null>(null)
   const userMenuRef = useRef<HTMLDivElement | null>(null)
 
@@ -134,18 +179,80 @@ export default function Header() {
             <div className="flex items-center gap-px bg-white/[0.06] rounded-2xl px-1 py-0.5 border border-white/[0.08] max-w-[calc(100vw-320px)] overflow-x-auto scrollbar-none">
               {navItems.map((item) => {
                 const active = isActive(item.href)
+                const hasMega = !!(item as any).mega
+                const megaKey = (item as any).mega as string | undefined
+
                 return (
-                  <Link
+                  <div
                     key={item.href}
-                    href={item.href}
-                    className={`relative px-2 py-1.5 rounded-lg text-[10.5px] font-semibold no-underline hover:no-underline whitespace-nowrap transition-all duration-300 ${
-                      active
-                        ? 'text-secondary-900 bg-gradient-to-r from-primary to-accent shadow-md shadow-primary/30'
-                        : 'text-secondary-300 hover:text-white hover:bg-white/[0.08]'
-                    }`}
+                    className="relative"
+                    onMouseEnter={() => {
+                      if (megaKey) {
+                        if (megaTimerRef.current) clearTimeout(megaTimerRef.current)
+                        setMegaOpen(megaKey)
+                      }
+                    }}
+                    onMouseLeave={() => {
+                      if (megaKey) {
+                        megaTimerRef.current = setTimeout(() => setMegaOpen(null), 200)
+                      }
+                    }}
                   >
-                    {t(item.label)}
-                  </Link>
+                    <Link
+                      href={item.href}
+                      className={`relative px-2 py-1.5 rounded-lg text-[10.5px] font-semibold no-underline hover:no-underline whitespace-nowrap transition-all duration-300 flex items-center gap-0.5 ${
+                        active
+                          ? 'text-secondary-900 bg-gradient-to-r from-primary to-accent shadow-md shadow-primary/30'
+                          : 'text-secondary-300 hover:text-white hover:bg-white/[0.08]'
+                      }`}
+                    >
+                      {t(item.label)}
+                      {hasMega && (
+                        <svg className={`w-2.5 h-2.5 transition-transform duration-200 ${megaOpen === megaKey ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                        </svg>
+                      )}
+                    </Link>
+
+                    {/* Mega Menu Dropdown */}
+                    {megaKey && megaOpen === megaKey && megaMenuData[megaKey as keyof typeof megaMenuData] && (
+                      <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-[520px] bg-surface-raised rounded-2xl border border-surface-border shadow-elevated overflow-hidden z-[70] fade-up"
+                        onMouseEnter={() => {
+                          if (megaTimerRef.current) clearTimeout(megaTimerRef.current)
+                        }}
+                        onMouseLeave={() => {
+                          megaTimerRef.current = setTimeout(() => setMegaOpen(null), 150)
+                        }}
+                      >
+                        <div className="grid grid-cols-4 gap-0 p-4">
+                          {megaMenuData[megaKey as keyof typeof megaMenuData].columns.map((col) => (
+                            <div key={col.title}>
+                              <h4 className="text-[10px] font-bold uppercase tracking-wider text-ink-faint mb-2 px-2">{col.title}</h4>
+                              <ul className="space-y-0.5">
+                                {col.links.map((link) => (
+                                  <li key={link.href}>
+                                    <Link
+                                      href={link.href}
+                                      className="block px-2 py-1.5 rounded-lg text-[11px] font-medium text-ink no-underline hover:no-underline hover:bg-primary-50 hover:text-primary-700 transition-colors"
+                                      onClick={() => setMegaOpen(null)}
+                                    >
+                                      {link.label}
+                                    </Link>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="px-4 py-2.5 bg-surface-sunken border-t border-surface-border flex items-center justify-between">
+                          <span className="text-[10px] text-ink-muted">Explore 1000+ temples across India</span>
+                          <Link href="/temples" className="text-[10px] font-bold text-primary-600 no-underline hover:no-underline hover:text-primary-800" onClick={() => setMegaOpen(null)}>
+                            Browse All →
+                          </Link>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 )
               })}
             </div>

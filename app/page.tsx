@@ -16,6 +16,11 @@ import HomeCategoryShowcase from '../components/HomeCategoryShowcase'
 import TempleGalleryMosaic from '../components/TempleGalleryMosaic'
 import DevotionalTeaser from '../components/DevotionalTeaser'
 import NearbyTemples from '../components/NearbyTemples'
+import PilgrimageCircuits from '../components/home/PilgrimageCircuits'
+import SpiritualQuotes from '../components/home/SpiritualQuotes'
+import BlogHighlights from '../components/home/BlogHighlights'
+import StoriesTeaser from '../components/home/StoriesTeaser'
+import RegionalExplorer from '../components/home/RegionalExplorer'
 
 // ─── Homepage SEO Metadata ───
 export const metadata: Metadata = {
@@ -153,8 +158,23 @@ export default async function HomePage() {
       {/* ─── Devotional Music Teaser (server-fetched devotionals) ─── */}
       <DevotionalTeaser initialItems={devotionalList} />
 
+      {/* ─── Pilgrimage Circuits ─── */}
+      <PilgrimageCircuits />
+
+      {/* ─── Sacred Stories Teaser ─── */}
+      <StoriesTeaser />
+
+      {/* ─── Regional Explorer ─── */}
+      <RegionalExplorer />
+
+      {/* ─── Spiritual Quotes Slider ─── */}
+      <SpiritualQuotes />
+
       {/* ─── Nearby Temples — Geolocation (inherently client-side) ─── */}
       <NearbyTemples />
+
+      {/* ─── Blog Highlights ─── */}
+      <BlogHighlights />
 
       {/* ─── Features Section (client — needs translation) ─── */}
       <FeaturesGrid />

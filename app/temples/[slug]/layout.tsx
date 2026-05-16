@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { connectDB } from '@/lib/db'
 import Temple from '@/models/Temple'
+import Review from '@/models/Review'
 
 const BASE = 'https://sarvdev.com'
 const DEFAULT_IMAGE = 'https://res.cloudinary.com/dc2qg7bwr/image/upload/image_2_xljqwa'
@@ -87,7 +88,7 @@ export default async function TempleSlugLayout({
     await connectDB()
     const temples = await Temple.find(
       { status: 'approved' },
-      'title description image city state country deity latitude longitude timings'
+      'title description image city state country deity latitude longitude timings phone website'
     ).lean() as any[]
     const temple = temples.find((t: any) => slugify(t.title) === slug)
     if (temple) {
@@ -138,6 +139,31 @@ export default async function TempleSlugLayout({
         name: `${temple.title} Temple Photo`,
         caption: `${temple.title}${temple.city ? ` in ${temple.city}` : ''}${temple.state ? `, ${temple.state}` : ''}`,
       }
+      // Speakable for voice search
+      placeSchema.speakable = {
+        '@type': 'SpeakableSpecification',
+        cssSelector: ['h1', '.temple-description'],
+      }
+
+      // telephone for local SEO
+      if (temple.phone) placeSchema.telephone = temple.phone
+      if (temple.website) placeSchema.url = temple.website
+
+      // AggregateRating from reviews
+      try {
+        const reviews = await Review.find({ templeSlug: slug, status: { $ne: 'rejected' } }, 'rating').lean() as any[]
+        if (reviews.length >= 1) {
+          const avg = reviews.reduce((s: number, r: any) => s + r.rating, 0) / reviews.length
+          placeSchema.aggregateRating = {
+            '@type': 'AggregateRating',
+            ratingValue: Math.round(avg * 10) / 10,
+            reviewCount: reviews.length,
+            bestRating: 5,
+            worstRating: 1,
+          }
+        }
+      } catch { /* reviews optional */ }
+
       jsonLdArray.push(placeSchema)
     }
   } catch { /* silent */ }

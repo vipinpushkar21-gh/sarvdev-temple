@@ -21,6 +21,11 @@
   "shortcuts": [
     { "name": "Temples", "url": "/temples", "description": "Browse temples" },
     { "name": "Devotionals", "url": "/devotionals", "description": "Listen to devotionals" },
-    { "name": "Daily Darshan", "url": "/daily-darshan", "description": "Today's darshan" }
-  ]
+    { "name": "Daily Darshan", "url": "/daily-darshan", "description": "Today's darshan" },
+    { "name": "Panchang", "url": "/panchang", "description": "Today's panchang" },
+    { "name": "My Bookmarks", "url": "/bookmarks", "description": "Saved temples & devotionals" }
+  ],
+  "prefer_related_applications": false,
+  "scope": "/",
+  "id": "sarvdev-temple-app"
 }

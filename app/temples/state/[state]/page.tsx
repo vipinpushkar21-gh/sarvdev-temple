@@ -5,6 +5,8 @@ import Temple from '@/models/Temple'
 import RelatedSacredContent from '@/components/RelatedSacredContent'
 import { hinduEvents } from '@/data/events'
 
+export const revalidate = 3600
+
 const BASE = 'https://sarvdev.com'
 const DEFAULT_IMAGE = 'https://res.cloudinary.com/dc2qg7bwr/image/upload/image_2_xljqwa'
 
@@ -102,32 +104,42 @@ export default async function StateTemplesPage({
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
-      {/* Hero */}
-      <section className="bg-gradient-to-br from-primary-50 via-surface to-accent-50/30 border-b border-surface-border">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
+      {/* Hero — Enhanced editorial */}
+      <section className="relative bg-gradient-to-br from-primary-50 via-surface to-accent-50/30 border-b border-surface-border overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-10 right-[10%] w-72 h-72 bg-primary/[0.05] rounded-full blur-3xl" />
+          <div className="absolute bottom-0 left-[5%] w-56 h-56 bg-accent/[0.04] rounded-full blur-3xl" />
+        </div>
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-20 relative z-10">
           <nav className="flex items-center gap-2 text-body-sm text-ink-muted mb-6">
             <Link href="/" className="hover:text-primary-600 transition-colors no-underline">Home</Link>
-            <span>/</span>
+            <span className="text-ink-faint">/</span>
             <Link href="/temples" className="hover:text-primary-600 transition-colors no-underline">Temples</Link>
-            <span>/</span>
+            <span className="text-ink-faint">/</span>
             <span className="text-ink font-medium">{stateName}</span>
           </nav>
           <h1 className="text-display font-serif text-secondary-800 mb-3">
             Temples in {stateName}
           </h1>
-          <p className="text-body text-ink-muted max-w-2xl">
+          <p className="text-body text-ink-muted max-w-2xl leading-relaxed">
             Explore <strong className="text-ink">{temples.length}</strong> sacred temples across {stateName}. 
             Discover temple timings, deity information, and spiritual significance.
           </p>
           <div className="mt-6 flex flex-wrap gap-3 text-body-sm">
+            <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/80 border border-surface-border text-ink-muted shadow-sm">
+              <svg className="w-3.5 h-3.5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4" /></svg>
+              <strong className="text-ink">{temples.length}</strong> temples
+            </span>
             {cities.length > 0 && (
-              <span className="px-3 py-1.5 rounded-full bg-white/80 border border-surface-border text-ink-muted">
-                {cities.length} {cities.length === 1 ? 'city' : 'cities'}
+              <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/80 border border-surface-border text-ink-muted shadow-sm">
+                <svg className="w-3.5 h-3.5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                <strong className="text-ink">{cities.length}</strong> {cities.length === 1 ? 'city' : 'cities'}
               </span>
             )}
             {deities.length > 0 && (
-              <span className="px-3 py-1.5 rounded-full bg-white/80 border border-surface-border text-ink-muted">
-                {deities.length} {deities.length === 1 ? 'deity' : 'deities'}
+              <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/80 border border-surface-border text-ink-muted shadow-sm">
+                <svg className="w-3.5 h-3.5 text-accent-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" /></svg>
+                <strong className="text-ink">{deities.length}</strong> {deities.length === 1 ? 'deity' : 'deities'}
               </span>
             )}
           </div>
@@ -147,6 +159,24 @@ export default async function StateTemplesPage({
                   className="px-3 py-1.5 rounded-full text-body-sm font-medium border border-surface-border hover:border-primary-300 hover:bg-primary-50 text-ink-muted hover:text-primary-700 transition-all no-underline"
                 >
                   {deity}
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* City quick links */}
+        {cities.length > 1 && (
+          <section className="mb-10">
+            <h2 className="text-h3 font-serif text-secondary-700 mb-4">Browse by City</h2>
+            <div className="flex flex-wrap gap-2">
+              {cities.map(city => (
+                <Link
+                  key={city}
+                  href={`/temples/city/${slugify(city)}`}
+                  className="px-3 py-1.5 rounded-full text-body-sm font-medium border border-surface-border hover:border-primary-300 hover:bg-primary-50 text-ink-muted hover:text-primary-700 transition-all no-underline"
+                >
+                  {city}
                 </Link>
               ))}
             </div>

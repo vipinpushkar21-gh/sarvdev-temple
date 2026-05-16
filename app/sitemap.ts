@@ -76,7 +76,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     await connectDB()
 
     const [temples, blogs, devotionals] = await Promise.all([
-      Temple.find({ status: 'approved' }, 'title slug state deity image createdAt').lean() as Promise<any[]>,
+      Temple.find({ status: 'approved' }, 'title slug state city deity image createdAt').lean() as Promise<any[]>,
       Blog.find({}, 'title slug createdAt').lean() as Promise<any[]>,
       Devotional.find({ status: 'approved' }, 'title createdAt').lean() as Promise<any[]>,
     ])
@@ -121,7 +121,88 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.7,
     }))
 
-    return [...staticPages, ...festivalPages, ...statePages, ...deityPages, ...templePages, ...blogPages, ...devotionalPages]
+    // ── City-wise landing pages ──
+    const cities = Array.from(new Set(temples.map((t: any) => t.city).filter(Boolean))) as string[]
+    const cityPages: MetadataRoute.Sitemap = cities.map(c => ({
+      url: `${BASE}/temples/city/${slugify(c)}`,
+      lastModified: now,
+      changeFrequency: 'weekly' as const,
+      priority: 0.7,
+    }))
+
+    // ── Pilgrimage cluster pages ──
+    const pilgrimageSlugs = [
+      'jyotirlinga', 'char-dham', 'shakti-peeth', 'chota-char-dham',
+      'panch-kedar', 'divya-desam', 'ashta-vinayak', 'navagraha',
+      'pancha-bhoota-stalam', 'sapta-puri',
+      'iskcon', 'ramayana-circuit', 'panch-prayag', 'arupadai-veedu', '108-shiva-temples',
+    ]
+    const pilgrimagePages: MetadataRoute.Sitemap = pilgrimageSlugs.map(s => ({
+      url: `${BASE}/temples/pilgrimage/${s}`,
+      lastModified: now,
+      changeFrequency: 'weekly' as const,
+      priority: 0.8,
+    }))
+
+    // ── District-level landing pages (aliases city pages for broader coverage) ──
+    const districtPages: MetadataRoute.Sitemap = cities.map(c => ({
+      url: `${BASE}/temples/district/${slugify(c)}`,
+      lastModified: now,
+      changeFrequency: 'weekly' as const,
+      priority: 0.6,
+    }))
+
+    // ── Pilgrimage index hub ──
+    const pilgrimageHub: MetadataRoute.Sitemap = [{
+      url: `${BASE}/temples/pilgrimage`,
+      lastModified: now,
+      changeFrequency: 'weekly' as const,
+      priority: 0.85,
+    }]
+
+    // ── Near-me / local discovery pages ──
+    const nearMePages: MetadataRoute.Sitemap = cities.map(c => ({
+      url: `${BASE}/temples/near/${slugify(c)}`,
+      lastModified: now,
+      changeFrequency: 'weekly' as const,
+      priority: 0.6,
+    }))
+
+    // ── Regional network pages ──
+    const regionSlugs = ['north-india', 'south-india', 'east-india', 'west-india', 'central-india']
+    const regionPages: MetadataRoute.Sitemap = regionSlugs.map(r => ({
+      url: `${BASE}/temples/region/${r}`,
+      lastModified: now,
+      changeFrequency: 'weekly' as const,
+      priority: 0.8,
+    }))
+
+    // ── Story collection pages (Discover) ──
+    const storySlugs = [
+      'top-shiva-temples-in-india', 'best-krishna-temples-in-india', 'most-powerful-hanuman-temples',
+      'famous-durga-devi-temples', 'ancient-temples-of-south-india', 'sacred-temples-of-uttarakhand',
+      'holy-temples-of-varanasi', 'ganesh-temples-in-india', 'ram-temples-in-india', 'jyotirlinga-temples',
+      'iskcon-temples-in-india', 'shakti-peeth-temples', 'temples-in-rajasthan', 'temples-in-maharashtra', 'temples-near-rivers',
+    ]
+    const storyPages: MetadataRoute.Sitemap = [
+      { url: `${BASE}/stories`, lastModified: now, changeFrequency: 'weekly' as const, priority: 0.8 },
+      ...storySlugs.map(s => ({
+        url: `${BASE}/stories/${s}`,
+        lastModified: now,
+        changeFrequency: 'weekly' as const,
+        priority: 0.75,
+      })),
+    ]
+
+    // ── Forum pages ──
+    const forumPages: MetadataRoute.Sitemap = [{
+      url: `${BASE}/forum`,
+      lastModified: now,
+      changeFrequency: 'daily' as const,
+      priority: 0.7,
+    }]
+
+    return [...staticPages, ...festivalPages, ...statePages, ...deityPages, ...cityPages, ...districtPages, ...pilgrimageHub, ...pilgrimagePages, ...nearMePages, ...regionPages, ...storyPages, ...forumPages, ...templePages, ...blogPages, ...devotionalPages]
   } catch {
     return [...staticPages, ...festivalPages]
   }

@@ -66,6 +66,31 @@ const STORIES: Record<string, { title: string; description: string; query: (t: a
     description: 'Explore the 12 Jyotirlinga temples — the most sacred Shiva shrines in India. Complete guide with location and significance.',
     query: (t) => (t.categories || []).some((c: string) => /jyotirlinga/i.test(c)),
   },
+  'iskcon-temples-in-india': {
+    title: 'ISKCON Temples in India',
+    description: 'Explore ISKCON (International Society for Krishna Consciousness) temples across India. Find Hare Krishna temples with timings and directions.',
+    query: (t) => /iskcon/i.test(t.templeType || '') || /iskcon/i.test(t.title || ''),
+  },
+  'shakti-peeth-temples': {
+    title: '51 Shakti Peethas Across India',
+    description: 'Discover the 51 Shakti Peethas — sacred Goddess temples where parts of Goddess Sati fell. Complete pilgrimage guide.',
+    query: (t) => (t.categories || []).some((c: string) => /shakti.*peeth/i.test(c)),
+  },
+  'temples-in-rajasthan': {
+    title: 'Famous Temples in Rajasthan',
+    description: 'Explore the grand temples of Rajasthan — from Dilwara in Mount Abu to Brahma Temple in Pushkar and Karni Mata in Deshnoke.',
+    query: (t) => /rajasthan/i.test(t.state || ''),
+  },
+  'temples-in-maharashtra': {
+    title: 'Sacred Temples of Maharashtra',
+    description: 'Discover the sacred temples of Maharashtra — Ashtavinayak, Shirdi Sai Baba, Trimbakeshwar, Pandharpur Vitthal, and more.',
+    query: (t) => /maharashtra/i.test(t.state || ''),
+  },
+  'temples-near-rivers': {
+    title: 'Temples on Sacred Rivers of India',
+    description: 'Explore temples located on the banks of India\'s holiest rivers — Ganga, Yamuna, Narmada, Godavari, and Kaveri.',
+    query: (t) => /ghat|river|ganga|yamuna|narmada|godavari|kaveri|sangam|prayag/i.test([t.description || '', t.location || '', t.title || ''].join(' ')),
+  },
 }
 
 const STORY_SLUGS = Object.keys(STORIES)

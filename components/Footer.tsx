@@ -3,97 +3,193 @@
 import Link from 'next/link'
 import { useTranslation } from '../lib/translation'
 
-const footerNav = [
-  {
-    heading: 'footer.quickLinks',
-    links: [
-      { label: 'footer.temples', href: '/temples' },
-      { label: 'footer.devotionals', href: '/devotionals' },
-      { label: 'footer.events', href: '/events' },
-      { label: 'footer.listTemple', href: '/list-temple' },
-    ],
-  },
-  {
-    heading: 'footer.resources',
-    links: [
-      { label: 'footer.blog', href: '/blog' },
-      { label: 'footer.panchang', href: '/panchang' },
-      { label: 'footer.sacredCategories', href: '/sacred-categories' },
-      { label: 'footer.help', href: '/help' },
-    ],
-  },
-  {
-    heading: 'footer.legal',
-    links: [
-      { label: 'footer.about', href: '/about' },
-      { label: 'footer.contact', href: '/contact' },
-      { label: 'footer.privacy', href: '/privacy' },
-      { label: 'footer.terms', href: '/terms' },
-    ],
-  },
+const popularStates = [
+  { label: 'Uttar Pradesh', href: '/temples/state/uttar-pradesh' },
+  { label: 'Rajasthan', href: '/temples/state/rajasthan' },
+  { label: 'Tamil Nadu', href: '/temples/state/tamil-nadu' },
+  { label: 'Maharashtra', href: '/temples/state/maharashtra' },
+  { label: 'Uttarakhand', href: '/temples/state/uttarakhand' },
+  { label: 'Karnataka', href: '/temples/state/karnataka' },
+  { label: 'Gujarat', href: '/temples/state/gujarat' },
+  { label: 'Kerala', href: '/temples/state/kerala' },
+]
+
+const popularDeities = [
+  { label: 'Shiva', href: '/temples/deity/shiva' },
+  { label: 'Krishna', href: '/temples/deity/krishna' },
+  { label: 'Hanuman', href: '/temples/deity/hanuman' },
+  { label: 'Ganesh', href: '/temples/deity/ganesh' },
+  { label: 'Ram', href: '/temples/deity/ram' },
+  { label: 'Durga', href: '/temples/deity/durga' },
+  { label: 'Vishnu', href: '/temples/deity/vishnu' },
+  { label: 'Lakshmi', href: '/temples/deity/lakshmi' },
+]
+
+const pilgrimageLinks = [
+  { label: 'Char Dham', href: '/temples/pilgrimage/char-dham' },
+  { label: '12 Jyotirlinga', href: '/temples/pilgrimage/jyotirlinga' },
+  { label: 'Shakti Peeth', href: '/temples/pilgrimage/shakti-peeth' },
+  { label: 'ISKCON Temples', href: '/temples/pilgrimage/iskcon' },
+  { label: 'Divya Desam', href: '/temples/pilgrimage/divya-desam' },
+  { label: 'Panch Kedar', href: '/temples/pilgrimage/panch-kedar' },
+]
+
+const quickLinks = [
+  { label: 'Browse Temples', href: '/temples' },
+  { label: 'Daily Darshan', href: '/daily-darshan' },
+  { label: 'Devotional Music', href: '/devotionals' },
+  { label: 'Festival Calendar', href: '/events' },
+  { label: 'Panchang Today', href: '/panchang' },
+  { label: 'Submit Temple', href: '/list-temple' },
+  { label: 'Sacred Stories', href: '/stories' },
+  { label: 'Community Forum', href: '/forum' },
+]
+
+const legalLinks = [
+  { label: 'About Sarvdev', href: '/contact' },
+  { label: 'Privacy Policy', href: '/privacy' },
+  { label: 'Terms of Service', href: '/terms' },
+  { label: 'Editorial Policy', href: '/editorial-policy' },
+  { label: 'Disclaimer', href: '/disclaimer' },
+  { label: 'Contributors', href: '/contributors' },
 ]
 
 export default function Footer() {
   const { t } = useTranslation()
 
   return (
-    <footer className="relative bg-secondary-800 text-secondary-100 overflow-hidden">
-      {/* Subtle decorative gradient */}
-      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
-      <div className="absolute top-0 right-0 w-96 h-96 bg-primary/[0.03] rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-72 h-72 bg-accent/[0.03] rounded-full blur-3xl translate-y-1/2 -translate-x-1/2 pointer-events-none" />
+    <footer className="relative bg-secondary-900 text-secondary-100 overflow-hidden">
+      {/* Decorative elements */}
+      <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
+      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/[0.03] rounded-full blur-[100px] -translate-y-1/2 translate-x-1/3 pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-80 h-80 bg-accent/[0.03] rounded-full blur-[80px] translate-y-1/2 -translate-x-1/3 pointer-events-none" />
 
-      <div className="page-container py-14 md:py-20 relative z-10">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-10 md:gap-8">
-          {/* Brand column */}
-          <div className="md:col-span-1">
-            <Link href="/" className="group inline-flex items-center gap-2.5 no-underline hover:no-underline">
-              <span className="flex items-center justify-center w-9 h-9 rounded-lg bg-gradient-to-br from-primary to-accent shadow-md shadow-primary/25 group-hover:shadow-lg group-hover:shadow-primary/40 transition-all duration-300">
-                <span className="text-secondary-900 font-serif font-bold text-lg leading-none">S</span>
+      {/* Main footer content */}
+      <div className="page-container pt-16 pb-10 md:pt-20 md:pb-12 relative z-10">
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-8 md:gap-6">
+
+          {/* Brand column — spans 2 on desktop */}
+          <div className="col-span-2">
+            <Link href="/" className="group inline-flex items-center gap-3 no-underline hover:no-underline">
+              <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent shadow-lg shadow-primary/30 group-hover:shadow-xl group-hover:shadow-primary/50 transition-all duration-300 group-hover:scale-105">
+                <span className="text-secondary-900 font-serif font-bold text-xl leading-none">S</span>
               </span>
-              <span className="text-h3 font-serif font-bold text-white group-hover:text-accent transition-colors duration-200">
-                Sarvdev
-              </span>
+              <div className="flex flex-col">
+                <span className="text-h3 font-serif font-bold text-white group-hover:text-accent transition-colors duration-200">
+                  Sarvdev
+                </span>
+                <span className="text-[9px] font-medium text-secondary-400 tracking-[0.12em] uppercase -mt-0.5">
+                  Temple & Devotional Hub
+                </span>
+              </div>
             </Link>
-            <p className="mt-4 text-body-sm text-secondary-300 leading-relaxed">
-              A temple directory and devotional hub connecting worshippers with temples, events, and spiritual traditions across the world.
+            <p className="mt-5 text-body-sm text-secondary-300 leading-relaxed max-w-xs">
+              India&apos;s most comprehensive sacred temple directory. Explore temples, listen to devotional music, track festivals, and deepen your spiritual journey.
             </p>
 
-            <blockquote className="mt-6 text-body-sm italic text-secondary-300 border-l-2 border-accent/60 pl-4 py-1">
-              <span className="font-devanagari text-accent-200">&ldquo;सर्वे भवन्तु सुखिनः सर्वे सन्तु निरामयाः&rdquo;</span>
-              <br />
-              <span className="text-caption not-italic text-secondary-400 mt-1.5 block">
-                May all be happy, may all be free from disease.
+            <blockquote className="mt-6 text-body-sm italic text-secondary-300 border-l-2 border-accent/50 pl-4 py-1">
+              <span className="font-devanagari text-accent-200 text-[15px]">&ldquo;सर्वे भवन्तु सुखिनः&rdquo;</span>
+              <span className="text-caption not-italic text-secondary-400 mt-1 block">
+                May all beings be happy.
               </span>
             </blockquote>
+
+            {/* Social / CTA */}
+            <div className="mt-6 flex items-center gap-3">
+              <Link href="/list-temple" className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-caption font-bold bg-gradient-to-r from-primary to-primary-600 text-white shadow-md shadow-primary/20 hover:shadow-lg hover:brightness-110 transition-all duration-300 no-underline hover:no-underline">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
+                Submit Temple
+              </Link>
+              <Link href="/bookmarks" className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-caption font-semibold bg-white/[0.06] text-secondary-300 border border-white/[0.1] hover:bg-white/[0.1] hover:text-white transition-all duration-300 no-underline hover:no-underline">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" /></svg>
+                Bookmarks
+              </Link>
+            </div>
           </div>
 
-          {/* Nav columns */}
-          {footerNav.map((group) => (
-            <nav key={group.heading} aria-label={t(group.heading)}>
-              <h3 className="text-overline uppercase tracking-wider text-accent/70 mb-5">
-                {t(group.heading)}
-              </h3>
-              <ul className="space-y-3">
-                {group.links.map((link) => (
+          {/* Quick Links */}
+          <nav aria-label="Quick links">
+            <h3 className="text-overline uppercase tracking-wider text-accent/70 mb-4">Explore</h3>
+            <ul className="space-y-2.5">
+              {quickLinks.map(link => (
+                <li key={link.href}>
+                  <Link href={link.href} className="text-body-sm text-secondary-300 no-underline hover:text-white hover:no-underline transition-colors duration-200">{link.label}</Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+
+          {/* States */}
+          <nav aria-label="Popular states">
+            <h3 className="text-overline uppercase tracking-wider text-accent/70 mb-4">Top States</h3>
+            <ul className="space-y-2.5">
+              {popularStates.map(link => (
+                <li key={link.href}>
+                  <Link href={link.href} className="text-body-sm text-secondary-300 no-underline hover:text-white hover:no-underline transition-colors duration-200">{link.label}</Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+
+          {/* Deities */}
+          <nav aria-label="Popular deities">
+            <h3 className="text-overline uppercase tracking-wider text-accent/70 mb-4">Deities</h3>
+            <ul className="space-y-2.5">
+              {popularDeities.map(link => (
+                <li key={link.href}>
+                  <Link href={link.href} className="text-body-sm text-secondary-300 no-underline hover:text-white hover:no-underline transition-colors duration-200">{link.label}</Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+
+          {/* Pilgrimages */}
+          <nav aria-label="Pilgrimage circuits">
+            <h3 className="text-overline uppercase tracking-wider text-accent/70 mb-4">Pilgrimages</h3>
+            <ul className="space-y-2.5">
+              {pilgrimageLinks.map(link => (
+                <li key={link.href}>
+                  <Link href={link.href} className="text-body-sm text-secondary-300 no-underline hover:text-white hover:no-underline transition-colors duration-200">{link.label}</Link>
+                </li>
+              ))}
+            </ul>
+            <div className="mt-6">
+              <h3 className="text-overline uppercase tracking-wider text-accent/70 mb-3">Legal</h3>
+              <ul className="space-y-2">
+                {legalLinks.slice(0, 4).map(link => (
                   <li key={link.href}>
-                    <Link
-                      href={link.href}
-                      className="group/link inline-flex items-center gap-2 text-body-sm text-secondary-300 no-underline hover:text-white hover:no-underline transition-colors duration-200"
-                    >
-                      <span className="w-0 h-px bg-primary group-hover/link:w-3 transition-all duration-200" />
-                      {t(link.label)}
-                    </Link>
+                    <Link href={link.href} className="text-caption text-secondary-400 no-underline hover:text-secondary-200 hover:no-underline transition-colors duration-200">{link.label}</Link>
                   </li>
                 ))}
               </ul>
-            </nav>
-          ))}
+            </div>
+          </nav>
+        </div>
+      </div>
+
+      {/* SEO footer — internal link bar */}
+      <div className="border-t border-secondary-800/80 relative z-10">
+        <div className="page-container py-5">
+          <div className="flex flex-wrap gap-x-4 gap-y-1.5 justify-center">
+            {[
+              { label: 'Temples in Delhi', href: '/temples/city/delhi' },
+              { label: 'Temples in Mumbai', href: '/temples/city/mumbai' },
+              { label: 'Temples in Varanasi', href: '/temples/city/varanasi' },
+              { label: 'Temples in Haridwar', href: '/temples/city/haridwar' },
+              { label: 'North India Temples', href: '/temples/region/north-india' },
+              { label: 'South India Temples', href: '/temples/region/south-india' },
+              { label: 'Hanuman Chalisa', href: '/devotionals' },
+              { label: 'Aarti Sangrah', href: '/devotionals' },
+              { label: 'Hindu Calendar 2026', href: '/panchang' },
+            ].map(link => (
+              <Link key={link.label} href={link.href} className="text-[11px] text-secondary-500 no-underline hover:text-secondary-300 hover:no-underline transition-colors">{link.label}</Link>
+            ))}
+          </div>
         </div>
       </div>
 
       {/* Bottom bar */}
-      <div className="border-t border-secondary-700/50 relative z-10">
+      <div className="border-t border-secondary-800/50 relative z-10">
         <div className="page-container py-5 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-caption text-secondary-400">
             &copy; {new Date().getFullYear()} Sarvdev. {t('footer.rights')}
@@ -101,7 +197,7 @@ export default function Footer() {
           <p className="text-caption text-secondary-500 flex items-center gap-1.5">
             Built for the community, with
             <span className="inline-block text-primary animate-pulse">&#9829;</span>
-            reverence.
+            reverence &amp; devotion.
           </p>
         </div>
       </div>

@@ -1,9 +1,12 @@
-const CACHE = 'sarvdev-v1'
+const CACHE = 'sarvdev-v2'
 const STATIC = [
   '/',
   '/temples',
   '/devotionals',
   '/events',
+  '/panchang',
+  '/sacred-categories',
+  '/bookmarks',
   '/manifest.json',
   '/images/sacred-pattern.svg',
   '/icon.svg',

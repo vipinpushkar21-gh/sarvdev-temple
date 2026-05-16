@@ -120,6 +120,34 @@ export async function GET(req: NextRequest) {
 
     const avgScore = allScores.length > 0 ? Math.round(allScores.reduce((s, i) => s + i.score, 0) / allScores.length) : 100
 
+    // Index coverage estimate — pages that *should* be indexable
+    const uniqueStates = new Set(approved.map(t => t.state).filter(Boolean))
+    const uniqueCities = new Set(approved.map(t => t.city).filter(Boolean))
+    const uniqueDeities = new Set(approved.map(t => t.deity).filter(Boolean))
+    const indexCoverage = {
+      templePages: approved.length,
+      stateHubPages: uniqueStates.size,
+      cityHubPages: uniqueCities.size,
+      deityHubPages: uniqueDeities.size,
+      pilgrimageClusters: 15,
+      blogPages: blogs.length,
+      staticPages: 18,
+      estimatedTotalIndexable: approved.length + uniqueStates.size + uniqueCities.size + uniqueDeities.size + 15 + blogs.length + devotionals.length + 18,
+    }
+
+    // CTR opportunity — content with good SEO but missing elements for rich snippets
+    const ctrOpportunities = approved
+      .filter(t => scoreTemple(t) >= 70 && (!t.image || !t.description || t.description.length < 100))
+      .slice(0, 10)
+      .map(t => ({
+        id: t._id.toString(),
+        title: t.title,
+        missing: [
+          !t.image && 'image',
+          (!t.description || t.description.length < 100) && 'rich description',
+        ].filter(Boolean),
+      }))
+
     return NextResponse.json({
       counts: {
         temples: approved.length,
@@ -134,6 +162,8 @@ export async function GET(req: NextRequest) {
       coverage,
       topStates,
       topDeities,
+      indexCoverage,
+      ctrOpportunities,
     })
   } catch (error) {
     console.error('SEO analytics error:', error)

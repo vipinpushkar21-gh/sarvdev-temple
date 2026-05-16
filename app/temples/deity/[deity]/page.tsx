@@ -4,6 +4,8 @@ import { connectDB } from '@/lib/db'
 import Temple from '@/models/Temple'
 import RelatedSacredContent from '@/components/RelatedSacredContent'
 
+export const revalidate = 3600
+
 const BASE = 'https://sarvdev.com'
 const DEFAULT_IMAGE = 'https://res.cloudinary.com/dc2qg7bwr/image/upload/image_2_xljqwa'
 

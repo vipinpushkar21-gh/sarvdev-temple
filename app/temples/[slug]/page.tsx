@@ -12,6 +12,7 @@ import { DetailPageSkeleton } from '../../../components/Skeleton'
 import ReviewSection from '../../../components/ReviewSection'
 import ClaimTempleButton from '../../../components/ClaimTempleButton'
 import AdminEditBar from '../../../components/AdminEditBar'
+import DeitySmartContent from '../../../components/DeitySmartContent'
 
 type Props = {
   params: Promise<{ slug: string }>
@@ -502,6 +503,9 @@ export default function TemplePage({ params }: Props) {
             </div>
           </div>
         )}
+
+        {/* ── Deity-Smart Devotional Content ── */}
+        <DeitySmartContent deity={temple.deity} templeName={temple.title} />
 
         {/* ── Ratings & Reviews ── */}
         <ReviewSection templeSlug={slug} />
