@@ -11,6 +11,102 @@ function isAdmin(req: NextRequest): boolean {
   return payload?.role === 'admin'
 }
 
+const SUPPORTED_TEMPLE_FIELDS = [
+  'title','titleHi','description','descriptionHi','image','images','location','locationHi',
+  'mapsLink','googleMapsUrl','latitude','longitude','city','cityHi','state','stateHi',
+  'country','pincode','pincodeHi','deity','establishedYear','establishedYearHi',
+  'templeType','templeTypes','speciality','specialityHi','categories','sacredCategories',
+  'timings','timingSlots','festivals','contact','phone','email','website','facebook',
+  'instagram','metaTitle','metaDescription','metaKeywords','ogImage','status','verified',
+  'submittedBy','submitterEmail','moderationNotes','reviewedAt'
+] as const;
+
+const hasOwn = (value: Record<string, any>, key: string) =>
+  Object.prototype.hasOwnProperty.call(value, key);
+
+function pickSupportedTempleFields(data: Record<string, any>) {
+  return Object.fromEntries(
+    Object.entries(data).filter(([key]) => (SUPPORTED_TEMPLE_FIELDS as readonly string[]).includes(key))
+  );
+}
+
+function cleanStringArray(value: unknown): string[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  return value
+    .filter((item): item is string => typeof item === 'string')
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function timingSlotsFromTimings(value: unknown): string[] | undefined {
+  if (typeof value !== 'string') return undefined;
+  const trimmed = value.trim();
+  if (!trimmed) return [];
+  return trimmed
+    .split(/\r?\n|,/)
+    .map((slot) => slot.trim())
+    .filter(Boolean);
+}
+
+function cleanFestivals(value: unknown) {
+  if (!Array.isArray(value)) return undefined;
+  return value
+    .map((festival) => ({
+      name: typeof festival?.name === 'string' ? festival.name.trim() : '',
+      description: typeof festival?.description === 'string' ? festival.description.trim() : '',
+    }))
+    .filter((festival) => festival.name || festival.description);
+}
+
+function normalizeTemplePayload(payload: Record<string, any>) {
+  const data = { ...payload };
+
+  if (hasOwn(data, 'mapsLink') && !hasOwn(data, 'googleMapsUrl')) {
+    data.googleMapsUrl = data.mapsLink;
+  } else if (hasOwn(data, 'googleMapsUrl') && !hasOwn(data, 'mapsLink')) {
+    data.mapsLink = data.googleMapsUrl;
+  }
+
+  const categories = cleanStringArray(data.categories);
+  const sacredCategories = cleanStringArray(data.sacredCategories);
+  if (categories) data.categories = categories;
+  if (sacredCategories) data.sacredCategories = sacredCategories;
+  if (hasOwn(data, 'categories') && !hasOwn(data, 'sacredCategories')) {
+    data.sacredCategories = data.categories;
+  } else if (hasOwn(data, 'sacredCategories') && !hasOwn(data, 'categories')) {
+    data.categories = data.sacredCategories;
+  } else if (Array.isArray(data.categories) && Array.isArray(data.sacredCategories)) {
+    if (data.categories.length === 0 && data.sacredCategories.length > 0) data.categories = data.sacredCategories;
+    if (data.sacredCategories.length === 0 && data.categories.length > 0) data.sacredCategories = data.categories;
+  }
+
+  const timingSlots = cleanStringArray(data.timingSlots);
+  if (timingSlots) data.timingSlots = timingSlots;
+  if (hasOwn(data, 'timingSlots') && !hasOwn(data, 'timings')) {
+    data.timings = Array.isArray(data.timingSlots) ? data.timingSlots.join(', ') : data.timings;
+  } else if (hasOwn(data, 'timings') && !hasOwn(data, 'timingSlots')) {
+    data.timingSlots = timingSlotsFromTimings(data.timings);
+  } else if (Array.isArray(data.timingSlots) && typeof data.timings === 'string') {
+    if (data.timingSlots.length === 0 && data.timings.trim()) data.timingSlots = timingSlotsFromTimings(data.timings);
+    if (!data.timings.trim() && data.timingSlots.length > 0) data.timings = data.timingSlots.join(', ');
+  }
+
+  const templeTypes = cleanStringArray(data.templeTypes);
+  if (templeTypes) data.templeTypes = templeTypes;
+  if (hasOwn(data, 'templeTypes') && !hasOwn(data, 'templeType')) {
+    data.templeType = Array.isArray(data.templeTypes) ? data.templeTypes[0] || '' : data.templeType;
+  } else if (hasOwn(data, 'templeType') && !hasOwn(data, 'templeTypes')) {
+    data.templeTypes = typeof data.templeType === 'string' && data.templeType.trim() ? [data.templeType.trim()] : [];
+  } else if (Array.isArray(data.templeTypes) && typeof data.templeType === 'string' && !data.templeType.trim() && data.templeTypes.length > 0) {
+    data.templeType = data.templeTypes[0];
+  }
+
+  const festivals = cleanFestivals(data.festivals);
+  if (festivals) data.festivals = festivals;
+
+  return data;
+}
+
 // ─── In-memory cache (60s TTL) ───
 let _cache: { data: any[]; ts: number } | null = null;
 const CACHE_TTL = 60_000;
@@ -75,7 +171,8 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     await connectDB();
-    const data = await req.json();
+    const rawData = await req.json();
+    const data = normalizeTemplePayload(pickSupportedTempleFields(rawData));
     // Allow public submissions (status defaults to 'pending')
     if (data.status === 'approved' && !isAdmin(req)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -113,15 +210,10 @@ export async function PUT(req: NextRequest) {
   try {
     await connectDB();
     const { id, ...rawUpdate } = await req.json();
-    const ALLOWED_FIELDS = [
-      'title','description','descriptionHi','image','images','location',
-      'latitude','longitude','city','state','country','pincode','deity',
-      'establishedYear','templeType','speciality','categories','timings',
-      'contact','phone','email','website','facebook','instagram','status','verified'
-    ] as const;
-    const update = Object.fromEntries(
-      Object.entries(rawUpdate).filter(([k]) => (ALLOWED_FIELDS as readonly string[]).includes(k))
-    );
+    if (!id) {
+      return NextResponse.json({ error: 'Missing temple id' }, { status: 400 });
+    }
+    const update = normalizeTemplePayload(pickSupportedTempleFields(rawUpdate));
     const temple = await Temple.findByIdAndUpdate(id, { $set: update }, { new: true });
     if (!temple) {
       return NextResponse.json({ error: 'Temple not found' }, { status: 404 });

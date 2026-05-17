@@ -29,10 +29,19 @@ export default function DeityDetailPage({ params }: Props) {
     async function fetchDeity() {
       try {
         const { slug } = await params
-        const response = await fetch('/api/deities')
-        const deities = await response.json()
-        const foundDeity = deities.find((d: any) => d.slug === slug)
-        
+
+        // Try DB first
+        let foundDeity = null
+        try {
+          const response = await fetch('/api/deities')
+          if (response.ok) {
+            const deities = await response.json()
+            if (Array.isArray(deities)) {
+              foundDeity = deities.find((d: any) => d.slug === slug)
+            }
+          }
+        } catch { /* DB fetch failed, will use static fallback */ }
+
         if (foundDeity) {
           setDeity(foundDeity)
         } else {
@@ -45,7 +54,7 @@ export default function DeityDetailPage({ params }: Props) {
           }
         }
       } catch (err) {
-        setError('Failed to fetch deity')
+        setError('Failed to load deity')
       } finally {
         setLoading(false)
       }

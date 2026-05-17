@@ -1504,6 +1504,14 @@ export default function DeitiesPage() {
   const [dbDeities, setDbDeities] = useState<any[]>([])
   const navRef = useRef<HTMLElement>(null)
 
+  // Force scroll to top on page load/refresh
+  useEffect(() => {
+    if ('scrollRestoration' in history) {
+      history.scrollRestoration = 'manual'
+    }
+    window.scrollTo(0, 0)
+  }, [])
+
   const checkScroll = useCallback(() => {
     const el = navRef.current
     if (!el) return

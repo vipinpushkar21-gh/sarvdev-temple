@@ -134,11 +134,22 @@ export default function AdminEditDeityPage({ params }: { params: Promise<{ id: s
 
       const payload = {
         id,
-        ...form,
-        slug,
+        name: form.name,
+        nameHi: form.nameHi,
+        description: form.description,
+        descriptionHi: form.descriptionHi,
+        mantra: form.mantra,
+        category: form.category,
+        categoryId: form.categoryId,
+        metaTitle: form.metaTitle,
+        metaDescription: form.metaDescription,
+        metaKeywords: form.metaKeywords,
+        ogImage: form.ogImage,
+        status: form.status,
+        slug: slug || deitySlug, // Fallback to existing slug if generated one is empty
         attributes: form.attributes.split(',').map(a => a.trim()).filter(a => a),
         images: form.images,
-        image: form.imageUrl, // Map imageUrl to image for model
+        image: form.imageUrl,
       }
 
       const res = await fetch('/api/deities', {
@@ -150,7 +161,7 @@ export default function AdminEditDeityPage({ params }: { params: Promise<{ id: s
       const data = await res.json()
 
       if (!res.ok) {
-        throw new Error(data.error || 'Failed to update deity')
+        throw new Error(data.details || data.error || 'Failed to update deity')
       }
 
       setSuccess("Deity updated successfully!")

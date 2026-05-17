@@ -55,15 +55,31 @@ export async function PUT(req: NextRequest) {
   try {
     await connectDB();
     const { id, ...update } = await req.json();
-    const deity = await Deity.findByIdAndUpdate(id, { $set: update }, { new: true, strict: false });
+    if (!id) {
+      return NextResponse.json({ error: 'Missing deity id' }, { status: 400 });
+    }
+    // Remove form-only fields that don't belong in the model
+    delete (update as any).imageUrl;
+    update.updatedAt = new Date();
+
+    // If slug would collide with another deity, keep existing slug
+    if (update.slug) {
+      const existing = await Deity.findOne({ slug: update.slug, _id: { $ne: id } }).lean();
+      if (existing) {
+        delete update.slug; // keep the deity's current slug
+      }
+    }
+
+    const deity = await Deity.findByIdAndUpdate(id, { $set: update }, { new: true, runValidators: true });
     if (!deity) {
       return NextResponse.json({ error: 'Deity not found' }, { status: 404 });
     }
-    _cache = null; // Clear cache to force refresh
+    _cache = null;
     return NextResponse.json(deity);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Update deity error:', error);
-    return NextResponse.json({ error: 'Failed to update deity', details: error instanceof Error ? error.message : 'Unknown error' }, { status: 500 });
+    const msg = error instanceof Error ? error.message : 'Unknown error';
+    return NextResponse.json({ error: 'Failed to update deity', details: msg }, { status: 500 });
   }
 }
 
