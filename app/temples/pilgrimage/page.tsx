@@ -1,36 +1,30 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { SACRED_CATEGORIES, CATEGORY_GROUPS } from '@/lib/sacred-categories'
 
 const BASE = 'https://sarvdev.com'
 
+// Derive pilgrimage index cards from central source
+const CLUSTERS = SACRED_CATEGORIES.filter(c => c.isActive).map(cat => ({
+  slug: cat.slug,
+  title: cat.name,
+  titleHi: cat.nameHi,
+  icon: cat.icon,
+  deity: cat.deity,
+  desc: cat.description,
+  group: cat.group,
+}))
+
 export const metadata: Metadata = {
   title: 'Pilgrimage Circuits — Sacred Temple Routes of India',
-  description: 'Explore 15 major Hindu pilgrimage circuits across India — Jyotirlinga, Char Dham, Shakti Peeth, ISKCON, Ramayana Circuit, and more. Complete guides with temples, significance, and directions.',
+  description: `Explore ${CLUSTERS.length} sacred pilgrimage circuits across India — Jyotirlinga, Char Dham, Shakti Peeth, ISKCON, Ramayana Circuit, and more. Complete guides with temples, significance, and directions.`,
   keywords: ['pilgrimage India', 'Hindu pilgrimage', 'Jyotirlinga', 'Char Dham', 'Shakti Peeth', 'ISKCON', 'Ramayana Circuit', 'temple circuits', 'Sarvdev'],
   alternates: {
     canonical: `${BASE}/temples/pilgrimage`,
     languages: { 'en-IN': `${BASE}/temples/pilgrimage`, 'hi-IN': `${BASE}/temples/pilgrimage`, 'x-default': `${BASE}/temples/pilgrimage` },
   },
-  openGraph: { title: 'Pilgrimage Circuits — Sarvdev', description: 'Explore 15 major Hindu pilgrimage circuits across India.', url: `${BASE}/temples/pilgrimage`, type: 'website', siteName: 'Sarvdev' },
+  openGraph: { title: 'Pilgrimage Circuits — Sarvdev', description: `Explore ${CLUSTERS.length} sacred pilgrimage circuits across India.`, url: `${BASE}/temples/pilgrimage`, type: 'website', siteName: 'Sarvdev' },
 }
-
-const CLUSTERS = [
-  { slug: 'jyotirlinga', title: '12 Jyotirlinga', titleHi: '12 ज्योतिर्लिंग', icon: '🕉️', deity: 'Shiva', desc: 'The 12 most sacred Shiva shrines where Lord Shiva appeared as blazing light.' },
-  { slug: 'char-dham', title: 'Char Dham', titleHi: 'चार धाम', icon: '🏔️', deity: 'Multi', desc: 'Four sacred abodes — Badrinath, Dwarka, Puri, and Rameshwaram.' },
-  { slug: 'shakti-peeth', title: '51 Shakti Peethas', titleHi: '51 शक्ति पीठ', icon: '🔱', deity: 'Durga', desc: 'Sacred Goddess temples where parts of Goddess Sati fell.' },
-  { slug: 'chota-char-dham', title: 'Chota Char Dham', titleHi: 'छोटा चार धाम', icon: '⛰️', deity: 'Multi', desc: 'Yamunotri, Gangotri, Kedarnath, Badrinath — Uttarakhand pilgrimage.' },
-  { slug: 'panch-kedar', title: 'Panch Kedar', titleHi: 'पंच केदार', icon: '🏔️', deity: 'Shiva', desc: 'Five sacred Shiva temples in the Garhwal Himalayas.' },
-  { slug: 'divya-desam', title: '108 Divya Desam', titleHi: '108 दिव्य देसम', icon: '🪷', deity: 'Vishnu', desc: 'Sacred Vishnu temples glorified by the Alwar poet-saints.' },
-  { slug: 'ashta-vinayak', title: 'Ashta Vinayak', titleHi: 'अष्ट विनायक', icon: '🐘', deity: 'Ganesha', desc: 'Eight ancient Ganesha temples of Maharashtra.' },
-  { slug: 'navagraha', title: 'Navagraha Temples', titleHi: 'नवग्रह मंदिर', icon: '🌟', deity: 'Multi', desc: 'Nine planetary deity shrines in Tamil Nadu.' },
-  { slug: 'pancha-bhoota-stalam', title: 'Pancha Bhoota Stalam', titleHi: 'पंच भूत स्थलम', icon: '🔥', deity: 'Shiva', desc: 'Five Shiva temples representing earth, water, fire, air, space.' },
-  { slug: 'sapta-puri', title: 'Sapta Puri', titleHi: 'सप्त पुरी', icon: '🏛️', deity: 'Multi', desc: 'Seven holiest cities that grant moksha.' },
-  { slug: 'iskcon', title: 'ISKCON Temples', titleHi: 'इस्कॉन मंदिर', icon: '🪷', deity: 'Krishna', desc: 'International Krishna Consciousness temples worldwide.' },
-  { slug: 'ramayana-circuit', title: 'Ramayana Circuit', titleHi: 'रामायण सर्किट', icon: '🏹', deity: 'Rama', desc: 'Sacred sites of Lord Ram from Ayodhya to Lanka.' },
-  { slug: 'panch-prayag', title: 'Panch Prayag', titleHi: 'पंच प्रयाग', icon: '🌊', deity: 'Multi', desc: 'Five sacred river confluences in Uttarakhand.' },
-  { slug: 'arupadai-veedu', title: 'Arupadai Veedu', titleHi: 'अरुपदै वीडू', icon: '🦚', deity: 'Murugan', desc: 'Six abodes of Lord Murugan in Tamil Nadu.' },
-  { slug: '108-shiva-temples', title: '108 Shiva Temples', titleHi: '108 शिव मंदिर', icon: '🔱', deity: 'Shiva', desc: 'Sacred shrines of Mahadeva across India.' },
-]
 
 export default function PilgrimageIndexPage() {
   const jsonLd = {

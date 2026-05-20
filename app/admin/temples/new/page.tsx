@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import ImageUpload from "../../../../components/ImageUpload"
 import { useTranslation } from '../../../../lib/translation'
+import { getGroupedCategories } from '../../../../lib/sacred-categories'
 
 type FormState = {
   name: string
@@ -58,22 +59,7 @@ const deities = [
 
 const templeTypes = ["North Indian", "South Indian", "Modern", "Ancient", "Cave Temple", "Hill Temple"]
 
-const sacredCategories = [
-  "Dwadash Jyotirlinga (12 Jyotirlingas)",
-  "Shakti Peeth (51 Shakti Peethas)",
-  "Char Dham",
-  "Chota Char Dham (Uttarakhand)",
-  "Panch Kedar",
-  "Panch Prayag",
-  "Arupadai Veedu (6 Abodes of Murugan)",
-  "Navagraha Temples",
-  "Divya Desam (108 Vishnu Temples)",
-  "Pancha Bhoota Stalam",
-  "Ashta Vinayak",
-  "Sapta Puri (7 Sacred Cities)",
-  "108 Shiva Temples",
-  "Other Sacred Group"
-]
+const sacredCategoryGroups = getGroupedCategories()
 
 const i = "admin-input w-full"
 const l = "block text-sm font-medium text-gray-600 mb-1"
@@ -293,15 +279,22 @@ export default function AdminNewTemplePage() {
 
           <div>
             <label className={l}>{T.sacredCats}</label>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-1.5 mt-2 p-4 rounded-xl bg-gray-50">
-              {sacredCategories.map(cat => (
-                <label key={cat} className="flex items-center gap-2 cursor-pointer hover:bg-white p-2 rounded-xl transition-colors text-sm">
-                  <input type="checkbox" checked={form.categories.includes(cat)} onChange={ev => {
-                    if (ev.target.checked) setForm(s => ({ ...s, categories: [...s.categories, cat] }))
-                    else setForm(s => ({ ...s, categories: s.categories.filter(c => c !== cat) }))
-                  }} className="w-4 h-4 rounded accent-orange-500" />
-                  <span className="text-gray-700">{cat}</span>
-                </label>
+            <div className="space-y-4 mt-2 p-4 rounded-xl bg-gray-50 max-h-[420px] overflow-y-auto">
+              {sacredCategoryGroups.map(({ group, categories }) => (
+                <div key={group.key}>
+                  <p className="text-xs font-semibold text-gray-500 mb-1.5">{group.label}</p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-1">
+                    {categories.map(cat => (
+                      <label key={cat.slug} className="flex items-center gap-2 cursor-pointer hover:bg-white p-2 rounded-xl transition-colors text-sm">
+                        <input type="checkbox" checked={form.categories.includes(cat.name)} onChange={ev => {
+                          if (ev.target.checked) setForm(s => ({ ...s, categories: [...s.categories, cat.name] }))
+                          else setForm(s => ({ ...s, categories: s.categories.filter(c => c !== cat.name) }))
+                        }} className="w-4 h-4 rounded accent-orange-500 flex-shrink-0" />
+                        <span className="text-gray-700 leading-tight">{cat.icon} {cat.name}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
           </div>

@@ -3,6 +3,7 @@ import { connectDB } from '@/lib/db';
 import Temple from '@/models/Temple';
 import Event from '@/models/Event';
 import { verifyToken, AUTH_COOKIE_NAME } from '@/lib/auth';
+import { getTemplesForSacredCategory, isShaktiPeethCategory } from '@/data/shakti-peethas';
 
 function isAdmin(req: NextRequest): boolean {
   const token = req.cookies.get(AUTH_COOKIE_NAME)?.value
@@ -18,7 +19,8 @@ const SUPPORTED_TEMPLE_FIELDS = [
   'templeType','templeTypes','speciality','specialityHi','categories','sacredCategories',
   'timings','timingSlots','festivals','contact','phone','email','website','facebook',
   'instagram','metaTitle','metaDescription','metaKeywords','ogImage','status','verified',
-  'submittedBy','submitterEmail','moderationNotes','reviewedAt'
+  'submittedBy','submitterEmail','moderationNotes','reviewedAt','canonicalShaktiPeeth',
+  'canonicalShaktiPeethKey','canonicalShaktiPeethName','shaktiPeethMeta'
 ] as const;
 
 const hasOwn = (value: Record<string, any>, key: string) =>
@@ -119,12 +121,13 @@ export async function GET(req: NextRequest) {
     const limitParam = searchParams.get('limit')
     const search = searchParams.get('search') || searchParams.get('q') || ''
     const category = searchParams.get('category') || ''
+    const useCanonicalShaktiPeethFilter = isShaktiPeethCategory(category)
 
     await connectDB()
 
     // Build filter
     const filter: Record<string, any> = {}
-    if (category) filter.categories = category
+    if (category && !useCanonicalShaktiPeethFilter) filter.categories = category
     if (search) filter.$text = { $search: search }
 
     // ─── Paginated mode (when page param is present) ───
@@ -132,6 +135,19 @@ export async function GET(req: NextRequest) {
       const page = Math.max(1, parseInt(pageParam, 10) || 1)
       const limit = Math.min(100, Math.max(1, parseInt(limitParam || '20', 10)))
       const skip = (page - 1) * limit
+
+      if (useCanonicalShaktiPeethFilter) {
+        const allItems = await Temple.find(filter, { __v: 0 })
+          .sort(search ? { score: { $meta: 'textScore' }, createdAt: -1 } : { createdAt: -1 })
+          .lean()
+        const shaktiItems = getTemplesForSacredCategory(allItems, category)
+        const items = shaktiItems.slice(skip, skip + limit)
+        const total = shaktiItems.length
+
+        const res = NextResponse.json({ items, total, page, pages: Math.ceil(total / limit), limit })
+        res.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=120')
+        return res
+      }
 
       const [items, total] = await Promise.all([
         Temple.find(filter, { __v: 0 })
@@ -155,10 +171,11 @@ export async function GET(req: NextRequest) {
     }
 
     const temples = await Temple.find(filter, { __v: 0 }).sort({ createdAt: -1 }).lean()
+    const result = useCanonicalShaktiPeethFilter ? getTemplesForSacredCategory(temples, category) : temples
     if (!search && !category) {
       _cache = { data: temples, ts: Date.now() }
     }
-    const res = NextResponse.json(temples)
+    const res = NextResponse.json(result)
     res.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300')
     return res
   } catch (error) {

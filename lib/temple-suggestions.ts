@@ -131,8 +131,8 @@ const SACRED_CATEGORY_RULES = [
     ],
   },
   {
-    category: 'Shakti Peeth (51 Shakti Peethas)',
-    explicit: ['shakti peeth', 'shaktipeeth', '51 shakti peeth'],
+    category: 'Shakti Peeth (52 Shakti Peethas)',
+    explicit: ['shakti peeth', 'shaktipeeth', '52 shakti peeth', '51 shakti peeth'],
     landmarks: ['kamakhya', 'kalighat', 'jwala', 'naina devi', 'chamunda'],
   },
   {

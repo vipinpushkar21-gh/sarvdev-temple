@@ -143,7 +143,7 @@ export async function GET(req: NextRequest) {
         { slug: 'char-dham', title: 'Char Dham' },
       ],
       durga: [
-        { slug: 'shakti-peeth', title: '51 Shakti Peethas' },
+        { slug: 'shakti-peeth', title: '52 Shakti Peethas' },
       ],
       ganesha: [
         { slug: 'ashta-vinayak', title: 'Ashta Vinayak' },

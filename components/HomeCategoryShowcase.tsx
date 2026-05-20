@@ -5,10 +5,11 @@ import Link from 'next/link'
 import { useTempleData } from '../lib/temple-data'
 import { useTranslation } from '../lib/translation'
 import { getTempleImage, TEMPLE_PLACEHOLDER } from '../lib/temple-image'
+import { getTemplesForSacredCategory, SHAKTI_PEETH_CATEGORY } from '../data/shakti-peethas'
 
 const CATEGORIES = [
   { name: "Dwadash Jyotirlinga (12 Jyotirlingas)", short: "Jyotirlinga" },
-  { name: "Shakti Peeth (51 Shakti Peethas)", short: "Shakti Peeth" },
+  { name: "Shakti Peeth (52 Shakti Peethas)", short: "Shakti Peeth" },
   { name: "Char Dham", short: "Char Dham" },
   { name: "Chota Char Dham (Uttarakhand)", short: "Chota Char Dham" },
   { name: "Panch Kedar", short: "Panch Kedar" },
@@ -33,7 +34,9 @@ export default function HomeCategoryShowcase({ initialTemples }: { initialTemple
   const categoryData = useMemo(() => {
     if (allTemples.length === 0) return []
     return CATEGORIES.map(cat => {
-      const matched = allTemples.filter((t: any) => t.categories?.includes(cat.name))
+      const matched = cat.name === SHAKTI_PEETH_CATEGORY
+        ? getTemplesForSacredCategory(allTemples, cat.name)
+        : allTemples.filter((t: any) => t.categories?.includes(cat.name))
       if (matched.length === 0) return null
       const cover = matched[Math.floor(Math.random() * matched.length)]
       return { cat, count: matched.length, cover }

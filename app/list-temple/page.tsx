@@ -3,6 +3,7 @@
 import { useState, useRef } from "react"
 import Hero from '../../components/Hero'
 import { useTranslation } from '../../lib/translation'
+import { getAllCategoryNames, getGroupedCategories } from '../../lib/sacred-categories'
 
 type FormState = {
   name: string
@@ -54,22 +55,7 @@ const deities = [
 
 const templeTypes = ["North Indian", "South Indian", "Modern", "Ancient", "Cave Temple", "Hill Temple"]
 
-const sacredCategories = [
-  "Dwadash Jyotirlinga (12 Jyotirlingas)",
-  "Shakti Peeth (51 Shakti Peethas)",
-  "Char Dham",
-  "Chota Char Dham (Uttarakhand)",
-  "Panch Kedar",
-  "Panch Prayag",
-  "Arupadai Veedu (6 Abodes of Murugan)",
-  "Navagraha Temples",
-  "Divya Desam (108 Vishnu Temples)",
-  "Pancha Bhoota Stalam",
-  "Ashta Vinayak",
-  "Sapta Puri (7 Sacred Cities)",
-  "108 Shiva Temples",
-  "Other Sacred Group"
-]
+const sacredCategoryGroups = getGroupedCategories()
 
 const emptyForm = (): FormState => ({
   name: "", location: "", mapsLink: "", city: "", state: "", country: "India", pincode: "",
@@ -314,15 +300,23 @@ export default function ListTemplePage() {
 
             <div>
               <label className="label mb-2">{T.sacredCats}</label>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 p-4 bg-surface-sunken rounded-xl">
-                {sacredCategories.map(cat => (
-                  <label key={cat} className="flex items-center gap-2.5 cursor-pointer hover:bg-surface-raised p-2.5 rounded-lg transition-colors">
-                    <input type="checkbox" checked={form.categories.includes(cat)} onChange={e => {
-                      if (e.target.checked) setForm(s => ({ ...s, categories: [...s.categories, cat] }))
-                      else setForm(s => ({ ...s, categories: s.categories.filter(c => c !== cat) }))
-                    }} className="w-4 h-4 accent-primary-500 rounded" />
-                    <span className="text-body-sm text-ink">{cat}</span>
-                  </label>
+              <p className="text-caption text-ink-faint mb-3">{T.sacredNote}</p>
+              <div className="space-y-4 p-4 bg-surface-sunken rounded-xl max-h-[420px] overflow-y-auto">
+                {sacredCategoryGroups.map(({ group, categories }) => (
+                  <div key={group.key}>
+                    <p className="text-caption font-semibold text-ink-muted mb-1.5">{group.label}</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-1">
+                      {categories.map(cat => (
+                        <label key={cat.slug} className="flex items-center gap-2.5 cursor-pointer hover:bg-surface-raised p-2 rounded-lg transition-colors">
+                          <input type="checkbox" checked={form.categories.includes(cat.name)} onChange={e => {
+                            if (e.target.checked) setForm(s => ({ ...s, categories: [...s.categories, cat.name] }))
+                            else setForm(s => ({ ...s, categories: s.categories.filter(c => c !== cat.name) }))
+                          }} className="w-4 h-4 accent-primary-500 rounded flex-shrink-0" />
+                          <span className="text-body-sm text-ink leading-tight">{cat.icon} {cat.name}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>

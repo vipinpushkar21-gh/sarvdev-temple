@@ -72,8 +72,8 @@ const STORIES: Record<string, { title: string; description: string; query: (t: a
     query: (t) => /iskcon/i.test(t.templeType || '') || /iskcon/i.test(t.title || ''),
   },
   'shakti-peeth-temples': {
-    title: '51 Shakti Peethas Across India',
-    description: 'Discover the 51 Shakti Peethas — sacred Goddess temples where parts of Goddess Sati fell. Complete pilgrimage guide.',
+    title: '52 Shakti Peethas Across India',
+    description: 'Discover the 52 Shakti Peethas — sacred Goddess temples where parts of Goddess Sati fell. Complete pilgrimage guide.',
     query: (t) => (t.categories || []).some((c: string) => /shakti.*peeth/i.test(c)),
   },
   'temples-in-rajasthan': {

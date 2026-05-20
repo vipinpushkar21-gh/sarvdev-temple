@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import ImageUpload from "../../../../../components/ImageUpload"
+import { getGroupedCategories } from '../../../../../lib/sacred-categories'
 
 type FormState = {
   title: string
@@ -57,22 +58,7 @@ const deities = [
 
 const templeTypes = ["North Indian", "South Indian", "Modern", "Ancient", "Cave Temple", "Hill Temple"]
 
-const sacredCategories = [
-  "Dwadash Jyotirlinga (12 Jyotirlingas)",
-  "Shakti Peeth (51 Shakti Peethas)",
-  "Char Dham",
-  "Chota Char Dham (Uttarakhand)",
-  "Panch Kedar",
-  "Panch Prayag",
-  "Arupadai Veedu (6 Abodes of Murugan)",
-  "Navagraha Temples",
-  "Divya Desam (108 Vishnu Temples)",
-  "Pancha Bhoota Stalam",
-  "Ashta Vinayak",
-  "Sapta Puri (7 Sacred Cities)",
-  "108 Shiva Temples",
-  "Other Sacred Group"
-]
+const sacredCategoryGroups = getGroupedCategories()
 
 function slugify(text: string): string {
   return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
@@ -364,20 +350,27 @@ export default function EditTemplePage({ params }: { params: Promise<{ id: strin
           <h2 className="admin-section-title">Sacred Categories</h2>
           <p className="text-xs text-gray-400 mt-0.5">Sacred pilgrimage groups and temple categories (select multiple if applicable)</p>
           
-          <div className="flex flex-wrap gap-2">
-            {sacredCategories.map(cat => (
-              <button
-                key={cat}
-                type="button"
-                onClick={() => toggleSacredCategory(cat)}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${
-                  form.sacredCategories.includes(cat)
-                    ? 'bg-primary text-white border-primary shadow-sm'
-                    : 'bg-white text-gray-600 border-gray-200 hover:border-primary/50 hover:text-primary'
-                }`}
-              >
-                {form.sacredCategories.includes(cat) && <span className="mr-1">✓</span>}{cat}
-              </button>
+          <div className="space-y-4 max-h-[420px] overflow-y-auto pr-1">
+            {sacredCategoryGroups.map(({ group, categories }) => (
+              <div key={group.key}>
+                <p className="text-xs font-semibold text-gray-500 mb-1.5">{group.label}</p>
+                <div className="flex flex-wrap gap-2">
+                  {categories.map(cat => (
+                    <button
+                      key={cat.slug}
+                      type="button"
+                      onClick={() => toggleSacredCategory(cat.name)}
+                      className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${
+                        form.sacredCategories.includes(cat.name)
+                          ? 'bg-primary text-white border-primary shadow-sm'
+                          : 'bg-white text-gray-600 border-gray-200 hover:border-primary/50 hover:text-primary'
+                      }`}
+                    >
+                      {form.sacredCategories.includes(cat.name) && <span className="mr-1">✓</span>}{cat.icon} {cat.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
           {form.sacredCategories.length === 0 && <p className="mt-1 text-xs text-gray-400">No sacred categories selected</p>}

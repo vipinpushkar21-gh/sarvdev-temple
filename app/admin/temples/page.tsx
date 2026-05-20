@@ -151,6 +151,7 @@ export default function AdminTemplesPage() {
           <p className="admin-section-subtitle">{rows.length} total · {filtered.length} shown</p>
         </div>
         <div className="flex gap-2">
+          <Link href="/admin/temples/shakti-peeth-mapping" className="admin-btn admin-btn-ghost px-4 py-2 text-sm">Shakti Mapping</Link>
           <Link href="/admin/temples/missing-data" className="admin-btn admin-btn-ghost px-4 py-2 text-sm">Missing Data</Link>
           <button onClick={exportCSV} className="admin-btn admin-btn-ghost px-4 py-2 text-sm">⬇ CSV</button>
           <Link href="/admin/temples/new" className="admin-btn admin-btn-primary px-4 py-2 text-sm">+ New Temple</Link>

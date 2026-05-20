@@ -8,10 +8,13 @@ import TempleGalleryMosaic from '../../components/TempleGalleryMosaic'
 import { useTranslation } from '../../lib/translation'
 import Hero from '../../components/Hero'
 import { TempleGridSkeleton } from '../../components/Skeleton'
+import { getTemplesForSacredCategory, SHAKTI_PEETH_CATEGORY } from '../../data/shakti-peethas'
 
 type Temple = {
   _id: string
+  slug?: string
   title: string
+  name?: string
   location?: string
   description?: string
   image?: string
@@ -19,9 +22,13 @@ type Temple = {
   contact?: string
   deity?: string
   state?: string
+  country?: string
   type?: string
   status?: string
   categories?: string[]
+  sacredCategories?: string[]
+  templeType?: string
+  templeTypes?: string[]
 
   city?: string
   speciality?: string
@@ -31,7 +38,7 @@ const ITEMS_PER_PAGE = 20
 
 const sacredCategories = [
   "Dwadash Jyotirlinga (12 Jyotirlingas)",
-  "Shakti Peeth (51 Shakti Peethas)",
+  "Shakti Peeth (52 Shakti Peethas)",
   "Char Dham",
   "Chota Char Dham (Uttarakhand)",
   "Panch Kedar",
@@ -60,6 +67,14 @@ export default function TemplesPage() {
   const [error, setError] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const searchRef = useRef<HTMLDivElement>(null)
+
+  function getTemplesForSelectedCategory(category: string) {
+    if (category === SHAKTI_PEETH_CATEGORY) {
+      return getTemplesForSacredCategory(temples, category)
+    }
+
+    return temples.filter(t => t.categories && t.categories.includes(category))
+  }
 
   // Read ?category= param from URL and apply filter
   useEffect(() => {
@@ -111,9 +126,7 @@ export default function TemplesPage() {
 
     // Filter by category
     if (selectedCategory !== 'all') {
-      result = result.filter(t => 
-        t.categories && t.categories.includes(selectedCategory)
-      )
+      result = getTemplesForSelectedCategory(selectedCategory)
     }
 
     // Filter by search query — split into words, every word must match somewhere
@@ -256,7 +269,7 @@ export default function TemplesPage() {
         >
           <option value="all">All Temples ({temples.length})</option>
           {sacredCategories.map(category => {
-            const count = temples.filter(t => t.categories?.includes(category)).length
+            const count = getTemplesForSelectedCategory(category).length
             if (count > 0) {
               return (
                 <option key={category} value={category}>

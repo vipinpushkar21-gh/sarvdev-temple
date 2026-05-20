@@ -4,6 +4,8 @@ import { connectDB } from '@/lib/db'
 import Temple from '@/models/Temple'
 import { notFound } from 'next/navigation'
 import RelatedSacredContent from '@/components/RelatedSacredContent'
+import { getTemplesForSacredCategory, SHAKTI_PEETH_CATEGORY } from '@/data/shakti-peethas'
+import { SACRED_CATEGORIES, getCategoryBySlug } from '@/lib/sacred-categories'
 
 const BASE = 'https://sarvdev.com'
 const DEFAULT_IMAGE = 'https://res.cloudinary.com/dc2qg7bwr/image/upload/image_2_xljqwa'
@@ -19,175 +21,33 @@ type PilgrimageCluster = {
   description: string
   longDescription: string
   categoryMatch: string
-  deity?: string
+  deity: string
   icon: string
   relatedClusters: string[]
 }
 
-const CLUSTERS: PilgrimageCluster[] = [
-  {
-    slug: 'jyotirlinga',
-    title: '12 Jyotirlinga Temples of India',
-    titleHi: '12 ज्योतिर्लिंग मंदिर',
-    description: 'Complete guide to the 12 Jyotirlingas — the most sacred Shiva shrines in India with location, significance, and how to reach.',
-    longDescription: 'The 12 Jyotirlingas are the most revered Shiva temples in India. According to the Shiva Purana, these are places where Lord Shiva appeared as a blazing column of light (Jyotirlinga). Pilgrims from across the world visit these sacred shrines to seek blessings and moksha.',
-    categoryMatch: 'Dwadash Jyotirlinga (12 Jyotirlingas)',
-    deity: 'Shiva',
-    icon: '🕉️',
-    relatedClusters: ['char-dham', 'panch-kedar', 'pancha-bhoota-stalam'],
-  },
-  {
-    slug: 'char-dham',
-    title: 'Char Dham Pilgrimage — Four Sacred Abodes',
-    titleHi: 'चार धाम यात्रा',
-    description: 'Explore the Char Dham pilgrimage circuit — Badrinath, Dwarka, Puri, and Rameshwaram. Complete guide with significance and temples.',
-    longDescription: 'Char Dham (four abodes) is the most important Hindu pilgrimage circuit established by Adi Shankaracharya. The four sacred sites — Badrinath (north), Dwarka (west), Puri (east), and Rameshwaram (south) — represent the spiritual corners of India.',
-    categoryMatch: 'Char Dham',
-    icon: '🏔️',
-    relatedClusters: ['jyotirlinga', 'chota-char-dham', 'sapta-puri'],
-  },
-  {
-    slug: 'shakti-peeth',
-    title: '51 Shakti Peethas — Sacred Goddess Temples',
-    titleHi: '51 शक्ति पीठ',
-    description: 'Discover the 51 Shakti Peethas across India and the world where parts of Goddess Sati fell. Complete list with location and significance.',
-    longDescription: 'The 51 Shakti Peethas are among the most sacred shrines of the Hindu Goddess tradition. According to legend, when Lord Shiva carried the body of Goddess Sati, Lord Vishnu\'s Sudarshana Chakra cut her body into 51 pieces, each falling at a sacred location.',
-    categoryMatch: 'Shakti Peeth (51 Shakti Peethas)',
-    deity: 'Durga',
-    icon: '🔱',
-    relatedClusters: ['char-dham', 'navagraha'],
-  },
-  {
-    slug: 'chota-char-dham',
-    title: 'Chota Char Dham Yatra — Uttarakhand Pilgrimage',
-    titleHi: 'छोटा चार धाम यात्रा',
-    description: 'Guide to the Chota Char Dham in Uttarakhand — Yamunotri, Gangotri, Kedarnath, and Badrinath. Himalayan spiritual journey.',
-    longDescription: 'The Chota Char Dham (Small Four Abodes) is the most popular pilgrimage circuit in the Garhwal Himalayas of Uttarakhand. The four sacred temples — Yamunotri, Gangotri, Kedarnath, and Badrinath — represent the source of India\'s holiest rivers.',
-    categoryMatch: 'Chota Char Dham (Uttarakhand)',
-    icon: '⛰️',
-    relatedClusters: ['char-dham', 'panch-kedar', 'jyotirlinga'],
-  },
-  {
-    slug: 'panch-kedar',
-    title: 'Panch Kedar — Five Sacred Shiva Temples of Uttarakhand',
-    titleHi: 'पंच केदार',
-    description: 'Explore the Panch Kedar — five ancient Shiva temples in the Garhwal Himalayas. Kedarnath, Tungnath, Rudranath, Madhyamaheshwar, and Kalpeshwar.',
-    longDescription: 'The Panch Kedar are five Hindu temples dedicated to Lord Shiva in the Garhwal Himalayan region of Uttarakhand. According to the Mahabharata, these temples mark the spots where different parts of Lord Shiva appeared as a bull to the Pandavas.',
-    categoryMatch: 'Panch Kedar',
-    deity: 'Shiva',
-    icon: '🏔️',
-    relatedClusters: ['chota-char-dham', 'jyotirlinga', 'pancha-bhoota-stalam'],
-  },
-  {
-    slug: 'divya-desam',
-    title: '108 Divya Desam — Sacred Vishnu Temples',
-    titleHi: '108 दिव्य देसम',
-    description: 'Complete guide to the 108 Divya Desam temples glorified by the Alwars. Sacred Vishnu shrines across India.',
-    longDescription: 'The 108 Divya Desams are a group of Hindu Vaishnavite temples glorified in the works of the 12 Alwar poet-saints. Of the 108 temples, 105 are in India, 1 in Nepal, and 2 are considered to be in the celestial realm.',
-    categoryMatch: 'Divya Desam (108 Vishnu Temples)',
-    deity: 'Vishnu',
-    icon: '🪷',
-    relatedClusters: ['char-dham', 'sapta-puri'],
-  },
-  {
-    slug: 'ashta-vinayak',
-    title: 'Ashta Vinayak — Eight Ganesha Temples of Maharashtra',
-    titleHi: 'अष्ट विनायक',
-    description: 'Explore the eight sacred Ganesha temples in Maharashtra. Complete Ashta Vinayak pilgrimage guide with directions and significance.',
-    longDescription: 'The Ashta Vinayak are eight ancient Hindu temples of Lord Ganesha in the Indian state of Maharashtra. Each temple has its own unique legend and form of Ganesha, making this one of the most popular pilgrimages in western India.',
-    categoryMatch: 'Ashta Vinayak',
-    deity: 'Ganesha',
-    icon: '🐘',
-    relatedClusters: ['jyotirlinga', 'shakti-peeth'],
-  },
-  {
-    slug: 'navagraha',
-    title: 'Navagraha Temples — Nine Planetary Deity Shrines',
-    titleHi: 'नवग्रह मंदिर',
-    description: 'Discover the Navagraha temples dedicated to the nine celestial bodies in Hindu astrology. Complete guide to planetary deity worship.',
-    longDescription: 'The Navagraha temples are nine Hindu temples, each dedicated to one of the nine major celestial bodies (Navagraha) in Hindu astrology. These temples are primarily located in Tamil Nadu and are believed to have immense spiritual power.',
-    categoryMatch: 'Navagraha Temples',
-    icon: '🌟',
-    relatedClusters: ['divya-desam', 'pancha-bhoota-stalam'],
-  },
-  {
-    slug: 'pancha-bhoota-stalam',
-    title: 'Pancha Bhoota Stalam — Five Element Shiva Temples',
-    titleHi: 'पंच भूत स्थलम',
-    description: 'Guide to the Pancha Bhoota Stalam — five Shiva temples representing earth, water, fire, air, and space.',
-    longDescription: 'The Pancha Bhoota Stalam are five Shiva temples in South India, each representing one of the five elements of nature — earth, water, fire, air, and space. These ancient temples are among the most significant Shaiva shrines.',
-    categoryMatch: 'Pancha Bhoota Stalam',
-    deity: 'Shiva',
-    icon: '🔥',
-    relatedClusters: ['jyotirlinga', 'panch-kedar', 'divya-desam'],
-  },
-  {
-    slug: 'sapta-puri',
-    title: 'Sapta Puri — Seven Sacred Cities of India',
-    titleHi: 'सप्त पुरी',
-    description: 'Explore the seven holiest cities (Sapta Puri) that grant moksha — Ayodhya, Mathura, Haridwar, Varanasi, Kanchipuram, Ujjain, and Dwarka.',
-    longDescription: 'The Sapta Puri (Seven Sacred Cities) are the seven most holy cities in Hinduism that are believed to grant moksha (liberation). Each city is associated with specific deities and has immense spiritual significance in Hindu tradition.',
-    categoryMatch: 'Sapta Puri (7 Sacred Cities)',
-    icon: '🏛️',
-    relatedClusters: ['char-dham', 'jyotirlinga', 'shakti-peeth'],
-  },
-  {
-    slug: 'iskcon',
-    title: 'ISKCON Temples Across India & World',
-    titleHi: 'इस्कॉन मंदिर',
-    description: 'Complete guide to ISKCON (International Society for Krishna Consciousness) temples across India and the world. Find timings, location, and significance.',
-    longDescription: 'ISKCON, founded by A.C. Bhaktivedanta Swami Prabhupada in 1966, operates hundreds of temples worldwide dedicated to Lord Krishna. These temples are centers of Bhakti Yoga, Vedic education, and vegetarian prasadam distribution.',
-    categoryMatch: 'ISKCON',
-    deity: 'Krishna',
-    icon: '🪷',
-    relatedClusters: ['divya-desam', 'sapta-puri', 'ramayana-circuit'],
-  },
-  {
-    slug: 'ramayana-circuit',
-    title: 'Ramayana Circuit — Sacred Sites of Lord Ram',
-    titleHi: 'रामायण सर्किट',
-    description: 'Explore the Ramayana Circuit pilgrimage — sacred sites associated with Lord Ram from Ayodhya to Lanka. Complete pilgrimage guide with temples and significance.',
-    longDescription: 'The Ramayana Circuit covers the sacred sites associated with the life journey of Lord Ram as described in the Ramayana. From his birthplace Ayodhya to Chitrakoot, Panchvati, Hampi (Kishkindha), Rameshwaram, and Sri Lanka — this pilgrimage traces the divine footsteps.',
-    categoryMatch: 'Ramayana Circuit',
-    deity: 'Rama',
-    icon: '🏹',
-    relatedClusters: ['char-dham', 'sapta-puri', 'iskcon'],
-  },
-  {
-    slug: 'panch-prayag',
-    title: 'Panch Prayag — Five Sacred River Confluences',
-    titleHi: 'पंच प्रयाग',
-    description: 'Discover the Panch Prayag — five sacred confluences of rivers in the Garhwal Himalayas of Uttarakhand. Devprayag, Rudraprayag, Karnaprayag, Nandprayag, and Vishnuprayag.',
-    longDescription: 'The Panch Prayag are five sacred river confluences in the Garhwal region of Uttarakhand where tributaries of the Ganges merge. Each prayag has ancient temples and spiritual significance. Devprayag, where Bhagirathi and Alaknanda merge to form the Ganga, is the most revered.',
-    categoryMatch: 'Panch Prayag',
-    icon: '🌊',
-    relatedClusters: ['chota-char-dham', 'panch-kedar', 'sapta-puri'],
-  },
-  {
-    slug: 'arupadai-veedu',
-    title: 'Arupadai Veedu — Six Abodes of Lord Murugan',
-    titleHi: 'अरुपदै वीडू',
-    description: 'Complete guide to the Arupadai Veedu — six sacred temples of Lord Murugan (Kartikeya) in Tamil Nadu. Pilgrimage route with significance and directions.',
-    longDescription: 'The Arupadai Veedu (Six Battle Camps) are the six most sacred temples of Lord Murugan in Tamil Nadu. These temples are mentioned in the Sangam Tamil literature and represent the six abodes where Murugan resided after defeating the demon Surapadman.',
-    categoryMatch: 'Arupadai Veedu (6 Abodes of Murugan)',
-    deity: 'Murugan',
-    icon: '🦚',
-    relatedClusters: ['navagraha', 'divya-desam', 'pancha-bhoota-stalam'],
-  },
-  {
-    slug: '108-shiva-temples',
-    title: '108 Shiva Temples — Sacred Shrines of Mahadeva',
-    titleHi: '108 शिव मंदिर',
-    description: 'Explore the 108 sacred Shiva temples across India. Complete directory of ancient and significant temples dedicated to Lord Shiva.',
-    longDescription: 'The 108 Shiva temples represent the most significant shrines dedicated to Lord Shiva across the Indian subcontinent. The number 108 holds deep spiritual significance in Hinduism — representing the wholeness of existence. These temples span from the Himalayas to Kanyakumari.',
-    categoryMatch: '108 Shiva Temples',
-    deity: 'Shiva',
-    icon: '🔱',
-    relatedClusters: ['jyotirlinga', 'panch-kedar', 'pancha-bhoota-stalam'],
-  },
-]
+// Derive pilgrimage clusters from the central sacred categories source
+const CLUSTERS: PilgrimageCluster[] = SACRED_CATEGORIES.filter(c => c.isActive).map(cat => ({
+  slug: cat.slug,
+  title: cat.name,
+  titleHi: cat.nameHi,
+  description: cat.description,
+  longDescription: cat.longDescription,
+  categoryMatch: cat.name,
+  deity: cat.deity,
+  icon: cat.icon,
+  relatedClusters: cat.relatedSlugs,
+}))
 
-const CLUSTER_MAP = Object.fromEntries(CLUSTERS.map(c => [c.slug, c]))
+const CLUSTER_MAP: Record<string, PilgrimageCluster> = Object.fromEntries(CLUSTERS.map(c => [c.slug, c]))
+
+// Backward-compatible slug aliases
+const shaktiPeethCluster = CLUSTER_MAP['shakti-peeth']
+if (shaktiPeethCluster) {
+  CLUSTER_MAP['shakti-peethas'] = shaktiPeethCluster
+  CLUSTER_MAP['51-shakti-peethas'] = shaktiPeethCluster
+  CLUSTER_MAP['52-shakti-peethas'] = shaktiPeethCluster
+}
 
 export async function generateMetadata(
   { params }: { params: Promise<{ slug: string }> }
@@ -215,10 +75,12 @@ export default async function PilgrimageClusterPage({ params }: { params: Promis
   let temples: any[] = []
   try {
     await connectDB()
-    const all = await Temple.find({ status: 'approved' }, 'title description image city state deity categories').lean() as any[]
-    temples = all.filter((t: any) =>
-      (t.categories || []).some((c: string) => c === cluster.categoryMatch)
-    )
+    const all = await Temple.find({ status: 'approved' }, 'title slug description image city state country deity categories sacredCategories templeType templeTypes canonicalShaktiPeeth canonicalShaktiPeethKey canonicalShaktiPeethName shaktiPeethMeta').lean() as any[]
+    temples = cluster.categoryMatch === SHAKTI_PEETH_CATEGORY
+      ? getTemplesForSacredCategory(all, cluster.categoryMatch)
+      : all.filter((t: any) =>
+        (t.categories || []).some((c: string) => c === cluster.categoryMatch)
+      )
   } catch (e) {
     console.error('Pilgrimage cluster fetch error:', e)
   }

@@ -23,7 +23,7 @@ const STORIES = [
   { slug: 'ram-temples-in-india', title: 'Ram Temples in India', desc: 'Sacred Lord Ram temples from Ayodhya and beyond' },
   { slug: 'jyotirlinga-temples', title: '12 Jyotirlinga Temples', desc: 'The most sacred Shiva shrines in India' },
   { slug: 'iskcon-temples-in-india', title: 'ISKCON Temples in India', desc: 'Hare Krishna temples across India' },
-  { slug: 'shakti-peeth-temples', title: '51 Shakti Peethas', desc: 'Sacred Goddess temples across India' },
+  { slug: 'shakti-peeth-temples', title: '52 Shakti Peethas', desc: 'Sacred Goddess temples across India' },
   { slug: 'temples-in-rajasthan', title: 'Temples in Rajasthan', desc: 'Grand temples of the desert state' },
   { slug: 'temples-in-maharashtra', title: 'Temples of Maharashtra', desc: 'Ashtavinayak, Shirdi, and more' },
   { slug: 'temples-near-rivers', title: 'Temples on Sacred Rivers', desc: 'Ganga, Yamuna, Narmada, Godavari' },
