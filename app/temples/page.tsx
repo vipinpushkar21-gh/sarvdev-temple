@@ -8,6 +8,7 @@ import { TempleGridSkeleton } from '../../components/Skeleton'
 import { getTemplesForSacredCategory, SHAKTI_PEETH_CATEGORY } from '../../data/shakti-peethas'
 import { SACRED_CATEGORIES, getAllCategoryNames } from '../../lib/sacred-categories'
 import { getTempleImage, TEMPLE_PLACEHOLDER } from '../../lib/temple-image'
+import { isAllowedImageHost, getSafeTempleImage } from '../../lib/imageGuard'
 
 type Temple = {
   _id: string
@@ -367,8 +368,8 @@ export default function TemplesPage() {
                           onClick={() => { setShowDropdown(false); setSearchQuery(''); router.push(`/temples/${slug}`) }}
                           className="w-full text-left px-5 py-3 hover:bg-primary-50/50 transition-all duration-200 flex items-center gap-3 group"
                         >
-                          {temple.image && (
-                            <img src={temple.image} alt="" className="w-11 h-11 rounded-xl object-cover flex-shrink-0 shadow-sm" />
+                          {isAllowedImageHost(temple.image) && (
+                            <img src={getSafeTempleImage(temple.image)} alt="" className="w-11 h-11 rounded-xl object-cover flex-shrink-0 shadow-sm" />
                           )}
                           <div className="min-w-0 flex-1">
                             <div className="text-body-sm font-medium text-ink truncate group-hover:text-primary-700 transition-colors">{temple.title}</div>

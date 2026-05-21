@@ -492,6 +492,188 @@ export default function EditTemplePage({ params }: { params: Promise<{ id: strin
           </div>
         </div>
 
+        {/* Spiritual Content */}
+        <div className="admin-card p-6 space-y-5">
+          <h2 className="admin-section-title">🕉️ Spiritual Content</h2>
+          <p className="text-xs text-gray-400">Add rich spiritual content — renders automatically on the temple page when filled.</p>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1">Sacred Importance (English)</label>
+            <textarea value={(form as any).sacredImportance || ""} onChange={e => setForm(s => ({ ...s, sacredImportance: e.target.value }))} rows={3} className="admin-input w-full" placeholder="Why is this temple spiritually significant?" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1">Sacred Importance (Hindi)</label>
+            <textarea value={(form as any).sacredImportanceHi || ""} onChange={e => setForm(s => ({ ...s, sacredImportanceHi: e.target.value }))} rows={3} className="admin-input w-full" placeholder="आध्यात्मिक महत्व..." />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1">Temple History (English)</label>
+              <textarea value={(form as any).history || ""} onChange={e => setForm(s => ({ ...s, history: e.target.value }))} rows={4} className="admin-input w-full" placeholder="Historical background..." />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1">Temple History (Hindi)</label>
+              <textarea value={(form as any).historyHi || ""} onChange={e => setForm(s => ({ ...s, historyHi: e.target.value }))} rows={4} className="admin-input w-full" placeholder="इतिहास..." />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1">Mythology (English)</label>
+              <textarea value={(form as any).mythology || ""} onChange={e => setForm(s => ({ ...s, mythology: e.target.value }))} rows={4} className="admin-input w-full" placeholder="Mythological connection..." />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1">Temple Legend (English)</label>
+              <textarea value={(form as any).templeLegend || ""} onChange={e => setForm(s => ({ ...s, templeLegend: e.target.value }))} rows={4} className="admin-input w-full" placeholder="Local legend or story..." />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1">Sacred Mystery</label>
+            <textarea value={(form as any).sacredMystery || ""} onChange={e => setForm(s => ({ ...s, sacredMystery: e.target.value }))} rows={3} className="admin-input w-full" placeholder="Any unexplained mystery or special phenomenon..." />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1">Secondary Deities</label>
+              <input value={(form as any).secondaryDeities?.join(', ') || ""} onChange={e => setForm(s => ({ ...s, secondaryDeities: e.target.value.split(',').map((x: string) => x.trim()).filter(Boolean) }))} className="admin-input w-full" placeholder="e.g. Nandi, Parvati, Ganesha" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1">Sampradaya / Tradition</label>
+              <input value={(form as any).sampradaya || ""} onChange={e => setForm(s => ({ ...s, sampradaya: e.target.value }))} className="admin-input w-full" placeholder="e.g. Shaiva, Vaishnava, Shakta" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1">Special Rituals</label>
+              <textarea value={(form as any).specialRituals || ""} onChange={e => setForm(s => ({ ...s, specialRituals: e.target.value }))} rows={2} className="admin-input w-full" placeholder="e.g. Rudrabhishek, Mangal Aarti..." />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1">Prasadam Info</label>
+              <textarea value={(form as any).prasadamInfo || ""} onChange={e => setForm(s => ({ ...s, prasadamInfo: e.target.value }))} rows={2} className="admin-input w-full" placeholder="What prasadam is distributed?" />
+            </div>
+          </div>
+        </div>
+
+        {/* Architecture */}
+        <div className="admin-card p-6 space-y-5">
+          <h2 className="admin-section-title">🏛️ Architecture</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1">Architecture Style</label>
+              <input value={(form as any).architectureStyle || ""} onChange={e => setForm(s => ({ ...s, architectureStyle: e.target.value }))} className="admin-input w-full" placeholder="e.g. Dravidian, Nagara, Vesara" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1">Built By</label>
+              <input value={(form as any).builtBy || ""} onChange={e => setForm(s => ({ ...s, builtBy: e.target.value }))} className="admin-input w-full" placeholder="King / ruler / community" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1">Dynasty</label>
+              <input value={(form as any).dynasty || ""} onChange={e => setForm(s => ({ ...s, dynasty: e.target.value }))} className="admin-input w-full" placeholder="e.g. Chola, Pallava, Maratha" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1">Temple Area</label>
+              <input value={(form as any).templeArea || ""} onChange={e => setForm(s => ({ ...s, templeArea: e.target.value }))} className="admin-input w-full" placeholder="e.g. 40 acres" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1">Gopuram Count</label>
+              <input value={(form as any).gopuramCount || ""} onChange={e => setForm(s => ({ ...s, gopuramCount: e.target.value }))} className="admin-input w-full" placeholder="e.g. 21 gopurams" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1">Mandapam Details</label>
+              <input value={(form as any).mandapamDetails || ""} onChange={e => setForm(s => ({ ...s, mandapamDetails: e.target.value }))} className="admin-input w-full" placeholder="e.g. 1000-pillar mandapam" />
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1">Architecture Highlights</label>
+            <textarea value={(form as any).architectureHighlights || ""} onChange={e => setForm(s => ({ ...s, architectureHighlights: e.target.value }))} rows={3} className="admin-input w-full" placeholder="Notable architectural features..." />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1">Renovations</label>
+            <input value={(form as any).renovations || ""} onChange={e => setForm(s => ({ ...s, renovations: e.target.value }))} className="admin-input w-full" placeholder="e.g. Renovated by ABC in 1920" />
+          </div>
+        </div>
+
+        {/* Pilgrimage & Visitor Guide */}
+        <div className="admin-card p-6 space-y-5">
+          <h2 className="admin-section-title">🛕 Pilgrimage & Visitor Guide</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1">Pilgrimage Circuit</label>
+              <input value={(form as any).pilgrimageCircuit || ""} onChange={e => setForm(s => ({ ...s, pilgrimageCircuit: e.target.value }))} className="admin-input w-full" placeholder="e.g. Char Dham, Jyotirlinga" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1">Best Season to Visit</label>
+              <input value={(form as any).bestSeason || ""} onChange={e => setForm(s => ({ ...s, bestSeason: e.target.value }))} className="admin-input w-full" placeholder="e.g. October–March" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1">Avg. Visit Duration</label>
+              <input value={(form as any).averageVisitDuration || ""} onChange={e => setForm(s => ({ ...s, averageVisitDuration: e.target.value }))} className="admin-input w-full" placeholder="e.g. 2–3 hours" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1">Crowd Level</label>
+              <select value={(form as any).crowdLevel || ""} onChange={e => setForm(s => ({ ...s, crowdLevel: e.target.value }))} className="admin-input w-full">
+                <option value="">— Select —</option>
+                <option value="low">Low</option>
+                <option value="moderate">Moderate</option>
+                <option value="high">High</option>
+                <option value="very-high">Very High</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1">Dress Code</label>
+              <input value={(form as any).dressCode || ""} onChange={e => setForm(s => ({ ...s, dressCode: e.target.value }))} className="admin-input w-full" placeholder="e.g. Traditional attire required" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1">Photography</label>
+              <select value={(form as any).photographyAllowed || ""} onChange={e => setForm(s => ({ ...s, photographyAllowed: e.target.value }))} className="admin-input w-full">
+                <option value="">— Select —</option>
+                <option value="yes">Allowed</option>
+                <option value="restricted">Restricted</option>
+                <option value="no">Not Allowed</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1">Nearby Sacred Places (comma-separated)</label>
+            <input value={(form as any).nearbySacredPlaces?.join(', ') || ""} onChange={e => setForm(s => ({ ...s, nearbySacredPlaces: e.target.value.split(',').map((x: string) => x.trim()).filter(Boolean) }))} className="admin-input w-full" placeholder="e.g. Kashi Vishwanath, Sankat Mochan" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1">Temple Rules</label>
+            <textarea value={(form as any).templeRules || ""} onChange={e => setForm(s => ({ ...s, templeRules: e.target.value }))} rows={2} className="admin-input w-full" placeholder="Entry restrictions, mobile policy..." />
+          </div>
+        </div>
+
+        {/* Travel Guide */}
+        <div className="admin-card p-6 space-y-4">
+          <h2 className="admin-section-title">✈️ Travel Guide</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1">Nearest Airport</label>
+              <input value={(form as any).nearestAirport || ""} onChange={e => setForm(s => ({ ...s, nearestAirport: e.target.value }))} className="admin-input w-full" placeholder="e.g. Varanasi Airport (15 km)" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1">Nearest Railway Station</label>
+              <input value={(form as any).nearestRailwayStation || ""} onChange={e => setForm(s => ({ ...s, nearestRailwayStation: e.target.value }))} className="admin-input w-full" placeholder="e.g. Varanasi Junction (3 km)" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1">Nearest Bus Stand</label>
+              <input value={(form as any).nearestBusStand || ""} onChange={e => setForm(s => ({ ...s, nearestBusStand: e.target.value }))} className="admin-input w-full" placeholder="e.g. Varanasi Bus Stand (2 km)" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1">Parking</label>
+              <input value={(form as any).parkingAvailable || ""} onChange={e => setForm(s => ({ ...s, parkingAvailable: e.target.value }))} className="admin-input w-full" placeholder="e.g. Available, 500 vehicles" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1">Wheelchair Access</label>
+              <input value={(form as any).wheelchairAccess || ""} onChange={e => setForm(s => ({ ...s, wheelchairAccess: e.target.value }))} className="admin-input w-full" placeholder="e.g. Ramp available at main gate" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1">Local Transport</label>
+              <input value={(form as any).localTransport || ""} onChange={e => setForm(s => ({ ...s, localTransport: e.target.value }))} className="admin-input w-full" placeholder="e.g. Auto, e-rickshaw available" />
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1">Accommodation Info</label>
+            <textarea value={(form as any).accommodationInfo || ""} onChange={e => setForm(s => ({ ...s, accommodationInfo: e.target.value }))} rows={2} className="admin-input w-full" placeholder="Hotels, dharamshalas, ashrams nearby..." />
+          </div>
+        </div>
+
         {/* SEO */}
         <div className="admin-card p-6 space-y-5">
           <div className="flex items-start justify-between gap-4">

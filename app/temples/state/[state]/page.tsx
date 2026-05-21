@@ -4,11 +4,11 @@ import { connectDB } from '@/lib/db'
 import Temple from '@/models/Temple'
 import RelatedSacredContent from '@/components/RelatedSacredContent'
 import { hinduEvents } from '@/data/events'
+import { getSafeTempleImage } from '@/lib/imageGuard'
 
 export const revalidate = 3600
 
 const BASE = 'https://sarvdev.com'
-const DEFAULT_IMAGE = 'https://res.cloudinary.com/dc2qg7bwr/image/upload/image_2_xljqwa'
 
 function slugify(text: string) {
   return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
@@ -202,7 +202,7 @@ export default async function StateTemplesPage({
                 >
                   <div className="relative h-48 overflow-hidden">
                     <img
-                      src={t.image || DEFAULT_IMAGE}
+                      src={getSafeTempleImage(t.image)}
                       alt={t.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       loading="lazy"

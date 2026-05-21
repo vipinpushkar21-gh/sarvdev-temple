@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 
 type Props = {
-  editHref: string
+  editHref?: string
   label?: string
 }
 
@@ -27,15 +27,17 @@ export default function AdminEditBar({ editHref, label = 'Edit' }: Props) {
       <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
       <span className="text-white/60 text-xs">Admin</span>
       <div className="w-px h-4 bg-white/20" />
-      <Link
-        href={editHref}
-        className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-500 hover:bg-orange-400 text-white text-xs font-semibold transition-colors"
-      >
-        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" />
-        </svg>
-        {label}
-      </Link>
+      {editHref && (
+        <Link
+          href={editHref}
+          className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-500 hover:bg-orange-400 text-white text-xs font-semibold transition-colors"
+        >
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" />
+          </svg>
+          {label}
+        </Link>
+      )}
       <Link
         href="/admin"
         className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 hover:bg-white/20 text-white text-xs font-medium transition-colors"

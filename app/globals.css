@@ -1313,3 +1313,792 @@
     font-family: var(--font-playfair), 'Playfair Display', Georgia, serif;
   }
 }
+
+/* ═══════════════════════════════════════════════════════ */
+/*  CINEMATIC TEMPLE EXPERIENCE — PREMIUM VISUAL SYSTEM   */
+/* ═══════════════════════════════════════════════════════ */
+
+@layer components {
+
+  /* ── Cinematic Hero: upgrade base class ── */
+  .temple-hero-2030 {
+    min-height: 92vh;
+    background: #1a0e0a;
+  }
+  /* Atmospheric layer: warm ambient orbs */
+  .temple-hero-2030::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse at 15% 45%, rgba(201,168,76,0.09) 0%, transparent 45%),
+      radial-gradient(ellipse at 82% 28%, rgba(255,153,51,0.07) 0%, transparent 38%),
+      radial-gradient(ellipse at 50% 85%, rgba(128,0,32,0.05) 0%, transparent 35%);
+    z-index: 2;
+    pointer-events: none;
+  }
+  /* Bottom curtain: deep dramatic fade */
+  .temple-hero-2030::after {
+    background: linear-gradient(
+      to bottom,
+      rgba(0,0,0,0.08) 0%,
+      rgba(0,0,0,0.0) 18%,
+      rgba(0,0,0,0.15) 48%,
+      rgba(0,0,0,0.68) 75%,
+      rgba(10,6,4,0.96) 100%
+    );
+  }
+
+  /* Hero ambient floating orbs */
+  .hero-orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(70px);
+    pointer-events: none;
+    will-change: transform;
+    z-index: 2;
+  }
+  .hero-orb-gold {
+    width: 380px; height: 380px;
+    top: 5%; left: 3%;
+    background: radial-gradient(circle, rgba(201,168,76,0.14) 0%, transparent 70%);
+    animation: driftOrb 11s ease-in-out infinite;
+  }
+  .hero-orb-saffron {
+    width: 260px; height: 260px;
+    top: 20%; right: 8%;
+    background: radial-gradient(circle, rgba(255,153,51,0.11) 0%, transparent 70%);
+    animation: driftOrb 14s ease-in-out infinite reverse;
+    animation-delay: -4s;
+  }
+  .hero-orb-maroon {
+    width: 200px; height: 200px;
+    bottom: 25%; left: 22%;
+    background: radial-gradient(circle, rgba(128,0,32,0.08) 0%, transparent 70%);
+    animation: driftOrb 17s ease-in-out infinite;
+    animation-delay: -8s;
+  }
+
+  /* Hero scroll indicator */
+  .scroll-cue {
+    position: absolute;
+    bottom: 2.25rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.375rem;
+    animation: scrollBounce 2.2s ease-in-out infinite;
+    opacity: 0.55;
+    pointer-events: none;
+  }
+  .scroll-cue-dot {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.8);
+  }
+  .scroll-cue-line {
+    width: 1px; height: 44px;
+    background: linear-gradient(to bottom, rgba(255,255,255,0.7), transparent);
+  }
+
+  /* ── Hero title upgrade ── */
+  .hero-title-grand {
+    font-size: clamp(2.4rem, 5.5vw, 4.8rem);
+    line-height: 1.06;
+    letter-spacing: -0.03em;
+    font-weight: 700;
+    color: #FFFFFF;
+    font-family: var(--font-playfair), 'Playfair Display', Georgia, serif;
+    text-shadow: 0 3px 10px rgba(0,0,0,0.45), 0 8px 40px rgba(0,0,0,0.25), 0 0 80px rgba(201,168,76,0.12);
+  }
+
+  /* ── Temple page content atmosphere ── */
+  .temple-content-wrap {
+    position: relative;
+    background:
+      radial-gradient(ellipse at 8% 20%, rgba(255,153,51,0.035) 0%, transparent 38%),
+      radial-gradient(ellipse at 92% 60%, rgba(201,168,76,0.025) 0%, transparent 35%),
+      linear-gradient(180deg, #FAF9F6 0%, #FDF8F2 100%);
+  }
+
+  /* ── About: premium editorial block ── */
+  .about-editorial {
+    background: linear-gradient(150deg, #FFFFFF 0%, #FFFDF8 50%, #FFF9F0 100%);
+    border: 1px solid rgba(201,168,76,0.22);
+    box-shadow: 0 4px 28px rgba(201,168,76,0.07), 0 1px 4px rgba(0,0,0,0.04);
+    border-radius: 1.5rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .about-editorial::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 4px;
+    background: linear-gradient(180deg, #FF9933 0%, #C9A84C 50%, #FF9933 100%);
+    border-radius: 4px 0 0 4px;
+  }
+  .about-editorial::after {
+    content: '';
+    position: absolute;
+    top: 0; right: 0;
+    width: 160px; height: 160px;
+    background: radial-gradient(circle, rgba(255,215,0,0.06) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  /* ── Dark parchment — History ── */
+  .section-dark-parchment {
+    background: linear-gradient(148deg, #1C1009 0%, #2A1B10 45%, #1C1009 100%);
+    border-radius: 1.5rem;
+    position: relative;
+    overflow: hidden;
+    padding: 2.5rem;
+  }
+  .section-dark-parchment::before {
+    content: '';
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse at 12% 20%, rgba(255,153,51,0.09) 0%, transparent 50%),
+      radial-gradient(ellipse at 88% 80%, rgba(201,168,76,0.07) 0%, transparent 50%);
+    pointer-events: none;
+  }
+  .section-dark-parchment .section-heading-2030 h2 {
+    background-image: linear-gradient(135deg, #E8D48B 0%, #FF9933 50%, #E8D48B 100%) !important;
+    -webkit-background-clip: text !important;
+    background-clip: text !important;
+    -webkit-text-fill-color: transparent;
+  }
+  .section-dark-parchment .section-heading-2030::after {
+    background: linear-gradient(90deg, rgba(201,168,76,0.45), transparent) !important;
+  }
+  .section-dark-parchment p,
+  .section-dark-parchment .prose-para {
+    color: rgba(245,235,218,0.88);
+    line-height: 1.9;
+  }
+
+  /* Parchment prose card inside dark section */
+  .parchment-card {
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 1rem;
+    padding: 1.75rem 2rem;
+  }
+
+  /* ── Mystical — Mythology/Legend ── */
+  .section-mystical {
+    background: linear-gradient(148deg, #0D0B1A 0%, #150F2E 45%, #1A0E18 100%);
+    border-radius: 1.5rem;
+    position: relative;
+    overflow: hidden;
+    padding: 2.5rem;
+  }
+  .section-mystical::before {
+    content: '';
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse at 18% 18%, rgba(147,51,234,0.07) 0%, transparent 45%),
+      radial-gradient(ellipse at 82% 82%, rgba(201,168,76,0.09) 0%, transparent 45%),
+      radial-gradient(ellipse at 50% 50%, rgba(255,153,51,0.03) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .section-mystical .section-heading-2030 h2 {
+    background-image: linear-gradient(135deg, #C4B5FD 0%, #C9A84C 50%, #A78BFA 100%) !important;
+    -webkit-background-clip: text !important;
+    background-clip: text !important;
+    -webkit-text-fill-color: transparent;
+  }
+  .section-mystical .section-heading-2030::after {
+    background: linear-gradient(90deg, rgba(167,139,250,0.35), transparent) !important;
+  }
+
+  /* Glass dark card — for inside dark sections */
+  .glass-dark-card {
+    background: rgba(255,255,255,0.06);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 1.25rem;
+    padding: 1.75rem;
+    transition: all 0.4s ease-out;
+  }
+  .glass-dark-card:hover {
+    background: rgba(255,255,255,0.09);
+    border-color: rgba(201,168,76,0.25);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3), 0 0 40px rgba(201,168,76,0.06);
+    transform: translateY(-3px);
+  }
+  .glass-dark-card h3 {
+    color: rgba(255,255,255,0.92);
+  }
+  .glass-dark-card p {
+    color: rgba(220,210,235,0.82);
+    line-height: 1.85;
+  }
+
+  /* Sacred quote block */
+  .sacred-quote-block {
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(201,168,76,0.18);
+    border-left: 3px solid rgba(201,168,76,0.5);
+    border-radius: 0 1rem 1rem 0;
+    padding: 1.5rem 2rem;
+    position: relative;
+  }
+  .sacred-quote-block::before {
+    content: '\201C';
+    position: absolute;
+    top: -0.75rem; left: 1rem;
+    font-size: 5rem; line-height: 1;
+    opacity: 0.12;
+    font-family: Georgia, serif;
+    color: #C9A84C;
+  }
+  .sacred-quote-block p {
+    color: rgba(230,215,255,0.85);
+    font-style: italic;
+    line-height: 1.9;
+  }
+
+  /* ── Architecture stat cards ── */
+  .arch-stat-card {
+    background: linear-gradient(148deg, #FFFFFF 0%, #F8F3EC 100%);
+    border: 1px solid rgba(139,117,53,0.14);
+    border-radius: 1rem;
+    padding: 1.25rem 1.5rem;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.35s ease-out;
+  }
+  .arch-stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #8B7535, #C9A84C, #8B7535);
+    border-radius: 1rem 1rem 0 0;
+  }
+  .arch-stat-card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(201,168,76,0.3);
+    box-shadow: 0 8px 28px rgba(139,117,53,0.12), 0 2px 6px rgba(0,0,0,0.04);
+  }
+  .arch-stat-icon {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+    display: block;
+  }
+  .arch-stat-value {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #3D2B1A;
+    line-height: 1.3;
+    margin-bottom: 0.2rem;
+  }
+  .arch-stat-label {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: #8B7535;
+  }
+
+  /* Architecture section wrap */
+  .section-architecture {
+    background: linear-gradient(148deg, #F8F4EE 0%, #FFFFF0 50%, #F8F4EE 100%);
+    border: 1px solid rgba(139,117,53,0.12);
+    border-radius: 1.5rem;
+    padding: 2.5rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .section-architecture::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 90% 10%, rgba(201,168,76,0.07) 0%, transparent 50%);
+    pointer-events: none;
+  }
+  .section-architecture .section-heading-2030 h2 {
+    background-image: linear-gradient(135deg, #3D2B1A, #8B7535, #C9A84C) !important;
+    -webkit-background-clip: text !important;
+    background-clip: text !important;
+    -webkit-text-fill-color: transparent;
+  }
+  .section-architecture .section-heading-2030::after {
+    background: linear-gradient(90deg, rgba(139,117,53,0.35), transparent) !important;
+  }
+
+  /* ── Festival aura cards ── */
+  .festival-aura-card {
+    background: linear-gradient(148deg, #1C0A04 0%, #2E1208 100%);
+    border: 1px solid rgba(255,153,51,0.2);
+    border-radius: 1.25rem;
+    padding: 1.375rem 1.5rem;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.4s ease-out;
+    color: #FFE8CC;
+  }
+  .festival-aura-card::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 50% -10%, rgba(255,153,51,0.15) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .festival-aura-card::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 20%; right: 20%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #FF9933, #C9A84C, transparent);
+    opacity: 0.5;
+    transition: opacity 0.35s, left 0.35s, right 0.35s;
+  }
+  .festival-aura-card:hover {
+    border-color: rgba(255,153,51,0.45);
+    transform: translateY(-5px);
+    box-shadow: 0 16px 48px rgba(200,80,0,0.22), 0 4px 12px rgba(0,0,0,0.25);
+  }
+  .festival-aura-card:hover::after {
+    left: 0; right: 0;
+    opacity: 1;
+  }
+  .festival-aura-card .festival-name {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #FFD4A0;
+    margin-bottom: 0.25rem;
+  }
+  .festival-aura-card .festival-month {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #FF9933;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+  }
+  .festival-aura-card .festival-desc {
+    font-size: 0.875rem;
+    color: rgba(255,220,180,0.75);
+    line-height: 1.65;
+  }
+  .festival-section-wrap {
+    background: linear-gradient(148deg, #0E0604 0%, #1C0C06 50%, #0E0604 100%);
+    border-radius: 1.5rem;
+    padding: 2.5rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .festival-section-wrap::before {
+    content: '';
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse at 10% 30%, rgba(255,153,51,0.08) 0%, transparent 45%),
+      radial-gradient(ellipse at 90% 70%, rgba(201,168,76,0.07) 0%, transparent 45%);
+    pointer-events: none;
+  }
+  .festival-section-wrap .section-heading-2030 h2 {
+    background-image: linear-gradient(135deg, #FF9933, #FFD700, #FF9933) !important;
+    -webkit-background-clip: text !important;
+    background-clip: text !important;
+    -webkit-text-fill-color: transparent;
+  }
+  .festival-section-wrap .section-heading-2030::after {
+    background: linear-gradient(90deg, rgba(255,153,51,0.4), transparent) !important;
+  }
+
+  /* ── Travel chip cards ── */
+  .travel-chip {
+    background: linear-gradient(148deg, #F0F7FF 0%, #E8F3FF 100%);
+    border: 1px solid rgba(21,101,192,0.12);
+    border-radius: 1rem;
+    padding: 1.125rem 1.25rem;
+    display: flex;
+    gap: 0.875rem;
+    align-items: flex-start;
+    transition: all 0.3s ease-out;
+  }
+  .travel-chip:hover {
+    border-color: rgba(21,101,192,0.28);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(21,101,192,0.09);
+  }
+  .travel-chip-icon {
+    width: 2.5rem; height: 2.5rem;
+    border-radius: 0.625rem;
+    background: linear-gradient(135deg, rgba(21,101,192,0.14), rgba(21,101,192,0.07));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 1.125rem;
+  }
+  .travel-chip-label {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: #1565C0;
+    margin-bottom: 0.2rem;
+  }
+  .travel-chip-value {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: #1A3A5C;
+    line-height: 1.4;
+  }
+  .travel-section-wrap {
+    background: linear-gradient(148deg, #F0F7FF 0%, #E8F2FF 50%, #F0F7FF 100%);
+    border: 1px solid rgba(21,101,192,0.1);
+    border-radius: 1.5rem;
+    padding: 2.5rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .travel-section-wrap::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 90% 10%, rgba(21,101,192,0.05) 0%, transparent 50%);
+    pointer-events: none;
+  }
+  .travel-section-wrap .section-heading-2030 h2 {
+    background-image: linear-gradient(135deg, #1565C0, #0288D1, #1565C0) !important;
+    -webkit-background-clip: text !important;
+    background-clip: text !important;
+    -webkit-text-fill-color: transparent;
+  }
+  .travel-section-wrap .section-heading-2030::after {
+    background: linear-gradient(90deg, rgba(21,101,192,0.3), transparent) !important;
+  }
+
+  /* ── Pilgrimage / Visitor Guide ── */
+  .section-pilgrimage {
+    background: linear-gradient(148deg, #FFF8EE 0%, #FFF3E0 50%, #FFF8EE 100%);
+    border: 1px solid rgba(201,168,76,0.2);
+    border-radius: 1.5rem;
+    padding: 2.5rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .section-pilgrimage::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 95% 5%, rgba(255,153,51,0.08) 0%, transparent 50%);
+    pointer-events: none;
+  }
+  .section-pilgrimage .section-heading-2030 h2 {
+    background-image: linear-gradient(135deg, #CC6A1A, #FF9933, #C9A84C) !important;
+    -webkit-background-clip: text !important;
+    background-clip: text !important;
+    -webkit-text-fill-color: transparent;
+  }
+  .section-pilgrimage .section-heading-2030::after {
+    background: linear-gradient(90deg, rgba(255,153,51,0.35), transparent) !important;
+  }
+  .visitor-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1.125rem;
+    border-radius: 9999px;
+    background: rgba(255,255,255,0.8);
+    border: 1px solid rgba(201,168,76,0.22);
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #5C4033;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    transition: all 0.3s;
+  }
+  .visitor-pill:hover {
+    background: rgba(255,153,51,0.1);
+    border-color: rgba(255,153,51,0.35);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(255,153,51,0.1);
+  }
+
+  /* ── Nearby sacred places tags ── */
+  .nearby-place-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 9999px;
+    background: linear-gradient(135deg, rgba(201,168,76,0.1), rgba(255,153,51,0.07));
+    border: 1px solid rgba(201,168,76,0.22);
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #5C4033;
+    transition: all 0.3s;
+  }
+  .nearby-place-tag:hover {
+    background: linear-gradient(135deg, rgba(255,153,51,0.15), rgba(201,168,76,0.1));
+    border-color: rgba(255,153,51,0.35);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 14px rgba(201,168,76,0.12);
+  }
+
+  /* ── Spiritual significance premium card ── */
+  .spiritual-sig-card {
+    background: linear-gradient(150deg, #FFF9F0 0%, #FFFBF5 50%, #FFF5E8 100%);
+    border: 1px solid rgba(201,168,76,0.2);
+    border-radius: 1.5rem;
+    padding: 2.5rem;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 4px 24px rgba(201,168,76,0.08);
+  }
+  .spiritual-sig-card::before {
+    content: '🕉️';
+    position: absolute;
+    right: 1.5rem; top: 1rem;
+    font-size: 5rem;
+    opacity: 0.05;
+    pointer-events: none;
+  }
+  .spiritual-sig-card .section-heading-2030 h2 {
+    background-image: linear-gradient(135deg, #5C4033, #C9A84C, #FF9933) !important;
+    -webkit-background-clip: text !important;
+    background-clip: text !important;
+    -webkit-text-fill-color: transparent;
+  }
+  .spiritual-sig-card .section-heading-2030::after {
+    background: linear-gradient(90deg, rgba(201,168,76,0.4), transparent) !important;
+  }
+
+  /* ── Sacred Mystery card ── */
+  .sacred-mystery-card {
+    background: linear-gradient(150deg, #0A0814 0%, #141026 100%);
+    border: 1px solid rgba(147,51,234,0.15);
+    border-radius: 1.5rem;
+    padding: 2.5rem;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 4px 32px rgba(147,51,234,0.08);
+  }
+  .sacred-mystery-card::before {
+    content: '';
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse at 30% 30%, rgba(147,51,234,0.08) 0%, transparent 50%),
+      radial-gradient(ellipse at 70% 70%, rgba(201,168,76,0.06) 0%, transparent 50%);
+    pointer-events: none;
+  }
+  .sacred-mystery-card .section-heading-2030 h2 {
+    background-image: linear-gradient(135deg, #A78BFA, #C9A84C, #A78BFA) !important;
+    -webkit-background-clip: text !important;
+    background-clip: text !important;
+    -webkit-text-fill-color: transparent;
+  }
+  .sacred-mystery-card .section-heading-2030::after {
+    background: linear-gradient(90deg, rgba(167,139,250,0.3), transparent) !important;
+  }
+  .sacred-mystery-card p {
+    color: rgba(220,210,248,0.85);
+    font-style: italic;
+    line-height: 1.9;
+  }
+
+  /* ── Section quick navigation ── */
+  .section-quick-nav {
+    position: sticky;
+    top: 3.75rem;
+    z-index: 40;
+    background: rgba(250,249,246,0.93);
+    backdrop-filter: blur(18px) saturate(1.4);
+    -webkit-backdrop-filter: blur(18px) saturate(1.4);
+    border-bottom: 1px solid rgba(229,224,213,0.65);
+    padding: 0.5rem 1rem;
+    display: flex;
+    gap: 0.375rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+  }
+  .section-quick-nav::-webkit-scrollbar { display: none; }
+  .section-nav-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.35rem 0.875rem;
+    border-radius: 9999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #6B6560;
+    white-space: nowrap;
+    border: 1px solid transparent;
+    transition: all 0.2s;
+    text-decoration: none;
+    flex-shrink: 0;
+    cursor: pointer;
+  }
+  .section-nav-pill:hover {
+    background: rgba(255,153,51,0.09);
+    color: #FF9933;
+    border-color: rgba(255,153,51,0.22);
+    text-decoration: none;
+  }
+
+  /* ── Mobile sticky darshan bar ── */
+  .mobile-darshan-bar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    z-index: 60;
+    background: rgba(255,255,255,0.94);
+    backdrop-filter: blur(20px) saturate(1.6);
+    -webkit-backdrop-filter: blur(20px) saturate(1.6);
+    border-top: 1px solid rgba(229,224,213,0.8);
+    padding: 0.75rem 1rem;
+    padding-bottom: max(0.875rem, env(safe-area-inset-bottom, 0.875rem));
+    display: none;
+    align-items: center;
+    gap: 0.75rem;
+    box-shadow: 0 -4px 24px rgba(0,0,0,0.08);
+  }
+  @media (max-width: 1024px) {
+    .mobile-darshan-bar {
+      display: flex;
+    }
+  }
+
+  /* ── Gallery premium section ── */
+  .gallery-section-premium {
+    background: linear-gradient(148deg, #0A0A0A 0%, #141414 100%);
+    border-radius: 1.5rem;
+    padding: 2.5rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .gallery-section-premium::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 50% 0%, rgba(201,168,76,0.06) 0%, transparent 50%);
+    pointer-events: none;
+  }
+  .gallery-section-premium .section-heading-2030 h2 {
+    background-image: linear-gradient(135deg, #E8D48B, #C9A84C, #E8D48B) !important;
+    -webkit-background-clip: text !important;
+    background-clip: text !important;
+    -webkit-text-fill-color: transparent;
+  }
+  .gallery-section-premium .section-heading-2030::after {
+    background: linear-gradient(90deg, rgba(201,168,76,0.4), transparent) !important;
+  }
+
+  /* ── Map section premium ── */
+  .map-section-premium {
+    border-radius: 1.5rem;
+    overflow: hidden;
+    position: relative;
+    border: 1px solid rgba(201,168,76,0.15);
+    box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+  }
+
+  /* ── Sacred category section ── */
+  .sacred-cat-section {
+    background: linear-gradient(148deg, #FFF5EB 0%, #FFFBF0 50%, #FFF5EB 100%);
+    border: 1px solid rgba(255,153,51,0.12);
+    border-radius: 1.5rem;
+    padding: 2rem 2.5rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .sacred-cat-section::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 5% 50%, rgba(255,153,51,0.06) 0%, transparent 45%);
+    pointer-events: none;
+  }
+
+  /* ── Bottom share bar upgrade ── */
+  .share-bar-premium {
+    background: linear-gradient(150deg, #FFF9F0 0%, #FFFBF5 100%);
+    border: 1px solid rgba(201,168,76,0.2);
+    border-radius: 1.5rem;
+    padding: 1.5rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+    box-shadow: 0 4px 20px rgba(201,168,76,0.07);
+  }
+}
+
+@layer utilities {
+  /* Orb drift animation */
+  @keyframes driftOrb {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    33%       { transform: translate(24px, -32px) scale(1.06); }
+    66%       { transform: translate(-18px, 22px) scale(0.96); }
+  }
+
+  /* Scroll cue bounce */
+  @keyframes scrollBounce {
+    0%, 100% { transform: translateX(-50%) translateY(0); opacity: 0.55; }
+    50%       { transform: translateX(-50%) translateY(10px); opacity: 0.85; }
+  }
+
+  /* Gold gradient text */
+  .text-gradient-gold {
+    background: linear-gradient(135deg, #C9A84C 0%, #FFD700 50%, #C9A84C 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .text-gradient-flame {
+    background: linear-gradient(135deg, #FF9933 0%, #E67E22 40%, #FFD700 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  /* Cinematic text shadow */
+  .text-shadow-cinematic {
+    text-shadow: 0 4px 16px rgba(0,0,0,0.55), 0 12px 40px rgba(0,0,0,0.3), 0 0 80px rgba(201,168,76,0.12);
+  }
+
+  /* Shimmer gold text */
+  @keyframes shimmerGold {
+    0%   { background-position: 200% center; }
+    100% { background-position: -200% center; }
+  }
+  .shimmer-gold {
+    background: linear-gradient(90deg, #C9A84C, #FFD700, #C9A84C, #FFD700);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: shimmerGold 4s linear infinite;
+  }
+
+  /* Pulse aura */
+  @keyframes pulseAura {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(255,153,51,0.18); }
+    50%       { box-shadow: 0 0 0 14px rgba(255,153,51,0); }
+  }
+  .pulse-aura {
+    animation: pulseAura 3s ease-in-out infinite;
+  }
+
+  /* Sacred prose paragraph spacing */
+  .prose-sacred p + p {
+    margin-top: 1.25rem;
+  }
+
+  /* Mobile: extra bottom padding for sticky bar */
+  @media (max-width: 1024px) {
+    .has-mobile-bar {
+      padding-bottom: 5rem;
+    }
+  }
+}

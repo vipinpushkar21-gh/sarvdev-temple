@@ -13,14 +13,42 @@ function isAdmin(req: NextRequest): boolean {
 }
 
 const SUPPORTED_TEMPLE_FIELDS = [
-  'title','titleHi','description','descriptionHi','image','images','location','locationHi',
-  'mapsLink','googleMapsUrl','latitude','longitude','city','cityHi','state','stateHi',
-  'country','pincode','pincodeHi','deity','establishedYear','establishedYearHi',
-  'templeType','templeTypes','speciality','specialityHi','categories','sacredCategories',
-  'timings','timingSlots','festivals','contact','phone','email','website','facebook',
-  'instagram','metaTitle','metaDescription','metaKeywords','ogImage','status','verified',
-  'submittedBy','submitterEmail','moderationNotes','reviewedAt','canonicalShaktiPeeth',
-  'canonicalShaktiPeethKey','canonicalShaktiPeethName','shaktiPeethMeta'
+  // Core
+  'title','titleHi','subtitle','subtitleHi','alternateNames','templeTagline','templeTaglineHi',
+  'shortDescription','shortDescriptionHi','description','descriptionHi',
+  // Media
+  'image','heroImage','images','galleryImages','festivalGallery','architectureGallery',
+  'deityGallery','videos','droneShots','ambienceAudio',
+  // Location
+  'location','locationHi','mapsLink','googleMapsUrl','latitude','longitude',
+  'city','cityHi','state','stateHi','country','pincode','pincodeHi',
+  // Deity & Spiritual
+  'deity','mainDeity','secondaryDeities','deityForms','sampradaya','sect','spiritualTradition',
+  'sacredImportance','sacredImportanceHi','mythology','mythologyHi',
+  'templeLegend','templeLegendHi','sacredMystery','sacredMysteryHi',
+  // History & Architecture
+  'history','historyHi','architectureStyle','architectureHighlights','templeArea',
+  'gopuramCount','mandapamDetails','builtBy','dynasty','renovations',
+  // Classification
+  'establishedYear','establishedYearHi','templeType','templeTypes',
+  'speciality','specialityHi','categories','sacredCategories',
+  // Pilgrimage
+  'pilgrimageType','pilgrimageCircuit','nearbySacredPlaces','bestSeason','crowdLevel',
+  'averageVisitDuration','dressCode','photographyAllowed','prasadamInfo','specialRituals','templeRules',
+  // Timings
+  'timings','timingSlots',
+  // Travel
+  'nearestAirport','nearestRailwayStation','nearestBusStand','parkingAvailable',
+  'wheelchairAccess','accommodationInfo','localTransport',
+  // Festivals
+  'festivals',
+  // Contact
+  'contact','phone','email','website','facebook','instagram',
+  // SEO
+  'metaTitle','metaDescription','metaKeywords','ogImage','canonicalUrl',
+  // Admin/Moderation
+  'status','verified','submittedBy','submitterEmail','moderationNotes','reviewedAt',
+  'canonicalShaktiPeeth','canonicalShaktiPeethKey','canonicalShaktiPeethName','shaktiPeethMeta'
 ] as const;
 
 const hasOwn = (value: Record<string, any>, key: string) =>
@@ -55,7 +83,12 @@ function cleanFestivals(value: unknown) {
   return value
     .map((festival) => ({
       name: typeof festival?.name === 'string' ? festival.name.trim() : '',
+      nameHi: typeof festival?.nameHi === 'string' ? festival.nameHi.trim() : '',
       description: typeof festival?.description === 'string' ? festival.description.trim() : '',
+      descriptionHi: typeof festival?.descriptionHi === 'string' ? festival.descriptionHi.trim() : '',
+      month: typeof festival?.month === 'string' ? festival.month.trim() : '',
+      crowdScale: typeof festival?.crowdScale === 'string' ? festival.crowdScale.trim() : '',
+      images: Array.isArray(festival?.images) ? festival.images.filter((i: unknown) => typeof i === 'string') : [],
     }))
     .filter((festival) => festival.name || festival.description);
 }

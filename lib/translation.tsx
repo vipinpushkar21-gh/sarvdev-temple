@@ -105,6 +105,14 @@ const translations: Record<Language, Record<string, string>> = {
     'temple.viewOnMaps': 'View on Google Maps',
     'temple.openInMaps': 'Open in Google Maps',
     'temple.contactInfo': 'Contact Information',
+    'temple.details': 'Temple Details',
+    'temple.festivals': 'Festivals & Celebrations',
+    'temple.sacredCategories': 'Sacred Categories',
+    'temple.verified': 'Verified Temple',
+    'temple.notVerified': 'Unverified',
+    'temple.verificationPending': 'Verification Pending',
+    'temple.verificationPendingDesc': 'Information on this page may not be fully verified. Please cross-check before visiting.',
+    'temple.sharePrompt': 'Share this sacred place with devotees',
     
     // List Temple Form
     'form.listTemple': 'List a Temple',
@@ -230,6 +238,14 @@ const translations: Record<Language, Record<string, string>> = {
     'temple.viewOnMaps': 'गूगल मैप्स पर देखें',
     'temple.openInMaps': 'गूगल मैप्स में खोलें',
     'temple.contactInfo': 'संपर्क जानकारी',
+    'temple.details': 'मंदिर विवरण',
+    'temple.festivals': 'उत्सव एवं समारोह',
+    'temple.sacredCategories': 'पवित्र श्रेणियाँ',
+    'temple.verified': 'सत्यापित मंदिर',
+    'temple.notVerified': 'असत्यापित',
+    'temple.verificationPending': 'सत्यापन लंबित',
+    'temple.verificationPendingDesc': 'इस पृष्ठ की जानकारी पूरी तरह सत्यापित नहीं हो सकती। दर्शन से पहले कृपया पुष्टि करें।',
+    'temple.sharePrompt': 'इस पवित्र स्थल को भक्तों के साथ साझा करें',
     
     // List Temple Form
     'form.listTemple': 'मंदिर सूचीबद्ध करें',

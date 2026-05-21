@@ -2,11 +2,11 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { connectDB } from '@/lib/db'
 import Temple from '@/models/Temple'
+import { getSafeTempleImage } from '@/lib/imageGuard'
 
 export const revalidate = 3600
 
 const BASE = 'https://sarvdev.com'
-const DEFAULT_IMAGE = 'https://res.cloudinary.com/dc2qg7bwr/image/upload/image_2_xljqwa'
 
 function slugify(text: string) {
   return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
@@ -170,7 +170,7 @@ export default async function RegionalTemplesPage({ params }: { params: Promise<
               <Link key={t._id.toString()} href={`/temples/${slugify(t.title)}`}
                 className="group card overflow-hidden hover:shadow-md transition-all duration-300 no-underline">
                 <div className="relative h-48 overflow-hidden">
-                  <img src={t.image || DEFAULT_IMAGE}
+                  <img src={getSafeTempleImage(t.image)}
                     alt={`${t.title}${t.city ? ` in ${t.city}` : ''}${t.state ? `, ${t.state}` : ''}`}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
                   {t.deity && (

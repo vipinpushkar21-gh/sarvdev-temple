@@ -13,6 +13,7 @@ import ReviewSection from '../../../components/ReviewSection'
 import ClaimTempleButton from '../../../components/ClaimTempleButton'
 import AdminEditBar from '../../../components/AdminEditBar'
 import DeitySmartContent from '../../../components/DeitySmartContent'
+import TempleImageGallery from '../../../components/TempleImageGallery'
 
 type Props = {
   params: Promise<{ slug: string }>
@@ -80,7 +81,8 @@ function TempleDetailImage({ image, alt }: { image?: string; alt: string }) {
       src={src}
       alt={alt}
       fill
-      className="object-cover"
+      className="object-cover object-[center_30%]"
+      priority
       onError={() => setSrc(TEMPLE_PLACEHOLDER)}
     />
   )
@@ -255,8 +257,12 @@ export default function TemplePage({ params }: Props) {
           className="absolute inset-0 parallax-zoom"
           style={{ transform: `scale(${heroScale})`, transformOrigin: 'center center' }}
         >
-          <TempleDetailImage image={temple.image} alt={temple.title} />
+          <TempleDetailImage image={temple.heroImage || temple.image} alt={temple.title} />
         </div>
+        {/* Ambient orb particles */}
+        <div className="hero-orb hero-orb-gold" aria-hidden="true" />
+        <div className="hero-orb hero-orb-saffron" aria-hidden="true" />
+        <div className="hero-orb hero-orb-maroon" aria-hidden="true" />
         {/* Sacred gold top accent */}
         <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-transparent via-temple-gold-DEFAULT to-transparent opacity-70 z-20" />
 
@@ -303,7 +309,7 @@ export default function TemplePage({ params }: Props) {
             )}
 
             {/* Temple title */}
-            <h1 className="text-display-lg text-white font-display reveal-up text-shadow-divine" style={{ animationDelay: '100ms' }}>
+            <h1 className="hero-title-grand reveal-up" style={{ animationDelay: '100ms' }}>
               {(language === 'hi' && temple.titleHi) ? temple.titleHi : temple.title}
             </h1>
             {displayLocation && (
@@ -316,6 +322,18 @@ export default function TemplePage({ params }: Props) {
               </p>
             )}
 
+            {/* Sacred category badges */}
+            {temple.categories && temple.categories.length > 0 && (
+              <div className="mt-4 flex flex-wrap gap-2 reveal-up" style={{ animationDelay: '250ms' }}>
+                {temple.categories.map((cat: string, idx: number) => (
+                  <span key={idx} className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-caption font-semibold bg-white/15 text-white/90 backdrop-blur-sm border border-white/20">
+                    <span className="w-1.5 h-1.5 rounded-full bg-temple-gold-light inline-block" />
+                    {cat}
+                  </span>
+                ))}
+              </div>
+            )}
+
             {/* Floating action bar */}
             <div className="mt-6 flex items-center gap-3 flex-wrap reveal-up" style={{ animationDelay: '300ms' }}>
               <div className="floating-bar-2030 flex items-center gap-2 px-2 py-1.5">
@@ -325,16 +343,44 @@ export default function TemplePage({ params }: Props) {
                 <div className="w-px h-6 bg-surface-border" />
                 <ShareButtons title={temple.title} />
               </div>
+              {temple.bestSeason && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-caption font-medium bg-white/10 text-white/80 backdrop-blur-sm border border-white/20">
+                  🌸 Best: {temple.bestSeason}
+                </span>
+              )}
+              {temple.averageVisitDuration && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-caption font-medium bg-white/10 text-white/80 backdrop-blur-sm border border-white/20">
+                  ⏱ {temple.averageVisitDuration}
+                </span>
+              )}
             </div>
           </div>
         </div>
+        {/* Cinematic scroll indicator */}
+        <div className="scroll-cue" aria-hidden="true">
+          <div className="scroll-cue-dot" />
+          <div className="scroll-cue-line" />
+        </div>
       </div>
 
-      {/* ── Main Content ── */}
-      <main className="max-w-page mx-auto px-4 sm:px-6 lg:px-8 -mt-4 relative z-30 pb-16">
+      {/* Section Quick Nav */}
+      <nav className="section-quick-nav" aria-label="Page sections">
+        <a href="#about" className="section-nav-pill">🙏 About</a>
+        {(temple.sacredImportance || temple.sacredImportanceHi) && <a href="#significance" className="section-nav-pill">🕉️ Significance</a>}
+        {(temple.history || temple.historyHi) && <a href="#history" className="section-nav-pill">📜 History</a>}
+        {(temple.mythology || temple.templeLegend) && <a href="#mythology" className="section-nav-pill">🌟 Mythology</a>}
+        {(temple.architectureStyle || temple.builtBy) && <a href="#architecture" className="section-nav-pill">🏛️ Architecture</a>}
+        {temple.festivals && temple.festivals.length > 0 && <a href="#festivals" className="section-nav-pill">🎉 Festivals</a>}
+        {(temple.dressCode || temple.pilgrimageCircuit) && <a href="#visitor" className="section-nav-pill">🛕 Visitor Guide</a>}
+        {(temple.nearestAirport || temple.nearestRailwayStation) && <a href="#travel" className="section-nav-pill">✈️ How to Reach</a>}
+        {((temple.galleryImages?.length ?? 0) > 0 || (temple.images?.length ?? 0) > 0) && <a href="#gallery" className="section-nav-pill">🖼️ Gallery</a>}
+      </nav>
 
-        {/* About Section — Glass card overlapping hero */}
-        <section className="glass-card-2030 p-10 sm:p-12 md:p-14 mb-10 mt-16 reveal-up">
+      {/* ── Main Content ── */}
+      <main className="temple-content-wrap max-w-page mx-auto px-4 sm:px-6 lg:px-8 -mt-4 relative z-30 pb-16 has-mobile-bar">
+
+        {/* About Section — premium editorial overlapping hero */}
+        <section id="about" className="about-editorial p-10 sm:p-12 md:p-14 mb-10 mt-16 reveal-up">
           <div className="section-heading-2030">
             <h2>{t('temple.about')}</h2>
           </div>
@@ -374,54 +420,290 @@ export default function TemplePage({ params }: Props) {
         {/* Sacred Categories */}
         {temple.categories && temple.categories.length > 0 && (
           <section className="mb-10 reveal-up">
-            <div className="section-heading-2030">
-              <h2>{t('temple.sacredCategories')}</h2>
+            <div className="sacred-cat-section">
+              <div className="section-heading-2030">
+                <h2>{t('temple.sacredCategories')}</h2>
+              </div>
+              <div className="flex flex-wrap gap-3 mt-2">
+                {temple.categories.map((cat: string, idx: number) => (
+                  <span key={idx} className="sacred-tag-2030" style={{ animationDelay: `${idx * 60}ms` }}>
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary inline-block" />
+                    {cat}
+                  </span>
+                ))}
+              </div>
             </div>
+          </section>
+        )}
+
+        {/* Spiritual Significance */}
+        {(temple.sacredImportance || temple.sacredImportanceHi) && (
+          <section id="significance" className="mb-10 reveal-up">
+            <div className="spiritual-sig-card">
+              <div className="section-heading-2030"><h2>Spiritual Significance</h2></div>
+              <p className="text-body text-ink leading-[1.9] whitespace-pre-line mt-4" style={{ fontSize: '1.05rem' }}>
+                {(language === 'hi' && temple.sacredImportanceHi) ? temple.sacredImportanceHi : temple.sacredImportance}
+              </p>
+            </div>
+          </section>
+        )}
+
+        {/* Temple History */}
+        {(temple.history || temple.historyHi) && (
+          <section id="history" className="mb-10 reveal-up">
+            <div className="section-dark-parchment">
+              <div className="section-heading-2030"><h2>Temple History</h2></div>
+              <div className="parchment-card space-y-4 mt-4">
+                {((language === 'hi' && temple.historyHi) ? temple.historyHi : temple.history)!.split(/\n\n+/).filter(Boolean).map((para: string, idx: number) => (
+                  <p key={idx} className="text-body leading-[1.9] whitespace-pre-line">{para}</p>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* Mythology & Legend */}
+        {(temple.mythology || temple.templeLegend) && (
+          <section id="mythology" className="mb-10 reveal-up">
+            <div className="section-mystical">
+              <div className="section-heading-2030"><h2>Legends & Mythology</h2></div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mt-4">
+                {(temple.mythology || temple.mythologyHi) && (
+                  <div className="glass-dark-card">
+                    <div className="flex items-start gap-3 mb-3">
+                      <span className="text-2xl flex-shrink-0">📜</span>
+                      <h3 className="text-h4 font-serif">Mythology</h3>
+                    </div>
+                    <div className="sacred-quote-block mt-2">
+                      <p className="whitespace-pre-line">
+                        {(language === 'hi' && temple.mythologyHi) ? temple.mythologyHi : temple.mythology}
+                      </p>
+                    </div>
+                  </div>
+                )}
+                {(temple.templeLegend || temple.templeLegendHi) && (
+                  <div className="glass-dark-card">
+                    <div className="flex items-start gap-3 mb-3">
+                      <span className="text-2xl flex-shrink-0">🌟</span>
+                      <h3 className="text-h4 font-serif">Temple Legend</h3>
+                    </div>
+                    <div className="sacred-quote-block mt-2">
+                      <p className="whitespace-pre-line">
+                        {(language === 'hi' && temple.templeLegendHi) ? temple.templeLegendHi : temple.templeLegend}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* Sacred Mystery */}
+        {(temple.sacredMystery || temple.sacredMysteryHi) && (
+          <section id="mystery" className="mb-10 reveal-up">
+            <div className="sacred-mystery-card">
+              <div className="section-heading-2030"><h2>Sacred Mystery</h2></div>
+              <div className="flex items-start gap-4 mt-4">
+                <span className="text-3xl flex-shrink-0">🔮</span>
+                <p className="text-body leading-[1.9] whitespace-pre-line italic">
+                  {(language === 'hi' && temple.sacredMysteryHi) ? temple.sacredMysteryHi : temple.sacredMystery}
+                </p>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* Architecture */}
+        {(temple.architectureStyle || temple.architectureHighlights || temple.builtBy) && (
+          <section id="architecture" className="mb-10 reveal-up">
+            <div className="section-architecture">
+              <div className="section-heading-2030"><h2>Architecture</h2></div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 mt-4 stagger-children">
+                {temple.architectureStyle && (
+                  <div className="arch-stat-card"><span className="arch-stat-icon">🏛️</span><div className="arch-stat-value">{temple.architectureStyle}</div><div className="arch-stat-label">Style</div></div>
+                )}
+                {temple.builtBy && (
+                  <div className="arch-stat-card"><span className="arch-stat-icon">👑</span><div className="arch-stat-value">{temple.builtBy}</div><div className="arch-stat-label">Built By</div></div>
+                )}
+                {temple.dynasty && (
+                  <div className="arch-stat-card"><span className="arch-stat-icon">⚔️</span><div className="arch-stat-value">{temple.dynasty}</div><div className="arch-stat-label">Dynasty</div></div>
+                )}
+                {temple.templeArea && (
+                  <div className="arch-stat-card"><span className="arch-stat-icon">📐</span><div className="arch-stat-value">{temple.templeArea}</div><div className="arch-stat-label">Area</div></div>
+                )}
+                {temple.gopuramCount && (
+                  <div className="arch-stat-card"><span className="arch-stat-icon">�</span><div className="arch-stat-value">{temple.gopuramCount}</div><div className="arch-stat-label">Gopurams</div></div>
+                )}
+                {temple.mandapamDetails && (
+                  <div className="arch-stat-card col-span-2"><span className="arch-stat-icon">🏹</span><div className="arch-stat-value">{temple.mandapamDetails}</div><div className="arch-stat-label">Mandapam</div></div>
+                )}
+              </div>
+              {(temple.renovations || temple.architectureHighlights) && (
+                <div className="mt-4 p-5 rounded-xl space-y-2" style={{ background: 'rgba(201,168,76,0.06)', border: '1px solid rgba(201,168,76,0.18)' }}>
+                  {temple.architectureHighlights && <p className="text-body-sm text-secondary-700 leading-relaxed"><span className="font-semibold">✨ Highlights: </span>{temple.architectureHighlights}</p>}
+                  {temple.renovations && <p className="text-body-sm text-secondary-700 leading-relaxed"><span className="font-semibold">🔨 Renovations: </span>{temple.renovations}</p>}
+                </div>
+              )}
+            </div>
+          </section>
+        )}
+
+        {/* Pilgrimage & Visitor Info */}
+        {(temple.dressCode || temple.photographyAllowed || temple.prasadamInfo || temple.specialRituals || temple.templeRules || temple.crowdLevel || temple.pilgrimageCircuit) && (
+          <section id="visitor" className="mb-10 reveal-up">
+            <div className="section-pilgrimage">
+              <div className="section-heading-2030"><h2>Pilgrimage & Visitor Guide</h2></div>
+              <div className="flex flex-wrap gap-3 mt-4">
+                {temple.dressCode && <span className="visitor-pill">👘 {temple.dressCode}</span>}
+                {temple.photographyAllowed && <span className="visitor-pill">📷 {temple.photographyAllowed === 'yes' ? 'Photography Allowed' : temple.photographyAllowed === 'no' ? 'No Photography' : 'Photography Restricted'}</span>}
+                {temple.crowdLevel && <span className="visitor-pill">👥 {temple.crowdLevel.charAt(0).toUpperCase() + temple.crowdLevel.slice(1)} Crowd</span>}
+                {temple.pilgrimageCircuit && <span className="visitor-pill">🛕 {temple.pilgrimageCircuit}</span>}
+                {temple.pilgrimageType && <span className="visitor-pill">🙏 {temple.pilgrimageType}</span>}
+                {temple.bestSeason && <span className="visitor-pill">🌸 Best: {temple.bestSeason}</span>}
+                {temple.averageVisitDuration && <span className="visitor-pill">⏱ {temple.averageVisitDuration}</span>}
+              </div>
+              {temple.prasadamInfo && (
+                <div className="mt-4 p-4 rounded-xl" style={{ background: 'rgba(255,255,255,0.65)', border: '1px solid rgba(201,168,76,0.2)' }}>
+                  <p className="text-body-sm font-semibold text-secondary-700 mb-1">🍛 Prasadam</p>
+                  <p className="text-body-sm text-ink-muted">{temple.prasadamInfo}</p>
+                </div>
+              )}
+              {temple.specialRituals && (
+                <div className="mt-3 p-4 rounded-xl" style={{ background: 'rgba(255,255,255,0.65)', border: '1px solid rgba(201,168,76,0.2)' }}>
+                  <p className="text-body-sm font-semibold text-secondary-700 mb-1">🔔 Special Rituals</p>
+                  <p className="text-body-sm text-ink-muted">{temple.specialRituals}</p>
+                </div>
+              )}
+              {temple.templeRules && (
+                <div className="mt-3 p-4 rounded-xl" style={{ background: 'rgba(255,255,255,0.65)', border: '1px solid rgba(201,168,76,0.2)' }}>
+                  <p className="text-body-sm font-semibold text-secondary-700 mb-1">📋 Temple Rules</p>
+                  <p className="text-body-sm text-ink-muted">{temple.templeRules}</p>
+                </div>
+              )}
+            </div>
+          </section>
+        )}
+
+        {/* Nearby Sacred Places */}
+        {temple.nearbySacredPlaces && temple.nearbySacredPlaces.length > 0 && (
+          <section className="mb-10 reveal-up">
+            <div className="section-heading-2030"><h2>Nearby Sacred Places</h2></div>
             <div className="flex flex-wrap gap-3">
-              {temple.categories.map((cat: string, idx: number) => (
-                <span key={idx} className="sacred-tag-2030" style={{ animationDelay: `${idx * 60}ms` }}>
-                  <span className="w-1.5 h-1.5 rounded-full bg-primary inline-block" />
-                  {cat}
+              {temple.nearbySacredPlaces.map((place: string, idx: number) => (
+                <span key={idx} className="nearby-place-tag">
+                  <span className="text-base">🏛️</span> {place}
                 </span>
               ))}
             </div>
           </section>
         )}
 
+        {/* Gallery */}
+        {((temple.galleryImages && temple.galleryImages.length > 0) || (temple.images && temple.images.length > 0)) && (
+          <section id="gallery" className="mb-10 reveal-up">
+            <div className="gallery-section-premium">
+              <div className="section-heading-2030"><h2>Gallery</h2></div>
+              <div className="mt-4">
+                <TempleImageGallery images={[...(temple.galleryImages || []), ...(temple.images || [])]} title={temple.title} />
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* Travel Guide */}
+        {(temple.nearestAirport || temple.nearestRailwayStation || temple.nearestBusStand || temple.localTransport || temple.accommodationInfo || temple.parkingAvailable) && (
+          <section id="travel" className="mb-10 reveal-up">
+            <div className="travel-section-wrap">
+              <div className="section-heading-2030"><h2>How to Reach</h2></div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mt-4 stagger-children">
+                {temple.nearestAirport && (
+                  <div className="travel-chip">
+                    <div className="travel-chip-icon">✈️</div>
+                    <div><div className="travel-chip-label">Nearest Airport</div><div className="travel-chip-value">{temple.nearestAirport}</div></div>
+                  </div>
+                )}
+                {temple.nearestRailwayStation && (
+                  <div className="travel-chip">
+                    <div className="travel-chip-icon">🚂</div>
+                    <div><div className="travel-chip-label">Railway Station</div><div className="travel-chip-value">{temple.nearestRailwayStation}</div></div>
+                  </div>
+                )}
+                {temple.nearestBusStand && (
+                  <div className="travel-chip">
+                    <div className="travel-chip-icon">🚌</div>
+                    <div><div className="travel-chip-label">Bus Stand</div><div className="travel-chip-value">{temple.nearestBusStand}</div></div>
+                  </div>
+                )}
+                {temple.parkingAvailable && (
+                  <div className="travel-chip">
+                    <div className="travel-chip-icon">🅿️</div>
+                    <div><div className="travel-chip-label">Parking</div><div className="travel-chip-value">{temple.parkingAvailable}</div></div>
+                  </div>
+                )}
+                {temple.wheelchairAccess && (
+                  <div className="travel-chip">
+                    <div className="travel-chip-icon">♿</div>
+                    <div><div className="travel-chip-label">Accessibility</div><div className="travel-chip-value">{temple.wheelchairAccess}</div></div>
+                  </div>
+                )}
+                {temple.localTransport && (
+                  <div className="travel-chip sm:col-span-2">
+                    <div className="travel-chip-icon">🛺</div>
+                    <div><div className="travel-chip-label">Local Transport</div><div className="travel-chip-value">{temple.localTransport}</div></div>
+                  </div>
+                )}
+                {temple.accommodationInfo && (
+                  <div className="travel-chip sm:col-span-2 lg:col-span-3">
+                    <div className="travel-chip-icon">🏨</div>
+                    <div><div className="travel-chip-label">Accommodation</div><div className="travel-chip-value">{temple.accommodationInfo}</div></div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </section>
+        )}
+
         {/* Festivals Section */}
         {temple.festivals && temple.festivals.length > 0 && (
-          <section className="mb-10 reveal-up">
-            <div className="section-heading-2030">
-              <h2>{t('temple.festivals')}</h2>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 stagger-children">
-              {temple.festivals.map((festival: { name: string; description: string }, idx: number) => (
-                <div key={idx} className="bento-card gradient-shimmer p-6">
-                  <div className="flex items-start gap-3">
-                    <div className="bento-icon flex-shrink-0">
-                      <span className="text-xl">🎉</span>
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-body font-semibold text-ink mb-1">{festival.name}</p>
-                      {festival.description && (
-                        <p className="text-body-sm text-ink-muted leading-relaxed">{festival.description}</p>
-                      )}
+          <section id="festivals" className="mb-10 reveal-up">
+            <div className="festival-section-wrap">
+              <div className="section-heading-2030">
+                <h2>{t('temple.festivals')}</h2>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4 stagger-children">
+                {temple.festivals.map((festival: { name: string; nameHi?: string; description: string; descriptionHi?: string; month?: string; crowdScale?: string }, idx: number) => (
+                  <div key={idx} className="festival-aura-card">
+                    <div className="flex items-start gap-3">
+                      <span className="text-2xl flex-shrink-0">🎉</span>
+                      <div className="min-w-0 flex-1">
+                        <p className="festival-name">
+                          {(language === 'hi' && festival.nameHi) ? festival.nameHi : festival.name}
+                        </p>
+                        {festival.month && <p className="festival-month">📅 {festival.month}</p>}
+                        {(language === 'hi' && festival.descriptionHi ? festival.descriptionHi : festival.description) && (
+                          <p className="festival-desc">
+                            {(language === 'hi' && festival.descriptionHi) ? festival.descriptionHi : festival.description}
+                          </p>
+                        )}
+                        {festival.crowdScale && <p className="festival-desc mt-1">👥 {festival.crowdScale}</p>}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </section>
         )}
 
         {/* Google Maps Embed */}
         {mapsLink && (
-          <section className="mb-10 reveal-up">
+          <section id="map" className="mb-10 reveal-up">
             <div className="section-heading-2030">
               <h2>{t('temple.locationMap')}</h2>
             </div>
-            <div className="bento-card p-6">
-              <div className="relative w-full h-80 rounded-xl overflow-hidden">
+            <div className="map-section-premium">
+              <div className="relative w-full h-80">
                 <iframe
                   src={mapsLink}
                   width="100%"
@@ -430,7 +712,6 @@ export default function TemplePage({ params }: Props) {
                   allowFullScreen
                   loading="lazy"
                   referrerPolicy="no-referrer-when-downgrade"
-                  className="rounded-xl"
                 />
               </div>
             </div>
@@ -525,14 +806,32 @@ export default function TemplePage({ params }: Props) {
         <ClaimTempleButton templeId={temple._id} templeName={temple.title} />
 
         {/* Bottom Share Bar */}
-        <div className="bento-card p-5 flex items-center justify-between flex-wrap gap-4 reveal-up">
+        <div className="share-bar-premium reveal-up">
           <div className="flex items-center gap-3">
-            <div className="bento-icon w-10 h-10 text-base">🙏</div>
+            <div className="bento-icon w-10 h-10 text-base pulse-aura">🙏</div>
             <p className="text-body-sm font-medium text-ink">{t('temple.sharePrompt')}</p>
           </div>
           <ShareButtons title={temple.title} />
         </div>
       </main>
+      {/* Mobile sticky darshan bar */}
+      <div className="mobile-darshan-bar">
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center text-sm flex-shrink-0" style={{ background: 'linear-gradient(135deg, rgba(255,153,51,0.18), rgba(201,168,76,0.1))' }}>🛕</div>
+          <div className="min-w-0">
+            <p className="text-caption font-bold text-ink truncate">{temple.title}</p>
+            {displayLocation && <p className="text-caption text-ink-muted truncate">{displayLocation}</p>}
+          </div>
+        </div>
+        {mapsLink ? (
+          <a href={`https://maps.google.com/maps?q=${encodeURIComponent(temple.title + ' ' + (displayLocation || ''))}`} target="_blank" rel="noopener noreferrer"
+            className="btn-divine flex-shrink-0 text-xs px-4 py-2 no-underline">
+            🗺️ Directions
+          </a>
+        ) : (
+          <ShareButtons title={temple.title} />
+        )}
+      </div>
       <AdminEditBar editHref={`/admin/temples/edit/${temple._id}`} label="Edit Temple" />
     </>
   )

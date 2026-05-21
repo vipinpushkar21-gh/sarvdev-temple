@@ -32,12 +32,13 @@ export default function DeityDetailPage({ params }: Props) {
 
         // Try DB first
         let foundDeity = null
+        let dbDeities: any[] = []
         try {
           const response = await fetch('/api/deities')
           if (response.ok) {
-            const deities = await response.json()
-            if (Array.isArray(deities)) {
-              foundDeity = deities.find((d: any) => d.slug === slug)
+            dbDeities = await response.json()
+            if (Array.isArray(dbDeities)) {
+              foundDeity = dbDeities.find((d: any) => d.slug === slug)
             }
           }
         } catch { /* DB fetch failed, will use static fallback */ }
@@ -48,7 +49,13 @@ export default function DeityDetailPage({ params }: Props) {
           // Fallback to static data
           const staticDeity = STATIC_DEITIES.find((d: any) => d.slug === slug)
           if (staticDeity) {
-            setDeity(staticDeity)
+            // Merge DB image if available (listing page matches by name)
+            const dbMatch = dbDeities.find((d: any) => d.name?.toLowerCase() === staticDeity.name?.toLowerCase())
+            if (dbMatch?.image) {
+              setDeity({ ...staticDeity, image: dbMatch.image })
+            } else {
+              setDeity(staticDeity)
+            }
           } else {
             setError('Deity not found')
           }
@@ -90,11 +97,9 @@ export default function DeityDetailPage({ params }: Props) {
       />
 
       <div className="page-container section-sm min-h-screen">
-        {deity._id && (
-          <AdminEditBar 
-            editHref={`/admin/deities/edit/${deity._id}`}
-          />
-        )}
+        <AdminEditBar 
+          editHref={deity._id ? `/admin/deities/edit/${deity._id}` : undefined}
+        />
 
         {/* Hero Section */}
         <div className="mb-12">

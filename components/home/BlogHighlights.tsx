@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
+import { getSafeTempleImage } from '@/lib/imageGuard'
 
 interface BlogPost {
   _id: string
@@ -11,8 +12,6 @@ interface BlogPost {
   slug: string
   createdAt: string
 }
-
-const DEFAULT_IMAGE = 'https://res.cloudinary.com/dc2qg7bwr/image/upload/image_2_xljqwa'
 
 export default function BlogHighlights() {
   const [blogs, setBlogs] = useState<BlogPost[]>([])
@@ -48,7 +47,7 @@ export default function BlogHighlights() {
             >
               <div className="relative h-44 overflow-hidden">
                 <img
-                  src={blog.image || DEFAULT_IMAGE}
+                  src={getSafeTempleImage(blog.image)}
                   alt={blog.title}
                   className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                   loading="lazy"

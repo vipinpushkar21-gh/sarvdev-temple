@@ -2,12 +2,12 @@ import type { Metadata } from 'next'
 import { connectDB } from '@/lib/db'
 import Temple from '@/models/Temple'
 import Review from '@/models/Review'
+import { getSafeTempleImage } from '@/lib/imageGuard'
 
 // ISR: revalidate temple detail pages every 5 minutes
 export const revalidate = 300
 
 const BASE = 'https://sarvdev.com'
-const DEFAULT_IMAGE = 'https://res.cloudinary.com/dc2qg7bwr/image/upload/image_2_xljqwa'
 
 function slugify(text: string) {
   return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
@@ -39,7 +39,7 @@ export async function generateMetadata(
     const description = temple.description
       ? temple.description.replace(/<[^>]+>/g, '').slice(0, 155)
       : `Explore ${temple.title}${location ? ` in ${location}` : ''}${temple.deity ? `, dedicated to ${temple.deity}` : ''}. Find timings, history and more on Sarvdev.`
-    const image = temple.image || DEFAULT_IMAGE
+    const image = getSafeTempleImage(temple.image)
     const url = `${BASE}/temples/${slug}`
     const keywords = [
       temple.title,
@@ -111,7 +111,7 @@ export default async function TempleSlugLayout({
         '@type': 'HinduTemple',
         name: temple.title,
         url: `${BASE}/temples/${slug}`,
-        image: temple.image || DEFAULT_IMAGE,
+        image: getSafeTempleImage(temple.image),
       }
       if (temple.description) {
         placeSchema.description = temple.description.replace(/<[^>]+>/g, '').slice(0, 300)
@@ -138,7 +138,7 @@ export default async function TempleSlugLayout({
       // ImageObject for Google Images discoverability
       placeSchema.photo = {
         '@type': 'ImageObject',
-        url: temple.image || DEFAULT_IMAGE,
+        url: getSafeTempleImage(temple.image),
         name: `${temple.title} Temple Photo`,
         caption: `${temple.title}${temple.city ? ` in ${temple.city}` : ''}${temple.state ? `, ${temple.state}` : ''}`,
       }
