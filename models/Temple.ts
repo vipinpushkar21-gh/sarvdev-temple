@@ -17,6 +17,9 @@ const TempleSchema = new Schema({
 
   // ── Media ──
   image: { type: String },
+  imageCard: { type: String },
+  imageHero: { type: String },
+  imageGallery: { type: [String], default: [] },
   heroImage: { type: String },
   images: { type: [String], default: [] },
   galleryImages: { type: [String], default: [] },

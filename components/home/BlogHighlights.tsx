@@ -2,13 +2,15 @@
 
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import { getSafeTempleImage } from '@/lib/imageGuard'
+import { getTempleCardImage } from '@/lib/temple-image'
 
 interface BlogPost {
   _id: string
   title: string
   excerpt?: string
   image?: string
+  imageCard?: string
+  imageHero?: string
   slug: string
   createdAt: string
 }
@@ -47,7 +49,7 @@ export default function BlogHighlights() {
             >
               <div className="relative h-44 overflow-hidden">
                 <img
-                  src={getSafeTempleImage(blog.image)}
+                  src={getTempleCardImage(blog).src}
                   alt={blog.title}
                   className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                   loading="lazy"

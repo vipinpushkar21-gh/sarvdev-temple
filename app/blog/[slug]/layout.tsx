@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { connectDB } from '@/lib/db'
 import Blog from '@/models/Blog'
+import { getOGImage } from '@/lib/temple-image'
 
 export const revalidate = 300
 
@@ -26,7 +27,7 @@ export async function generateMetadata(
     const description = blog.excerpt
       ? blog.excerpt.slice(0, 155)
       : `Read "${blog.title}" — spiritual insights and temple stories on Sarvdev.`
-    const image = blog.image || DEFAULT_IMAGE
+    const image = getOGImage(blog).src || DEFAULT_IMAGE
     const url = `${BASE}/blog/${slug}`
     const publishedAt = blog.date ? new Date(blog.date).toISOString() : new Date(blog.createdAt).toISOString()
 

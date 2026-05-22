@@ -3,26 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from '../../lib/translation'
 import PanchangCard from '../../components/PanchangCard'
-import Hero from '../../components/Hero'
-
-type CityOption = {
-  label: string
-  lat: number
-  lon: number
-}
-
-const indianCities: CityOption[] = [
-  { label: 'Delhi', lat: 28.6139, lon: 77.2090 },
-  { label: 'Mumbai', lat: 19.0760, lon: 72.8777 },
-  { label: 'Kolkata', lat: 22.5726, lon: 88.3639 },
-  { label: 'Chennai', lat: 13.0827, lon: 80.2707 },
-  { label: 'Bengaluru', lat: 12.9716, lon: 77.5946 },
-  { label: 'Hyderabad', lat: 17.3850, lon: 78.4867 },
-  { label: 'Ahmedabad', lat: 23.0225, lon: 72.5714 },
-  { label: 'Pune', lat: 18.5204, lon: 73.8567 },
-  { label: 'Jaipur', lat: 26.9124, lon: 75.7873 },
-  { label: 'Lucknow', lat: 26.8467, lon: 80.9462 },
-]
+import { PANCHANG_CITIES, QUICK_PANCHANG_CITIES, type PanchangCity } from '../../lib/panchang-cities'
 
 type PanchangData = {
   date: string
@@ -38,24 +19,51 @@ type PanchangData = {
   source?: string
 }
 
+const DELHI = PANCHANG_CITIES.find((city) => city.city === 'Delhi') || PANCHANG_CITIES[0]
+
+function formatDateLabel(date: string, language: string) {
+  const parsed = new Date(`${date}T12:00:00`)
+  return parsed.toLocaleDateString(language === 'hi' ? 'hi-IN' : 'en-IN', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  })
+}
+
 export default function PanchangPage() {
-  const { t, language } = useTranslation()
-  const [city, setCity] = useState<CityOption>(indianCities[0])
+  const { language } = useTranslation()
+  const [city, setCity] = useState<PanchangCity>(DELHI)
+  const [cityQuery, setCityQuery] = useState('')
   const [date, setDate] = useState<string>(() => new Date().toISOString().slice(0, 10))
   const [loading, setLoading] = useState(false)
   const [data, setData] = useState<PanchangData | null>(null)
-  const tz = useMemo(() => Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Kolkata', [])
 
-  const fetchPanchang = async () => {
+  const filteredCities = useMemo(() => {
+    const query = cityQuery.trim().toLowerCase()
+    if (!query) return PANCHANG_CITIES.slice(0, 12)
+    return PANCHANG_CITIES.filter((item) =>
+      `${item.city} ${item.state}`.toLowerCase().includes(query)
+    ).slice(0, 12)
+  }, [cityQuery])
+
+  const quickCities = useMemo(
+    () => QUICK_PANCHANG_CITIES
+      .map((name) => PANCHANG_CITIES.find((item) => item.city === name))
+      .filter((item): item is PanchangCity => Boolean(item)),
+    []
+  )
+
+  const fetchPanchang = async (selectedCity = city) => {
     setLoading(true)
     try {
       const params = new URLSearchParams({
         date,
-        lat: String(city.lat),
-        lon: String(city.lon),
-        tz,
+        lat: String(selectedCity.lat),
+        lon: String(selectedCity.lng),
+        tz: selectedCity.timezone,
         lang: language,
-        city: city.label,
+        city: selectedCity.city,
       })
       const res = await fetch(`/api/panchang?${params.toString()}`, { cache: 'no-store' })
       const json = await res.json()
@@ -68,86 +76,123 @@ export default function PanchangPage() {
   }
 
   useEffect(() => {
-    fetchPanchang()
+    fetchPanchang(DELHI)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  const selectCity = (next: PanchangCity) => {
+    setCity(next)
+    setCityQuery('')
+    fetchPanchang(next)
+  }
+
   return (
     <>
-    <Hero title={language === 'hi' ? 'दैनिक पंचांग' : 'Daily Panchang'} subtitle={language === 'hi'
-          ? 'अपने शहर के लिए तिथि, नक्षत्र, योग, करन और सूर्योदय/सूर्यास्त देखें।'
-          : 'View Tithi, Nakshatra, Yoga, Karana and Sunrise/Sunset for your city.'} overline="Hindu Calendar" />
-    <main className="page-container section-sm">
-
-      <section aria-label={language === 'hi' ? 'चयन' : 'Selection'} className="relative card overflow-hidden mb-8">
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-accent to-primary" />
-        <div className="p-5 md:p-6">
-          <div className="flex items-center gap-3 mb-5">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-md shadow-primary/20">
-              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
-              </svg>
-            </div>
-            <h2 className="text-h4 font-serif text-secondary-700">
-              {language === 'hi' ? 'तारीख और शहर चुनें' : 'Select Date & City'}
-            </h2>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="label">{language === 'hi' ? 'तारीख' : 'Date'}</label>
-              <input
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                className="input"
-              />
-            </div>
-            <div>
-              <label className="label">{language === 'hi' ? 'शहर' : 'City'}</label>
-              <select
-                value={city.label}
-                onChange={(e) => {
-                  const next = indianCities.find(c => c.label === e.target.value) || indianCities[0]
-                  setCity(next)
-                }}
-                className="input"
-                suppressHydrationWarning
-              >
-                {indianCities.map((c) => (
-                  <option key={c.label} value={c.label}>{c.label}</option>
-                ))}
-              </select>
-            </div>
-            <div className="flex items-end">
-              <button
-                onClick={fetchPanchang}
-                className="btn btn-primary group"
-                suppressHydrationWarning
-              >
-                {loading ? (
-                  <span className="flex items-center gap-2">
-                    <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
-                    {language === 'hi' ? 'लोड हो रहा है...' : 'Loading...'}
-                  </span>
-                ) : (
-                  <>
-                    {language === 'hi' ? 'पंचांग देखें' : 'Get Panchang'}
-                    <svg className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" /></svg>
-                  </>
-                )}
-              </button>
+      <section className="relative overflow-hidden bg-[#160f1f] text-white">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(250,204,21,0.24),transparent_28%),radial-gradient(circle_at_78%_26%,rgba(147,197,253,0.22),transparent_26%),linear-gradient(135deg,rgba(88,28,135,0.55),rgba(15,23,42,0.96))]" />
+        <div className="absolute -right-16 top-10 h-64 w-64 rounded-full border border-white/10 bg-white/[0.03] shadow-[0_0_80px_rgba(255,255,255,0.18)]" />
+        <div className="absolute left-8 bottom-8 h-28 w-28 rounded-full bg-amber-300/20 blur-2xl" />
+        <div className="page-container relative py-16 md:py-20">
+          <div className="max-w-4xl">
+            <p className="text-overline uppercase tracking-[0.18em] text-amber-200/90 mb-3">Hindu Calendar</p>
+            <h1 className="text-display-lg md:text-display-xl font-serif leading-tight">
+              Daily Panchang
+            </h1>
+            <p className="mt-2 text-h2 font-devanagari text-amber-100">आज का पंचांग</p>
+            <p className="mt-5 max-w-2xl text-body-lg text-white/76">
+              {language === 'hi'
+                ? 'तिथि, नक्षत्र, मुहूर्त और दैनिक साधना संकेतों के साथ आपका पवित्र दिन-मार्गदर्शक।'
+                : 'A sacred daily dashboard for tithi, nakshatra, muhurta, sunrise, moonrise and devotional guidance.'}
+            </p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <span className="rounded-full border border-white/15 bg-white/10 px-4 py-2 text-body-sm text-white/90 backdrop-blur-md">
+                {formatDateLabel(date, language)}
+              </span>
+              <span className="rounded-full border border-white/15 bg-white/10 px-4 py-2 text-body-sm text-white/90 backdrop-blur-md">
+                {city.city}, {city.state}
+              </span>
             </div>
           </div>
-          <p className="text-caption text-ink-faint mt-4">
-            {language === 'hi'
-              ? 'डेमो डाटा: सटीक परिणाम के लिए API/कैल्कुलेशन सक्षम करें।'
-              : 'Demo data: enable API/calculations for accurate results.'}
-          </p>
         </div>
       </section>
 
-      {data && <PanchangCard data={data} language={language === 'hi' ? 'hi' : 'en'} />}
-    </main>
+      <main className="bg-[#f8f5ef]">
+        <div className="page-container section-sm space-y-8">
+          <section className="rounded-2xl border border-amber-100 bg-white p-5 md:p-6 shadow-sm">
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.5fr_auto] gap-4 items-end">
+              <div>
+                <label className="label">{language === 'hi' ? 'तारीख' : 'Date'}</label>
+                <input
+                  type="date"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  className="input"
+                />
+              </div>
+
+              <div className="relative">
+                <label className="label">{language === 'hi' ? 'शहर खोजें' : 'Search City'}</label>
+                <input
+                  value={cityQuery}
+                  onChange={(e) => setCityQuery(e.target.value)}
+                  placeholder={language === 'hi' ? 'दिल्ली, वाराणसी, उज्जैन...' : 'Delhi, Varanasi, Ujjain...'}
+                  className="input"
+                />
+                {cityQuery && (
+                  <div className="absolute z-30 mt-2 max-h-72 w-full overflow-y-auto rounded-xl border border-gray-200 bg-white shadow-xl">
+                    {filteredCities.length > 0 ? filteredCities.map((item) => (
+                      <button
+                        key={`${item.city}-${item.state}`}
+                        type="button"
+                        onClick={() => selectCity(item)}
+                        className="block w-full px-4 py-3 text-left hover:bg-amber-50 transition-colors"
+                      >
+                        <span className="block text-sm font-semibold text-gray-900">{item.city}</span>
+                        <span className="text-xs text-gray-500">{item.state} · {item.timezone}</span>
+                      </button>
+                    )) : (
+                      <p className="px-4 py-3 text-sm text-gray-500">No city found. Delhi remains the fallback.</p>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <button
+                onClick={() => fetchPanchang()}
+                className="btn btn-primary min-h-[44px]"
+                suppressHydrationWarning
+              >
+                {loading ? 'Loading...' : language === 'hi' ? 'पंचांग देखें' : 'Get Panchang'}
+              </button>
+            </div>
+
+            <div className="mt-5 flex flex-wrap gap-2">
+              {quickCities.map((item) => (
+                <button
+                  key={item.city}
+                  type="button"
+                  onClick={() => selectCity(item)}
+                  className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+                    city.city === item.city
+                      ? 'border-amber-500 bg-amber-100 text-amber-900'
+                      : 'border-gray-200 bg-gray-50 text-gray-600 hover:border-amber-300 hover:bg-amber-50'
+                  }`}
+                >
+                  {item.city}
+                </button>
+              ))}
+            </div>
+
+            <p className="mt-4 text-caption text-ink-faint">
+              {language === 'hi'
+                ? 'यह पेज अभी डेमो/फॉलबैक पंचांग डेटा दिखाता है। इसे अनुष्ठान के लिए अंतिम सत्य न मानें।'
+                : 'This page currently shows demo/fallback Panchang data. Do not treat it as authoritative for rituals.'}
+            </p>
+          </section>
+
+          {data && <PanchangCard data={data} language={language === 'hi' ? 'hi' : 'en'} />}
+        </div>
+      </main>
     </>
   )
 }

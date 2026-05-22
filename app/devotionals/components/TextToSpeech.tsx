@@ -166,7 +166,7 @@ export const TextToSpeech: React.FC<TextToSpeechProps> = ({ text, lang, autoPlay
             className="px-3 py-1.5 rounded-full bg-primary-500 text-white hover:bg-primary-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400"
             aria-label="Play text to speech"
           >
-            ▶ Play via TTS
+            Play via TTS
           </button>
         ) : paused ? (
           <button
@@ -175,7 +175,7 @@ export const TextToSpeech: React.FC<TextToSpeechProps> = ({ text, lang, autoPlay
             className="px-3 py-1.5 rounded-full bg-primary-500 text-white hover:bg-primary-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400"
             aria-label="Resume text to speech"
           >
-            ▶ Resume
+            Resume
           </button>
         ) : (
           <button
@@ -184,7 +184,7 @@ export const TextToSpeech: React.FC<TextToSpeechProps> = ({ text, lang, autoPlay
             className="px-3 py-1.5 rounded-full bg-primary-500 text-white hover:bg-primary-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400"
             aria-label="Pause text to speech"
           >
-            ❚❚ Pause
+            Pause
           </button>
         )}
         {speaking && (
@@ -194,7 +194,7 @@ export const TextToSpeech: React.FC<TextToSpeechProps> = ({ text, lang, autoPlay
             className="btn btn-outline btn-sm rounded-full"
             aria-label="Stop text to speech"
           >
-            ■ Stop
+            Stop
           </button>
         )}
       </div>

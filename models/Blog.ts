@@ -6,6 +6,8 @@ interface IBlog extends Document {
   excerpt?: string;
   date?: string;
   image?: string;
+  imageCard?: string;
+  imageHero?: string;
   body?: string;
   slug?: string;
   author?: string;
@@ -23,6 +25,8 @@ const BlogSchema = new Schema<IBlog>({
   excerpt: { type: String },
   date: { type: String },
   image: { type: String },
+  imageCard: { type: String },
+  imageHero: { type: String },
   body: { type: String },
   slug: { type: String },
   author: { type: String },

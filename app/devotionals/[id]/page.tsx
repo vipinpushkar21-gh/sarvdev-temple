@@ -1,172 +1,123 @@
 "use client"
 
-import { useEffect, useState } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useEffect, useMemo, useState } from 'react'
+import type { ReactNode } from 'react'
 import Link from 'next/link'
-import { TextToSpeech } from '../components/TextToSpeech'
-import { renderBilingualTitle, isDevanagari } from '../utils/bilingual'
-import BookmarkButton from '../../../components/BookmarkButton'
+import { useParams } from 'next/navigation'
+import { BookOpen, Clock, Headphones, Languages, Music2, Share2, Sparkles } from 'lucide-react'
 import AdminEditBar from '../../../components/AdminEditBar'
+import BookmarkButton from '../../../components/BookmarkButton'
+import SarvdevImage from '../../../components/SarvdevImage'
+import { getDevotionalHeroImage } from '../../../lib/devotional-image'
 import { useTranslation } from '../../../lib/translation'
+import DevotionalAudioPlayer from '../components/DevotionalAudioPlayer'
+import DevotionalLyricsReader from '../components/DevotionalLyricsReader'
+import DevotionalRelatedContent from '../components/DevotionalRelatedContent'
+import { categoryToSlug, createDevotionalSlug, getDevotionalHref } from '../components/devotional-utils'
+import type { Devotional } from '../types'
+import { renderBilingualTitle } from '../utils/bilingual'
 
-const DEFAULT_DEVOTIONAL_IMAGE = 'https://res.cloudinary.com/dc2qg7bwr/image/upload/image_2_xljqwa'
-
-type Devotional = {
-  _id: string
-  title: string
-  description?: string
-  descriptionHi?: string
-  category?: string
-  language?: string
-  deity?: string
-  image?: string
-  audio?: string
-  lyrics?: string
-  duration?: string
-  artist?: string
-  status?: string
-  type?: string
-  names?: { sanskrit?: string; mantra?: string; english?: string }[]
+function detectSpeechLang(devotional: Devotional) {
+  const language = (devotional.language || '').toLowerCase()
+  if (language.includes('hi') || language.includes('hindi') || language.includes('sanskrit')) return 'hi-IN'
+  return 'en-IN'
 }
 
 export default function DevotionalDetailPage() {
   const params = useParams()
-  const router = useRouter()
   const { language } = useTranslation()
   const [devotional, setDevotional] = useState<Devotional | null>(null)
+  const [allDevotionals, setAllDevotionals] = useState<Devotional[]>([])
   const [loading, setLoading] = useState(true)
-  const [generatedAudioUrl, setGeneratedAudioUrl] = useState<string | null>(null)
-  const [showTransliteration, setShowTransliteration] = useState(true)
-  const [lyricsOpen, setLyricsOpen] = useState(true)
-
-  useEffect(() => {
-    async function fetchDevotional() {
-      try {
-        const slug = params.id as string
-        // Step 1: Fetch listing (without lyrics) to find matching devotional by slug
-        const res = await fetch(`/api/devotionals`)
-        if (res.ok) {
-          const devotionals = await res.json()
-
-          const translitMap: {[key: string]: string} = {
-            'श्री': 'shri', 'गणेश': 'ganesh', 'आरती': 'aarti',
-            'चालीसा': 'chalisa', 'मंत्र': 'mantra', 'स्तोत्र': 'stotra', 'भजन': 'bhajan'
-          }
-
-          const found = devotionals.find((d: any) => {
-            const englishMatch = d.title.match(/\(([^)]+)\)/)
-            let text = englishMatch ? englishMatch[1] : d.title
-            let devotionalSlug = text
-              .toLowerCase()
-              .replace(/[^a-z0-9\s-]/g, '')
-              .replace(/\s+/g, '-')
-              .replace(/-+/g, '-')
-              .trim()
-            if (!devotionalSlug || devotionalSlug === '-' || devotionalSlug === '') {
-              let transliterated = d.title.toLowerCase()
-              for (const [devanagari, english] of Object.entries(translitMap)) {
-                transliterated = transliterated.replace(new RegExp(devanagari, 'g'), english)
-              }
-              devotionalSlug = transliterated
-                .replace(/[^a-z0-9\s-]/g, '')
-                .replace(/\s+/g, '-')
-                .replace(/-+/g, '-')
-                .trim()
-            }
-            return devotionalSlug === slug
-          })
-
-          if (found) {
-            // Step 2: Fetch the full devotional WITH lyrics using its _id
-            const fullRes = await fetch(`/api/devotionals?id=${found._id}`)
-            if (fullRes.ok) {
-              const fullData = await fullRes.json()
-              if (fullData) {
-                setDevotional(fullData)
-                return
-              }
-            }
-            // Fallback: use listing data (without lyrics)
-            setDevotional(found)
-          }
-        }
-      } catch (error) {
-        console.error('Failed to fetch devotional:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-    if (params.id) fetchDevotional()
-  }, [params.id])
-
-  /* ── Loading ── */
-  if (loading) {
-    return (
-      <>
-        <div className="relative w-full h-32 bg-gradient-to-br from-surface-sunken to-surface border-b border-surface-border" />
-        <main className="page-container section-sm">
-          <div className="max-w-3xl mx-auto">
-            <div className="card p-8 animate-pulse space-y-6">
-              <div className="h-8 bg-surface-sunken rounded w-3/4" />
-              <div className="flex gap-2">
-                <div className="h-5 bg-surface-sunken rounded w-20" />
-                <div className="h-5 bg-surface-sunken rounded w-16" />
-              </div>
-              <div className="space-y-3">
-                <div className="h-4 bg-surface-sunken rounded w-full" />
-                <div className="h-4 bg-surface-sunken rounded w-5/6" />
-                <div className="h-4 bg-surface-sunken rounded w-4/6" />
-              </div>
-            </div>
-          </div>
-        </main>
-      </>
-    )
-  }
-
-  /* ── Not Found ── */
-  if (!devotional) {
-    return (
-      <>
-        <div className="relative w-full py-12 bg-gradient-to-br from-surface-sunken to-surface border-b border-surface-border">
-          <div className="page-container">
-            <h1 className="text-h1 font-serif text-secondary-800">Not Found</h1>
-            <p className="mt-2 text-body text-ink-muted">This devotional could not be found.</p>
-          </div>
-        </div>
-        <main className="page-container section-sm">
-          <div className="max-w-3xl mx-auto text-center">
-            <div className="card p-12">
-              <span className="text-5xl block mb-4">🕉️</span>
-              <p className="text-body text-ink-muted mb-6">The devotional you're looking for doesn't exist or has been removed.</p>
-              <Link href="/devotionals" className="btn btn-primary">Back to Devotionals</Link>
-            </div>
-          </div>
-        </main>
-      </>
-    )
-  }
-
-  const bt = renderBilingualTitle(devotional.title || '')
-  const detectedLang = (function () {
-    const l = (devotional.language || '').toLowerCase()
-    if (l.includes('hi') || l.includes('hindi') || l.includes('हिं') || l.includes('हिन्द')) return 'hi-IN'
-    if (l.includes('sa') || l.includes('sanskrit') || l.includes('संस्क')) return 'hi-IN'
-    return 'en-IN'
-  })()
-
-  const heroImage = devotional.image || DEFAULT_DEVOTIONAL_IMAGE
   const slug = params.id as string
 
-  const jsonLd = {
+  useEffect(() => {
+    let cancelled = false
+
+    async function load() {
+      try {
+        const res = await fetch('/api/devotionals')
+        if (!res.ok) return
+        const list = (await res.json()) as Devotional[]
+        const approved = (Array.isArray(list) ? list : []).filter((item) => item.status === 'approved' || !item.status)
+        const found = approved.find((item) => createDevotionalSlug(item.title || '') === slug || item._id === slug)
+
+        if (cancelled) return
+        setAllDevotionals(approved)
+
+        if (!found) return
+        const fullRes = await fetch(`/api/devotionals?id=${found._id}`)
+        if (!fullRes.ok) {
+          setDevotional(found)
+          return
+        }
+        const fullData = await fullRes.json()
+        if (!cancelled) setDevotional(fullData || found)
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+
+    if (slug) load()
+    return () => { cancelled = true }
+  }, [slug])
+
+  const title = useMemo(() => renderBilingualTitle(devotional?.title || ''), [devotional?.title])
+
+  async function sharePage() {
+    const url = typeof window !== 'undefined' ? window.location.href : ''
+    if (typeof navigator !== 'undefined' && 'share' in navigator) {
+      try {
+        await navigator.share({ title: title.primary, url })
+        return
+      } catch {}
+    }
+    if (typeof navigator !== 'undefined' && navigator.clipboard && url) await navigator.clipboard.writeText(url)
+  }
+
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-surface">
+        <div className="h-[460px] animate-pulse bg-stone-900" />
+        <div className="page-container py-12">
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
+            <div className="h-96 rounded-2xl bg-stone-100" />
+            <div className="h-96 rounded-2xl bg-stone-100" />
+          </div>
+        </div>
+      </main>
+    )
+  }
+
+  if (!devotional) {
+    return (
+      <main className="page-container min-h-screen py-16 text-center">
+        <div className="mx-auto max-w-lg rounded-2xl border border-stone-200 bg-white p-10 shadow-sm">
+          <BookOpen className="mx-auto h-10 w-10 text-stone-400" />
+          <h1 className="mt-4 text-3xl font-black text-stone-950">Devotional not found</h1>
+          <p className="mt-3 text-stone-600">This devotional may have moved or is not available yet.</p>
+          <Link href="/devotionals" className="btn btn-primary mt-6">Back to Devotionals</Link>
+        </div>
+      </main>
+    )
+  }
+
+  const heroImage = getDevotionalHeroImage(devotional)
+  const speechLang = detectSpeechLang(devotional)
+  const readingText = devotional.lyrics || devotional.description || devotional.title || ''
+  const description = language === 'hi' && devotional.descriptionHi ? devotional.descriptionHi : devotional.description
+  const pageUrl = `https://sarvdev.com${getDevotionalHref(devotional)}`
+
+  const creativeWorkLd = {
     '@context': 'https://schema.org',
-    '@type': 'MusicRecording',
+    '@type': devotional.audio ? 'MusicComposition' : 'CreativeWork',
     name: devotional.title,
-    description: devotional.description || undefined,
-    inLanguage: detectedLang,
-    url: `https://sarvdev.com/devotionals/${slug}`,
-    image: heroImage,
-    ...(devotional.duration ? { duration: devotional.duration } : {}),
+    description: description || undefined,
+    inLanguage: devotional.language || speechLang,
+    url: pageUrl,
+    image: heroImage.src,
+    genre: devotional.category || 'Devotional',
+    about: devotional.deity || undefined,
     ...(devotional.artist ? { byArtist: { '@type': 'Person', name: devotional.artist } } : {}),
     ...(devotional.audio ? {
       associatedMedia: {
@@ -175,302 +126,149 @@ export default function DevotionalDetailPage() {
         encodingFormat: 'audio/mpeg',
       },
     } : {}),
-    genre: devotional.category || 'Devotional',
-    publisher: {
-      '@type': 'Organization',
-      name: 'Sarvdev',
-      url: 'https://sarvdev.com',
-    },
+    publisher: { '@type': 'Organization', name: 'Sarvdev', url: 'https://sarvdev.com' },
+  }
+
+  const breadcrumbLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://sarvdev.com' },
+      { '@type': 'ListItem', position: 2, name: 'Devotionals', item: 'https://sarvdev.com/devotionals' },
+      ...(devotional.category ? [{
+        '@type': 'ListItem',
+        position: 3,
+        name: devotional.category,
+        item: `https://sarvdev.com/devotionals/category/${categoryToSlug(devotional.category)}`,
+      }] : []),
+      { '@type': 'ListItem', position: devotional.category ? 4 : 3, name: devotional.title, item: pageUrl },
+    ],
   }
 
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
-      {/* ── Premium Image Hero Header ── */}
-      <div className="relative w-full overflow-hidden" style={{ height: '380px' }}>
-        <img
-          src={heroImage}
-          alt={bt.primary}
-          className="absolute inset-0 w-full h-full object-cover scale-105"
-          onError={e => { (e.target as HTMLImageElement).src = DEFAULT_DEVOTIONAL_IMAGE }}
-        />
-        {/* Multi-layer gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-secondary-900 via-secondary-900/60 to-secondary-900/20" />
-        <div className="absolute inset-0 bg-gradient-to-r from-secondary-900/40 to-transparent" />
-        {/* Sacred gold top accent line */}
-        <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-transparent via-temple-gold-DEFAULT to-transparent opacity-80" />
-        {/* Decorative glow */}
-        <div className="absolute bottom-0 left-[10%] w-64 h-64 bg-primary/10 rounded-full blur-[80px] pointer-events-none" />
-        {/* Title content */}
-        <div className="absolute bottom-0 left-0 right-0 page-container pb-10 pt-4 z-10">
-          <div className="flex items-center gap-2 mb-3">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(creativeWorkLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }} />
+
+      <section className="relative min-h-[560px] overflow-hidden bg-stone-950 text-white">
+        <SarvdevImage image={heroImage} alt={title.primary || devotional.title} className="absolute inset-0" imgClassName="object-cover" loading="eager" renderMode="auto" />
+        <div className="absolute inset-0 bg-gradient-to-r from-stone-950/92 via-stone-950/62 to-stone-950/20" />
+        <div className="absolute inset-x-0 bottom-0 h-36 bg-gradient-to-t from-surface to-transparent" />
+
+        <div className="page-container relative z-10 flex min-h-[560px] flex-col justify-end pb-12 pt-20">
+          <nav className="mb-6 flex flex-wrap items-center gap-2 text-sm text-stone-300">
+            <Link href="/devotionals" className="text-stone-200 hover:text-amber-200">Devotionals</Link>
             {devotional.category && (
-              <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-caption font-bold bg-primary/90 text-white backdrop-blur-sm shadow-divine">
-                {devotional.category}
-              </span>
-            )}
-            {devotional.deity && (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-caption font-semibold bg-white/15 text-white/90 backdrop-blur-sm border border-white/10">
-                🙏 {devotional.deity}
-              </span>
-            )}
-          </div>
-          <h1 className="text-h1 md:text-display font-display text-white leading-tight text-shadow-divine">
-            {bt.primary}
-          </h1>
-          {showTransliteration && bt.secondary && (
-            <p className="mt-2 text-body text-temple-gold-light/80 font-devanagari">{bt.secondary}</p>
-          )}
-        </div>
-      </div>
-      <main className="page-container section-sm min-h-screen">
-        <div className="max-w-3xl mx-auto">
-
-          {/* ── Breadcrumb + Bookmark ── */}
-          <div className="flex items-center justify-between gap-4 mb-6">
-            <nav className="flex items-center gap-2 text-body-sm text-ink-muted min-w-0">
-              <Link href="/devotionals" className="hover:text-primary-600 transition-colors flex-shrink-0">Devotionals</Link>
-              <span>/</span>
-              {devotional.category && (
-                <>
-                  <Link href={`/devotionals/category/${devotional.category === '108 Namavali' ? 'namavali' : devotional.category.toLowerCase().replace(/\s+/g, '-')}`} className="hover:text-primary-600 transition-colors flex-shrink-0">{devotional.category}</Link>
-                  <span>/</span>
-                </>
-              )}
-              <span className="text-ink font-medium truncate">{bt.primary}</span>
-            </nav>
-            <BookmarkButton
-              item={{
-                id: devotional._id,
-                type: 'devotional',
-                title: bt.primary,
-                slug: params.id as string,
-              }}
-            />
-          </div>
-
-          {/* ── Meta Card ── */}
-          <div className="relative card overflow-hidden p-6 sm:p-8 mb-6 fade-up">
-            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-accent to-primary" />
-            {/* Tags */}
-            <div className="flex flex-wrap gap-2 mb-4">
-              {devotional.category && <span className="badge badge-primary">{devotional.category}</span>}
-              {devotional.language && <span className="badge">{devotional.language}</span>}
-              {devotional.type && <span className="badge">{devotional.type}</span>}
-            </div>
-
-            {/* Metadata grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-body-sm">
-              {devotional.deity && (
-                <div className="flex items-center gap-2">
-                  <span className="text-lg">🕉️</span>
-                  <div>
-                    <div className="text-ink-muted text-caption">Deity</div>
-                    <div className="font-medium text-ink">{devotional.deity}</div>
-                  </div>
-                </div>
-              )}
-              {devotional.artist && (
-                <div className="flex items-center gap-2">
-                  <span className="text-lg">🎤</span>
-                  <div>
-                    <div className="text-ink-muted text-caption">Artist</div>
-                    <div className="font-medium text-ink">{devotional.artist}</div>
-                  </div>
-                </div>
-              )}
-              {devotional.duration && (
-                <div className="flex items-center gap-2">
-                  <span className="text-lg">⏱️</span>
-                  <div>
-                    <div className="text-ink-muted text-caption">Duration</div>
-                    <div className="font-medium text-ink">{devotional.duration}</div>
-                  </div>
-                </div>
-              )}
-              {devotional.language && (
-                <div className="flex items-center gap-2">
-                  <span className="text-lg">🌐</span>
-                  <div>
-                    <div className="text-ink-muted text-caption">Language</div>
-                    <div className="font-medium text-ink">{devotional.language}</div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Description */}
-            {(devotional.description || devotional.descriptionHi) && (
               <>
-                <div className="divider my-5" />
-                <p className="text-body text-ink-muted leading-relaxed">
-                  {language === 'hi' && devotional.descriptionHi
-                    ? devotional.descriptionHi
-                    : devotional.description}
-                </p>
+                <span>/</span>
+                <Link href={`/devotionals/category/${categoryToSlug(devotional.category)}`} className="text-stone-200 hover:text-amber-200">{devotional.category}</Link>
               </>
             )}
-          </div>
+          </nav>
 
-          {/* ── Audio Player ── */}
-          <div className="card p-5 sm:p-6 mb-6 fade-up">
-            <h2 className="text-h4 font-serif text-secondary-700 mb-4 flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-sm">
-                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 9l10.5-3m0 6.553v3.75a2.25 2.25 0 01-1.632 2.163l-1.32.377a1.803 1.803 0 11-.99-3.467l2.31-.66a2.25 2.25 0 001.632-2.163zm0 0V2.25L9 5.25v10.303m0 0v3.75a2.25 2.25 0 01-1.632 2.163l-1.32.377a1.803 1.803 0 01-.99-3.467l2.31-.66A2.25 2.25 0 009 15.553z" /></svg>
-              </div>
-              Listen
-            </h2>
-            {devotional.audio ? (
-              <audio controls src={devotional.audio} className="w-full rounded-btn" />
-            ) : generatedAudioUrl ? (
-              <audio controls src={generatedAudioUrl} className="w-full rounded-btn" />
-            ) : (
-              <div className="space-y-4">
-                <TextToSpeech
-                  text={devotional.lyrics || devotional.description || devotional.title || ''}
-                  lang={detectedLang}
-                  autoPlay
-                />
-                <button
-                  type="button"
-                  className="btn btn-outline btn-sm"
-                  suppressHydrationWarning
-                  onClick={async () => {
-                    if (!devotional) return
-                    try {
-                      const resp = await fetch('/api/tts', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                          text: devotional.lyrics || devotional.description || devotional.title || '',
-                          lang: detectedLang
-                        })
-                      })
-                      if (!resp.ok) return
-                      const ct = resp.headers.get('Content-Type') || ''
-                      if (ct.includes('text/html')) return
-                      const blob = await resp.blob()
-                      setGeneratedAudioUrl(URL.createObjectURL(blob))
-                    } catch (error) {
-                      console.error('Failed to generate audio:', error)
-                    }
-                  }}
-                >
-                  Generate Server Audio
-                </button>
-              </div>
-            )}
-          </div>
+          <div className="max-w-4xl">
+            <div className="mb-4 flex flex-wrap gap-2">
+              {devotional.category && <Badge icon={<Music2 className="h-3.5 w-3.5" />} label={devotional.category} />}
+              {devotional.deity && <Badge icon={<Sparkles className="h-3.5 w-3.5" />} label={devotional.deity} />}
+              {devotional.language && <Badge icon={<Languages className="h-3.5 w-3.5" />} label={devotional.language} />}
+            </div>
 
-          {/* ── Lyrics ── */}
-          {devotional.lyrics && (
-            <div className="card p-5 sm:p-6 mb-6 fade-up">
-              <button
-                onClick={() => setLyricsOpen(!lyricsOpen)}
-                className="w-full flex items-center justify-between text-h4 font-serif text-secondary-700"
-              >
-                <span className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-accent to-primary flex items-center justify-center shadow-sm">
-                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
-                  </div>
-                  Lyrics
-                </span>
-                <span className="text-ink-muted text-lg transition-transform duration-200" style={{ transform: lyricsOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}>▼</span>
+            <h1 className="text-[clamp(2.5rem,7vw,5.8rem)] font-black leading-[0.95] tracking-normal text-white drop-shadow-2xl">
+              {title.primary}
+            </h1>
+            {title.secondary && <p className="mt-4 max-w-3xl text-2xl font-semibold leading-snug text-amber-100">{title.secondary}</p>}
+            {description && <p className="mt-5 max-w-3xl text-lg leading-8 text-stone-100">{description}</p>}
+
+            <div className="mt-7 flex flex-wrap gap-3">
+              <BookmarkButton item={{ id: devotional._id, type: 'devotional', title: title.primary, slug }} className="bg-white/90 shadow-lg backdrop-blur hover:bg-white" />
+              <button type="button" onClick={sharePage} className="btn border border-white/15 bg-white/12 text-white backdrop-blur hover:bg-white/20">
+                <Share2 className="h-4 w-4" />
+                Share
               </button>
-              {lyricsOpen && (
-                <div className="mt-5">
-                  {(function () {
-                    const lines = (devotional.lyrics || '').split(/\r?\n/).map(l => l.trim()).filter(Boolean)
-                    const devLines = lines.filter(l => isDevanagari(l))
-                    const engLines = lines.filter(l => !isDevanagari(l))
-                    const hasMixed = devLines.length > 0 && engLines.length > 0
-                    // Determine language label from devotional.language field
-                    const lang = (devotional.language || '').toLowerCase()
-                    const devLabel = lang.includes('sanskrit') || lang.includes('संस्क') ? 'संस्कृत' : lang.includes('hindi') || lang.includes('हिं') || lang.includes('हिन्द') ? 'हिंदी' : 'हिंदी'
-                    if (!hasMixed) {
-                      return (
-                        <div>
-                          {devLines.length > 0 && (
-                            <p className="text-body-sm font-semibold text-secondary-700 mb-3 text-center">{devLabel}</p>
-                          )}
-                          <div className="whitespace-pre-line text-body leading-loose text-ink text-center font-devanagari">
-                            {devotional.lyrics}
-                          </div>
-                        </div>
-                      )
-                    }
-                    return (
-                      <div className="grid md:grid-cols-2 gap-6">
-                        {devLines.length > 0 && (
-                          <div className="bg-surface-sunken rounded-card p-5">
-                            <h3 className="text-body-sm font-semibold text-secondary-700 mb-3">{devLabel}</h3>
-                            <div className="space-y-2 font-devanagari">
-                              {devLines.map((l, i) => (<p key={i} className="text-body leading-loose text-ink">{l}</p>))}
-                            </div>
-                          </div>
-                        )}
-                        {engLines.length > 0 && (
-                          <div className="bg-surface-sunken rounded-card p-5">
-                            <h3 className="text-body-sm font-semibold text-secondary-700 mb-3">English</h3>
-                            <div className="space-y-2">
-                              {engLines.map((l, i) => (<p key={i} className="text-body leading-relaxed text-ink">{l}</p>))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )
-                  })()}
-                </div>
-              )}
             </div>
-          )}
+          </div>
+        </div>
+      </section>
 
-          {/* ── 108 Names ── */}
-          {devotional.names && devotional.names.length > 0 && (
-            <div className="card p-5 sm:p-6 mb-6 fade-up">
-              <h2 className="text-h4 font-serif text-secondary-700 mb-4 flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center shadow-sm">
-                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" /></svg>
-                </div>
-                {devotional.names.length} Names
-              </h2>
-              <div className="grid sm:grid-cols-2 gap-x-6 gap-y-1">
-                {devotional.names.map((name, i) => (
-                  <div key={i} className="flex items-baseline gap-2 py-1.5 border-b border-surface-border last:border-0">
-                    <span className="text-caption text-ink-faint w-7 shrink-0 text-right">{i + 1}.</span>
-                    <div>
-                      {name.sanskrit && <span className="font-semibold text-ink font-devanagari">{name.sanskrit}</span>}
-                      {name.english && <span className="text-ink-muted text-body-sm"> ({name.english})</span>}
-                      {name.mantra && <span className="text-primary-600 text-caption italic block">{name.mantra}</span>}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* ── Actions Bar ── */}
-          <div className="flex items-center justify-between mt-2 mb-8">
-            <Link href="/devotionals" className="btn btn-outline btn-sm group no-underline hover:no-underline">
-              <svg className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" /></svg>
-              Back to Devotionals
-            </Link>
-            <button
-              type="button"
-              onClick={() => setShowTransliteration(!showTransliteration)}
-              className="btn btn-ghost btn-sm"
-              suppressHydrationWarning
-            >
-              {showTransliteration ? 'Hide' : 'Show'} Transliteration
-            </button>
+      <main className="min-h-screen bg-surface pb-20">
+        <div className="page-container -mt-8 relative z-20">
+          <div className="grid gap-3 rounded-2xl border border-amber-200 bg-white p-4 shadow-xl sm:grid-cols-2 lg:grid-cols-4">
+            <QuickFact icon={<Music2 className="h-5 w-5" />} label="Category" value={devotional.category || 'Devotional'} />
+            <QuickFact icon={<Sparkles className="h-5 w-5" />} label="Deity" value={devotional.deity || 'Universal'} />
+            <QuickFact icon={<Languages className="h-5 w-5" />} label="Language" value={devotional.language || 'Hindi'} />
+            <QuickFact icon={<Clock className="h-5 w-5" />} label="Duration" value={devotional.duration || (devotional.audio ? 'Audio available' : 'TTS ready')} />
           </div>
 
+          <div className="mt-10 grid gap-8 lg:grid-cols-[minmax(0,1fr)_24rem]">
+            <div className="space-y-8">
+              {description && (
+                <section className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm md:p-8">
+                  <p className="text-xs font-black uppercase tracking-[0.18em] text-orange-700">About this devotional</p>
+                  <h2 className="mt-1 text-3xl font-black text-stone-950">{title.primary}</h2>
+                  <p className="mt-4 text-lg leading-9 text-stone-700">{description}</p>
+                </section>
+              )}
+
+              <DevotionalLyricsReader
+                title={title.primary || devotional.title}
+                lyrics={devotional.lyrics}
+                language={devotional.language}
+                names={devotional.names}
+              />
+            </div>
+
+            <aside className="space-y-6 lg:sticky lg:top-24 lg:self-start">
+              <DevotionalAudioPlayer
+                title={title.primary || devotional.title}
+                text={readingText}
+                audio={devotional.audio}
+                lang={speechLang}
+              />
+
+              <div className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
+                <p className="mb-3 text-xs font-black uppercase tracking-[0.18em] text-orange-700">Quick Actions</p>
+                <div className="grid gap-2">
+                  {devotional.category && (
+                    <Link href={`/devotionals/category/${categoryToSlug(devotional.category)}`} className="rounded-xl bg-orange-50 px-4 py-3 text-sm font-bold text-stone-800 no-underline hover:bg-orange-100">
+                      More {devotional.category}
+                    </Link>
+                  )}
+                  {devotional.deity && (
+                    <Link href={`/devotionals?deity=${encodeURIComponent(devotional.deity)}`} className="rounded-xl bg-orange-50 px-4 py-3 text-sm font-bold text-stone-800 no-underline hover:bg-orange-100">
+                      More for {devotional.deity}
+                    </Link>
+                  )}
+                </div>
+              </div>
+
+              <DevotionalRelatedContent devotional={devotional} allDevotionals={allDevotionals} />
+            </aside>
+          </div>
         </div>
       </main>
+
       <AdminEditBar editHref={`/admin/devotionals/${devotional._id}/edit`} label="Edit Devotional" />
     </>
+  )
+}
+
+function Badge({ icon, label }: { icon: ReactNode; label: string }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/12 px-3 py-1.5 text-xs font-bold text-white backdrop-blur">
+      {icon}
+      {label}
+    </span>
+  )
+}
+
+function QuickFact({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
+  return (
+    <div className="flex items-center gap-3 rounded-xl bg-orange-50/70 p-4">
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-orange-700 shadow-sm">{icon}</span>
+      <span className="min-w-0">
+        <span className="block text-xs font-black uppercase tracking-wide text-stone-500">{label}</span>
+        <span className="block truncate text-sm font-black text-stone-900">{value}</span>
+      </span>
+    </div>
   )
 }

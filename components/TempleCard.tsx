@@ -2,9 +2,9 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
 import type { Temple } from '../data/sarvdev'
-import { getTempleImage, TEMPLE_PLACEHOLDER } from '../lib/temple-image'
+import { getTempleCardImage } from '../lib/temple-image'
+import SarvdevImage from './SarvdevImage'
 
 type Props = {
   temple: Temple
@@ -12,18 +12,18 @@ type Props = {
 
 export default function TempleCard({ temple }: Props) {
   const slug = temple.slug || temple.title?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
-  const [imgSrc, setImgSrc] = useState(getTempleImage(temple))
+  const [cardImage] = useState(() => getTempleCardImage(temple))
 
   return (
     <article className="temple-card-2030 group">
       <Link href={`/temples/${slug}`} className="block no-underline hover:no-underline">
         <div className="card-img-wrap">
-          <Image
-            src={imgSrc}
+          <SarvdevImage
+            image={cardImage}
             alt={temple.title}
-            fill
-            className="object-cover"
-            onError={() => setImgSrc(TEMPLE_PLACEHOLDER)}
+            className="absolute inset-0"
+            imgClassName="object-cover"
+            renderMode="auto"
           />
           {/* Location overlay on image */}
           {temple.location && (

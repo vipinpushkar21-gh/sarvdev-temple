@@ -3,12 +3,11 @@
 import { useEffect, useState, useRef, useMemo } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import Image from 'next/image'
 import { TempleGridSkeleton } from '../../components/Skeleton'
 import { getTemplesForSacredCategory, SHAKTI_PEETH_CATEGORY } from '../../data/shakti-peethas'
 import { SACRED_CATEGORIES, getAllCategoryNames } from '../../lib/sacred-categories'
-import { getTempleImage, TEMPLE_PLACEHOLDER } from '../../lib/temple-image'
-import { isAllowedImageHost, getSafeTempleImage } from '../../lib/imageGuard'
+import { getTempleCardImage } from '../../lib/temple-image'
+import SarvdevImage from '../../components/SarvdevImage'
 
 type Temple = {
   _id: string
@@ -368,9 +367,12 @@ export default function TemplesPage() {
                           onClick={() => { setShowDropdown(false); setSearchQuery(''); router.push(`/temples/${slug}`) }}
                           className="w-full text-left px-5 py-3 hover:bg-primary-50/50 transition-all duration-200 flex items-center gap-3 group"
                         >
-                          {isAllowedImageHost(temple.image) && (
-                            <img src={getSafeTempleImage(temple.image)} alt="" className="w-11 h-11 rounded-xl object-cover flex-shrink-0 shadow-sm" />
-                          )}
+                          <SarvdevImage
+                            image={getTempleCardImage(temple)}
+                            alt=""
+                            className="w-11 h-11 rounded-xl flex-shrink-0 shadow-sm"
+                            imgClassName="object-cover"
+                          />
                           <div className="min-w-0 flex-1">
                             <div className="text-body-sm font-medium text-ink truncate group-hover:text-primary-700 transition-colors">{temple.title}</div>
                             <div className="text-caption text-ink-muted truncate">
@@ -501,12 +503,11 @@ export default function TemplesPage() {
               return (
                 <article key={temple._id} className="bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-md transition-shadow duration-200 group flex flex-col">
                   <div className="relative h-44 overflow-hidden">
-                    <Image
-                      src={getTempleImage(temple)}
+                    <SarvdevImage
+                      image={getTempleCardImage(temple)}
                       alt={temple.title}
-                      fill
-                      className="object-cover group-hover:scale-105 transition-transform duration-500"
-                      onError={(e) => { (e.target as HTMLImageElement).src = TEMPLE_PLACEHOLDER }}
+                      className="absolute inset-0"
+                      imgClassName="object-cover group-hover:scale-105 transition-transform duration-500"
                     />
                   </div>
                   <div className="p-4 flex-1 flex flex-col">
@@ -587,12 +588,11 @@ export default function TemplesPage() {
                 return (
                   <Link key={temple._id} href={`/temples/${slug}`} className="group bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-md transition-shadow duration-200 no-underline">
                     <div className="relative h-36 overflow-hidden">
-                      <Image
-                        src={getTempleImage(temple)}
+                      <SarvdevImage
+                        image={getTempleCardImage(temple)}
                         alt={temple.title}
-                        fill
-                        className="object-cover group-hover:scale-105 transition-transform duration-500"
-                        onError={(e) => { (e.target as HTMLImageElement).src = TEMPLE_PLACEHOLDER }}
+                        className="absolute inset-0"
+                        imgClassName="object-cover group-hover:scale-105 transition-transform duration-500"
                       />
                     </div>
                     <div className="p-4">
@@ -631,12 +631,11 @@ export default function TemplesPage() {
                 return (
                   <Link key={temple._id} href={`/temples/${slug}`} className="group bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-md transition-shadow duration-200 no-underline">
                     <div className="relative h-36 overflow-hidden">
-                      <Image
-                        src={getTempleImage(temple)}
+                      <SarvdevImage
+                        image={getTempleCardImage(temple)}
                         alt={temple.title}
-                        fill
-                        className="object-cover group-hover:scale-105 transition-transform duration-500"
-                        onError={(e) => { (e.target as HTMLImageElement).src = TEMPLE_PLACEHOLDER }}
+                        className="absolute inset-0"
+                        imgClassName="object-cover group-hover:scale-105 transition-transform duration-500"
                       />
                     </div>
                     <div className="p-4">
@@ -810,12 +809,11 @@ export default function TemplesPage() {
                     return (
                       <article key={temple._id} className="bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-md transition-shadow duration-200 group flex flex-col">
                         <div className="relative h-40 overflow-hidden">
-                          <Image
-                            src={getTempleImage(temple)}
+                          <SarvdevImage
+                            image={getTempleCardImage(temple)}
                             alt={temple.title}
-                            fill
-                            className="object-cover group-hover:scale-105 transition-transform duration-500"
-                            onError={(e) => { (e.target as HTMLImageElement).src = TEMPLE_PLACEHOLDER }}
+                            className="absolute inset-0"
+                            imgClassName="object-cover group-hover:scale-105 transition-transform duration-500"
                           />
                           {temple.verified === 'verified' && (
                             <span className="absolute top-2 right-2 bg-green-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">Verified</span>

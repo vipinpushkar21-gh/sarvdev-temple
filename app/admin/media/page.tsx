@@ -4,10 +4,12 @@ import { useState, useRef } from 'react'
 
 type UploadedImage = {
   url: string
+  previewUrl?: string
   publicId: string
   name: string
   size: string
   uploadedAt: string
+  warnings?: string[]
 }
 
 const FOLDERS = [
@@ -40,10 +42,12 @@ export default function AdminMediaPage() {
 
     return {
       url: data.url,
+      previewUrl: data.previewUrl || data.optimizedUrl,
       publicId: data.publicId,
       name: file.name,
       size: (file.size / 1024).toFixed(1) + ' KB',
       uploadedAt: new Date().toLocaleTimeString(),
+      warnings: Array.isArray(data.warnings) ? data.warnings : [],
     }
   }
 
@@ -160,10 +164,13 @@ export default function AdminMediaPage() {
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
             {uploaded.map(img => (
               <div key={img.url} className="rounded-xl overflow-hidden border border-gray-200 bg-gray-50 flex flex-col">
-                <img src={img.url} alt={img.name} className="w-full h-28 object-cover" />
+                <img src={img.previewUrl || img.url} alt={img.name} className="w-full h-28 object-cover object-top" />
                 <div className="p-2 space-y-1.5 flex-1 flex flex-col">
                   <p className="text-[11px] font-medium text-gray-700 truncate">{img.name}</p>
                   <p className="text-[10px] text-gray-400">{img.size}</p>
+                  {img.warnings && img.warnings.length > 0 && (
+                    <p className="text-[10px] text-amber-600 line-clamp-2">{img.warnings[0]}</p>
+                  )}
                   <button
                     onClick={() => copyUrl(img.url)}
                     className={`mt-auto w-full text-[11px] py-1.5 rounded-lg font-semibold transition-all ${

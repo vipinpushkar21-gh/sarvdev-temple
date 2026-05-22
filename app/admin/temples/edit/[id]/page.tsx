@@ -28,6 +28,9 @@ type FormState = {
   speciality: string
   specialityHi: string
   image: string
+  imageCard: string
+  imageHero: string
+  imageGallery: string
   timings: string
   contact: string
   phone: string
@@ -69,7 +72,7 @@ export default function EditTemplePage({ params }: { params: Promise<{ id: strin
   const [form, setForm] = useState<FormState>({ 
     title: "", titleHi: "", location: "", locationHi: "", mapsLink: "", city: "", cityHi: "", state: "", stateHi: "", pincode: "", pincodeHi: "",
     description: "", descriptionHi: "", deity: "", establishedYear: "", establishedYearHi: "", templeType: "", templeTypes: [], sacredCategories: [], speciality: "", specialityHi: "",
-    image: "", timings: "", contact: "", phone: "", email: "", website: "", 
+    image: "", imageCard: "", imageHero: "", imageGallery: "", timings: "", contact: "", phone: "", email: "", website: "", 
     facebook: "", instagram: "", status: "pending",
     metaTitle: "", metaDescription: "", metaKeywords: "", ogImage: ""
   })
@@ -132,6 +135,11 @@ export default function EditTemplePage({ params }: { params: Promise<{ id: strin
             speciality: temple.speciality || "",
             specialityHi: temple.specialityHi || "",
             image: temple.image || "",
+            imageCard: temple.imageCard || "",
+            imageHero: temple.imageHero || temple.heroImage || "",
+            imageGallery: Array.isArray(temple.imageGallery) && temple.imageGallery.length > 0
+              ? temple.imageGallery.join('\n')
+              : (Array.isArray(temple.galleryImages) ? temple.galleryImages.join('\n') : ""),
             timings: temple.timings || "",
             contact: temple.contact || "",
             phone: temple.phone || "",
@@ -203,7 +211,7 @@ export default function EditTemplePage({ params }: { params: Promise<{ id: strin
       'temple', 'india', 'sarvdev',
     ]
     const metaKeywords = [...new Set(keywordSet)].join(', ')
-    const ogImage = form.ogImage || form.image || ''
+    const ogImage = form.ogImage || form.imageHero || form.imageCard || form.image || ''
 
     setForm(prev => ({ ...prev, metaTitle, metaDescription, metaKeywords, ogImage }))
   }
@@ -216,6 +224,10 @@ export default function EditTemplePage({ params }: { params: Promise<{ id: strin
       const submitData = {
         id,
         ...form,
+        image: form.image || form.imageCard || form.imageHero,
+        heroImage: form.imageHero,
+        imageGallery: form.imageGallery.split(/\r?\n|,/).map(url => url.trim()).filter(Boolean),
+        galleryImages: form.imageGallery.split(/\r?\n|,/).map(url => url.trim()).filter(Boolean),
         categories: form.sacredCategories, // Keep both fields in sync
       }
 
@@ -444,9 +456,28 @@ export default function EditTemplePage({ params }: { params: Promise<{ id: strin
               <input value={form.timings} onChange={(e) => onChange("timings", e.target.value)} className="admin-input w-full" />
             </div>
 
-            <div>
+            <div className="md:col-span-2 space-y-6">
               <ImageUpload
-                label="🖼️ Temple Image"
+                label="Card Image"
+                value={form.imageCard}
+                onChange={url => onChange("imageCard", url)}
+                folder="sarvdev/temples/cards"
+                guidance="card"
+              />
+              <ImageUpload
+                label="Hero Image"
+                value={form.imageHero}
+                onChange={url => onChange("imageHero", url)}
+                folder="sarvdev/temples/heroes"
+                guidance="hero"
+              />
+              <div>
+                <label className="block text-sm font-medium text-gray-600 mb-1">Gallery Images <span className="font-normal text-gray-400">(optional, one URL per line)</span></label>
+                <textarea value={form.imageGallery} onChange={(e) => onChange("imageGallery", e.target.value)} rows={3} className="admin-input w-full" placeholder="https://..." />
+                <p className="mt-1 text-xs text-gray-400">Optional multi-image gallery. Recommended 2400px+ wide, sacred elements away from edges.</p>
+              </div>
+              <ImageUpload
+                label="Legacy Image"
                 value={form.image}
                 onChange={url => onChange("image", url)}
                 folder="sarvdev/temples"

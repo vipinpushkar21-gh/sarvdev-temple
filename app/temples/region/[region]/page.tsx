@@ -2,7 +2,8 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { connectDB } from '@/lib/db'
 import Temple from '@/models/Temple'
-import { getSafeTempleImage } from '@/lib/imageGuard'
+import SarvdevImage from '@/components/SarvdevImage'
+import { getTempleCardImage } from '@/lib/temple-image'
 
 export const revalidate = 3600
 
@@ -170,9 +171,12 @@ export default async function RegionalTemplesPage({ params }: { params: Promise<
               <Link key={t._id.toString()} href={`/temples/${slugify(t.title)}`}
                 className="group card overflow-hidden hover:shadow-md transition-all duration-300 no-underline">
                 <div className="relative h-48 overflow-hidden">
-                  <img src={getSafeTempleImage(t.image)}
+                  <SarvdevImage
+                    image={getTempleCardImage(t)}
                     alt={`${t.title}${t.city ? ` in ${t.city}` : ''}${t.state ? `, ${t.state}` : ''}`}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
+                    className="absolute inset-0"
+                    imgClassName="object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
                   {t.deity && (
                     <span className="absolute bottom-2 left-2 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-white/90 text-ink backdrop-blur-sm">{t.deity}</span>
                   )}

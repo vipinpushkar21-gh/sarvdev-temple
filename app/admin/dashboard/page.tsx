@@ -656,13 +656,14 @@ export default function AdminDashboardPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3">
           {[
             { href: '/admin/temples/new',    icon: '🛕', label: 'Add Temple',     from: '#3B82F6', to: '#2563EB' },
             { href: '/admin/deities/new',    icon: '🙏', label: 'Add Deity',     from: '#EC4899', to: '#DB2777' },
             { href: '/admin/devotionals/new',icon: '🎵', label: 'Add Devotional', from: '#FF9933', to: '#E67E22' },
             { href: '/admin/temples',         icon: '✅', label: 'Approve Temples',from: '#10B981', to: '#059669' },
             { href: '/admin/activity',        icon: '📋', label: 'Activity Log',  from: '#8B5CF6', to: '#7C3AED' },
+            { href: '/admin/images/audit',    icon: 'IMG', label: 'Image Audit',    from: '#0EA5E9', to: '#0369A1' },
           ].map(a => (
             <Link key={a.href} href={a.href}
               className="group flex flex-col items-center gap-2 p-5 rounded-2xl text-white text-sm font-bold transition-all hover:-translate-y-1 hover:shadow-xl active:scale-95"

@@ -2,9 +2,10 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import Link from 'next/link'
-import { getTempleImage, TEMPLE_PLACEHOLDER } from '../lib/temple-image'
+import { getTempleHeroImage } from '../lib/temple-image'
 import { useTempleData } from '../lib/temple-data'
 import { useTranslation } from '../lib/translation'
+import SarvdevImage from './SarvdevImage'
 
 /* ─── Types ─── */
 interface Temple {
@@ -12,6 +13,9 @@ interface Temple {
   title: string
   description?: string
   image?: string
+  imageHero?: string
+  imageCard?: string
+  heroImage?: string
   location?: string
   city?: string
   state?: string
@@ -111,15 +115,12 @@ function MosaicRow({
             onMouseLeave={onLeave}
           >
             {/* Image */}
-            <img
-              src={getTempleImage(temple)}
+            <SarvdevImage
+              image={getTempleHeroImage(temple)}
               alt={temple.title}
-              loading="lazy"
-              className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out will-change-transform"
-              style={{
-                transform: isHovered ? 'scale(1.05)' : 'scale(1)',
-              }}
-              onError={(e) => { (e.target as HTMLImageElement).src = TEMPLE_PLACEHOLDER }}
+              className="absolute inset-0"
+              imgClassName={`object-cover transition-transform duration-700 ease-out will-change-transform ${isHovered ? 'scale-105' : 'scale-100'}`}
+              renderMode="auto"
             />
 
             {/* Gradient overlay — always present, deepens on hover */}
@@ -220,12 +221,12 @@ function MobileScrollRow({
             onTouchStart={() => onHover(id)}
             onTouchEnd={onLeave}
           >
-            <img
-              src={getTempleImage(temple)}
+            <SarvdevImage
+              image={getTempleHeroImage(temple)}
               alt={temple.title}
-              loading="lazy"
-              className="absolute inset-0 w-full h-full object-cover"
-              onError={(e) => { (e.target as HTMLImageElement).src = TEMPLE_PLACEHOLDER }}
+              className="absolute inset-0"
+              imgClassName="object-cover"
+              renderMode="auto"
             />
             <div
               className="absolute inset-0"

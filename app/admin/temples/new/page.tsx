@@ -23,6 +23,9 @@ type FormState = {
   speciality: string
   categories: string[]
   imageUrl: string
+  imageCard: string
+  imageHero: string
+  imageGallery: string
   contact: string
   phone: string
   email: string
@@ -68,7 +71,7 @@ const e = "mt-1 text-xs text-red-500"
 const emptyForm = (): FormState => ({
   name: "", location: "", mapsLink: "", city: "", state: "", country: "India", pincode: "",
   description: "", descriptionHi: "", deity: "", establishedYear: "", templeType: "",
-  speciality: "", categories: [], imageUrl: "", contact: "", phone: "", email: "",
+  speciality: "", categories: [], imageUrl: "", imageCard: "", imageHero: "", imageGallery: "", contact: "", phone: "", email: "",
   website: "", facebook: "", instagram: "",
   metaTitle: "", metaDescription: "", metaKeywords: "", ogImage: ""
 })
@@ -169,7 +172,12 @@ export default function AdminNewTemplePage() {
           speciality: form.speciality,
           categories: form.categories,
           sacredCategories: form.categories, // Sync both fields
-          image: form.imageUrl,
+          image: form.imageUrl || form.imageCard || form.imageHero,
+          imageCard: form.imageCard,
+          imageHero: form.imageHero,
+          heroImage: form.imageHero,
+          imageGallery: form.imageGallery.split(/\r?\n|,/).map(url => url.trim()).filter(Boolean),
+          galleryImages: form.imageGallery.split(/\r?\n|,/).map(url => url.trim()).filter(Boolean),
           timings: filledSlots.join(', '),
           timingSlots: filledSlots,
           festivals: festivals.filter(f => f.name.trim()),
@@ -383,12 +391,27 @@ export default function AdminNewTemplePage() {
             <p className="mt-1 text-xs text-gray-400">{hi ? 'उदाहरण: "5:00 AM - 12:00 PM" और "4:00 PM - 9:00 PM" अलग-अलग स्लॉट में' : 'Examples: "5:00 AM – 12:00 PM" and "4:00 PM – 9:00 PM" as separate slots'}</p>
           </div>
 
-          <ImageUpload
-            label={hi ? 'मंदिर की छवि' : 'Temple Image'}
-            value={form.imageUrl}
-            onChange={url => onChange("imageUrl", url)}
-            folder="sarvdev/temples"
-          />
+          <div className="space-y-6">
+            <ImageUpload
+              label={hi ? 'कार्ड छवि' : 'Card Image'}
+              value={form.imageCard}
+              onChange={url => onChange("imageCard", url)}
+              folder="sarvdev/temples/cards"
+              guidance="card"
+            />
+            <ImageUpload
+              label={hi ? 'हीरो छवि' : 'Hero Image'}
+              value={form.imageHero}
+              onChange={url => onChange("imageHero", url)}
+              folder="sarvdev/temples/heroes"
+              guidance="hero"
+            />
+            <div>
+              <label className={l}>{hi ? 'गैलरी छवियां' : 'Gallery Images'} <span className="font-normal text-gray-400">(optional, one URL per line)</span></label>
+              <textarea value={form.imageGallery} onChange={ev => onChange("imageGallery", ev.target.value)} rows={3} className={i} placeholder="https://..." />
+              <p className="mt-1 text-xs text-gray-400">Optional multi-image gallery. Recommended 2400px+ wide, sacred elements away from edges.</p>
+            </div>
+          </div>
         </div>
 
         {/* Festivals */}

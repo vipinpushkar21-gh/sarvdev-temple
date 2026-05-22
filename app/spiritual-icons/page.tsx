@@ -1,333 +1,259 @@
 "use client"
 
-import { useState, useMemo, useEffect } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import Link from 'next/link'
-import { spiritualIcons, categories } from '../../data/spiritual-icons'
-import type { SpiritualIcon } from '../../data/spiritual-icons'
+import { BookOpen, CheckCircle2, Filter, MapPin, Search, Sparkles, Star, Users } from 'lucide-react'
+import SarvdevImage from '../../components/SarvdevImage'
+import { SPIRITUAL_ICON_CATEGORIES } from '../../data/spiritual-icon-categories'
+import { filterSpiritualIcons, getStaticSpiritualIconsForSeed, type SpiritualIconRecord } from '../../lib/spiritual-icons'
+import { getTempleCardImage, getTempleHeroImage } from '../../lib/temple-image'
 
-/* ─── Helpers ─── */
-
-function shuffleArray<T>(arr: T[]): T[] {
-  const a = [...arr]
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]]
-  }
-  return a
-}
-
-const typeEmojis: Record<string, string> = {
-  'katha-vachak': '🎙️',
-  'bhajan-gayak': '🎵',
-  'pandit': '📿',
-}
-
-const typeBgs: Record<string, string> = {
-  'katha-vachak': 'bg-primary-100',
-  'bhajan-gayak': 'bg-secondary-100',
-  'pandit': 'bg-accent-100',
-}
-
-const typeLabels: Record<string, string> = {
-  'katha-vachak': 'Katha Vachak',
-  'bhajan-gayak': 'Bhajan Gayak',
-  'pandit': 'Pandit / Purohit',
-}
+const HERO_IMAGE = 'https://res.cloudinary.com/dc2qg7bwr/image/upload/image_2_xljqwa'
 
 export default function SpiritualIconsPage() {
-  const [activeTab, setActiveTab] = useState<string>('katha-vachak')
-  const [searchQuery, setSearchQuery] = useState('')
-  const [stateFilter, setStateFilter] = useState('all')
+  const [icons, setIcons] = useState<SpiritualIconRecord[]>(() => getStaticSpiritualIconsForSeed())
+  const [loading, setLoading] = useState(true)
+  const [activeCategory, setActiveCategory] = useState('all')
+  const [search, setSearch] = useState('')
+  const [stateFilter, setStateFilter] = useState('')
+  const [languageFilter, setLanguageFilter] = useState('')
 
-  const activeCategory = categories.find(c => c.id === activeTab)!
-
-  // Stats
-  const totalIcons = spiritualIcons.length
-  const allStates = useMemo(() => {
-    const s = new Set(spiritualIcons.map(i => i.state))
-    return Array.from(s).sort()
-  }, [])
-
-  // States for current tab
-  const tabStates = useMemo(() => {
-    const s = new Set(spiritualIcons.filter(i => i.type === activeTab).map(i => i.state))
-    return ['all', ...Array.from(s).sort()]
-  }, [activeTab])
-
-  // Featured spotlight — client-only to avoid hydration mismatch
-  const [spotlight, setSpotlight] = useState(spiritualIcons[0])
   useEffect(() => {
-    setSpotlight(shuffleArray(spiritualIcons)[0])
-  }, [])
+    let cancelled = false
 
-  // Filtered icons (deterministic)
-  const filteredBase = useMemo(() => {
-    let icons = spiritualIcons.filter(icon => icon.type === activeTab)
-
-    if (stateFilter !== 'all') {
-      icons = icons.filter(icon => icon.state === stateFilter)
+    async function loadIcons() {
+      try {
+        const res = await fetch('/api/spiritual-icons')
+        if (!res.ok) return
+        const data = await res.json()
+        if (!cancelled && Array.isArray(data) && data.length > 0) setIcons(data)
+      } catch {
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
     }
 
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase()
-      icons = icons.filter(icon =>
-        icon.name.toLowerCase().includes(q) ||
-        icon.nameHi.includes(q) ||
-        icon.speciality.toLowerCase().includes(q) ||
-        icon.state.toLowerCase().includes(q) ||
-        icon.famousFor.some(f => f.toLowerCase().includes(q))
-      )
-    }
+    loadIcons()
+    return () => { cancelled = true }
+  }, [])
 
-    return icons
-  }, [activeTab, stateFilter, searchQuery])
+  const states = useMemo(() => Array.from(new Set(icons.map((icon) => icon.state).filter(Boolean) as string[])).sort(), [icons])
+  const languages = useMemo(() => Array.from(new Set(icons.flatMap((icon) => icon.languages || []).filter(Boolean))).sort(), [icons])
+  const featured = useMemo(() => {
+    const explicit = icons.filter((icon) => icon.featured)
+    return (explicit.length ? explicit : icons.slice(0, 6)).slice(0, 6)
+  }, [icons])
 
-  // Shuffle client-side only to avoid hydration mismatch
-  const [filteredIcons, setFilteredIcons] = useState<SpiritualIcon[]>([])
-  useEffect(() => {
-    setFilteredIcons(shuffleArray(filteredBase))
-  }, [filteredBase])
+  const filtered = useMemo(() => {
+    const params = new URLSearchParams()
+    if (activeCategory !== 'all') params.set('category', activeCategory)
+    if (search) params.set('search', search)
+    if (stateFilter) params.set('state', stateFilter)
+    if (languageFilter) params.set('language', languageFilter)
+    return filterSpiritualIcons(icons, params)
+  }, [activeCategory, icons, languageFilter, search, stateFilter])
+
+  const jsonLd = useMemo(() => [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://sarvdev.com' },
+        { '@type': 'ListItem', position: 2, name: 'Spiritual Icons', item: 'https://sarvdev.com/spiritual-icons' },
+      ],
+    },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'ItemList',
+      name: 'Spiritual Icons on Sarvdev',
+      itemListElement: icons.slice(0, 24).map((icon, index) => ({
+        '@type': 'ListItem',
+        position: index + 1,
+        name: icon.name,
+        url: `https://sarvdev.com/spiritual-icons/${icon.slug}`,
+      })),
+    },
+  ], [icons])
+
+  const heroImage = getTempleHeroImage(HERO_IMAGE)
 
   return (
     <>
-      {/* ═══ Hero Section with Stats ═══ */}
-      <section className="relative overflow-hidden border-b border-surface-border">
-        <div className="absolute inset-0 bg-cover bg-center bg-no-repeat" style={{ backgroundImage: `url('https://res.cloudinary.com/dc2qg7bwr/image/upload/v1774363519/hero-bg.jpg.jpg')` }} />
-        <div className="absolute inset-0 bg-black/60" />
-        <div className="absolute inset-0 bg-gradient-to-br from-secondary-900/40 via-transparent to-primary/20" />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
-        <div className="page-container py-14 md:py-20 relative z-10">
-          <h1 className="text-display-lg font-serif text-white leading-tight">
-            Spiritual Icons
-          </h1>
-          <p className="mt-3 text-body text-white/75 max-w-2xl">
-            Discover revered Katha Vachaks, Bhajan Gayaks, and Pandits who keep our spiritual traditions alive worldwide.
-          </p>
-          <div className="mt-4 w-16 h-1 rounded-full bg-gradient-to-r from-primary to-accent" />
+      <section className="relative min-h-[560px] overflow-hidden bg-stone-950 text-white">
+        <SarvdevImage image={heroImage} alt="Spiritual Icons sacred background" className="absolute inset-0 opacity-45" imgClassName="object-cover" loading="eager" />
+        <div className="absolute inset-0 bg-gradient-to-r from-stone-950/95 via-stone-950/70 to-stone-950/25" />
+        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-surface to-transparent" />
 
-          {/* Stats row */}
-          <div className="mt-6 flex flex-wrap items-center gap-3">
-            <span className="stat-pill">
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>
-              {totalIcons} Icons
+        <div className="page-container relative z-10 flex min-h-[560px] flex-col justify-end pb-14 pt-24">
+          <div className="max-w-5xl">
+            <span className="inline-flex items-center gap-2 rounded-full border border-amber-200/25 bg-amber-300/15 px-3 py-1.5 text-xs font-black uppercase tracking-[0.18em] text-amber-100 backdrop-blur">
+              <Sparkles className="h-3.5 w-3.5" />
+              Spiritual Lineages
             </span>
-            <span className="stat-pill">
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6z" /></svg>
-              {categories.length} Categories
-            </span>
-            <span className="stat-pill">
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" /></svg>
-              {allStates.length} States
-            </span>
-          </div>
-        </div>
-      </section>
-
-      {/* ═══ Featured Spotlight ═══ */}
-      <section className="page-container py-8">
-        <div className="card-gradient">
-          <div className="card p-6 sm:p-8 flex flex-col sm:flex-row items-start gap-6">
-            <div className={`w-20 h-20 sm:w-24 sm:h-24 rounded-2xl ${typeBgs[spotlight.type]} flex items-center justify-center shrink-0 shadow-md`}>
-              <span className="text-4xl sm:text-5xl font-serif font-bold text-secondary-700">{spotlight.name.charAt(0)}</span>
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="badge-trending">
-                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" /></svg>
-                  Spotlight
-                </span>
-                <span className="badge badge-primary text-xs">{typeLabels[spotlight.type]}</span>
-              </div>
-              <h3 className="text-h2 font-serif text-secondary-800">{spotlight.name}</h3>
-              <p className="text-body-sm text-primary-600 font-medium">{spotlight.nameHi}</p>
-              <p className="text-body-sm text-ink-muted mt-2 line-clamp-2">{spotlight.description}</p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {spotlight.famousFor.map(tag => (
-                  <span key={tag} className="badge bg-surface-sunken text-secondary-600 text-xs">{tag}</span>
-                ))}
-              </div>
-              <Link
-                href={`/spiritual-icons/${spotlight.slug}`}
-                className="inline-flex items-center gap-1.5 mt-4 text-body-sm font-semibold text-primary-600 hover:text-primary-700 no-underline hover:no-underline transition-colors"
-              >
-                View Profile
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" /></svg>
-              </Link>
+            <h1 className="mt-5 text-[clamp(3rem,8vw,6.6rem)] font-black leading-[0.92] tracking-normal text-white drop-shadow-2xl">
+              Spiritual Icons
+            </h1>
+            <p className="mt-5 max-w-3xl text-xl leading-8 text-stone-100">
+              Discover revered Katha Vachaks, Bhajan Gayaks, Pandits, gurus, scholars, kirtan mandalis, and dharma pracharaks preserving Sanatan traditions.
+            </p>
+            <div className="mt-8 grid max-w-4xl gap-3 sm:grid-cols-3">
+              <HeroStat icon={<Users className="h-5 w-5" />} label="Profiles" value={icons.length} />
+              <HeroStat icon={<Filter className="h-5 w-5" />} label="Categories" value={SPIRITUAL_ICON_CATEGORIES.length} />
+              <HeroStat icon={<MapPin className="h-5 w-5" />} label="States" value={states.length} />
             </div>
           </div>
         </div>
       </section>
 
-      {/* ═══ Category Tabs (Sticky) ═══ */}
-      <section className="bg-surface/80 backdrop-blur-xl border-b border-surface-border/50 sticky top-0 z-30">
-        <div className="page-container">
-          <div className="flex items-center gap-2 overflow-x-auto py-3 scrollbar-none">
-            {categories.map((cat) => {
-              const count = spiritualIcons.filter(i => i.type === cat.id).length
-              const isActive = activeTab === cat.id
+      <main className="bg-surface pb-24">
+        <section className="page-container -mt-10 relative z-20">
+          <div className="rounded-2xl border border-amber-200 bg-white p-4 shadow-xl">
+            <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_12rem_12rem]">
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
+                <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by name, speciality, state..." className="w-full rounded-xl border border-stone-200 bg-white py-3 pl-10 pr-4 text-sm font-semibold outline-none focus:border-orange-400" />
+              </div>
+              <select value={stateFilter} onChange={(e) => setStateFilter(e.target.value)} className="rounded-xl border border-stone-200 bg-white px-3 py-3 text-sm font-semibold">
+                <option value="">All States</option>
+                {states.map((state) => <option key={state} value={state}>{state}</option>)}
+              </select>
+              <select value={languageFilter} onChange={(e) => setLanguageFilter(e.target.value)} className="rounded-xl border border-stone-200 bg-white px-3 py-3 text-sm font-semibold">
+                <option value="">All Languages</option>
+                {languages.map((language) => <option key={language} value={language}>{language}</option>)}
+              </select>
+            </div>
+          </div>
+        </section>
+
+        <section className="page-container pt-10">
+          <SectionHeader eyebrow="All Categories" title="Explore spiritual service paths" description="Every category stays visible, even when records are still being added." />
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+            <button type="button" onClick={() => setActiveCategory('all')} className={`rounded-2xl border p-5 text-left transition ${activeCategory === 'all' ? 'border-stone-900 bg-stone-950 text-white shadow-xl' : 'border-stone-200 bg-white hover:border-amber-300'}`}>
+              <span className="text-2xl">✨</span>
+              <h3 className="mt-3 text-lg font-black">All Icons</h3>
+              <p className={`mt-1 text-sm ${activeCategory === 'all' ? 'text-stone-200' : 'text-stone-500'}`}>{icons.length} profiles</p>
+            </button>
+            {SPIRITUAL_ICON_CATEGORIES.map((category) => {
+              const count = icons.filter((icon) => icon.categorySlug === category.slug).length
+              const active = activeCategory === category.slug
               return (
-                <button
-                  key={cat.id}
-                  onClick={() => { setActiveTab(cat.id); setSearchQuery(''); setStateFilter('all') }}
-                  className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-body-sm font-medium whitespace-nowrap transition-all duration-300 ${
-                    isActive
-                      ? 'bg-gradient-to-r from-primary to-primary-600 text-white shadow-md shadow-primary/25'
-                      : 'bg-surface-raised text-secondary-600 hover:bg-secondary-50 border border-surface-border hover:shadow-sm'
-                  }`}
-                >
-                  <span aria-hidden="true">{typeEmojis[cat.id]}</span>
-                  <span>{cat.label}</span>
-                  <span className={`text-caption px-1.5 py-0.5 rounded-full font-bold tabular-nums ${
-                    isActive ? 'bg-white/20 text-white' : 'bg-secondary-100 text-secondary-500'
-                  }`}>
-                    {count}
-                  </span>
+                <button key={category.slug} type="button" onClick={() => setActiveCategory(category.slug)} className={`rounded-2xl border p-5 text-left transition ${active ? 'border-stone-900 bg-stone-950 text-white shadow-xl' : 'border-stone-200 bg-white hover:border-amber-300'}`}>
+                  <span className="text-2xl">{category.icon}</span>
+                  <h3 className="mt-3 text-lg font-black">{category.name}</h3>
+                  <p className={`mt-1 text-sm ${active ? 'text-stone-200' : 'text-stone-500'}`}>{count} profiles</p>
                 </button>
               )
             })}
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* ═══ Main Content ═══ */}
-      <main className="page-container py-10">
-
-        {/* Category Header + Filters */}
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
-          <div>
-            <h2 className="text-h2 font-serif text-secondary-800">
-              {activeCategory.labelHi} ({activeCategory.label})
-            </h2>
-            <p className="text-body-sm text-ink-muted mt-1">{activeCategory.desc}</p>
+        <section className="page-container pt-14">
+          <SectionHeader eyebrow="Featured" title="Featured spiritual icons" description="Verified and highlighted voices from the spiritual community." />
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {featured.map((icon) => <IconCard key={icon.slug} icon={icon} featured />)}
           </div>
-          <div className="flex items-center gap-3 flex-wrap">
-            {/* State Filter */}
-            <select
-              aria-label="Filter by state"
-              value={stateFilter}
-              onChange={(e) => setStateFilter(e.target.value)}
-              className="rounded-xl border border-surface-border bg-surface-raised text-ink text-body-sm px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary-300/50 focus:border-primary-400 shadow-sm transition-all duration-200"
-            >
-              {tabStates.map(s => (
-                <option key={s} value={s}>{s === 'all' ? 'All States' : s}</option>
-              ))}
-            </select>
+        </section>
 
-            {/* Search */}
-            <div className="relative w-full sm:w-64 group">
-              <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-faint group-focus-within:text-primary-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-              </svg>
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={`Search ${activeCategory.label}...`}
-                className="w-full rounded-xl border border-surface-border bg-surface-raised text-ink text-body-sm pl-10 pr-10 py-2.5 placeholder:text-ink-faint focus:outline-none focus:ring-2 focus:ring-primary-300/50 focus:border-primary-400 shadow-sm hover:shadow-md focus:shadow-md transition-all duration-200"
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md text-ink-faint hover:text-ink-muted hover:bg-surface-sunken transition-all"
-                >
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              )}
+        <section className="page-container pt-14">
+          <SectionHeader eyebrow="Directory" title="Search results" description={`${filtered.length} profile${filtered.length === 1 ? '' : 's'} matching current filters.`} />
+          {filtered.length > 0 ? (
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {filtered.map((icon) => <IconCard key={icon.slug} icon={icon} />)}
             </div>
-          </div>
-        </div>
+          ) : (
+            <EmptyState title="No matching spiritual icons yet" description="Try clearing filters or explore category sections below." />
+          )}
+        </section>
 
-        {/* Result count */}
-        <p className="text-caption text-ink-muted mb-4">
-          Showing {filteredIcons.length} {activeCategory.label}{filteredIcons.length !== 1 ? 's' : ''}
-          {stateFilter !== 'all' && <> from <strong>{stateFilter}</strong></>}
-          {searchQuery && <> matching &ldquo;{searchQuery}&rdquo;</>}
-        </p>
+        <section className="page-container pt-14 space-y-12">
+          {SPIRITUAL_ICON_CATEGORIES.map((category) => {
+            const categoryIcons = icons.filter((icon) => icon.categorySlug === category.slug).slice(0, 6)
+            return (
+              <section key={category.slug}>
+                <SectionHeader eyebrow={category.nameHi} title={category.name} description={category.description} />
+                {categoryIcons.length > 0 ? (
+                  <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                    {categoryIcons.map((icon) => <IconCard key={icon.slug} icon={icon} />)}
+                  </div>
+                ) : (
+                  <EmptyState title={`${category.name} profiles coming soon`} description="This category is ready in Sarvdev admin and will appear here when active records are added." />
+                )}
+              </section>
+            )
+          })}
+        </section>
 
-        {/* Icons Grid */}
-        {filteredIcons.length === 0 ? (
-          <div className="text-center py-16">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary-100 to-accent-100 flex items-center justify-center mx-auto mb-5">
-              <svg className="w-7 h-7 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>
-            </div>
-            <p className="text-body text-ink-muted mb-4">
-              No {activeCategory.label} found
-              {searchQuery && <> for &ldquo;{searchQuery}&rdquo;</>}
-              {stateFilter !== 'all' && <> in {stateFilter}</>}
-            </p>
-            <button
-              type="button"
-              onClick={() => { setSearchQuery(''); setStateFilter('all') }}
-              className="btn btn-outline btn-sm"
-            >
-              Clear Filters
-            </button>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 stagger-children">
-            {filteredIcons.map((icon) => (
-              <SpiritualIconCard key={icon.id} icon={icon} />
-            ))}
-          </div>
-        )}
+        {loading && <p className="page-container pt-6 text-sm text-stone-400">Refreshing spiritual icon records...</p>}
       </main>
     </>
   )
 }
 
-/* ─── Card Component ─── */
-function SpiritualIconCard({ icon }: { icon: SpiritualIcon }) {
+function IconCard({ icon, featured = false }: { icon: SpiritualIconRecord; featured?: boolean }) {
+  const image = getTempleCardImage({ imageCard: icon.imageCard || icon.image || '', image: icon.imageCard || icon.image || '' })
   return (
-    <Link href={`/spiritual-icons/${icon.slug}`} className="block no-underline hover:no-underline">
-      <article className="card-interactive overflow-hidden group">
-        {/* Image / Placeholder */}
-        <div className={`relative h-48 w-full ${typeBgs[icon.type]} flex items-center justify-center overflow-hidden`}>
-          {icon.image ? (
-            <img src={icon.image} alt={icon.name} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-          ) : (
-            <div className="text-center">
-              <div className="w-20 h-20 rounded-full bg-secondary-200/80 mx-auto flex items-center justify-center mb-2 group-hover:scale-110 transition-transform duration-300">
-                <span className="text-4xl font-serif font-bold text-secondary-700">{icon.name.charAt(0)}</span>
-              </div>
-            </div>
-          )}
-          {/* Type badge */}
-          <span className="absolute top-3 left-3 badge badge-primary text-xs font-medium">
-            {typeLabels[icon.type]}
-          </span>
-          {/* State badge */}
-          <span className="absolute top-3 right-3 badge bg-secondary-700 text-white text-xs flex items-center gap-1">
-            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
-            </svg>
-            {icon.state}
-          </span>
-        </div>
-
-        {/* Content */}
-        <div className="p-5">
-          <h3 className="text-h4 font-serif text-secondary-800 group-hover:text-primary-700 transition-colors">{icon.name}</h3>
-          <p className="text-caption text-primary-600 font-medium mt-0.5">{icon.nameHi}</p>
-          <p className="text-body-sm text-ink-muted mt-2 line-clamp-2">{icon.description}</p>
-
-          {/* Speciality */}
-          <div className="mt-3 flex items-center gap-2">
-            <span className="text-caption text-ink-muted">Speciality:</span>
-            <span className="badge bg-primary-50 text-primary-700 text-xs">{icon.speciality}</span>
+    <Link href={`/spiritual-icons/${icon.slug}`} className="group overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm no-underline transition duration-300 hover:-translate-y-1 hover:border-amber-300 hover:shadow-xl">
+      <div className="relative aspect-[4/3] overflow-hidden bg-orange-50">
+        {icon.imageCard || icon.image ? (
+          <SarvdevImage image={image} alt={icon.name} className="absolute inset-0" imgClassName="object-cover transition duration-700 group-hover:scale-105" />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-orange-50 to-amber-100">
+            <span className="flex h-24 w-24 items-center justify-center rounded-full bg-white text-4xl font-black text-orange-700 shadow-sm">{icon.name.charAt(0)}</span>
           </div>
-
-          {/* Famous For */}
-          <div className="mt-3 flex flex-wrap gap-1.5">
-            {icon.famousFor.map((tag) => (
-              <span key={tag} className="badge bg-surface-sunken text-secondary-600 text-xs">
-                {tag}
-              </span>
-            ))}
-          </div>
+        )}
+        <div className="absolute left-3 top-3 flex flex-wrap gap-2">
+          {featured && <Badge icon={<Star className="h-3.5 w-3.5" />} label="Featured" />}
+          {icon.verified && <Badge icon={<CheckCircle2 className="h-3.5 w-3.5" />} label="Verified" />}
         </div>
-      </article>
+      </div>
+      <div className="p-5">
+        <p className="text-xs font-black uppercase tracking-[0.16em] text-orange-700">{icon.category}</p>
+        <h3 className="mt-2 text-2xl font-black leading-tight text-stone-950 group-hover:text-orange-700">{icon.name}</h3>
+        {icon.nameHi && <p className="mt-1 font-semibold text-stone-500">{icon.nameHi}</p>}
+        <p className="mt-3 line-clamp-2 text-sm leading-6 text-stone-600">{icon.shortBio || icon.fullBio || icon.title}</p>
+        <div className="mt-4 flex flex-wrap gap-2">
+          {(icon.specializations || []).slice(0, 3).map((tag) => <span key={tag} className="rounded-full bg-stone-100 px-2.5 py-1 text-xs font-bold text-stone-600">{tag}</span>)}
+        </div>
+        <div className="mt-4 flex flex-wrap gap-2 text-xs font-bold text-stone-500">
+          {icon.state && <span className="inline-flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{icon.state}</span>}
+          {(icon.languages || []).slice(0, 2).map((language) => <span key={language}>{language}</span>)}
+        </div>
+      </div>
     </Link>
+  )
+}
+
+function HeroStat({ icon, label, value }: { icon: ReactNode; label: string; value: number }) {
+  return (
+    <div className="rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur">
+      <span className="flex items-center gap-2 text-amber-100">{icon}<span className="text-sm font-bold">{label}</span></span>
+      <p className="mt-2 text-3xl font-black text-white">{value}</p>
+    </div>
+  )
+}
+
+function SectionHeader({ eyebrow, title, description }: { eyebrow: string; title: string; description: string }) {
+  return (
+    <div className="mb-6 max-w-3xl">
+      <p className="text-xs font-black uppercase tracking-[0.18em] text-orange-700">{eyebrow}</p>
+      <h2 className="mt-2 text-3xl font-black text-stone-950 md:text-4xl">{title}</h2>
+      <p className="mt-3 text-base leading-7 text-stone-600">{description}</p>
+    </div>
+  )
+}
+
+function Badge({ icon, label }: { icon: ReactNode; label: string }) {
+  return <span className="inline-flex items-center gap-1 rounded-full bg-white/90 px-2.5 py-1 text-xs font-black text-stone-900 shadow-sm">{icon}{label}</span>
+}
+
+function EmptyState({ title, description }: { title: string; description: string }) {
+  return (
+    <div className="rounded-2xl border border-dashed border-amber-300 bg-amber-50/70 p-8 text-center">
+      <BookOpen className="mx-auto h-9 w-9 text-amber-700" />
+      <h3 className="mt-3 text-xl font-black text-stone-950">{title}</h3>
+      <p className="mt-2 text-sm text-stone-600">{description}</p>
+    </div>
   )
 }

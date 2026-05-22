@@ -1,6 +1,6 @@
 import React from 'react';
-
-const FALLBACK_IMAGE = 'https://res.cloudinary.com/dc2qg7bwr/image/upload/image_2_xljqwa'
+import SarvdevImage from '../../../components/SarvdevImage';
+import { getTempleCardImage } from '../../../lib/temple-image';
 
 export type DevotionalCardProps = {
   title: string;
@@ -14,6 +14,8 @@ export type DevotionalCardProps = {
   hasAudio?: boolean;
   isFeatured?: boolean;
   image?: string;
+  imageCard?: string;
+  imageHero?: string;
   onClick?: () => void;
 };
 
@@ -33,8 +35,12 @@ export const DevotionalCard: React.FC<DevotionalCardProps> = ({
   hasAudio,
   isFeatured,
   image,
+  imageCard,
+  imageHero,
   onClick,
-}) => (
+}) => {
+  const cardImage = getTempleCardImage({ imageCard, imageHero, image })
+  return (
   <div
     className="devotional-card-2026 cursor-pointer group overflow-hidden"
     tabIndex={0}
@@ -44,12 +50,12 @@ export const DevotionalCard: React.FC<DevotionalCardProps> = ({
   >
     {/* Card image */}
     <div className="relative h-40 overflow-hidden">
-      <img
-        src={image || FALLBACK_IMAGE}
+      <SarvdevImage
+        image={cardImage}
         alt={title}
-        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-        loading="lazy"
-        onError={(e) => { (e.target as HTMLImageElement).src = FALLBACK_IMAGE }}
+        className="absolute inset-0"
+        imgClassName="object-cover transition-transform duration-500 group-hover:scale-105"
+        renderMode="auto"
       />
       <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
     </div>
@@ -104,4 +110,4 @@ export const DevotionalCard: React.FC<DevotionalCardProps> = ({
       )}
     </div>
   </div>
-);
+)};

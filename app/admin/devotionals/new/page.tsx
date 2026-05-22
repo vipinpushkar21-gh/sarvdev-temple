@@ -10,10 +10,13 @@ export default function NewDevotionalPage() {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
+    descriptionHi: '',
     category: 'Bhajan',
     language: 'Hindi',
     deity: '',
     image: '',
+    imageCard: '',
+    imageHero: '',
     audio: '',
     lyrics: '',
     duration: '',
@@ -127,10 +130,18 @@ export default function NewDevotionalPage() {
         <div className="admin-card p-6 space-y-5">
           <h2 className="admin-section-title">Media & Content</h2>
           <ImageUpload
-            value={formData.image}
-            onChange={url => setFormData(prev => ({ ...prev, image: url }))}
-            folder="sarvdev/devotionals"
-            label="Cover Image (Header pe dikhegi)"
+            value={formData.imageCard}
+            onChange={url => setFormData(prev => ({ ...prev, imageCard: url, image: prev.image || url }))}
+            folder="sarvdev/devotionals/cards"
+            label="Card Image"
+            guidance="devotionalCard"
+          />
+          <ImageUpload
+            value={formData.imageHero}
+            onChange={url => setFormData(prev => ({ ...prev, imageHero: url, image: prev.image || url }))}
+            folder="sarvdev/devotionals/heroes"
+            label="Hero Image"
+            guidance="devotionalHero"
           />
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-1">Audio URL</label>
@@ -139,6 +150,10 @@ export default function NewDevotionalPage() {
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-1">Description</label>
             <textarea name="description" value={formData.description} onChange={handleChange} rows={3} className="admin-input w-full" placeholder="Brief description of the devotional" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1">Description <span className="text-orange-500 font-normal">(Hindi)</span></label>
+            <textarea name="descriptionHi" value={formData.descriptionHi} onChange={handleChange} rows={3} className="admin-input w-full" placeholder="Hindi devotional description..." />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-1">Lyrics (Optional)</label>

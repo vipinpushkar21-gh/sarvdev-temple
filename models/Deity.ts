@@ -9,6 +9,8 @@ const DeitySchema = new Schema({
   mantra: { type: String },
   attributes: { type: [String], default: [] },
   image: { type: String },
+  imageCard: { type: String },
+  imageHero: { type: String },
   images: { type: [String], default: [] },
   category: { type: String }, // Tridev, Tridevi, etc.
   categoryId: { type: String }, // For linking to category

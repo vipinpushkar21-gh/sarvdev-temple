@@ -4,6 +4,8 @@ import { useState, useEffect, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { DEITY_CATEGORIES } from "@/app/deities/page"
+import SarvdevImage from "@/components/SarvdevImage"
+import { getDeityCardImage } from "@/lib/temple-image"
 
 export default function AdminDeitiesPage() {
   const router = useRouter()
@@ -11,6 +13,7 @@ export default function AdminDeitiesPage() {
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
+  const [categoryFilter, setCategoryFilter] = useState("all")
 
   useEffect(() => {
     fetchDeities()
@@ -132,8 +135,9 @@ export default function AdminDeitiesPage() {
         (deity.category && deity.category.toLowerCase().includes(searchTerm.toLowerCase()))
       
       const matchesStatus = statusFilter === "all" || deity.status === statusFilter
+      const matchesCategory = categoryFilter === "all" || deity.category === categoryFilter
       
-      return matchesSearch && matchesStatus
+      return matchesSearch && matchesStatus && matchesCategory
     })
     
     // Deduplicate by both slug and name to ensure uniqueness
@@ -148,7 +152,11 @@ export default function AdminDeitiesPage() {
       seenNames.add(nameKey)
       return true
     })
-  }, [deities, searchTerm, statusFilter])
+  }, [deities, searchTerm, statusFilter, categoryFilter])
+
+  const categoryOptions = useMemo(() => Array.from(new Set(deities.map((deity) => deity.category).filter(Boolean))).sort(), [deities])
+  const dbCount = deities.filter((deity) => deity.status !== 'static').length
+  const imageReadyCount = deities.filter((deity) => deity.imageCard || deity.imageHero || deity.image).length
 
   if (loading) {
     return (
@@ -184,6 +192,13 @@ export default function AdminDeitiesPage() {
         </div>
       </div>
 
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <AdminStat label="Total profiles" value={deities.length} />
+        <AdminStat label="DB records" value={dbCount} />
+        <AdminStat label="Image ready" value={imageReadyCount} />
+        <AdminStat label="Categories" value={categoryOptions.length} />
+      </div>
+
       {/* Filters */}
       <div className="card p-4 mb-6">
         <div className="flex flex-col md:flex-row gap-4">
@@ -194,6 +209,16 @@ export default function AdminDeitiesPage() {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
+          <select
+            className="admin-input md:w-56"
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+          >
+            <option value="all">All Categories</option>
+            {categoryOptions.map((category) => (
+              <option key={category} value={category}>{category}</option>
+            ))}
+          </select>
           <select
             className="admin-input md:w-48"
             value={statusFilter}
@@ -213,6 +238,7 @@ export default function AdminDeitiesPage() {
           <table className="w-full">
             <thead className="bg-surface-sunken border-b border-surface-border">
               <tr>
+                <th className="text-left px-6 py-3 text-sm font-semibold text-ink">Image</th>
                 <th className="text-left px-6 py-3 text-sm font-semibold text-ink">Name</th>
                 <th className="text-left px-6 py-3 text-sm font-semibold text-ink">Category</th>
                 <th className="text-left px-6 py-3 text-sm font-semibold text-ink">Status</th>
@@ -223,7 +249,7 @@ export default function AdminDeitiesPage() {
             <tbody>
               {filteredDeities.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="text-center px-6 py-12 text-ink-muted">
+                  <td colSpan={6} className="text-center px-6 py-12 text-ink-muted">
                     No deities found
                   </td>
                 </tr>
@@ -231,9 +257,23 @@ export default function AdminDeitiesPage() {
                 filteredDeities.map((deity, index) => (
                   <tr key={`deity-row-${index}`} className="border-b border-surface-border hover:bg-surface-sunken/50 transition-colors">
                     <td className="px-6 py-4">
+                      <div className="relative h-14 w-14 overflow-hidden rounded-xl border border-orange-100 bg-orange-50">
+                        <SarvdevImage
+                          image={getDeityCardImage(deity)}
+                          alt={deity.name}
+                          className="absolute inset-0"
+                          imgClassName="object-cover"
+                          renderMode="auto"
+                        />
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
                       <div>
                         <p className="font-medium text-ink">{deity.name}</p>
                         <p className="text-sm text-ink-muted font-devanagari">{deity.nameHi}</p>
+                        <p className="mt-1 text-[11px] font-semibold text-gray-400">
+                          {deity.imageHero ? 'Hero image set' : deity.imageCard ? 'Card image set' : deity.image ? 'Legacy image set' : 'Fallback image'}
+                        </p>
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -300,6 +340,15 @@ export default function AdminDeitiesPage() {
           ← Back to Dashboard
         </Link>
       </div>
+    </div>
+  )
+}
+
+function AdminStat({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-2xl border border-orange-100 bg-white p-4 shadow-sm">
+      <p className="text-xs font-bold uppercase tracking-wide text-gray-500">{label}</p>
+      <p className="mt-1 text-2xl font-black text-gray-950 tabular-nums">{value.toLocaleString('en-IN')}</p>
     </div>
   )
 }

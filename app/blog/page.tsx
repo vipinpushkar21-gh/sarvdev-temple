@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Hero from '../../components/Hero'
+import { getTempleCardImage } from '../../lib/temple-image'
 
 const DEFAULT_IMAGE = 'https://res.cloudinary.com/dc2qg7bwr/image/upload/image_2_xljqwa'
 
@@ -12,6 +13,8 @@ type Blog = {
   excerpt?: string
   date?: string
   image?: string
+  imageCard?: string
+  imageHero?: string
   status?: string
 }
 
@@ -80,7 +83,7 @@ export default function BlogIndexPage() {
               <article key={p._id} className="group card-interactive overflow-hidden">
                 <div className="relative h-48 overflow-hidden">
                   <img
-                    src={p.image || DEFAULT_IMAGE}
+                    src={getTempleCardImage(p).src || DEFAULT_IMAGE}
                     alt={p.title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     onError={e => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE }}

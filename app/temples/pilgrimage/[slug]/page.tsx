@@ -6,7 +6,8 @@ import { notFound } from 'next/navigation'
 import RelatedSacredContent from '@/components/RelatedSacredContent'
 import { getTemplesForSacredCategory, SHAKTI_PEETH_CATEGORY } from '@/data/shakti-peethas'
 import { SACRED_CATEGORIES, getCategoryBySlug } from '@/lib/sacred-categories'
-import { getSafeTempleImage } from '@/lib/imageGuard'
+import SarvdevImage from '@/components/SarvdevImage'
+import { getTempleCardImage } from '@/lib/temple-image'
 
 const BASE = 'https://sarvdev.com'
 
@@ -177,9 +178,12 @@ export default async function PilgrimageClusterPage({ params }: { params: Promis
               <Link key={t._id.toString()} href={`/temples/${slugify(t.title)}`}
                 className="group card overflow-hidden hover:shadow-md transition-all duration-300 no-underline">
                 <div className="relative h-48 overflow-hidden">
-                  <img src={getSafeTempleImage(t.image)}
+                  <SarvdevImage
+                    image={getTempleCardImage(t)}
                     alt={`${t.title} — ${cluster.title}`}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
+                    className="absolute inset-0"
+                    imgClassName="object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
                   {t.deity && (
                     <span className="absolute bottom-2 left-2 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-white/90 text-ink backdrop-blur-sm">{t.deity}</span>
                   )}

@@ -1,381 +1,301 @@
 "use client"
 
-import { useEffect, useState } from 'react'
-import { isDevanagari, renderBilingualTitle } from '../../utils/bilingual'
-import { useParams, useRouter } from 'next/navigation'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
+import { useParams } from 'next/navigation'
+import { Filter, Library, Search, Sparkles } from 'lucide-react'
+import CategoryHero from '../../components/CategoryHero'
+import DevotionalCardPremium from '../../components/DevotionalCardPremium'
+import DevotionalFilterChips from '../../components/DevotionalFilterChips'
+import { EXCLUDED_CATEGORY_IDS, FULL_CATEGORIES } from '../../components/categories'
+import {
+  categoryToSlug,
+  getCategoryDescription,
+  getCategoryInfo,
+  getCategoryPracticeTitle,
+  getDevotionalHref,
+  matchesCategory,
+} from '../../components/devotional-utils'
+import type { Devotional } from '../../types'
 
-// Helper function to create URL slug from title
-function createSlug(title: string): string {
-  // Extract English text from parentheses if present
-  const englishMatch = title.match(/\(([^)]+)\)/);
-  let text = englishMatch ? englishMatch[1] : title;
-  
-  let slug = text
-    .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/-+/g, '-')
-    .trim();
-  
-  // If slug is empty, transliterate
-  if (!slug || slug === '-' || slug === '') {
-    const translitMap: {[key: string]: string} = {
-      'श्री': 'shri',
-      'गणेश': 'ganesh',
-      'आरती': 'aarti',
-      'चालीसा': 'chalisa',
-      'मंत्र': 'mantra',
-      'स्तोत्र': 'stotra',
-      'भजन': 'bhajan'
-    };
-    
-    let transliterated = title.toLowerCase();
-    for (const [devanagari, english] of Object.entries(translitMap)) {
-      transliterated = transliterated.replace(new RegExp(devanagari, 'g'), english);
-    }
-    
-    slug = transliterated
-      .replace(/[^a-z0-9\s-]/g, '')
-      .replace(/\s+/g, '-')
-      .replace(/-+/g, '-')
-      .trim();
-  }
-  
-  return slug || 'devotional';
-}
-
-type Devotional = {
-  _id: string
-  title: string
-  description?: string
-  category?: string
-  language?: string
-  deity?: string
-  audio?: string
-  lyrics?: string
-  duration?: string
-  artist?: string
-  status?: string
-  names?: { sanskrit?: string; mantra?: string; english?: string }[]
-}
-
-// Category mapping
-const CATEGORY_MAP: { [key: string]: { label: string; hindi: string } } = {
-  'mantra': { label: 'Mantra', hindi: 'मंत्र' },
-  'bhajan': { label: 'Bhajan', hindi: 'भजन' },
-  'stotra': { label: 'Stotra/Suktam', hindi: 'स्तोत्र/सूक्त' },
-  'aarti': { label: 'Aarti', hindi: 'आरती' },
-  'chalisa': { label: 'Chalisa', hindi: 'चालीसा' },
-  'stuti': { label: 'Stuti', hindi: 'स्तुति' },
-  'shloka': { label: 'Shloka', hindi: 'श्लोक' },
-  'ek-shloki': { label: 'Ek Shloki', hindi: 'एक श्लोकी' },
-  'ashtaka': { label: 'Ashtaka', hindi: 'अष्टक' },
-  'path': { label: 'Path', hindi: 'पाठ' },
-  'rashi': { label: 'Rashi', hindi: 'राशि' },
-  'vastu': { label: 'Vastu', hindi: 'वास्तु' },
-  'durga': { label: 'Durga', hindi: 'दुर्गा' },
-  'kuber': { label: 'Kuber', hindi: 'कुबेर' },
-  'namavali': { label: 'Namavali', hindi: 'नामावली' },
-  'kavacham': { label: 'Kavacham', hindi: 'कवचम्' },
-  'prarthana': { label: 'Prarthana', hindi: 'प्रार्थना' },
-  'vrat-katha': { label: 'Vrat Katha', hindi: 'व्रत कथा' },
-  'other': { label: 'Other', hindi: 'अन्य' }
-}
+type SortKey = 'popular' | 'newest' | 'az' | 'audio'
 
 export default function CategoryPage() {
   const params = useParams()
-  const router = useRouter()
-  const [devotionals, setDevotionals] = useState<Devotional[]>([])
-  const [loading, setLoading] = useState(true)
-  const [selectedDeity, setSelectedDeity] = useState<string>('all')
-  const [selectedSubCategory, setSelectedSubCategory] = useState<string>('all')
-
   const categorySlug = params.slug as string
-  const categoryInfo = CATEGORY_MAP[categorySlug]
+  const categoryInfo = getCategoryInfo(categorySlug)
+  const label = categoryInfo?.label || categorySlug.split('-').map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(' ')
+  const description = categoryInfo?.description || getCategoryDescription(label)
+
+  const [allDevotionals, setAllDevotionals] = useState<Devotional[]>([])
+  const [loading, setLoading] = useState(true)
+  const [selectedDeity, setSelectedDeity] = useState('all')
+  const [sort, setSort] = useState<SortKey>('popular')
+  const [search, setSearch] = useState('')
 
   useEffect(() => {
-    async function fetchDevotionals() {
+    let cancelled = false
+    async function load() {
       try {
-        const res = await fetch(`/api/devotionals`)
-        if (res.ok) {
-          const data = await res.json()
-          // Filter by category and approved status
-          const filtered = data.filter((d: Devotional) => {
-            if (d.status !== 'approved') return false
-            // Merge all namavali types under single 'namavali' slug
-            if (categorySlug === 'namavali') {
-              return d.category === 'Namavali' || d.category === '108 Namavali'
-            }
-            return d.category?.toLowerCase().replace(/\s+/g, '-') === categorySlug
-          })
-          setDevotionals(filtered)
+        const res = await fetch('/api/devotionals')
+        if (!res.ok) return
+        const data = await res.json()
+        if (!cancelled) {
+          setAllDevotionals((Array.isArray(data) ? data : []).filter((item: Devotional) => item.status === 'approved' || !item.status))
         }
-      } catch (error) {
-        console.error('Failed to fetch devotionals:', error)
       } finally {
-        setLoading(false)
+        if (!cancelled) setLoading(false)
       }
     }
-    fetchDevotionals()
+    load()
+    return () => { cancelled = true }
+  }, [])
+
+  const categoryDevotionals = useMemo(
+    () => allDevotionals.filter((devotional) => matchesCategory(devotional, categorySlug)),
+    [allDevotionals, categorySlug]
+  )
+
+  const deityCounts = useMemo(() => {
+    const counts = new Map<string, number>()
+    categoryDevotionals.forEach((devotional) => {
+      if (!devotional.deity) return
+      counts.set(devotional.deity, (counts.get(devotional.deity) || 0) + 1)
+    })
+    return Array.from(counts.entries()).sort((a, b) => b[1] - a[1])
+  }, [categoryDevotionals])
+
+  const deityChips = useMemo(() => [
+    { id: 'all', label: 'All Deities', meta: categoryDevotionals.length },
+    ...deityCounts.map(([deity, count]) => ({ id: deity, label: deity, meta: count })),
+  ], [categoryDevotionals.length, deityCounts])
+
+  const filtered = useMemo(() => {
+    const term = search.trim().toLowerCase()
+    return categoryDevotionals.filter((devotional) => {
+      if (selectedDeity !== 'all' && devotional.deity !== selectedDeity) return false
+      if (!term) return true
+      return [devotional.title, devotional.description, devotional.deity, devotional.language, devotional.artist]
+        .filter(Boolean)
+        .some((value) => value!.toLowerCase().includes(term))
+    })
+  }, [categoryDevotionals, search, selectedDeity])
+
+  const sorted = useMemo(() => {
+    const list = [...filtered]
+    if (sort === 'audio') return list.sort((a, b) => Number(Boolean(b.audio)) - Number(Boolean(a.audio)))
+    if (sort === 'newest') return list.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
+    if (sort === 'az') return list.sort((a, b) => (a.title || '').localeCompare(b.title || ''))
+    return list.sort((a, b) =>
+      Number(Boolean(b.audio)) - Number(Boolean(a.audio)) ||
+      Number(Boolean(b.duration)) - Number(Boolean(a.duration)) ||
+      new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+    )
+  }, [filtered, sort])
+
+  const popular = useMemo(() => sorted.slice(0, 6), [sorted])
+  const relatedCategories = useMemo(() => {
+    return FULL_CATEGORIES
+      .filter((category) => !EXCLUDED_CATEGORY_IDS.has(category.id) && categoryToSlug(category.id) !== categorySlug)
+      .slice(0, 6)
   }, [categorySlug])
 
-  // Get unique deities from devotionals
-  const deities = ['all', ...Array.from(new Set(devotionals.map(d => d.deity).filter(Boolean)))]
-  
-  // Check if this is Mantra category and has Rashi mantras
-  const rashiMantras = devotionals.filter(d => 
-    d.title?.toLowerCase().includes('rashi') || 
-    d.title?.toLowerCase().includes('aries') ||
-    d.title?.toLowerCase().includes('taurus') ||
-    d.title?.toLowerCase().includes('gemini') ||
-    d.title?.toLowerCase().includes('cancer') ||
-    d.title?.toLowerCase().includes('leo') ||
-    d.title?.toLowerCase().includes('virgo') ||
-    d.title?.toLowerCase().includes('libra') ||
-    d.title?.toLowerCase().includes('scorpio') ||
-    d.title?.toLowerCase().includes('sagittarius') ||
-    d.title?.toLowerCase().includes('capricorn') ||
-    d.title?.toLowerCase().includes('aquarius') ||
-    d.title?.toLowerCase().includes('pisces')
-  )
-  const hasRashiMantras = rashiMantras.length > 0
-  
-  // Filter by deity
-  let filteredByDeity = selectedDeity === 'all'
-    ? devotionals
-    : devotionals.filter(d => d.deity === selectedDeity)
-  
-  // Further filter by subcategory (Rashi)
-  if (selectedSubCategory === 'rashi') {
-    filteredByDeity = filteredByDeity.filter(d => 
-      d.title?.toLowerCase().includes('rashi') || 
-      d.title?.toLowerCase().includes('aries') ||
-      d.title?.toLowerCase().includes('taurus') ||
-      d.title?.toLowerCase().includes('gemini') ||
-      d.title?.toLowerCase().includes('cancer') ||
-      d.title?.toLowerCase().includes('leo') ||
-      d.title?.toLowerCase().includes('virgo') ||
-      d.title?.toLowerCase().includes('libra') ||
-      d.title?.toLowerCase().includes('scorpio') ||
-      d.title?.toLowerCase().includes('sagittarius') ||
-      d.title?.toLowerCase().includes('capricorn') ||
-      d.title?.toLowerCase().includes('aquarius') ||
-      d.title?.toLowerCase().includes('pisces')
-    )
-  } else if (selectedSubCategory === 'other') {
-    filteredByDeity = filteredByDeity.filter(d => 
-      !d.title?.toLowerCase().includes('rashi') && 
-      !d.title?.toLowerCase().includes('aries') &&
-      !d.title?.toLowerCase().includes('taurus') &&
-      !d.title?.toLowerCase().includes('gemini') &&
-      !d.title?.toLowerCase().includes('cancer') &&
-      !d.title?.toLowerCase().includes('leo') &&
-      !d.title?.toLowerCase().includes('virgo') &&
-      !d.title?.toLowerCase().includes('libra') &&
-      !d.title?.toLowerCase().includes('scorpio') &&
-      !d.title?.toLowerCase().includes('sagittarius') &&
-      !d.title?.toLowerCase().includes('capricorn') &&
-      !d.title?.toLowerCase().includes('aquarius') &&
-      !d.title?.toLowerCase().includes('pisces')
-    )
+  const groupedByDeity = useMemo(() => {
+    return deityCounts.slice(0, 8).map(([deity]) => ({
+      deity,
+      items: categoryDevotionals.filter((item) => item.deity === deity).slice(0, 4),
+    }))
+  }, [categoryDevotionals, deityCounts])
+
+  const itemListJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: `${label} Devotionals`,
+    itemListElement: sorted.slice(0, 24).map((item, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: item.title,
+      url: `https://sarvdev.com${getDevotionalHref(item)}`,
+    })),
   }
 
-  if (!categoryInfo) {
-    return (
-      <main className="page-container section-sm text-center">
-        <h1 className="text-h2 font-serif text-secondary-700 mb-4">Category Not Found</h1>
-        <Link href="/devotionals" className="text-primary-600 hover:text-primary-700">
-          Back to Devotionals
-        </Link>
-      </main>
-    )
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://sarvdev.com' },
+      { '@type': 'ListItem', position: 2, name: 'Devotionals', item: 'https://sarvdev.com/devotionals' },
+      { '@type': 'ListItem', position: 3, name: label, item: `https://sarvdev.com/devotionals/category/${categorySlug}` },
+    ],
   }
 
   if (loading) {
     return (
-      <main className="page-container section-sm">
-        <div className="text-center text-ink-muted">Loading {categoryInfo.label}...</div>
+      <main className="min-h-screen bg-surface">
+        <div className="h-80 animate-pulse bg-stone-900" />
+        <div className="page-container py-12">
+          <div className="grid gap-5 md:grid-cols-3">
+            {Array.from({ length: 6 }).map((_, index) => <div key={index} className="h-72 rounded-2xl bg-stone-100" />)}
+          </div>
+        </div>
       </main>
     )
   }
 
   return (
     <>
-      {/* Premium Hero Banner */}
-      <section className="sacred-hero relative">
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-[20%] right-[10%] w-64 h-64 bg-primary/[0.06] rounded-full blur-[80px]" />
-          <div className="absolute bottom-[10%] left-[15%] w-48 h-48 bg-accent/[0.05] rounded-full blur-[60px]" />
-        </div>
-        <div className="sacred-hero-content page-container py-14 md:py-20">
-          <nav className="flex items-center gap-2 text-body-sm text-sandstone-400 mb-6">
-            <Link href="/devotionals" className="hover:text-primary-300 transition-colors no-underline hover:no-underline">Devotionals</Link>
-            <span className="text-sandstone-600">/</span>
-            <span className="text-sandstone-200 font-medium">{categoryInfo.hindi} ({categoryInfo.label})</span>
-          </nav>
-          <span className="font-cinzel text-overline uppercase tracking-[0.2em] text-temple-gold-light">
-            Devotional Collection
-          </span>
-          <h1 className="text-display font-display text-white mt-2 text-shadow-divine">
-            {categoryInfo.hindi} <span className="text-primary-300">({categoryInfo.label})</span>
-          </h1>
-          <p className="text-body text-sandstone-300 mt-3">
-            {filteredByDeity.length} {categoryInfo.label}{filteredByDeity.length !== 1 ? 's' : ''} available
-          </p>
-        </div>
-      </section>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
 
-    <main className="page-container section-sm">
-      {/* Ganesh Ashtaka Ad Section */}
-      {categorySlug === 'ashtaka' && devotionals.length === 1 && devotionals[0].deity && devotionals[0].deity.toLowerCase().includes('ganesh') && (selectedDeity === 'all' || selectedDeity.toLowerCase().includes('ganesh')) && (
-        <div className="mb-10 p-6 rounded-xl bg-gradient-to-br from-yellow-50 to-pink-50 border border-yellow-200 shadow-card text-center">
-          <h2 className="text-h3 font-serif text-pink-700 mb-2">॥ atha shri ganeshashtakam ॥</h2>
-          <p className="text-body font-medium text-amber-900 mb-2">shri ganeshaya namah</p>
-          <p className="text-body-sm text-ink-muted mb-4">Deity: <span className="font-semibold text-primary-700">Ganesh</span></p>
-          <div className="mb-4 text-body-sm text-ink">
-            <p className="mb-2">sarve uchuh.</p>
-            <p className="mb-2">yato'nantashakter anantashcha jivayato nirgunadaprameya gunaste.</p>
-            <p className="mb-2">yato bhati sarvam tridha bhedabhinnam sada tam ganesham namamo bhajamah ॥1॥</p>
-            <p className="mb-2">yatashchavirasij jagat sarvametat tatha'bjasano vishvago vishvagopta.</p>
-            <p className="mb-2">tathendrādayo devasangha manushyah sada tam ganesham namamo bhajamah ॥2॥</p>
-            <p className="mb-2">yato vahnibhanū bhavo bhurjalam chayatah sagarashchandrama vyoma vayuh.</p>
-            <p className="mb-2">yatah sthavara jangama vrikshasangha sada tam ganesham namamo bhajamah ॥3॥</p>
-            <p className="mb-2">yato danavah kinnarā yakshasangha yatashcharana varanah shvapadashcha.</p>
-            <p className="mb-2">yatah pakshikita yato virudhah cha sada tam ganesham namamo bhajamah ॥4॥</p>
-            <p className="mb-2">yato buddhir ajnananasho mumukshor yatah sampado bhaktasantoshikah syuh.</p>
-            <p className="mb-2">yato vighnanasho yatah karyasiddhih sada tam ganesham namamo bhajamah ॥5॥</p>
-            <p className="mb-2">yatah putrasampad yato vanchhitartho yato'bhaktavighnastatha'nekarupah.</p>
-            <p className="mb-2">yatah shokamohau yatah kama eva sada tam ganesham namamo bhajamah ॥6॥</p>
-            <p className="mb-2">yato'nantashaktih sa shesho babhuva dharadhārane'nekarupe cha shaktah.</p>
-            <p className="mb-2">yato'nekadha svargalokā hi nana sada tam ganesham namamo bhajamah ॥7॥</p>
-            <p className="mb-2">yato vedavacho vikuntha manobhih sada neti neti iti yatta grinanti.</p>
-            <p className="mb-2">parabrahmarupam chidanandabhutam sada tam ganesham namamo bhajamah ॥8॥</p>
-          </div>
-          <a href="/devotionals/ganeshashtakam" className="inline-block mt-2 px-6 py-2 rounded-full bg-pink-600 text-white font-semibold shadow hover:bg-pink-700 transition">Read Full Ganeshashtakam</a>
-        </div>
-      )}
+      <CategoryHero
+        label={label}
+        hindi={categoryInfo?.hindi}
+        description={description}
+        count={categoryDevotionals.length}
+        deityCount={deityCounts.length}
+        audioCount={categoryDevotionals.filter((item) => item.audio).length}
+      />
 
-      {/* Deity Filter */}
-      {deities.length > 1 && (
-        <div className="mb-10">
-          <h3 className="text-h4 font-serif text-secondary-700 mb-4 text-center">
-            Filter by Deity
-          </h3>
-          <div className="flex flex-wrap justify-center gap-2">
-            {deities.map(deity => (
-              <button
-                key={deity}
-                onClick={() => {
-                  setSelectedDeity(deity || 'all')
-                  setSelectedSubCategory('all')
-                }}
-                className="deity-chip"
-                data-active={selectedDeity === deity && selectedSubCategory === 'all' ? 'true' : undefined}
-              >
-                {deity === 'all' ? 'All Deities' : deity}
-              </button>
-            ))}
-            
-            {/* Rashi Filter - Show in Mantra category if Rashi mantras exist */}
-            {hasRashiMantras && (
-              <button
-                onClick={() => {
-                  setSelectedDeity('all')
-                  setSelectedSubCategory('rashi')
-                }}
-                className="deity-chip"
-                data-active={selectedSubCategory === 'rashi' ? 'true' : undefined}
-              >
-                Rashi Mantras ({rashiMantras.length})
-              </button>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Devotionals Grid */}
-      <section>
-        {filteredByDeity.length === 0 ? (
-          <div className="text-center py-16">
-            <p className="text-body text-ink-muted mb-6">
-              {devotionals.length === 0 
-                ? `No ${categoryInfo.label}s available yet.`
-                : `No ${categoryInfo.label}s found for ${selectedDeity}.`
-              }
-            </p>
-            {devotionals.length === 0 && (
-              <Link 
-                href="/devotionals" 
-                className="btn btn-primary"
-              >
-                Browse All Categories
-              </Link>
-            )}
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 stagger-children">
-            {filteredByDeity.map((d: Devotional) => {
-              const bt = renderBilingualTitle(d.title || '')
+      <main className="min-h-screen bg-surface pb-16">
+        <div className="sticky top-0 z-30 border-b border-amber-200/60 bg-surface/90 backdrop-blur-xl">
+          <div className="page-container flex gap-2 overflow-x-auto py-3 scrollbar-none">
+            {FULL_CATEGORIES.filter((category) => !EXCLUDED_CATEGORY_IDS.has(category.id)).map((category) => {
+              const slug = categoryToSlug(category.id)
               return (
-                <Link 
-                  key={d._id}
-                  href={`/devotionals/${createSlug(d.title || '')}`}
-                  className="card-divine p-5 flex flex-col group no-underline hover:no-underline"
+                <Link
+                  key={category.id}
+                  href={`/devotionals/category/${slug}`}
+                  className="category-pill whitespace-nowrap no-underline hover:no-underline"
+                  data-active={slug === categorySlug ? 'true' : 'false'}
                 >
-                  {/* Top accent */}
-                  <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-primary/0 via-primary/40 to-primary/0 group-hover:via-primary transition-all duration-500" />
-
-                  <div className="flex items-start justify-between mb-3">
-                    <h3 className="text-h4 font-serif text-secondary-700 leading-tight pr-2 group-hover:text-primary-700 transition-colors">
-                      <span>{bt.primary}</span>
-                      {bt.secondary && <span className="text-body-sm text-ink-muted font-normal"> ({bt.secondary})</span>}
-                    </h3>
-                    <span className="badge badge-primary shrink-0">
-                      {d.category}
-                    </span>
-                  </div>
-
-                  {d.deity && (
-                    <div className="flex items-center gap-1.5 mb-2">
-                      <span className="text-sm">🙏</span>
-                      <span className="text-body-sm text-primary-600 font-medium">{d.deity}</span>
-                    </div>
-                  )}
-
-                  {d.description && (
-                    <p className="mt-1 text-body-sm text-ink-muted flex-grow line-clamp-3">
-                      {d.description}
-                    </p>
-                  )}
-
-                  <div className="mt-4 pt-3 border-t border-surface-border flex items-center justify-between">
-                    <div className="flex items-center gap-3 text-caption text-ink-faint">
-                      {d.artist && <span className="flex items-center gap-1"><span className="text-xs">🎤</span> {d.artist}</span>}
-                      {d.duration && <span className="flex items-center gap-1"><span className="text-xs">⏱️</span> {d.duration}</span>}
-                    </div>
-                    {d.language && <span className="badge text-[10px]">{d.language}</span>}
-                  </div>
+                  {category.label}
                 </Link>
               )
             })}
           </div>
-        )}
-      </section>
+        </div>
 
-      {/* Back Button */}
-      <div className="mt-12 text-center">
-        <Link 
-          href="/devotionals"
-          className="inline-flex items-center gap-2 text-primary-600 hover:text-primary-700 font-medium transition-colors"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-          </svg>
-          Browse All Categories
-        </Link>
-      </div>
-    </main>
+        <div className="page-container space-y-14 py-12">
+          <section className="rounded-3xl border border-amber-200 bg-white p-6 shadow-sm md:p-8">
+            <div className="grid gap-6 lg:grid-cols-[1fr_22rem]">
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-orange-700">Category Guide</p>
+                <h2 className="mt-1 text-3xl font-black text-stone-950">{getCategoryPracticeTitle(label)}</h2>
+                <p className="mt-3 max-w-3xl text-base leading-8 text-stone-600">
+                  {description} Use the filters below to find deity-specific versions, audio-ready entries and readable lyrics for home puja or daily chanting.
+                </p>
+              </div>
+              <div className="rounded-2xl bg-orange-50 p-5">
+                <p className="text-sm font-black text-stone-900">SEO focus</p>
+                <p className="mt-2 text-sm leading-6 text-stone-600">
+                  {label} lyrics, {label.toLowerCase()} audio, Hindi and Sanskrit devotional reading, and deity-wise discovery.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <section className="space-y-5">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <p className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.18em] text-orange-700">
+                  <Filter className="h-4 w-4" />
+                  Filters
+                </p>
+                <h2 className="mt-1 text-2xl font-black text-stone-950">Refine {label}</h2>
+              </div>
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <label className="relative min-w-[18rem]">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
+                  <input
+                    value={search}
+                    onChange={(event) => setSearch(event.target.value)}
+                    className="input bg-white pl-10"
+                    placeholder={`Search ${label.toLowerCase()}...`}
+                  />
+                </label>
+                <select value={sort} onChange={(event) => setSort(event.target.value as SortKey)} className="input w-auto bg-white">
+                  <option value="popular">Popular first</option>
+                  <option value="audio">Audio first</option>
+                  <option value="newest">Newest first</option>
+                  <option value="az">A to Z</option>
+                </select>
+              </div>
+            </div>
+
+            {deityChips.length > 1 && (
+              <DevotionalFilterChips chips={deityChips} activeId={selectedDeity} onChange={setSelectedDeity} ariaLabel={`Filter ${label} by deity`} />
+            )}
+          </section>
+
+          {popular.length > 0 && (
+            <section>
+              <SectionTitle title={categorySlug === 'aarti' ? 'Popular Aartis' : `Popular ${label}`} subtitle="Prioritized by audio availability, freshness and completeness." />
+              <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+                {popular.map((devotional) => <DevotionalCardPremium key={devotional._id} devotional={devotional} featured />)}
+              </div>
+            </section>
+          )}
+
+          <section>
+            <SectionTitle title={`All ${label}`} subtitle={`${sorted.length} result${sorted.length === 1 ? '' : 's'} after filters.`} />
+            {sorted.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-amber-300 bg-white p-10 text-center">
+                <Library className="mx-auto h-10 w-10 text-stone-400" />
+                <h3 className="mt-3 text-xl font-black text-stone-900">No entries found</h3>
+                <p className="mt-2 text-stone-600">Try another deity or clear the search text.</p>
+                <button type="button" onClick={() => { setSearch(''); setSelectedDeity('all') }} className="btn btn-primary mt-5">Reset filters</button>
+              </div>
+            ) : (
+              <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+                {sorted.map((devotional) => <DevotionalCardPremium key={devotional._id} devotional={devotional} />)}
+              </div>
+            )}
+          </section>
+
+          {groupedByDeity.length > 0 && (
+            <section>
+              <SectionTitle title={`${label} by Deity`} subtitle="Dynamic deity grouping across this category." />
+              <div className="grid gap-5 lg:grid-cols-2">
+                {groupedByDeity.map((group) => (
+                  <div key={group.deity} className="rounded-2xl border border-amber-200 bg-white p-5 shadow-sm">
+                    <h3 className="mb-4 text-lg font-black text-stone-900">{group.deity} {label}</h3>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {group.items.map((item) => <DevotionalCardPremium key={item._id} devotional={item} compact />)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          <section>
+            <SectionTitle title="Related Categories" subtitle="Continue exploring other devotional forms." />
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {relatedCategories.map((category) => (
+                <Link key={category.id} href={`/devotionals/category/${categoryToSlug(category.id)}`} className="rounded-2xl border border-amber-200 bg-white p-5 no-underline shadow-sm transition hover:-translate-y-0.5 hover:border-orange-300 hover:text-orange-800 hover:shadow-md">
+                  <p className="text-xs font-black uppercase tracking-wide text-orange-700">Category</p>
+                  <h3 className="mt-1 text-xl font-black text-stone-900">{category.label}</h3>
+                  {category.hindi && <p className="font-devanagari text-stone-500">{category.hindi}</p>}
+                  <p className="mt-2 text-sm leading-6 text-stone-600">{category.description}</p>
+                </Link>
+              ))}
+            </div>
+          </section>
+        </div>
+      </main>
     </>
+  )
+}
+
+function SectionTitle({ title, subtitle }: { title: string; subtitle?: string }) {
+  return (
+    <div className="mb-6">
+      <p className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.18em] text-orange-700">
+        <Sparkles className="h-4 w-4" />
+        Collection
+      </p>
+      <h2 className="mt-1 text-3xl font-black tracking-normal text-stone-950">{title}</h2>
+      {subtitle && <p className="mt-2 text-sm leading-6 text-stone-600">{subtitle}</p>}
+    </div>
   )
 }

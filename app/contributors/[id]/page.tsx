@@ -4,6 +4,8 @@ import { connectDB } from '@/lib/db'
 import User from '@/models/User'
 import Temple from '@/models/Temple'
 import Review from '@/models/Review'
+import SarvdevImage from '@/components/SarvdevImage'
+import { getTempleCardImage } from '@/lib/temple-image'
 
 const BASE = 'https://sarvdev.com'
 
@@ -136,7 +138,12 @@ export default async function ContributorProfilePage({ params }: { params: Promi
                 <Link key={t._id.toString()} href={`/temples/${slugify(t.title)}`}
                   className="group card p-4 flex items-center gap-4 hover:shadow-md transition-all no-underline">
                   {t.image && (
-                    <img src={t.image} alt={t.title} className="w-14 h-14 rounded-xl object-cover flex-shrink-0" loading="lazy" />
+                    <SarvdevImage
+                      image={getTempleCardImage(t)}
+                      alt={t.title}
+                      className="w-14 h-14 rounded-xl flex-shrink-0"
+                      imgClassName="object-cover"
+                    />
                   )}
                   <div className="min-w-0">
                     <h3 className="text-body-sm font-semibold text-ink group-hover:text-primary-700 transition-colors line-clamp-1">{t.title}</h3>

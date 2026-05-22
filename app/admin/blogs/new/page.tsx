@@ -13,6 +13,8 @@ export default function NewBlogPage() {
     excerpt: '',
     body: '',
     image: '',
+    imageCard: '',
+    imageHero: '',
     author: '',
     tags: '',
     date: new Date().toISOString().slice(0, 10),
@@ -106,10 +108,19 @@ export default function NewBlogPage() {
           <h2 className="admin-section-title">Media &amp; Content</h2>
 
           <ImageUpload
-            value={formData.image}
-            onChange={url => setFormData(prev => ({ ...prev, image: url }))}
-            folder="sarvdev/blogs"
-            label="Cover Image"
+            value={formData.imageCard}
+            onChange={url => setFormData(prev => ({ ...prev, imageCard: url, image: prev.image || url }))}
+            folder="sarvdev/blogs/cards"
+            label="Card Image"
+            guidance="card"
+          />
+
+          <ImageUpload
+            value={formData.imageHero}
+            onChange={url => setFormData(prev => ({ ...prev, imageHero: url, image: prev.image || url }))}
+            folder="sarvdev/blogs/heroes"
+            label="Hero Image"
+            guidance="hero"
           />
 
           <div>

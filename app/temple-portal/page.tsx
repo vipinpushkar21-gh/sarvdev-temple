@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import SarvdevImage from '../../components/SarvdevImage'
+import { getTempleCardImage } from '../../lib/temple-image'
 
 type TempleUser = {
   _id: string; name: string; email: string; role: string; status: string
@@ -119,7 +121,14 @@ export default function TemplePortalPage() {
             {temple ? (
               <div>
                 <div className="flex items-center gap-3 mb-4">
-                  {temple.image && <img src={temple.image} alt={temple.title} className="w-14 h-14 rounded-xl object-cover" />}
+                  {temple.image && (
+                    <SarvdevImage
+                      image={getTempleCardImage(temple)}
+                      alt={temple.title}
+                      className="w-14 h-14 rounded-xl"
+                      imgClassName="object-cover"
+                    />
+                  )}
                   <div>
                     <p className="font-bold text-gray-900">{temple.title}</p>
                     <p className="text-xs text-gray-500">{[temple.city, temple.state].filter(Boolean).join(', ')}</p>

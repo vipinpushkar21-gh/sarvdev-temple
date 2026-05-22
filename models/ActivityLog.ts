@@ -14,4 +14,6 @@ const ActivityLogSchema = new Schema({
 
 ActivityLogSchema.index({ timestamp: -1 })
 
-export default models.ActivityLog || mongoose.model('ActivityLog', ActivityLogSchema)
+const ActivityLog: any = (models.ActivityLog as any) || mongoose.model<any>('ActivityLog', ActivityLogSchema as any)
+
+export default ActivityLog

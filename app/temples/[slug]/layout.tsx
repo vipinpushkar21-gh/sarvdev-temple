@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { connectDB } from '@/lib/db'
 import Temple from '@/models/Temple'
 import Review from '@/models/Review'
-import { getSafeTempleImage } from '@/lib/imageGuard'
+import { getOGImage, getTempleHeroImage } from '@/lib/temple-image'
 
 // ISR: revalidate temple detail pages every 5 minutes
 export const revalidate = 300
@@ -21,7 +21,7 @@ export async function generateMetadata(
     await connectDB()
     const temples = await Temple.find(
       { status: 'approved' },
-      'title description image city state deity templeType'
+      'title description image imageCard imageHero heroImage ogImage city state deity templeType'
     ).lean() as any[]
 
     const temple = temples.find((t: any) => slugify(t.title) === slug)
@@ -39,7 +39,7 @@ export async function generateMetadata(
     const description = temple.description
       ? temple.description.replace(/<[^>]+>/g, '').slice(0, 155)
       : `Explore ${temple.title}${location ? ` in ${location}` : ''}${temple.deity ? `, dedicated to ${temple.deity}` : ''}. Find timings, history and more on Sarvdev.`
-    const image = getSafeTempleImage(temple.image)
+    const image = getOGImage(temple).src
     const url = `${BASE}/temples/${slug}`
     const keywords = [
       temple.title,
@@ -111,7 +111,7 @@ export default async function TempleSlugLayout({
         '@type': 'HinduTemple',
         name: temple.title,
         url: `${BASE}/temples/${slug}`,
-        image: getSafeTempleImage(temple.image),
+        image: getTempleHeroImage(temple).src,
       }
       if (temple.description) {
         placeSchema.description = temple.description.replace(/<[^>]+>/g, '').slice(0, 300)
@@ -138,7 +138,7 @@ export default async function TempleSlugLayout({
       // ImageObject for Google Images discoverability
       placeSchema.photo = {
         '@type': 'ImageObject',
-        url: getSafeTempleImage(temple.image),
+        url: getTempleHeroImage(temple).src,
         name: `${temple.title} Temple Photo`,
         caption: `${temple.title}${temple.city ? ` in ${temple.city}` : ''}${temple.state ? `, ${temple.state}` : ''}`,
       }

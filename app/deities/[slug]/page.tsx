@@ -1,14 +1,17 @@
-'use client'
+"use client"
 
-import { useState, useEffect } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import Link from 'next/link'
 import Breadcrumbs from '../../../components/Breadcrumbs'
 import ShareButtons from '../../../components/ShareButtons'
 import { DetailPageSkeleton } from '../../../components/Skeleton'
 import AdminEditBar from '../../../components/AdminEditBar'
 import { DEITY_CATEGORIES } from '../page'
+import { getDeityCardImage, getDeityHeroImage, getGalleryImage } from '../../../lib/temple-image'
+import SarvdevImage from '../../../components/SarvdevImage'
 
-// Flatten all deities from categories for fallback
+const BASE_URL = 'https://sarvdev.com'
+
 const STATIC_DEITIES: any[] = DEITY_CATEGORIES.flatMap((category: any) =>
   category.deities.map((deity: any) => ({
     ...deity,
@@ -20,19 +23,35 @@ type Props = {
   params: Promise<{ slug: string }>
 }
 
+function slugify(text: string) {
+  return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+}
+
+function textMatchesDeity(value: unknown, deity: any) {
+  const haystack = String(value || '').toLowerCase()
+  if (!haystack) return false
+  const names = [deity?.name, deity?.nameHi, deity?.slug]
+    .filter(Boolean)
+    .flatMap((name: string) => [name, name.replace(/\([^)]*\)/g, ''), name.split(/[(/]/)[0]])
+    .map((name: string) => name.toLowerCase().trim())
+    .filter(Boolean)
+  return names.some((name: string) => haystack.includes(name))
+}
+
 export default function DeityDetailPage({ params }: Props) {
   const [deity, setDeity] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [relatedDevotionals, setRelatedDevotionals] = useState<any[]>([])
+  const [relatedTemples, setRelatedTemples] = useState<any[]>([])
 
   useEffect(() => {
     async function fetchDeity() {
       try {
         const { slug } = await params
-
-        // Try DB first
         let foundDeity = null
         let dbDeities: any[] = []
+
         try {
           const response = await fetch('/api/deities')
           if (response.ok) {
@@ -41,26 +60,35 @@ export default function DeityDetailPage({ params }: Props) {
               foundDeity = dbDeities.find((d: any) => d.slug === slug)
             }
           }
-        } catch { /* DB fetch failed, will use static fallback */ }
+        } catch {
+          // Static fallback keeps existing slugs working if DB is unavailable.
+        }
 
         if (foundDeity) {
           setDeity(foundDeity)
-        } else {
-          // Fallback to static data
-          const staticDeity = STATIC_DEITIES.find((d: any) => d.slug === slug)
-          if (staticDeity) {
-            // Merge DB image if available (listing page matches by name)
-            const dbMatch = dbDeities.find((d: any) => d.name?.toLowerCase() === staticDeity.name?.toLowerCase())
-            if (dbMatch?.image) {
-              setDeity({ ...staticDeity, image: dbMatch.image })
-            } else {
-              setDeity(staticDeity)
-            }
-          } else {
-            setError('Deity not found')
-          }
+          return
         }
-      } catch (err) {
+
+        const staticDeity = STATIC_DEITIES.find((d: any) => d.slug === slug)
+        if (!staticDeity) {
+          setError('Deity not found')
+          return
+        }
+
+        const dbMatch = dbDeities.find((d: any) => d.name?.toLowerCase() === staticDeity.name?.toLowerCase())
+        if (dbMatch?.image || dbMatch?.imageCard || dbMatch?.imageHero) {
+          setDeity({
+            ...staticDeity,
+            _id: dbMatch._id,
+            image: dbMatch.image || staticDeity.image,
+            imageCard: dbMatch.imageCard || dbMatch.image || staticDeity.imageCard || staticDeity.image,
+            imageHero: dbMatch.imageHero || dbMatch.imageCard || dbMatch.image || staticDeity.imageHero || staticDeity.imageCard || staticDeity.image,
+            ogImage: dbMatch.ogImage || dbMatch.imageHero || dbMatch.imageCard || dbMatch.image || staticDeity.ogImage,
+          })
+        } else {
+          setDeity(staticDeity)
+        }
+      } catch {
         setError('Failed to load deity')
       } finally {
         setLoading(false)
@@ -70,9 +98,42 @@ export default function DeityDetailPage({ params }: Props) {
     fetchDeity()
   }, [params])
 
-  if (loading) {
-    return <DetailPageSkeleton />
-  }
+  useEffect(() => {
+    if (!deity) return
+    let cancelled = false
+
+    async function loadRelated() {
+      try {
+        const [devotionalRes, templeRes] = await Promise.all([
+          fetch('/api/devotionals'),
+          fetch('/api/temples'),
+        ])
+        const devotionals = devotionalRes.ok ? await devotionalRes.json() : []
+        const temples = templeRes.ok ? await templeRes.json() : []
+        if (cancelled) return
+
+        setRelatedDevotionals((Array.isArray(devotionals) ? devotionals : [])
+          .filter((item: any) => item.status === 'approved' || !item.status)
+          .filter((item: any) => textMatchesDeity([item.deity, item.title, item.description, item.category].filter(Boolean).join(' '), deity))
+          .slice(0, 6))
+
+        setRelatedTemples((Array.isArray(temples) ? temples : [])
+          .filter((item: any) => item.status === 'approved' || !item.status)
+          .filter((item: any) => textMatchesDeity([item.deity, item.title, item.description, item.speciality].filter(Boolean).join(' '), deity))
+          .slice(0, 6))
+      } catch {
+        if (!cancelled) {
+          setRelatedDevotionals([])
+          setRelatedTemples([])
+        }
+      }
+    }
+
+    loadRelated()
+    return () => { cancelled = true }
+  }, [deity])
+
+  if (loading) return <DetailPageSkeleton />
 
   if (error || !deity) {
     return (
@@ -80,115 +141,193 @@ export default function DeityDetailPage({ params }: Props) {
         <div className="text-center py-20">
           <h1 className="text-h2 font-serif text-secondary-800 mb-4">Deity Not Found</h1>
           <Link href="/deities" className="text-primary-600 hover:text-primary-700 font-medium">
-            ← Back to Deities
+            Back to Deities
           </Link>
         </div>
       </div>
     )
   }
 
+  const category = DEITY_CATEGORIES.find((cat: any) => cat.deities.some((item: any) => item.slug === deity.slug || item.name === deity.name))
+  const relatedForms = (category?.deities || []).filter((item: any) => item.slug !== deity.slug).slice(0, 6)
+  const heroImage = getDeityHeroImage(deity)
+  const pageUrl = `${BASE_URL}/deities/${deity.slug}`
+  const breadcrumbLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: BASE_URL },
+      { '@type': 'ListItem', position: 2, name: 'Deities', item: `${BASE_URL}/deities` },
+      { '@type': 'ListItem', position: 3, name: deity.name, item: pageUrl },
+    ],
+  }
+  const deityLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Thing',
+    name: deity.name,
+    alternateName: deity.nameHi,
+    description: deity.description || deity.descriptionHi,
+    image: heroImage.src,
+    url: pageUrl,
+    category: deity.category || category?.title,
+  }
+
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(deityLd) }} />
       <Breadcrumbs
         items={[
           { label: 'Deities', href: '/deities' },
           { label: deity.nameHi, href: `/deities/${deity.slug}` },
         ]}
       />
+      <AdminEditBar editHref={deity._id ? `/admin/deities/edit/${deity._id}` : undefined} />
 
-      <div className="page-container section-sm min-h-screen">
-        <AdminEditBar 
-          editHref={deity._id ? `/admin/deities/edit/${deity._id}` : undefined}
+      <section className="relative min-h-[680px] overflow-hidden bg-stone-950 text-white">
+        <SarvdevImage
+          image={heroImage}
+          alt={deity.name}
+          className="absolute inset-0 opacity-70"
+          imgClassName="object-cover"
+          loading="eager"
+          renderMode="auto"
         />
+        <div className="absolute inset-0 bg-gradient-to-r from-stone-950/96 via-stone-950/70 to-stone-950/18" />
+        <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-surface to-transparent" />
 
-        {/* Hero Section */}
-        <div className="mb-12">
-          <div className="relative w-full aspect-[16/9] md:aspect-[21/9] overflow-hidden rounded-2xl mb-8">
-            <img
-              src={deity.image || 'https://res.cloudinary.com/dc2qg7bwr/image/upload/image_2_xljqwa'}
-              alt={deity.name}
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                e.currentTarget.src = 'https://res.cloudinary.com/dc2qg7bwr/image/upload/image_2_xljqwa'
-              }}
-            />
-          </div>
-
-          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">
-            <div>
-              <h1 className="text-display-sm font-serif text-secondary-800 mb-2">{deity.nameHi}</h1>
-              <p className="text-h3 text-primary-700 font-semibold">{deity.name}</p>
-              {deity.category && (
-                <span className="inline-block mt-3 px-3 py-1 text-caption font-medium rounded-full bg-primary-50 text-primary-700 border border-primary-100">
-                  {deity.category}
-                </span>
-              )}
+        <div className="page-container relative z-10 flex min-h-[680px] flex-col justify-end pb-16 pt-24">
+          <div className="max-w-5xl">
+            <div className="mb-4 flex flex-wrap gap-2">
+              {(deity.category || category?.title) && <span className="deity-detail-badge">{deity.category || category?.title}</span>}
+              {category?.titleHi && <span className="deity-detail-badge">{category.titleHi}</span>}
+              <span className="deity-detail-badge">Sacred profile</span>
             </div>
-            <ShareButtons
-              title={`${deity.nameHi} - ${deity.name}`}
-              url={typeof window !== 'undefined' ? window.location.href : ''}
-            />
+            <h1 className="text-[clamp(3rem,8vw,7rem)] font-serif leading-[0.92] tracking-normal text-white drop-shadow-2xl">{deity.nameHi}</h1>
+            <p className="mt-4 text-2xl font-bold text-amber-100 md:text-3xl">{deity.name}</p>
+            {(deity.descriptionHi || deity.description) && (
+              <p className="mt-6 max-w-3xl text-lg leading-8 text-stone-100">{deity.descriptionHi || deity.description}</p>
+            )}
+            <div className="mt-8 flex flex-wrap items-center gap-3">
+              <ShareButtons title={`${deity.nameHi} - ${deity.name}`} url={typeof window !== 'undefined' ? window.location.href : ''} />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <main className="bg-surface pb-20">
+        <div className="page-container -mt-10 relative z-20">
+          <div className="grid gap-3 rounded-2xl border border-amber-200 bg-white p-4 shadow-xl sm:grid-cols-2 lg:grid-cols-4">
+            <DeityFact label="Category" value={deity.category || category?.title || 'Deity'} />
+            <DeityFact label="Forms nearby" value={`${relatedForms.length} related`} />
+            <DeityFact label="Devotionals" value={`${relatedDevotionals.length} linked`} />
+            <DeityFact label="Temples" value={`${relatedTemples.length} linked`} />
           </div>
         </div>
 
-        {/* Description Section */}
-        <div className="card p-6 md:p-8 mb-8">
-          <h2 className="text-h3 font-serif text-secondary-800 mb-4">About</h2>
-          <div className="space-y-4">
-            {deity.descriptionHi && (
-              <p className="text-body font-devanagari text-ink leading-relaxed">{deity.descriptionHi}</p>
+        <div className="page-container pt-10 grid gap-8 lg:grid-cols-[minmax(0,1fr)_22rem]">
+          <div className="space-y-8">
+            <section className="deity-detail-panel">
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-orange-700">About</p>
+              <h2 className="mt-1 text-3xl font-serif text-stone-950">{deity.nameHi}</h2>
+              <div className="mt-5 space-y-5">
+                {deity.descriptionHi && <p className="font-devanagari text-lg leading-9 text-stone-800">{deity.descriptionHi}</p>}
+                {deity.description && <p className="text-lg leading-9 text-stone-700">{deity.description}</p>}
+              </div>
+            </section>
+
+            {deity.mantra && (
+              <section className="deity-mantra-panel">
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-orange-700">Mantra</p>
+                <p className="mt-4 text-center font-devanagari text-2xl font-bold leading-10 text-stone-950">{deity.mantra}</p>
+              </section>
             )}
-            {deity.description && (
-              <p className="text-body text-ink leading-relaxed">{deity.description}</p>
-            )}
-          </div>
-        </div>
 
-        {/* Attributes Section */}
-        {deity.attributes && deity.attributes.length > 0 && (
-          <div className="card p-6 md:p-8 mb-8">
-            <h2 className="text-h3 font-serif text-secondary-800 mb-4">Attributes</h2>
-            <div className="flex flex-wrap gap-2">
-              {deity.attributes.map((attr: string, index: number) => (
-                <span
-                  key={index}
-                  className="px-3 py-1.5 text-body-sm font-medium rounded-full bg-primary-50 text-primary-700 border border-primary-100"
-                >
-                  {attr}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Mantra Section */}
-        {deity.mantra && (
-          <div className="card p-6 md:p-8 mb-8 bg-gradient-to-br from-primary-50/80 to-accent-50/50 border-primary-200/50">
-            <h2 className="text-h3 font-serif text-secondary-800 mb-4">मंत्र / Mantra</h2>
-            <p className="text-body-lg font-devanagari text-secondary-800 font-medium text-center py-4">
-              {deity.mantra}
-            </p>
-          </div>
-        )}
-
-        {/* Gallery Section */}
-        {deity.images && deity.images.length > 0 && (
-          <div className="card p-6 md:p-8 mb-8">
-            <h2 className="text-h3 font-serif text-secondary-800 mb-4">Gallery</h2>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              {deity.images.map((img: string, index: number) => (
-                <div key={index} className="relative aspect-square overflow-hidden rounded-xl">
-                  <img
-                    src={img}
-                    alt={`${deity.name} ${index + 1}`}
-                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                  />
+            {deity.attributes && deity.attributes.length > 0 && (
+              <section className="deity-detail-panel">
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-orange-700">Attributes</p>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {deity.attributes.map((attr: string, index: number) => (
+                    <span key={index} className="rounded-full border border-orange-200 bg-orange-50 px-3 py-1.5 text-sm font-bold text-orange-800">{attr}</span>
+                  ))}
                 </div>
+              </section>
+            )}
+
+            <RelatedSection title="Related devotionals" empty="Related mantras, aarti and stotras will appear here as devotional content is mapped.">
+              {relatedDevotionals.map((item) => (
+                <RelatedTextCard key={item._id || item.title} href={`/devotionals/${item.slug || slugify(item.title || '')}`} title={item.title} subtitle={[item.category, item.language].filter(Boolean).join(' - ')} />
               ))}
-            </div>
+            </RelatedSection>
+
+            <RelatedSection title="Related temples" empty="Related temple links will appear here as temple deity fields are mapped.">
+              {relatedTemples.map((item) => (
+                <RelatedTextCard key={item._id || item.title} href={`/temples/${item.slug || slugify(item.title || '')}`} title={item.title} subtitle={[item.city, item.state].filter(Boolean).join(', ')} />
+              ))}
+            </RelatedSection>
           </div>
-        )}
-      </div>
+
+          <aside className="space-y-6 lg:sticky lg:top-24 lg:self-start">
+            <section className="deity-detail-panel">
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-orange-700">Related forms</p>
+              <div className="mt-4 grid gap-3">
+                {relatedForms.length > 0 ? relatedForms.map((item: any) => (
+                  <Link key={item.slug || item.name} href={`/deities/${item.slug}`} className="group flex items-center gap-3 rounded-xl border border-stone-200 bg-white p-3 no-underline transition hover:border-amber-300 hover:bg-orange-50">
+                    <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-orange-50">
+                      <SarvdevImage image={getDeityCardImage(item)} alt={item.name} className="absolute inset-0" imgClassName="object-cover" renderMode="auto" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="truncate font-black text-stone-950 group-hover:text-orange-700">{item.nameHi}</p>
+                      <p className="truncate text-xs font-semibold text-stone-500">{item.name}</p>
+                    </div>
+                  </Link>
+                )) : <p className="text-sm text-stone-500">Related forms will appear here.</p>}
+              </div>
+            </section>
+
+            {deity.images && deity.images.length > 0 && (
+              <section className="deity-detail-panel">
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-orange-700">Gallery</p>
+                <div className="mt-4 grid grid-cols-2 gap-3">
+                  {deity.images.map((img: string, index: number) => (
+                    <div key={index} className="relative aspect-square overflow-hidden rounded-xl bg-orange-50">
+                      <SarvdevImage image={getGalleryImage(img)} alt={`${deity.name} ${index + 1}`} className="absolute inset-0" imgClassName="object-cover hover:scale-105 transition-transform duration-300" renderMode="auto" />
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+          </aside>
+        </div>
+      </main>
     </>
+  )
+}
+
+function DeityFact({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl bg-orange-50/70 p-4">
+      <span className="block text-xs font-black uppercase tracking-wide text-stone-500">{label}</span>
+      <span className="mt-1 block text-sm font-black text-stone-950">{value}</span>
+    </div>
+  )
+}
+
+function RelatedSection({ title, empty, children }: { title: string; empty: string; children: ReactNode }) {
+  const hasChildren = Array.isArray(children) ? children.length > 0 : Boolean(children)
+  return (
+    <section className="deity-detail-panel">
+      <p className="text-xs font-black uppercase tracking-[0.18em] text-orange-700">{title}</p>
+      {hasChildren ? <div className="mt-4 grid gap-3 sm:grid-cols-2">{children}</div> : <p className="mt-4 text-sm text-stone-500">{empty}</p>}
+    </section>
+  )
+}
+
+function RelatedTextCard({ href, title, subtitle }: { href: string; title: string; subtitle?: string }) {
+  return (
+    <Link href={href} className="rounded-xl border border-stone-200 bg-white p-4 no-underline transition hover:border-amber-300 hover:bg-orange-50">
+      <p className="font-black text-stone-950">{title}</p>
+      {subtitle && <p className="mt-1 text-xs font-semibold text-stone-500">{subtitle}</p>}
+    </Link>
   )
 }

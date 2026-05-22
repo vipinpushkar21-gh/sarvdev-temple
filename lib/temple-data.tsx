@@ -7,6 +7,10 @@ export interface TempleData {
   title: string
   description?: string
   image?: string
+  imageCard?: string
+  imageHero?: string
+  imageGallery?: string[]
+  heroImage?: string
   location?: string
   city?: string
   state?: string

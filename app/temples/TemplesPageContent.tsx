@@ -10,7 +10,8 @@ import Hero from '../../components/Hero'
 import { TempleGridSkeleton } from '../../components/Skeleton'
 import { getTemplesForSacredCategory, SHAKTI_PEETH_CATEGORY } from '../../data/shakti-peethas'
 import { getAllCategoryNames } from '../../lib/sacred-categories'
-import { isAllowedImageHost, getSafeTempleImage } from '../../lib/imageGuard'
+import { getTempleCardImage } from '../../lib/temple-image'
+import SarvdevImage from '../../components/SarvdevImage'
 
 type Temple = {
   _id: string
@@ -200,9 +201,12 @@ export default function TemplesPageContent() {
                           onClick={() => { setShowDropdown(false); setSearchQuery(''); router.push(`/temples/${slug}`) }}
                           className="w-full text-left px-5 py-3 hover:bg-primary-50/50 transition-all duration-200 flex items-center gap-3 group"
                         >
-                          {isAllowedImageHost(temple.image) && (
-                            <img src={getSafeTempleImage(temple.image)} alt="" className="w-11 h-11 rounded-xl object-cover flex-shrink-0 shadow-sm" />
-                          )}
+                          <SarvdevImage
+                            image={getTempleCardImage(temple)}
+                            alt=""
+                            className="w-11 h-11 rounded-xl flex-shrink-0 shadow-sm"
+                            imgClassName="object-cover"
+                          />
                           <div className="min-w-0 flex-1">
                             <div className="text-body-sm font-medium text-ink truncate group-hover:text-primary-700 transition-colors">{temple.title}</div>
                             <div className="text-caption text-ink-muted truncate">

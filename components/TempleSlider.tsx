@@ -2,16 +2,20 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { getTempleImage, TEMPLE_PLACEHOLDER } from '../lib/temple-image'
+import { getTempleHeroImage } from '../lib/temple-image'
 import { useTempleData } from '../lib/temple-data'
 import { useTranslation } from '../lib/translation'
 import { Skeleton } from './Skeleton'
+import SarvdevImage from './SarvdevImage'
 
 interface Temple {
   _id: string
   title: string
   description?: string
   image?: string
+  imageHero?: string
+  imageCard?: string
+  heroImage?: string
   location?: string
   slug?: string
 }
@@ -103,11 +107,13 @@ export default function TempleSlider({ initialTemples }: { initialTemples?: Temp
           className={`absolute inset-0 transition-opacity duration-[800ms] ease-in-out ${isTransitioning ? 'opacity-0' : 'opacity-100'}`}
           key={`current-${currentIndex}`}
         >
-          <img
-            src={getTempleImage(currentTemple)}
+          <SarvdevImage
+            image={getTempleHeroImage(currentTemple)}
             alt={currentTemple.title}
-            className="w-full h-full object-cover"
-            onError={(e) => { (e.target as HTMLImageElement).src = TEMPLE_PLACEHOLDER }}
+            className="absolute inset-0"
+            imgClassName="object-cover"
+            loading="eager"
+            renderMode="auto"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-secondary-900/80 via-secondary-900/30 to-secondary-900/10"></div>
         </div>
@@ -117,11 +123,12 @@ export default function TempleSlider({ initialTemples }: { initialTemples?: Temp
           className={`absolute inset-0 transition-opacity duration-[800ms] ease-in-out ${isTransitioning ? 'opacity-100' : 'opacity-0'}`}
           key={`next-${currentIndex}`}
         >
-          <img
-            src={getTempleImage(nextTemple)}
+          <SarvdevImage
+            image={getTempleHeroImage(nextTemple)}
             alt={nextTemple.title}
-            className="w-full h-full object-cover"
-            onError={(e) => { (e.target as HTMLImageElement).src = TEMPLE_PLACEHOLDER }}
+            className="absolute inset-0"
+            imgClassName="object-cover"
+            renderMode="auto"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-secondary-900/80 via-secondary-900/30 to-secondary-900/10"></div>
         </div>

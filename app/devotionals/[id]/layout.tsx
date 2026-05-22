@@ -1,23 +1,13 @@
 import type { Metadata } from 'next'
+import type { ReactNode } from 'react'
 import { connectDB } from '@/lib/db'
 import Devotional from '@/models/Devotional'
+import { getDevotionalOGImage } from '@/lib/devotional-image'
+import { categoryToSlug, createDevotionalSlug } from '../components/devotional-utils'
 
 export const revalidate = 300
 
 const BASE = 'https://sarvdev.com'
-const DEFAULT_IMAGE = 'https://res.cloudinary.com/dc2qg7bwr/image/upload/image_2_xljqwa'
-
-const TRANSLIT: Record<string, string> = {
-  'श्री': 'shri', 'गणेश': 'ganesh', 'आरती': 'aarti',
-  'चालीसा': 'chalisa', 'मंत्र': 'mantra', 'स्तोत्र': 'stotra', 'भजन': 'bhajan',
-}
-
-function devotionalSlug(title: string): string {
-  const englishMatch = title.match(/\(([^)]+)\)/)
-  let text = englishMatch ? englishMatch[1] : title
-  Object.entries(TRANSLIT).forEach(([hi, en]) => { text = text.replace(new RegExp(hi, 'g'), en) })
-  return text.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').trim()
-}
 
 export async function generateMetadata(
   { params }: { params: Promise<{ id: string }> }
@@ -27,32 +17,42 @@ export async function generateMetadata(
     await connectDB()
     const devotionals = await Devotional.find(
       { status: 'approved' },
-      'title description category deity language'
+      'title description category deity language image imageCard imageHero ogImage metaTitle metaDescription metaKeywords'
     ).lean() as any[]
 
-    const devotional = devotionals.find((d: any) => devotionalSlug(d.title) === id)
+    const devotional = devotionals.find((item: any) => createDevotionalSlug(item.title || '') === id || item._id?.toString() === id)
 
     if (!devotional) {
       return {
-        title: 'Devotional — Sarvdev',
-        description: 'Listen to bhajans, aartis and mantras on Sarvdev.',
+        title: 'Devotional - Sarvdev',
+        description: 'Listen to bhajans, aartis, mantras and devotional lyrics on Sarvdev.',
       }
     }
 
     const url = `${BASE}/devotionals/${id}`
     const categoryLabel = devotional.category || 'Devotional'
-    const deityLabel = devotional.deity ? ` — ${devotional.deity}` : ''
-    const title = `${devotional.title} ${categoryLabel}${deityLabel} — Sarvdev`
-    const description = devotional.description
-      ? devotional.description.slice(0, 155)
-      : `${devotional.title} — ${categoryLabel} lyrics, meaning and audio${devotional.deity ? ` dedicated to ${devotional.deity}` : ''}. Stream on Sarvdev.`
+    const deityLabel = devotional.deity ? ` - ${devotional.deity}` : ''
+    const title = devotional.metaTitle || `${devotional.title} ${categoryLabel}${deityLabel} - Sarvdev`
+    const description = devotional.metaDescription
+      || (devotional.description
+        ? devotional.description.slice(0, 155)
+        : `${devotional.title} - ${categoryLabel} lyrics, meaning and audio${devotional.deity ? ` dedicated to ${devotional.deity}` : ''}. Stream on Sarvdev.`)
+    const customKeywords = typeof devotional.metaKeywords === 'string'
+      ? devotional.metaKeywords.split(',').map((item: string) => item.trim()).filter(Boolean)
+      : []
     const keywords = [
+      ...customKeywords,
       devotional.title,
       devotional.deity,
       devotional.category,
       devotional.language,
-      'bhajan', 'aarti', 'mantra', 'devotional lyrics', 'Sarvdev',
+      'bhajan',
+      'aarti',
+      'mantra',
+      'devotional lyrics',
+      'Sarvdev',
     ].filter(Boolean) as string[]
+    const ogImage = getDevotionalOGImage(devotional).src
 
     return {
       title,
@@ -65,17 +65,17 @@ export async function generateMetadata(
         url,
         type: 'website',
         siteName: 'Sarvdev',
-        images: [{ url: DEFAULT_IMAGE, width: 1200, height: 630, alt: devotional.title }],
+        images: [{ url: ogImage, width: 1200, height: 630, alt: devotional.title }],
       },
       twitter: {
         card: 'summary_large_image',
         title,
         description,
-        images: [DEFAULT_IMAGE],
+        images: [ogImage],
       },
     }
   } catch {
-    return { title: 'Devotional — Sarvdev' }
+    return { title: 'Devotional - Sarvdev' }
   }
 }
 
@@ -83,7 +83,7 @@ export default async function DevotionalIdLayout({
   children,
   params,
 }: {
-  children: React.ReactNode
+  children: ReactNode
   params: Promise<{ id: string }>
 }) {
   let breadcrumbLd: object | null = null
@@ -91,7 +91,7 @@ export default async function DevotionalIdLayout({
     const { id } = await params
     await connectDB()
     const devotionals = await Devotional.find({ status: 'approved' }, 'title category').lean() as any[]
-    const devotional = devotionals.find((d: any) => devotionalSlug(d.title) === id)
+    const devotional = devotionals.find((item: any) => createDevotionalSlug(item.title || '') === id || item._id?.toString() === id)
     if (devotional) {
       breadcrumbLd = {
         '@context': 'https://schema.org',
@@ -99,11 +99,17 @@ export default async function DevotionalIdLayout({
         itemListElement: [
           { '@type': 'ListItem', position: 1, name: 'Home', item: BASE },
           { '@type': 'ListItem', position: 2, name: 'Devotionals', item: `${BASE}/devotionals` },
-          { '@type': 'ListItem', position: 3, name: devotional.title, item: `${BASE}/devotionals/${id}` },
+          ...(devotional.category ? [{
+            '@type': 'ListItem',
+            position: 3,
+            name: devotional.category,
+            item: `${BASE}/devotionals/category/${categoryToSlug(devotional.category)}`,
+          }] : []),
+          { '@type': 'ListItem', position: devotional.category ? 4 : 3, name: devotional.title, item: `${BASE}/devotionals/${id}` },
         ],
       }
     }
-  } catch { /* silent */ }
+  } catch {}
 
   return (
     <>
@@ -117,3 +123,4 @@ export default async function DevotionalIdLayout({
     </>
   )
 }
+

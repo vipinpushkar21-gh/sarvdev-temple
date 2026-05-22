@@ -3,6 +3,8 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
+import SarvdevImage from '../../components/SarvdevImage'
+import { getDeityCardImage, getDeityHeroImage } from '../../lib/temple-image'
 
 /* ─── Deity Data ─── */
 
@@ -14,7 +16,12 @@ interface Deity {
   mantra?: string
   attributes?: string[]
   image?: string
+  imageCard?: string
+  imageHero?: string
+  heroImage?: string
+  ogImage?: string
   slug?: string
+  _id?: string
 }
 
 interface DeityCategory {
@@ -26,6 +33,9 @@ interface DeityCategory {
   emoji: string
   deities: Deity[]
 }
+
+const BASE_URL = 'https://sarvdev.com'
+const DEITIES_HERO_IMAGE = 'https://res.cloudinary.com/dc2qg7bwr/image/upload/v1774363519/hero-bg.jpg.jpg'
 
 export const DEITY_CATEGORIES: DeityCategory[] = [
   {
@@ -1551,19 +1561,29 @@ export default function DeitiesPage() {
   }
 
   const filteredCategories = useMemo(() => {
-    // Create a map of database deities by name for quick lookup
+    // Create maps of database deities by stable identifiers for quick lookup.
     const dbDeityMap = new Map<string, any>()
     dbDeities.forEach((deity: any) => {
-      dbDeityMap.set(deity.name.toLowerCase(), deity)
+      if (deity?.name) dbDeityMap.set(deity.name.toLowerCase(), deity)
+      if (deity?.slug) dbDeityMap.set(deity.slug.toLowerCase(), deity)
     })
 
     // Merge database deities with static data
     const mergedCategories = DEITY_CATEGORIES.map(cat => ({
       ...cat,
       deities: cat.deities.map((deity: any) => {
-        const dbDeity = dbDeityMap.get(deity.name.toLowerCase())
-        // If deity exists in database, use database data (including image), otherwise use static
-        return dbDeity ? { ...deity, image: dbDeity.image } : deity
+        const dbDeity = dbDeityMap.get(deity.slug?.toLowerCase()) || dbDeityMap.get(deity.name.toLowerCase())
+        if (!dbDeity) return deity
+
+        return {
+          ...deity,
+          _id: dbDeity._id,
+          image: dbDeity.image || deity.image,
+          imageCard: dbDeity.imageCard || dbDeity.image || deity.imageCard || deity.image,
+          imageHero: dbDeity.imageHero || dbDeity.imageCard || dbDeity.image || deity.imageHero || deity.imageCard || deity.image,
+          heroImage: dbDeity.imageHero || dbDeity.imageCard || dbDeity.image || deity.heroImage,
+          ogImage: dbDeity.ogImage || dbDeity.imageHero || dbDeity.imageCard || dbDeity.image || deity.ogImage,
+        }
       })
     }))
 
@@ -1582,43 +1602,81 @@ export default function DeitiesPage() {
   }, [search, dbDeities])
 
   const totalDeities = DEITY_CATEGORIES.reduce((sum, cat) => sum + cat.deities.length, 0)
+  const visibleDeityCount = filteredCategories.reduce((sum, cat) => sum + cat.deities.length, 0)
+  const heroImage = getDeityHeroImage(DEITIES_HERO_IMAGE)
+  const itemListLd = useMemo(() => ({
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: 'Hindu Deities on Sarvdev',
+    itemListElement: DEITY_CATEGORIES.flatMap((category) => category.deities.map((deity) => ({ deity, category }))).map(({ deity, category }, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: deity.name,
+      url: `${BASE_URL}/deities/${deity.slug}`,
+      item: {
+        '@type': 'Thing',
+        name: deity.name,
+        alternateName: deity.nameHi,
+        description: deity.description,
+        category: category.title,
+      },
+    })),
+  }), [])
+  const breadcrumbLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: BASE_URL },
+      { '@type': 'ListItem', position: 2, name: 'Deities', item: `${BASE_URL}/deities` },
+    ],
+  }
 
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }} />
+
       {/* Hero */}
-      <section className="relative overflow-hidden border-b border-surface-border">
-        {/* Background image */}
-        <div
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-          style={{ backgroundImage: `url('https://res.cloudinary.com/dc2qg7bwr/image/upload/v1774363519/hero-bg.jpg.jpg')` }}
+      <section className="deities-premium-hero relative min-h-[620px] overflow-hidden border-b border-amber-200/30 bg-stone-950 text-white">
+        <SarvdevImage
+          image={heroImage}
+          alt="Sacred Hindu deities"
+          className="absolute inset-0 opacity-45"
+          imgClassName="object-cover"
+          loading="eager"
+          renderMode="auto"
         />
-        {/* Dark overlay */}
-        <div className="absolute inset-0 bg-black/60" />
-        {/* Warm saffron tint */}
-        <div className="absolute inset-0 bg-gradient-to-br from-secondary-900/40 via-transparent to-primary/20" />
-        <div className="page-container py-14 md:py-20 relative z-10">
+        <div className="absolute inset-0 bg-gradient-to-r from-stone-950/95 via-stone-950/72 to-stone-950/28" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_74%,rgba(255,194,92,0.18),transparent_34%)]" />
+        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-surface to-transparent" />
+        <div className="page-container relative z-10 flex min-h-[620px] items-end py-14 md:py-20">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
-            <h1 className="text-display-lg font-serif text-white leading-tight">
+            <span className="inline-flex items-center gap-2 rounded-full border border-amber-200/25 bg-amber-300/15 px-3 py-1.5 text-xs font-black uppercase tracking-[0.18em] text-amber-100 backdrop-blur">
+              Sacred Encyclopedia
+            </span>
+            <h1 className="mt-5 text-[clamp(3.2rem,8vw,7rem)] font-serif text-white leading-[0.92] tracking-normal drop-shadow-2xl">
               देवी-देवता <span className="text-primary-300">Deities</span>
             </h1>
-            <p className="mt-3 text-body text-white/75 max-w-3xl">
+            <p className="mt-5 text-lg md:text-xl leading-8 text-white/82 max-w-3xl">
               Hindu dharma mein 33 Koti (33 prakar/types) devi-devta maane jate hain — Explore the divine pantheon of Hindu deities organized by their sacred categories.
             </p>
-            <p className="mt-1 text-body-sm text-white/60 max-w-3xl font-devanagari">
+            <p className="mt-2 text-body-sm text-amber-50/75 max-w-3xl font-devanagari leading-7">
               हिन्दू धर्म में ३३ कोटि (३३ प्रकार) देवी-देवता माने जाते हैं — सभी प्रमुख और पूज्य देवी-देवताओं की विस्तृत सूची
             </p>
-            <div className="mt-4 w-16 h-1 rounded-full bg-gradient-to-r from-primary to-accent" />
-
             {/* Stats */}
-            <div className="mt-6 flex flex-wrap items-center gap-3">
+            <div className="mt-7 flex flex-wrap items-center gap-3">
               <span className="stat-pill">🕉️ {totalDeities} Deities</span>
               <span className="stat-pill">📂 {DEITY_CATEGORIES.length} Categories</span>
             </div>
 
+            <p className="mt-3 text-sm font-semibold text-amber-100/80">
+              {search ? `${visibleDeityCount} matching deity profiles` : 'Category order and deity sequence are preserved as Sarvdev reference order.'}
+            </p>
+
             {/* Search */}
-            <div className="mt-8 max-w-xl">
+            <div className="mt-8 max-w-2xl">
               <div className="relative">
-                <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-ink-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-amber-100/70" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
                 <input
@@ -1626,10 +1684,10 @@ export default function DeitiesPage() {
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Search deities by name, description..."
-                  className="input pl-12 py-3.5 rounded-2xl w-full text-body"
+                  className="w-full rounded-2xl border border-white/15 bg-white/92 py-4 pl-12 pr-12 text-base font-semibold text-stone-900 shadow-2xl outline-none backdrop-blur placeholder:text-stone-500 focus:border-amber-300 focus:ring-4 focus:ring-amber-200/30"
                 />
                 {search && (
-                  <button onClick={() => setSearch('')} className="absolute right-4 top-1/2 -translate-y-1/2 text-ink-muted hover:text-ink">
+                  <button onClick={() => setSearch('')} className="absolute right-4 top-1/2 -translate-y-1/2 text-stone-500 hover:text-stone-900">
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                   </button>
                 )}
@@ -1640,7 +1698,7 @@ export default function DeitiesPage() {
       </section>
 
       {/* Quick Category Nav */}
-      <div className="sticky top-0 z-30 bg-surface/80 backdrop-blur-xl border-b border-surface-border/50">
+      <div className="sticky top-0 z-30 border-b border-amber-200/50 bg-white/88 shadow-sm backdrop-blur-xl">
         <div className="page-container py-3">
           <div className="relative flex items-center">
             {/* Left Arrow */}
@@ -1726,7 +1784,7 @@ export default function DeitiesPage() {
 
           <div className="max-w-4xl mx-auto">
             {/* Explanation Card */}
-            <div className="card p-6 sm:p-8 mb-8">
+            <div className="deity-intro-card p-6 sm:p-8 mb-8">
               <p className="text-body text-ink leading-relaxed font-devanagari">
                 <strong>&#39;कोटि&#39;</strong> शब्द का अर्थ <strong>&#39;प्रकार&#39;</strong> (type/category) है, न कि &#39;करोड़&#39; (crore)। वेदों के अनुसार, विशेषकर <strong>बृहदारण्यक उपनिषद्</strong> (3.9.1-9) में ऋषि याज्ञवल्क्य ने शाकल्य को बताया कि देवताओं की संख्या <strong>३३</strong> है, जो ३३ प्रकारों/श्रेणियों में विभाजित हैं।
               </p>
@@ -1741,10 +1799,12 @@ export default function DeitiesPage() {
               {/* 8 Vasu */}
               <div className="card border-l-4 border-l-amber-500 overflow-hidden">
                 <div className="relative w-full aspect-[4/3] overflow-hidden">
-                  <img
-                    src="https://res.cloudinary.com/dc2qg7bwr/image/upload/image_2_xljqwa"
+                  <SarvdevImage
+                    image={getDeityHeroImage(undefined)}
                     alt="Ashta Vasu"
-                    className="w-full h-full object-cover"
+                    className="absolute inset-0"
+                    imgClassName="object-cover"
+                    renderMode="auto"
                   />
                 </div>
                 <div className="p-5">
@@ -1782,10 +1842,12 @@ export default function DeitiesPage() {
               {/* 11 Rudra */}
               <div className="card border-l-4 border-l-red-500 overflow-hidden">
                 <div className="relative w-full aspect-[4/3] overflow-hidden">
-                  <img
-                    src="https://res.cloudinary.com/dc2qg7bwr/image/upload/image_2_xljqwa"
+                  <SarvdevImage
+                    image={getDeityHeroImage(undefined)}
                     alt="Ekadash Rudra"
-                    className="w-full h-full object-cover"
+                    className="absolute inset-0"
+                    imgClassName="object-cover"
+                    renderMode="auto"
                   />
                 </div>
                 <div className="p-5">
@@ -1826,10 +1888,12 @@ export default function DeitiesPage() {
               {/* 12 Aditya */}
               <div className="card border-l-4 border-l-orange-500 overflow-hidden">
                 <div className="relative w-full aspect-[4/3] overflow-hidden">
-                  <img
-                    src="https://res.cloudinary.com/dc2qg7bwr/image/upload/image_2_xljqwa"
+                  <SarvdevImage
+                    image={getDeityHeroImage(undefined)}
                     alt="Dwadash Aditya"
-                    className="w-full h-full object-cover"
+                    className="absolute inset-0"
+                    imgClassName="object-cover"
+                    renderMode="auto"
                   />
                 </div>
                 <div className="p-5">
@@ -1873,10 +1937,12 @@ export default function DeitiesPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-5">
               <div className="card border-l-4 border-l-blue-500 overflow-hidden">
                 <div className="relative w-full aspect-[4/3] overflow-hidden">
-                  <img
-                    src="https://res.cloudinary.com/dc2qg7bwr/image/upload/image_2_xljqwa"
+                  <SarvdevImage
+                    image={getDeityHeroImage(undefined)}
                     alt="Indra"
-                    className="w-full h-full object-cover"
+                    className="absolute inset-0"
+                    imgClassName="object-cover"
+                    renderMode="auto"
                   />
                 </div>
                 <div className="p-5">
@@ -1896,10 +1962,12 @@ export default function DeitiesPage() {
 
               <div className="card border-l-4 border-l-violet-500 overflow-hidden">
                 <div className="relative w-full aspect-[4/3] overflow-hidden">
-                  <img
-                    src="https://res.cloudinary.com/dc2qg7bwr/image/upload/image_2_xljqwa"
+                  <SarvdevImage
+                    image={getDeityHeroImage(undefined)}
                     alt="Prajapati"
-                    className="w-full h-full object-cover"
+                    className="absolute inset-0"
+                    imgClassName="object-cover"
+                    renderMode="auto"
                   />
                 </div>
                 <div className="p-5">
@@ -1964,8 +2032,8 @@ export default function DeitiesPage() {
                   transition={{ duration: 0.5, delay: catIdx * 0.05 }}
                 >
                   {/* Category Header */}
-                  <div className="text-center mb-10">
-                    <span className="text-4xl mb-3 block">{category.emoji}</span>
+                  <div className="deity-category-heading text-center mb-10">
+                    <span className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-2xl border border-amber-200 bg-white text-4xl shadow-sm">{category.emoji}</span>
                     <h2 className="text-display-sm font-serif text-secondary-800">
                       {category.titleHi}
                     </h2>
@@ -1992,17 +2060,16 @@ export default function DeitiesPage() {
                             className="block"
                           >
                           <div
-                            className="card cursor-pointer transition-all duration-300 hover:shadow-elevated hover:-translate-y-1"
+                            className="deity-card-premium cursor-pointer"
                           >
                             {/* Deity Image */}
                             <div className="relative w-full aspect-square overflow-hidden rounded-t-xl">
-                              <img
-                                src={deity.image || 'https://res.cloudinary.com/dc2qg7bwr/image/upload/image_2_xljqwa'}
+                              <SarvdevImage
+                                image={getDeityCardImage(deity)}
                                 alt={deity.name}
-                                className="w-full h-full object-cover"
-                                onError={(e) => {
-                                  e.currentTarget.src = 'https://res.cloudinary.com/dc2qg7bwr/image/upload/image_2_xljqwa'
-                                }}
+                                className="absolute inset-0"
+                                imgClassName="object-cover"
+                                renderMode="auto"
                               />
                             </div>
 

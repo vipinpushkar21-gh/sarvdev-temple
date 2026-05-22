@@ -8,6 +8,10 @@ import sarvdev from '@/data/sarvdev'
 let _cache: { data: any[]; ts: number } | null = null
 const CACHE_TTL = 60_000
 
+function escapeRegex(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
@@ -25,12 +29,16 @@ export async function GET(request: NextRequest) {
     const limitParam = searchParams.get('limit')
     const search = searchParams.get('search') || searchParams.get('q') || ''
     const category = searchParams.get('category') || ''
+    const deity = searchParams.get('deity') || ''
+    const status = searchParams.get('status') || ''
 
     await connectDB()
 
     // Build filter
     const filter: Record<string, any> = {}
     if (category) filter.category = category
+    if (deity) filter.deity = { $regex: new RegExp(escapeRegex(deity), 'i') }
+    if (status) filter.status = status
     if (search) filter.$text = { $search: search }
 
     // ─── Paginated mode ───
@@ -57,14 +65,21 @@ export async function GET(request: NextRequest) {
     }
 
     // ─── Legacy mode (returns all) ───
-    if (_cache && !search && !category && Date.now() - _cache.ts < CACHE_TTL) {
+    if (_cache && !search && !category && !deity && !status && !limitParam && Date.now() - _cache.ts < CACHE_TTL) {
       return NextResponse.json(_cache.data)
     }
 
-    const devotionals = await Devotional.find(
-      search || category ? filter : {},
+    let query = Devotional.find(
+      search || category || deity || status ? filter : {},
       { lyrics: 0, __v: 0, updatedAt: 0 }
-    ).sort({ createdAt: -1 }).lean()
+    ).sort({ createdAt: -1 })
+
+    if (limitParam) {
+      const limit = Math.min(100, Math.max(1, parseInt(limitParam, 10) || 20))
+      query = query.limit(limit)
+    }
+
+    const devotionals = await query.lean()
 
     if (!devotionals || devotionals.length === 0) {
       try {
@@ -94,7 +109,7 @@ export async function GET(request: NextRequest) {
       ...d,
       description: d.description?.length > 200 ? d.description.slice(0, 200) + '…' : d.description,
     }))
-    if (!search && !category) {
+    if (!search && !category && !deity && !status && !limitParam) {
       _cache = { data: trimmed, ts: Date.now() }
     }
     return NextResponse.json(trimmed)

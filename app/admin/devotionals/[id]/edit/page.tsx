@@ -35,6 +35,8 @@ export default function EditDevotionalPage() {
     language: '',
     deity: '',
     image: '',
+    imageCard: '',
+    imageHero: '',
     audio: '',
     lyrics: '',
     duration: '',
@@ -62,6 +64,8 @@ export default function EditDevotionalPage() {
               language: found.language || '',
               deity: found.deity || '',
               image: found.image || '',
+              imageCard: found.imageCard || '',
+              imageHero: found.imageHero || '',
               audio: found.audio || '',
               lyrics: found.lyrics || '',
               duration: found.duration || '',
@@ -124,7 +128,7 @@ export default function EditDevotionalPage() {
     const metaKeywords = [...new Set(keywordSet)].join(', ')
 
     // OG Image — use cover image if available
-    const ogImage = formData.ogImage || formData.image || ''
+    const ogImage = formData.ogImage || formData.imageHero || formData.imageCard || formData.image || ''
 
     setFormData(prev => ({ ...prev, metaTitle, metaDescription: metaDescription.slice(0, 160), metaKeywords, ogImage }))
   }
@@ -152,6 +156,8 @@ export default function EditDevotionalPage() {
               language: found.language || '',
               deity: found.deity || '',
               image: found.image || '',
+              imageCard: found.imageCard || '',
+              imageHero: found.imageHero || '',
               audio: found.audio || '',
               lyrics: found.lyrics || '',
               duration: found.duration || '',
@@ -296,10 +302,18 @@ export default function EditDevotionalPage() {
           <h2 className="admin-section-title">Media & Content</h2>
 
           <ImageUpload
-            value={formData.image}
-            onChange={url => setFormData(prev => ({ ...prev, image: url }))}
-            folder="sarvdev/devotionals"
-            label="Cover Image (Header pe dikhegi)"
+            value={formData.imageCard}
+            onChange={url => setFormData(prev => ({ ...prev, imageCard: url, image: prev.image || url }))}
+            folder="sarvdev/devotionals/cards"
+            label="Card Image"
+            guidance="devotionalCard"
+          />
+          <ImageUpload
+            value={formData.imageHero}
+            onChange={url => setFormData(prev => ({ ...prev, imageHero: url, image: prev.image || url }))}
+            folder="sarvdev/devotionals/heroes"
+            label="Hero Image"
+            guidance="devotionalHero"
           />
 
           <div>

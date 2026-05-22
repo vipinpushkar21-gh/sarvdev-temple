@@ -4,6 +4,7 @@ import mongoose from 'mongoose';
 const DevotionalSchema = new mongoose.Schema({
   title: { type: String, required: true },
   description: String,
+  descriptionHi: String,
   category: { type: String, default: 'Other' },
   language: { type: String, default: 'Hindi' },
   deity: String,
@@ -11,6 +12,13 @@ const DevotionalSchema = new mongoose.Schema({
   lyrics: String,
   duration: String,
   artist: String,
+  image: String,
+  imageCard: String,
+  imageHero: String,
+  metaTitle: String,
+  metaDescription: String,
+  metaKeywords: String,
+  ogImage: String,
   status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
   createdAt: { type: Date, default: Date.now }
 });

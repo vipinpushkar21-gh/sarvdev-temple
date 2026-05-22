@@ -3,9 +3,8 @@
 import { useFavourites, BookmarkItem } from '../../lib/favourites'
 import { useTranslation } from '../../lib/translation'
 import Link from 'next/link'
-import Image from 'next/image'
-import { useState } from 'react'
-import { TEMPLE_PLACEHOLDER } from '../../lib/temple-image'
+import { getTempleCardImage } from '../../lib/temple-image'
+import SarvdevImage from '../../components/SarvdevImage'
 
 const TYPE_CONFIG: Record<'temple' | 'devotional' | 'darshan', {
   labelEn: string
@@ -156,19 +155,17 @@ function BookmarkCard({
 }) {
   const cfg = TYPE_CONFIG[item.type]
   const href = item.type === 'darshan' ? '/daily-darshan' : `${cfg.hrefPrefix}${item.slug}`
-  const [imgSrc, setImgSrc] = useState(item.image || TEMPLE_PLACEHOLDER)
 
   return (
     <div className="card-interactive flex flex-col">
       <Link href={href} className="no-underline hover:no-underline group flex-1">
         {item.image && (
           <div className="relative h-36 w-full bg-surface-sunken rounded-t-card overflow-hidden">
-            <Image
-              src={imgSrc}
+            <SarvdevImage
+              image={getTempleCardImage(item)}
               alt={item.title}
-              fill
-              className="object-cover"
-              onError={() => setImgSrc(TEMPLE_PLACEHOLDER)}
+              className="absolute inset-0"
+              imgClassName="object-cover"
             />
           </div>
         )}

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import AdminEditBar from '../../../components/AdminEditBar'
+import { getTempleHeroImage } from '../../../lib/temple-image'
 
 const DEFAULT_IMAGE = 'https://res.cloudinary.com/dc2qg7bwr/image/upload/image_2_xljqwa'
 
@@ -13,6 +14,8 @@ type Blog = {
   excerpt?: string
   date?: string
   image?: string
+  imageCard?: string
+  imageHero?: string
   body?: string
   status?: string
 }
@@ -80,7 +83,7 @@ export default function BlogPostPage() {
     '@type': ['BlogPosting', 'NewsArticle'],
     headline: post.title,
     description: post.excerpt || undefined,
-    image: post.image || DEFAULT_IMAGE,
+    image: post.imageHero || post.image || DEFAULT_IMAGE,
     url: `https://sarvdev.com/blog/${slug}`,
     datePublished: post.date ? new Date(post.date).toISOString() : undefined,
     dateModified: post.date ? new Date(post.date).toISOString() : undefined,
@@ -145,7 +148,7 @@ export default function BlogPostPage() {
 
         <div className="rounded-xl overflow-hidden mb-8 shadow-lg">
           <img
-            src={post.image || DEFAULT_IMAGE}
+            src={getTempleHeroImage(post).src || DEFAULT_IMAGE}
             alt={post.title}
             className="w-full h-64 object-cover"
             onError={e => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE }}

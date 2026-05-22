@@ -528,6 +528,210 @@
 
 /* ─── 2030 Futuristic Temple UI ─── */
 @layer components {
+  /* Sarvdev premium image frame */
+  .sarvdev-image-frame {
+    position: relative;
+    display: block;
+    overflow: hidden;
+    background-color: #211512;
+    background-size: cover;
+    background-position: top center;
+    isolation: isolate;
+    --sarvdev-safe-padding: clamp(10px, 2.2vw, 32px);
+  }
+  .sarvdev-image-frame::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background: linear-gradient(110deg, transparent 0%, rgba(255,255,255,0.18) 42%, transparent 72%);
+    transform: translateX(-120%);
+    animation: sarvdevImageShimmer 1.6s ease-in-out infinite;
+    pointer-events: none;
+  }
+  .sarvdev-image-frame > img,
+  .sarvdev-image-frame > picture,
+  .sarvdev-image-frame > picture > img {
+    width: 100%;
+    height: 100%;
+  }
+  .sarvdev-image-frame > picture {
+    display: block;
+    position: relative;
+    z-index: 1;
+  }
+  .sarvdev-cinematic-image {
+    position: relative;
+    z-index: 1;
+    display: block;
+    object-fit: cover;
+    object-position: top center;
+    image-rendering: auto;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    filter: brightness(1.02) contrast(1.045) saturate(1.025);
+  }
+  .sarvdev-render-safe-cover .sarvdev-cinematic-image {
+    object-position: top center;
+  }
+  .sarvdev-render-focal-safe .sarvdev-cinematic-image {
+    object-fit: cover;
+    object-position: center 58%;
+  }
+  .sarvdev-render-safe-contain {
+    background-size: cover;
+    background-position: center;
+  }
+  .sarvdev-render-safe-contain::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(circle at 50% 18%, rgba(255, 202, 112, 0.22), transparent 32%),
+      linear-gradient(180deg, rgba(0,0,0,0.18), rgba(0,0,0,0.42));
+  }
+  .sarvdev-render-safe-contain .sarvdev-cinematic-image {
+    object-fit: contain;
+    object-position: center center;
+    box-sizing: border-box;
+    padding: var(--sarvdev-safe-padding);
+    transform: none !important;
+  }
+  .sarvdev-render-cinematic-cover .sarvdev-cinematic-image {
+    object-fit: cover;
+    object-position: top center;
+  }
+  .sarvdev-crop-risk {
+    background-color: #2b1a12;
+  }
+  .sarvdev-image-frame[data-image-role="deityHero"] {
+    background-position: center 58%;
+    background: linear-gradient(135deg, rgba(20,12,8,0.85), rgba(40,24,16,0.75));
+  }
+  /* Disable shimmer animation for deity heroes */
+  .sarvdev-image-frame[data-image-role="deityHero"]::before {
+    animation: none !important;
+    background: none !important;
+  }
+  /* Clean, static vignette for deity hero safe-contain mode */
+  .sarvdev-render-safe-contain[data-image-role="deityHero"]::after {
+    background:
+      radial-gradient(ellipse at 50% 50%, transparent 40%, rgba(0,0,0,0.35) 100%),
+      linear-gradient(180deg, rgba(0,0,0,0.12), rgba(0,0,0,0.32)) !important;
+  }
+  .sarvdev-image-contain {
+    object-fit: contain;
+    object-position: center center;
+    filter: brightness(1.015) contrast(1.035) saturate(1.015);
+  }
+  .sarvdev-panoramic-safe {
+    aspect-ratio: 21 / 9;
+  }
+  @media (max-width: 1024px) {
+    .sarvdev-panoramic-safe {
+      aspect-ratio: 16 / 9;
+    }
+  }
+  @media (max-width: 640px) {
+    .sarvdev-panoramic-safe {
+      aspect-ratio: 4 / 5;
+    }
+  }
+  @keyframes sarvdevImageShimmer {
+    0% { transform: translateX(-120%); }
+    55%, 100% { transform: translateX(120%); }
+  }
+
+  .deity-hero-stat {
+    display: flex;
+    min-height: 86px;
+    flex-direction: column;
+    justify-content: center;
+    border-radius: 1rem;
+    border: 1px solid rgba(255, 226, 170, 0.22);
+    background: rgba(255, 255, 255, 0.11);
+    padding: 1rem;
+    color: white;
+    box-shadow: 0 18px 48px rgba(0, 0, 0, 0.16);
+    backdrop-filter: blur(18px);
+  }
+  .deity-hero-stat span:last-child {
+    margin-top: 0.25rem;
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(255, 246, 225, 0.78);
+  }
+  .deity-intro-card,
+  .deity-detail-panel,
+  .deity-mantra-panel {
+    border-radius: 1.25rem;
+    border: 1px solid rgba(245, 158, 11, 0.22);
+    background:
+      linear-gradient(135deg, rgba(255,255,255,0.96), rgba(255,251,235,0.92));
+    box-shadow: 0 18px 54px rgba(120, 53, 15, 0.08);
+  }
+  .deity-detail-panel,
+  .deity-mantra-panel {
+    padding: 1.5rem;
+  }
+  @media (min-width: 768px) {
+    .deity-detail-panel,
+    .deity-mantra-panel {
+      padding: 2rem;
+    }
+  }
+  .deity-mantra-panel {
+    background:
+      radial-gradient(circle at 50% 0%, rgba(251, 191, 36, 0.2), transparent 34%),
+      linear-gradient(135deg, rgba(255,251,235,0.98), rgba(255,247,237,0.94));
+  }
+  .deity-card-premium {
+    overflow: hidden;
+    border-radius: 1.25rem;
+    border: 1px solid rgba(245, 158, 11, 0.18);
+    background: rgba(255, 255, 255, 0.95);
+    box-shadow: 0 10px 30px rgba(120, 53, 15, 0.07);
+    transition: transform 220ms ease, box-shadow 220ms ease, border-color 220ms ease;
+  }
+  .deity-card-premium:hover {
+    transform: translateY(-4px);
+    border-color: rgba(245, 158, 11, 0.46);
+    box-shadow: 0 22px 56px rgba(120, 53, 15, 0.14);
+  }
+  .deity-detail-badge {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    background: rgba(255, 255, 255, 0.12);
+    padding: 0.45rem 0.8rem;
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(14px);
+  }
+
+  .sacred-deity-hero-frame {
+    min-height: clamp(420px, 68vw, 620px);
+    background:
+      radial-gradient(circle at 50% 68%, rgba(255, 213, 128, 0.14), transparent 32%),
+      linear-gradient(180deg, #2a1710, #130c09);
+  }
+  @media (min-width: 768px) {
+    .sacred-deity-hero-frame {
+      min-height: clamp(460px, 48vw, 680px);
+    }
+  }
+  @media (min-width: 1280px) {
+    .sacred-deity-hero-frame {
+      min-height: clamp(520px, 42vw, 760px);
+    }
+  }
+
   /* Immersive hero with parallax-like depth */
   .temple-hero-2030 {
     @apply relative w-full overflow-hidden;
@@ -807,66 +1011,6 @@
 @keyframes float {
   0%, 100% { transform: translateY(0); }
   50%      { transform: translateY(-6px); }
-}
-
-/* ─── Print styles for devotional text ─── */
-@media print {
-  /* Hide non-content elements */
-  header, footer, nav,
-  .disclaimer,
-  button, .btn,
-  [role="dialog"],
-  .fixed,
-  .sticky,
-  audio, video,
-  .no-print {
-    display: none !important;
-  }
-
-  body {
-    background: white !important;
-    color: black !important;
-    font-size: 12pt;
-    line-height: 1.6;
-  }
-
-  main {
-    max-width: 100% !important;
-    padding: 0 !important;
-    margin: 0 !important;
-  }
-
-  /* Devotional print layout */
-  .print-devotional {
-    page-break-inside: avoid;
-  }
-
-  .print-devotional h1 {
-    font-size: 18pt;
-    text-align: center;
-    margin-bottom: 12pt;
-    color: black !important;
-  }
-
-  .print-devotional .lyrics-content {
-    font-size: 14pt;
-    line-height: 1.8;
-    text-align: center;
-    white-space: pre-line;
-  }
-
-  /* Ensure links show URL */
-  a[href^="http"]::after {
-    content: " (" attr(href) ")";
-    font-size: 9pt;
-    color: #666;
-  }
-
-  /* Remove shadows and borders */
-  .card, .card-interactive, [class*="shadow"] {
-    box-shadow: none !important;
-    border: 1px solid #ddd !important;
-  }
 }
 
 /* ─── Admin Premium Theme ─── */
@@ -1322,8 +1466,19 @@
 
   /* ── Cinematic Hero: upgrade base class ── */
   .temple-hero-2030 {
-    min-height: 92vh;
+    min-height: 0;
+    height: clamp(520px, 42.857vw, 760px);
     background: #1a0e0a;
+  }
+  @media (max-width: 1024px) {
+    .temple-hero-2030 {
+      height: clamp(460px, 56.25vw, 640px);
+    }
+  }
+  @media (max-width: 640px) {
+    .temple-hero-2030 {
+      height: clamp(560px, 125vw, 760px);
+    }
   }
   /* Atmospheric layer: warm ambient orbs */
   .temple-hero-2030::before {

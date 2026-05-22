@@ -3,6 +3,9 @@ export type Temple = {
   title: string
   description: string
   image?: string
+  imageCard?: string
+  imageHero?: string
+  imageGallery?: string[]
   slug?: string
   location?: string
 }

@@ -4,8 +4,9 @@ import { useState, useEffect, useMemo, useRef } from 'react'
 import Link from 'next/link'
 import { useTempleData } from '../lib/temple-data'
 import { useTranslation } from '../lib/translation'
-import { getTempleImage, TEMPLE_PLACEHOLDER } from '../lib/temple-image'
+import { getTempleCardImage } from '../lib/temple-image'
 import { getTemplesForSacredCategory, SHAKTI_PEETH_CATEGORY } from '../data/shakti-peethas'
+import SarvdevImage from './SarvdevImage'
 
 const CATEGORIES = [
   { name: "Dwadash Jyotirlinga (12 Jyotirlingas)", short: "Jyotirlinga" },
@@ -149,12 +150,13 @@ export default function HomeCategoryShowcase({ initialTemples }: { initialTemple
               draggable={false}
             >
               {/* Full-bleed temple image */}
-              <img
-                src={getTempleImage(cover)}
+              <SarvdevImage
+                image={getTempleCardImage(cover)}
                 alt={cat.short}
                 draggable={false}
-                className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                onError={(e) => { (e.target as HTMLImageElement).src = TEMPLE_PLACEHOLDER }}
+                className="absolute inset-0"
+                imgClassName="object-cover transition-transform duration-700 group-hover:scale-105"
+                renderMode="auto"
               />
               {/* Bottom gradient scrim */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />

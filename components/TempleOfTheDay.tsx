@@ -2,9 +2,10 @@
 
 import { useMemo } from 'react'
 import Link from 'next/link'
-import { getTempleImage, TEMPLE_PLACEHOLDER } from '../lib/temple-image'
+import { getTempleHeroImage } from '../lib/temple-image'
 import { useTempleData } from '../lib/temple-data'
 import { useTranslation } from '../lib/translation'
+import SarvdevImage from './SarvdevImage'
 
 function generateSlug(title: string) {
   return title
@@ -64,11 +65,12 @@ export default function TempleOfTheDay() {
         <div className="flex flex-col md:flex-row rounded-2xl overflow-hidden border border-gray-100 shadow-sm" style={{ minHeight: 480 }}>
           {/* Left — full-bleed image with Ken Burns */}
           <div className="relative md:w-3/5 overflow-hidden" style={{ minHeight: 320 }}>
-            <img
-              src={getTempleImage(temple as any)}
+            <SarvdevImage
+              image={getTempleHeroImage(temple as any)}
               alt={temple.title}
-              className="absolute inset-0 w-full h-full object-cover ken-burns"
-              onError={(e) => { (e.target as HTMLImageElement).src = TEMPLE_PLACEHOLDER }}
+              className="absolute inset-0"
+              imgClassName="object-cover ken-burns"
+              renderMode="auto"
             />
             {/* Subtle scrim for mobile text legibility */}
             <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent md:hidden" />

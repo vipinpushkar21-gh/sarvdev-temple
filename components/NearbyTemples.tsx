@@ -2,15 +2,17 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
 import { useTranslation } from '../lib/translation'
-import { getTempleImage, TEMPLE_PLACEHOLDER } from '../lib/temple-image'
+import { getTempleCardImage } from '../lib/temple-image'
 import { useTempleData } from '../lib/temple-data'
+import SarvdevImage from './SarvdevImage'
 
 type Temple = {
   _id: string
   title: string
   image?: string
+  imageCard?: string
+  imageHero?: string
   city?: string
   state?: string
   deity?: string
@@ -139,7 +141,7 @@ export default function NearbyTemples() {
               className="card-interactive no-underline hover:no-underline group"
             >
               <div className="relative h-40 w-full bg-surface-sunken rounded-t-card overflow-hidden">
-                <TempleImage image={temple.image} alt={temple.title} />
+                <TempleImage temple={temple} alt={temple.title} />
               </div>
               <div className="p-4">
                 <h3 className="text-h4 text-secondary-700 group-hover:text-primary-600 transition-colors">
@@ -164,15 +166,14 @@ export default function NearbyTemples() {
   )
 }
 
-function TempleImage({ image, alt }: { image?: string; alt: string }) {
-  const [src, setSrc] = useState(getTempleImage({ image }))
+function TempleImage({ temple, alt }: { temple: Temple; alt: string }) {
   return (
-    <Image
-      src={src}
+    <SarvdevImage
+      image={getTempleCardImage(temple)}
       alt={alt}
-      fill
-      className="object-cover"
-      onError={() => setSrc(TEMPLE_PLACEHOLDER)}
+      className="absolute inset-0"
+      imgClassName="object-cover"
+      renderMode="auto"
     />
   )
 }

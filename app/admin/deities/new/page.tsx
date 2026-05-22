@@ -15,6 +15,8 @@ type FormState = {
   category: string
   categoryId: string
   imageUrl: string
+  imageCard: string
+  imageHero: string
   images: string[]
   metaTitle: string
   metaDescription: string
@@ -46,6 +48,8 @@ const emptyForm = (): FormState => ({
   category: "Other",
   categoryId: "",
   imageUrl: "",
+  imageCard: "",
+  imageHero: "",
   images: [],
   metaTitle: "",
   metaDescription: "",
@@ -75,6 +79,7 @@ export default function AdminNewDeityPage() {
       const payload = {
         ...form,
         slug,
+        image: form.imageUrl || form.imageCard || form.imageHero,
         attributes: form.attributes.split(',').map(a => a.trim()).filter(a => a),
         images: form.images,
         status: "approved"
@@ -226,9 +231,26 @@ export default function AdminNewDeityPage() {
           
           <div className="space-y-6">
             <ImageUpload
-              label="Main Image"
+              label="Card Image"
+              value={form.imageCard}
+              onChange={(url) => handleChange('imageCard', url)}
+              folder="sarvdev/deities/cards"
+              guidance="card"
+            />
+
+            <ImageUpload
+              label="Hero Image"
+              value={form.imageHero}
+              onChange={(url) => handleChange('imageHero', url)}
+              folder="sarvdev/deities/heroes"
+              guidance="hero"
+            />
+
+            <ImageUpload
+              label="Legacy Main Image"
               value={form.imageUrl}
               onChange={(url) => handleChange('imageUrl', url)}
+              folder="sarvdev/deities"
             />
 
             <div>

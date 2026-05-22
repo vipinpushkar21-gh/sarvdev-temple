@@ -17,7 +17,7 @@ const SUPPORTED_TEMPLE_FIELDS = [
   'title','titleHi','subtitle','subtitleHi','alternateNames','templeTagline','templeTaglineHi',
   'shortDescription','shortDescriptionHi','description','descriptionHi',
   // Media
-  'image','heroImage','images','galleryImages','festivalGallery','architectureGallery',
+  'image','imageCard','imageHero','imageGallery','heroImage','images','galleryImages','festivalGallery','architectureGallery',
   'deityGallery','videos','droneShots','ambienceAudio',
   // Location
   'location','locationHi','mapsLink','googleMapsUrl','latitude','longitude',

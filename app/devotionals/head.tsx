@@ -1,16 +1,18 @@
 export default function Head() {
-  const description = "Explore sacred mantras, bhajans, stotras and more.";
-  const title = "Devotionals";
+  const description = 'Explore sacred mantras, bhajans, stotras, aartis, chalisas and devotional lyrics with audio support.'
+  const title = 'Devotionals'
   const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "CollectionPage",
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
     name: title,
     description,
+    url: 'https://sarvdev.com/devotionals',
     isPartOf: {
-      "@type": "WebSite",
-      name: "Sarvdev Temple"
-    }
-  };
+      '@type': 'WebSite',
+      name: 'Sarvdev',
+      url: 'https://sarvdev.com',
+    },
+  }
 
   return (
     <>
@@ -22,5 +24,6 @@ export default function Head() {
       <meta property="og:type" content="website" />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
     </>
-  );
+  )
 }
+

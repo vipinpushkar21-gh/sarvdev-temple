@@ -15,6 +15,8 @@ type FormState = {
   category: string
   categoryId: string
   imageUrl: string
+  imageCard: string
+  imageHero: string
   images: string[]
   metaTitle: string
   metaDescription: string
@@ -49,6 +51,8 @@ export default function AdminEditDeityPage({ params }: { params: Promise<{ id: s
     category: "Other",
     categoryId: "",
     imageUrl: "",
+    imageCard: "",
+    imageHero: "",
     images: [],
     metaTitle: "",
     metaDescription: "",
@@ -82,6 +86,8 @@ export default function AdminEditDeityPage({ params }: { params: Promise<{ id: s
             category: deity.category || "Other",
             categoryId: deity.categoryId || "",
             imageUrl: deity.image || "",
+            imageCard: deity.imageCard || "",
+            imageHero: deity.imageHero || "",
             images: Array.isArray(deity.images) ? deity.images : [],
             metaTitle: deity.metaTitle || "",
             metaDescription: deity.metaDescription || "",
@@ -149,7 +155,9 @@ export default function AdminEditDeityPage({ params }: { params: Promise<{ id: s
         slug: slug || deitySlug, // Fallback to existing slug if generated one is empty
         attributes: form.attributes.split(',').map(a => a.trim()).filter(a => a),
         images: form.images,
-        image: form.imageUrl,
+        image: form.imageUrl || form.imageCard || form.imageHero,
+        imageCard: form.imageCard,
+        imageHero: form.imageHero,
       }
 
       const res = await fetch('/api/deities', {
@@ -344,9 +352,26 @@ export default function AdminEditDeityPage({ params }: { params: Promise<{ id: s
           
           <div className="space-y-6">
             <ImageUpload
-              label="Main Image"
+              label="Card Image"
+              value={form.imageCard}
+              onChange={(url) => handleChange('imageCard', url)}
+              folder="sarvdev/deities/cards"
+              guidance="card"
+            />
+
+            <ImageUpload
+              label="Hero Image"
+              value={form.imageHero}
+              onChange={(url) => handleChange('imageHero', url)}
+              folder="sarvdev/deities/heroes"
+              guidance="hero"
+            />
+
+            <ImageUpload
+              label="Legacy Main Image"
               value={form.imageUrl}
               onChange={(url) => handleChange('imageUrl', url)}
+              folder="sarvdev/deities"
             />
 
             <div>

@@ -1,10 +1,9 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import Image from 'next/image'
 import Link from 'next/link'
 import { useTranslation } from '../../../lib/translation'
-import { getTempleImage, TEMPLE_PLACEHOLDER } from '../../../lib/temple-image'
+import { getTempleHeroImage } from '../../../lib/temple-image'
 import BookmarkButton from '../../../components/BookmarkButton'
 import Breadcrumbs from '../../../components/Breadcrumbs'
 import ShareButtons from '../../../components/ShareButtons'
@@ -14,6 +13,7 @@ import ClaimTempleButton from '../../../components/ClaimTempleButton'
 import AdminEditBar from '../../../components/AdminEditBar'
 import DeitySmartContent from '../../../components/DeitySmartContent'
 import TempleImageGallery from '../../../components/TempleImageGallery'
+import SarvdevImage from '../../../components/SarvdevImage'
 
 type Props = {
   params: Promise<{ slug: string }>
@@ -74,16 +74,16 @@ function slugify(text: string): string {
 }
 
 /** Small helper so we can use useState for the onError fallback */
-function TempleDetailImage({ image, alt }: { image?: string; alt: string }) {
-  const [src, setSrc] = useState(getTempleImage({ image }))
+function TempleDetailImage({ temple, alt }: { temple: any; alt: string }) {
+  const heroImage = getTempleHeroImage(temple)
   return (
-    <Image
-      src={src}
+    <SarvdevImage
+      image={heroImage}
       alt={alt}
-      fill
-      className="object-cover object-[center_30%]"
-      priority
-      onError={() => setSrc(TEMPLE_PLACEHOLDER)}
+      className="absolute inset-0"
+      imgClassName="object-cover"
+      loading="eager"
+      renderMode="auto"
     />
   )
 }
@@ -157,7 +157,7 @@ export default function TemplePage({ params }: Props) {
       if (!heroRef.current) return
       const rect = heroRef.current.getBoundingClientRect()
       const scrollProgress = Math.max(0, Math.min(1, -rect.top / rect.height))
-      setHeroScale(1 + scrollProgress * 0.15)
+      setHeroScale(1 + scrollProgress * 0.04)
     }
     window.addEventListener('scroll', handleScroll, { passive: true })
     return () => window.removeEventListener('scroll', handleScroll)
@@ -222,7 +222,7 @@ export default function TemplePage({ params }: Props) {
     '@type': 'PlaceOfWorship',
     name: temple.title,
     description: temple.description || undefined,
-    image: temple.image || undefined,
+    image: getTempleHeroImage(temple).src,
     url: `https://sarvdev.com/temples/${slug}`,
     ...(temple.city || temple.state ? {
       address: {
@@ -255,9 +255,9 @@ export default function TemplePage({ params }: Props) {
       <div ref={heroRef} className="temple-hero-2030">
         <div
           className="absolute inset-0 parallax-zoom"
-          style={{ transform: `scale(${heroScale})`, transformOrigin: 'center center' }}
+          style={{ transform: `scale(${heroScale})`, transformOrigin: 'top center' }}
         >
-          <TempleDetailImage image={temple.heroImage || temple.image} alt={temple.title} />
+          <TempleDetailImage temple={temple} alt={temple.title} />
         </div>
         {/* Ambient orb particles */}
         <div className="hero-orb hero-orb-gold" aria-hidden="true" />
@@ -338,7 +338,7 @@ export default function TemplePage({ params }: Props) {
             <div className="mt-6 flex items-center gap-3 flex-wrap reveal-up" style={{ animationDelay: '300ms' }}>
               <div className="floating-bar-2030 flex items-center gap-2 px-2 py-1.5">
                 <BookmarkButton
-                  item={{ id: temple._id || slug, type: 'temple', title: temple.title, slug, image: temple.image }}
+                  item={{ id: temple._id || slug, type: 'temple', title: temple.title, slug, image: temple.imageCard || temple.imageHero || temple.image }}
                 />
                 <div className="w-px h-6 bg-surface-border" />
                 <ShareButtons title={temple.title} />
@@ -373,7 +373,7 @@ export default function TemplePage({ params }: Props) {
         {temple.festivals && temple.festivals.length > 0 && <a href="#festivals" className="section-nav-pill">🎉 Festivals</a>}
         {(temple.dressCode || temple.pilgrimageCircuit) && <a href="#visitor" className="section-nav-pill">🛕 Visitor Guide</a>}
         {(temple.nearestAirport || temple.nearestRailwayStation) && <a href="#travel" className="section-nav-pill">✈️ How to Reach</a>}
-        {((temple.galleryImages?.length ?? 0) > 0 || (temple.images?.length ?? 0) > 0) && <a href="#gallery" className="section-nav-pill">🖼️ Gallery</a>}
+        {((temple.imageGallery?.length ?? 0) > 0 || (temple.galleryImages?.length ?? 0) > 0 || (temple.images?.length ?? 0) > 0) && <a href="#gallery" className="section-nav-pill">🖼️ Gallery</a>}
       </nav>
 
       {/* ── Main Content ── */}
@@ -600,12 +600,12 @@ export default function TemplePage({ params }: Props) {
         )}
 
         {/* Gallery */}
-        {((temple.galleryImages && temple.galleryImages.length > 0) || (temple.images && temple.images.length > 0)) && (
+        {((temple.imageGallery && temple.imageGallery.length > 0) || (temple.galleryImages && temple.galleryImages.length > 0) || (temple.images && temple.images.length > 0)) && (
           <section id="gallery" className="mb-10 reveal-up">
             <div className="gallery-section-premium">
               <div className="section-heading-2030"><h2>Gallery</h2></div>
               <div className="mt-4">
-                <TempleImageGallery images={[...(temple.galleryImages || []), ...(temple.images || [])]} title={temple.title} />
+                <TempleImageGallery images={[...(temple.imageGallery || []), ...(temple.galleryImages || []), ...(temple.images || [])]} title={temple.title} />
               </div>
             </div>
           </section>
