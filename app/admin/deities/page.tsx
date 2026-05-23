@@ -6,6 +6,7 @@ import Link from "next/link"
 import { DEITY_CATEGORIES } from "@/app/deities/page"
 import SarvdevImage from "@/components/SarvdevImage"
 import { getDeityCardImage } from "@/lib/temple-image"
+import { findBestDeityMatch, mergeStaticDeityWithDb } from "@/lib/deity-identity"
 
 export default function AdminDeitiesPage() {
   const router = useRouter()
@@ -14,6 +15,7 @@ export default function AdminDeitiesPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [categoryFilter, setCategoryFilter] = useState("all")
+  const [seedResult, setSeedResult] = useState<any>(null)
 
   useEffect(() => {
     fetchDeities()
@@ -21,54 +23,72 @@ export default function AdminDeitiesPage() {
 
   async function fetchDeities() {
     try {
-      const response = await fetch('/api/deities')
-      const dbDeities = await response.json()
-      
-      // Create map of database deities by name
-      const dbDeityMap = new Map<string, any>()
-      dbDeities.forEach((deity: any) => {
-        dbDeityMap.set(deity.name.toLowerCase(), deity)
-      })
-      
-      // Combine static deities with database deities
+      const response = await fetch('/api/deities', { credentials: 'include', cache: 'no-store' })
+      if (!response.ok) throw new Error('Failed to load deities')
+      const data = await response.json()
+      const dbDeities = Array.isArray(data) ? data : []
+
       const allDeities: any[] = []
       const orderMap = new Map<string, number>()
-      const addedIds = new Set<string>() // Track added IDs to prevent duplicates
+      const addedDbIds = new Set<string>()
+      const addedKeys = new Set<string>()
       let orderIndex = 0
-      
+
       DEITY_CATEGORIES.forEach((category: any) => {
         category.deities.forEach((deity: any) => {
-          orderMap.set(deity.name.toLowerCase(), orderIndex)
-          
-          // If deity exists in database, use database version, otherwise use static
-          const dbDeity = dbDeityMap.get(deity.name.toLowerCase())
-          const deityToAdd = dbDeity || {
+          const slugKey = deity.slug?.toLowerCase()
+          const nameKey = deity.name?.toLowerCase()
+          if (slugKey) orderMap.set(`slug:${slugKey}`, orderIndex)
+          if (nameKey) orderMap.set(`name:${nameKey}`, orderIndex)
+
+          const staticDeity = {
             ...deity,
-            _id: deity.slug, // Use slug as ID for static deities
-            status: 'static', // Mark as static
             category: category.title,
+            categoryId: category.id,
+          }
+          const match = findBestDeityMatch(staticDeity, dbDeities, addedDbIds)
+          const dbDeity = match?.deity as any
+          const deityToAdd = dbDeity ? {
+            ...mergeStaticDeityWithDb(staticDeity, dbDeity, category),
+            matchScore: match?.score,
+          } : {
+            ...staticDeity,
+            _id: `static-${deity.slug}`,
+            status: 'not-seeded',
+            source: 'static-fallback',
+            isStaticFallback: true,
             createdAt: null,
           }
-          
-          // Use slug if available, otherwise use _id as unique identifier
-          const uniqueId = deityToAdd.slug || deityToAdd._id
-          
-          // Only add if not already added (prevent duplicates)
-          if (!addedIds.has(uniqueId)) {
+
+          const uniqueId = deityToAdd.isStaticFallback ? `static:${deityToAdd.slug || deityToAdd._id}` : `db:${deityToAdd._id || deityToAdd.slug}`
+          if (!addedKeys.has(uniqueId)) {
             allDeities.push(deityToAdd)
-            addedIds.add(uniqueId)
+            addedKeys.add(uniqueId)
+            if (dbDeity?._id) addedDbIds.add(String(dbDeity._id))
           }
           orderIndex++
         })
       })
-      
-      // Sort deities according to static data order
+
+      dbDeities.forEach((deity: any) => {
+        const dbId = String(deity?._id || '')
+        const uniqueId = deity._id ? `db:${deity._id}` : `slug:${deity.slug}`
+        if (dbId && addedDbIds.has(dbId)) return
+        if (uniqueId && addedKeys.has(uniqueId)) return
+        allDeities.push({
+          ...deity,
+          source: deity.source || 'manual',
+          isStaticFallback: false,
+        })
+        if (uniqueId) addedKeys.add(uniqueId)
+      })
+
       const sortedDeities = allDeities.sort((a, b) => {
-        const orderA = orderMap.get(a.name.toLowerCase()) ?? Infinity
-        const orderB = orderMap.get(b.name.toLowerCase()) ?? Infinity
+        const orderA = orderMap.get(`slug:${a.slug?.toLowerCase()}`) ?? orderMap.get(`name:${a.name?.toLowerCase()}`) ?? Infinity
+        const orderB = orderMap.get(`slug:${b.slug?.toLowerCase()}`) ?? orderMap.get(`name:${b.name?.toLowerCase()}`) ?? Infinity
         return orderA - orderB
       })
-      
+
       setDeities(sortedDeities)
     } catch (error) {
       console.error('Failed to fetch deities:', error)
@@ -93,35 +113,39 @@ export default function AdminDeitiesPage() {
   }
 
   async function handleSeedDeities() {
-    if (!confirm('This will add/update all static deities to the database. Continue?')) return
+    if (!confirm('Seed All will only create missing deities and fill empty safe fields. It will never overwrite customized DB records or uploaded images. Continue?')) return
 
     try {
       setLoading(true)
+      setSeedResult(null)
       
       // Flatten all deities from categories
       const allDeities = DEITY_CATEGORIES.flatMap((category: any) =>
         category.deities.map((deity: any) => ({
           ...deity,
           category: category.title,
+          categoryId: category.id,
         }))
       )
 
       const response = await fetch('/api/admin/seed-deities', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ deities: allDeities }),
       })
       const result = await response.json()
       
-      if (result.success) {
-        alert(`Successfully processed ${result.results.length} deities`)
+      if (response.ok && (result.ok || result.success)) {
+        setSeedResult(result)
+        alert(`Safe seed complete. Created: ${result.created || 0}, skipped: ${result.skippedExisting || 0}, protected: ${result.protectedCustomized || 0}, merged empty fields: ${result.mergedMissingFields || 0}, failed: ${result.failed || 0}`)
         fetchDeities()
       } else {
-        alert('Failed to seed deities')
+        alert(result.error || result.errors?.[0]?.reason || 'Failed to seed deities')
       }
     } catch (error) {
       console.error('Failed to seed deities:', error)
-      alert('Failed to seed deities')
+      alert(error instanceof Error ? error.message : 'Failed to seed deities')
     } finally {
       setLoading(false)
     }
@@ -129,33 +153,28 @@ export default function AdminDeitiesPage() {
 
   const filteredDeities = useMemo(() => {
     const filtered = deities.filter(deity => {
-      const matchesSearch = 
-        deity.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        deity.nameHi.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      const matchesSearch =
+        (deity.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (deity.nameHi || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
         (deity.category && deity.category.toLowerCase().includes(searchTerm.toLowerCase()))
-      
+
       const matchesStatus = statusFilter === "all" || deity.status === statusFilter
       const matchesCategory = categoryFilter === "all" || deity.category === categoryFilter
-      
+
       return matchesSearch && matchesStatus && matchesCategory
     })
     
-    // Deduplicate by both slug and name to ensure uniqueness
-    const seenSlugs = new Set<string>()
-    const seenNames = new Set<string>()
+    const seenRows = new Set<string>()
     return filtered.filter(deity => {
-      const slugKey = deity.slug || deity._id || ''
-      const nameKey = deity.name.toLowerCase()
-      
-      if (seenSlugs.has(slugKey) || seenNames.has(nameKey)) return false
-      seenSlugs.add(slugKey)
-      seenNames.add(nameKey)
+      const rowKey = deity.isStaticFallback ? `static:${deity.slug || deity._id || ''}` : `db:${deity._id || deity.slug || ''}`
+      if (seenRows.has(rowKey)) return false
+      seenRows.add(rowKey)
       return true
     })
   }, [deities, searchTerm, statusFilter, categoryFilter])
 
   const categoryOptions = useMemo(() => Array.from(new Set(deities.map((deity) => deity.category).filter(Boolean))).sort(), [deities])
-  const dbCount = deities.filter((deity) => deity.status !== 'static').length
+  const dbCount = deities.filter((deity) => !deity.isStaticFallback).length
   const imageReadyCount = deities.filter((deity) => deity.imageCard || deity.imageHero || deity.image).length
 
   if (loading) {
@@ -184,6 +203,12 @@ export default function AdminDeitiesPage() {
             Seed All Deities
           </button>
           <Link
+            href="/admin/deities/data-integrity"
+            className="px-6 py-2.5 rounded-lg font-medium border border-amber-200 text-amber-700 hover:bg-amber-50"
+          >
+            Integrity Report
+          </Link>
+          <Link
             href="/admin/deities/new"
             className="btn-primary px-6 py-2.5 rounded-lg font-medium"
           >
@@ -197,6 +222,16 @@ export default function AdminDeitiesPage() {
         <AdminStat label="DB records" value={dbCount} />
         <AdminStat label="Image ready" value={imageReadyCount} />
         <AdminStat label="Categories" value={categoryOptions.length} />
+      </div>
+
+      <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+        <p className="font-bold">Safe Seed All</p>
+        <p className="mt-1">Seed All will only create missing deities and fill empty safe fields. It will never overwrite customized DB records or uploaded images.</p>
+        {seedResult && (
+          <p className="mt-2 font-semibold">
+            Created {seedResult.created || 0}, skipped {seedResult.skippedExisting || 0}, protected {seedResult.protectedCustomized || 0}, merged empty fields {seedResult.mergedMissingFields || 0}, failed {seedResult.failed || 0}.
+          </p>
+        )}
       </div>
 
       {/* Filters */}
@@ -228,6 +263,7 @@ export default function AdminDeitiesPage() {
             <option value="approved">Approved</option>
             <option value="pending">Pending</option>
             <option value="rejected">Rejected</option>
+            <option value="not-seeded">Not in DB</option>
           </select>
         </div>
       </div>
@@ -272,7 +308,7 @@ export default function AdminDeitiesPage() {
                         <p className="font-medium text-ink">{deity.name}</p>
                         <p className="text-sm text-ink-muted font-devanagari">{deity.nameHi}</p>
                         <p className="mt-1 text-[11px] font-semibold text-gray-400">
-                          {deity.imageHero ? 'Hero image set' : deity.imageCard ? 'Card image set' : deity.image ? 'Legacy image set' : 'Fallback image'}
+                          {deity.imageHero ? 'Hero image set' : deity.imageCard ? 'Card image set' : deity.image ? 'Legacy image set' : 'Fallback image'} · source: {deity.source || 'legacy'}
                         </p>
                       </div>
                     </td>
@@ -281,11 +317,9 @@ export default function AdminDeitiesPage() {
                     </td>
                     <td className="px-6 py-4">
                       <span className={`inline-block px-2.5 py-1 text-xs font-medium rounded-full ${
-                        deity.status === 'approved' ? 'bg-green-50 text-green-700 border border-green-200' :
-                        deity.status === 'rejected' ? 'bg-red-50 text-red-700 border border-red-200' :
-                        'bg-yellow-50 text-yellow-700 border border-yellow-200'
+                        getStatusClasses(deity)
                       }`}>
-                        {deity.status || 'pending'}
+                        {getDbStatusLabel(deity)}
                       </span>
                     </td>
                     <td className="px-6 py-4">
@@ -302,7 +336,7 @@ export default function AdminDeitiesPage() {
                         >
                           View
                         </Link>
-                        {deity.status === 'static' ? (
+                        {deity.isStaticFallback ? (
                           <Link
                             href={`/admin/deities/new?slug=${deity.slug}`}
                             className="text-sm text-primary-600 hover:text-primary-700 font-medium"
@@ -351,4 +385,23 @@ function AdminStat({ label, value }: { label: string; value: number }) {
       <p className="mt-1 text-2xl font-black text-gray-950 tabular-nums">{value.toLocaleString('en-IN')}</p>
     </div>
   )
+}
+
+function getStatusLabel(deity: any) {
+  if (deity.isStaticFallback) return 'Not in DB'
+  if (deity.isCustomized) return `${deity.status || 'pending'} · customized`
+  return deity.status || 'pending'
+}
+
+function getStatusClasses(deity: any) {
+  if (deity.isStaticFallback) return 'bg-slate-50 text-slate-700 border border-slate-200'
+  if (deity.status === 'approved') return 'bg-green-50 text-green-700 border border-green-200'
+  if (deity.status === 'rejected') return 'bg-red-50 text-red-700 border border-red-200'
+  return 'bg-yellow-50 text-yellow-700 border border-yellow-200'
+}
+
+function getDbStatusLabel(deity: any) {
+  if (deity.isStaticFallback) return 'Not in DB'
+  if (deity.isCustomized) return `In DB - ${deity.status || 'pending'} - customized`
+  return `In DB - ${deity.status || 'pending'}`
 }

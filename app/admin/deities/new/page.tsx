@@ -4,6 +4,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import ImageUpload from "../../../../components/ImageUpload"
+import { getCategoryOptions } from "../../../../lib/deity-categories"
 
 type FormState = {
   name: string
@@ -12,8 +13,7 @@ type FormState = {
   descriptionHi: string
   mantra: string
   attributes: string
-  category: string
-  categoryId: string
+  categories: string[]
   imageUrl: string
   imageCard: string
   imageHero: string
@@ -23,16 +23,6 @@ type FormState = {
   metaKeywords: string
   ogImage: string
 }
-
-const categories = [
-  "Tridev",
-  "Tridevi",
-  "Ashta Vasu",
-  "Ekadash Rudra",
-  "Dwadash Aditya",
-  "Navagraha",
-  "Other"
-]
 
 const i = "admin-input w-full"
 const l = "block text-sm font-medium text-gray-600 mb-1"
@@ -45,8 +35,7 @@ const emptyForm = (): FormState => ({
   descriptionHi: "",
   mantra: "",
   attributes: "",
-  category: "Other",
-  categoryId: "",
+  categories: [],
   imageUrl: "",
   imageCard: "",
   imageHero: "",
@@ -77,17 +66,27 @@ export default function AdminNewDeityPage() {
       const slug = form.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
 
       const payload = {
-        ...form,
+        name: form.name,
+        nameHi: form.nameHi,
+        description: form.description,
+        descriptionHi: form.descriptionHi,
+        mantra: form.mantra,
+        categories: form.categories,
         slug,
         image: form.imageUrl || form.imageCard || form.imageHero,
         attributes: form.attributes.split(',').map(a => a.trim()).filter(a => a),
         images: form.images,
+        metaTitle: form.metaTitle,
+        metaDescription: form.metaDescription,
+        metaKeywords: form.metaKeywords,
+        ogImage: form.ogImage,
         status: "approved"
       }
 
       const res = await fetch('/api/deities', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify(payload)
       })
 
@@ -142,27 +141,22 @@ export default function AdminNewDeityPage() {
             </div>
 
             <div>
-              <label className={l}>Category</label>
+              <label className={l}>Categories (Multiple Select)</label>
               <select
+                multiple
                 className={i}
-                value={form.category}
-                onChange={(e) => handleChange('category', e.target.value)}
+                value={form.categories}
+                onChange={(e) => {
+                  const selected = Array.from(e.target.selectedOptions, option => option.value)
+                  handleChange('categories', selected)
+                }}
+                required
               >
-                {categories.map(cat => (
-                  <option key={cat} value={cat}>{cat}</option>
+                {getCategoryOptions(false).map(cat => (
+                  <option key={cat.id} value={cat.value}>{cat.label}</option>
                 ))}
               </select>
-            </div>
-
-            <div>
-              <label className={l}>Category ID</label>
-              <input
-                type="text"
-                className={i}
-                value={form.categoryId}
-                onChange={(e) => handleChange('categoryId', e.target.value)}
-                placeholder="e.g., tridev"
-              />
+              <p className="mt-2 text-xs text-gray-500">Hold Ctrl/Cmd to select multiple categories</p>
             </div>
           </div>
         </div>

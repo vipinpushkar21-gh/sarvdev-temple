@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import ImageUpload from "../../../../../components/ImageUpload"
+import { getCategoryOptions } from "../../../../../lib/deity-categories"
 
 type FormState = {
   name: string
@@ -12,8 +13,7 @@ type FormState = {
   descriptionHi: string
   mantra: string
   attributes: string
-  category: string
-  categoryId: string
+  categories: string[]
   imageUrl: string
   imageCard: string
   imageHero: string
@@ -25,15 +25,7 @@ type FormState = {
   status: string
 }
 
-const categories = [
-  "Tridev",
-  "Tridevi",
-  "Ashta Vasu",
-  "Ekadash Rudra",
-  "Dwadash Aditya",
-  "Navagraha",
-  "Other"
-]
+const PREDEFINED_CATEGORIES = getCategoryOptions(false).map(opt => opt.value)
 
 const i = "admin-input w-full"
 const l = "block text-sm font-medium text-gray-600 mb-1"
@@ -48,8 +40,7 @@ export default function AdminEditDeityPage({ params }: { params: Promise<{ id: s
     descriptionHi: "",
     mantra: "",
     attributes: "",
-    category: "Other",
-    categoryId: "",
+    categories: [],
     imageUrl: "",
     imageCard: "",
     imageHero: "",
@@ -70,12 +61,26 @@ export default function AdminEditDeityPage({ params }: { params: Promise<{ id: s
     async function fetchDeity() {
       try {
         const { id } = await params
-        const response = await fetch('/api/deities')
+        const response = await fetch('/api/deities', { credentials: 'include', cache: 'no-store' })
         const deities = await response.json()
         const deity = deities.find((d: any) => d._id === id)
-        
+
         if (deity) {
           setDeitySlug(deity.slug || "")
+
+          // Support both new multi-category and legacy single-category fields
+          let selectedCategories: string[] = []
+          
+          if (Array.isArray(deity.categories) && deity.categories.length > 0) {
+            selectedCategories = deity.categories
+          } else if (Array.isArray(deity.categoryIds) && deity.categoryIds.length > 0) {
+            selectedCategories = deity.categoryIds
+          } else if (deity.category) {
+            selectedCategories = [deity.category]
+          } else if (deity.categoryId) {
+            selectedCategories = [deity.categoryId]
+          }
+
           setForm({
             name: deity.name || "",
             nameHi: deity.nameHi || "",
@@ -83,8 +88,7 @@ export default function AdminEditDeityPage({ params }: { params: Promise<{ id: s
             descriptionHi: deity.descriptionHi || "",
             mantra: deity.mantra || "",
             attributes: Array.isArray(deity.attributes) ? deity.attributes.join(', ') : "",
-            category: deity.category || "Other",
-            categoryId: deity.categoryId || "",
+            categories: selectedCategories,
             imageUrl: deity.image || "",
             imageCard: deity.imageCard || "",
             imageHero: deity.imageHero || "",
@@ -93,7 +97,7 @@ export default function AdminEditDeityPage({ params }: { params: Promise<{ id: s
             metaDescription: deity.metaDescription || "",
             metaKeywords: deity.metaKeywords || "",
             ogImage: deity.ogImage || "",
-            status: deity.status || "pending"
+            status: ['pending', 'approved', 'rejected'].includes(deity.status) ? deity.status : "approved"
           })
         }
       } catch (err) {
@@ -133,10 +137,6 @@ export default function AdminEditDeityPage({ params }: { params: Promise<{ id: s
 
     try {
       const { id } = await params
-      
-      // Generate slug from name
-      const slug = form.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
-      setDeitySlug(slug)
 
       const payload = {
         id,
@@ -145,17 +145,15 @@ export default function AdminEditDeityPage({ params }: { params: Promise<{ id: s
         description: form.description,
         descriptionHi: form.descriptionHi,
         mantra: form.mantra,
-        category: form.category,
-        categoryId: form.categoryId,
+        categories: form.categories,
         metaTitle: form.metaTitle,
         metaDescription: form.metaDescription,
         metaKeywords: form.metaKeywords,
         ogImage: form.ogImage,
         status: form.status,
-        slug: slug || deitySlug, // Fallback to existing slug if generated one is empty
         attributes: form.attributes.split(',').map(a => a.trim()).filter(a => a),
         images: form.images,
-        image: form.imageUrl || form.imageCard || form.imageHero,
+        image: form.imageUrl,
         imageCard: form.imageCard,
         imageHero: form.imageHero,
       }
@@ -163,6 +161,7 @@ export default function AdminEditDeityPage({ params }: { params: Promise<{ id: s
       const res = await fetch('/api/deities', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify(payload)
       })
 
@@ -173,6 +172,7 @@ export default function AdminEditDeityPage({ params }: { params: Promise<{ id: s
       }
 
       setSuccess("Deity updated successfully!")
+      setDeitySlug(data.slug || deitySlug)
       setTimeout(() => setSuccess(""), 3000)
     } catch (err: any) {
       console.error('Save error:', err)
@@ -250,27 +250,22 @@ export default function AdminEditDeityPage({ params }: { params: Promise<{ id: s
             </div>
 
             <div>
-              <label className={l}>Category</label>
+              <label className={l}>Categories (Multiple Select)</label>
               <select
+                multiple
                 className={i}
-                value={form.category}
-                onChange={(e) => handleChange('category', e.target.value)}
+                value={form.categories}
+                onChange={(e) => {
+                  const selected = Array.from(e.target.selectedOptions, option => option.value)
+                  handleChange('categories', selected)
+                }}
+                required
               >
-                {categories.map(cat => (
-                  <option key={cat} value={cat}>{cat}</option>
+                {getCategoryOptions(false).map(cat => (
+                  <option key={cat.id} value={cat.value}>{cat.label}</option>
                 ))}
               </select>
-            </div>
-
-            <div>
-              <label className={l}>Category ID</label>
-              <input
-                type="text"
-                className={i}
-                value={form.categoryId}
-                onChange={(e) => handleChange('categoryId', e.target.value)}
-                placeholder="e.g., tridev"
-              />
+              <p className="mt-2 text-xs text-gray-500">Hold Ctrl/Cmd to select multiple categories</p>
             </div>
 
             <div>

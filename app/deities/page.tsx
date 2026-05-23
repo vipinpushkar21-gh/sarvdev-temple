@@ -5,6 +5,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
 import SarvdevImage from '../../components/SarvdevImage'
 import { getDeityCardImage, getDeityHeroImage } from '../../lib/temple-image'
+import { findBestDeityMatch, mergeStaticDeityWithDb } from '../../lib/deity-identity'
+import { resolveCategoryForDeity } from '../../lib/deity-categories'
 
 /* ─── Deity Data ─── */
 
@@ -1544,9 +1546,9 @@ export default function DeitiesPage() {
   useEffect(() => {
     async function fetchDbDeities() {
       try {
-        const response = await fetch('/api/deities')
+        const response = await fetch('/api/deities', { cache: 'no-store' })
         const data = await response.json()
-        setDbDeities(data)
+        setDbDeities(Array.isArray(data) ? data : [])
       } catch (error) {
         console.error('Failed to fetch database deities:', error)
       }
@@ -1561,47 +1563,55 @@ export default function DeitiesPage() {
   }
 
   const filteredCategories = useMemo(() => {
-    // Create maps of database deities by stable identifiers for quick lookup.
-    const dbDeityMap = new Map<string, any>()
-    dbDeities.forEach((deity: any) => {
-      if (deity?.name) dbDeityMap.set(deity.name.toLowerCase(), deity)
-      if (deity?.slug) dbDeityMap.set(deity.slug.toLowerCase(), deity)
+    const hasDbData = dbDeities.length > 0
+    const addedDbIds = new Set<string>()
+    const mergedCategories = DEITY_CATEGORIES.map(cat => {
+      const deities = cat.deities.map((deity: any) => {
+        const staticDeity = {
+          ...deity,
+          category: cat.title,
+          categoryId: cat.id,
+        }
+        const match = findBestDeityMatch(staticDeity, dbDeities, addedDbIds)
+        const dbDeity = match?.deity as any
+        if (!dbDeity) return hasDbData ? null : deity
+        if (dbDeity._id) addedDbIds.add(String(dbDeity._id))
+
+        return mergeStaticDeityWithDb(staticDeity, dbDeity, cat)
+      }).filter(Boolean)
+      return { ...cat, deities }
     })
 
-    // Merge database deities with static data
-    const mergedCategories = DEITY_CATEGORIES.map(cat => ({
-      ...cat,
-      deities: cat.deities.map((deity: any) => {
-        const dbDeity = dbDeityMap.get(deity.slug?.toLowerCase()) || dbDeityMap.get(deity.name.toLowerCase())
-        if (!dbDeity) return deity
+    dbDeities.forEach((deity: any) => {
+      if (deity?._id && addedDbIds.has(String(deity._id))) return
+      const canonicalCategory = resolveCategoryForDeity(deity?.category, deity?.categoryId)
+      const targetCategory = mergedCategories.find((cat) =>
+        canonicalCategory === cat.id || deity?.category === cat.title
+      )
+      if (targetCategory) {
+        targetCategory.deities.push(deity)
+        if (deity?._id) addedDbIds.add(String(deity._id))
+      }
+    })
 
-        return {
-          ...deity,
-          _id: dbDeity._id,
-          image: dbDeity.image || deity.image,
-          imageCard: dbDeity.imageCard || dbDeity.image || deity.imageCard || deity.image,
-          imageHero: dbDeity.imageHero || dbDeity.imageCard || dbDeity.image || deity.imageHero || deity.imageCard || deity.image,
-          heroImage: dbDeity.imageHero || dbDeity.imageCard || dbDeity.image || deity.heroImage,
-          ogImage: dbDeity.ogImage || dbDeity.imageHero || dbDeity.imageCard || dbDeity.image || deity.ogImage,
-        }
-      })
-    }))
+    const publicCategories = hasDbData ? mergedCategories.filter(cat => cat.deities.length > 0) : mergedCategories
 
-    if (!search.trim()) return mergedCategories
+    if (!search.trim()) return publicCategories
     const term = search.trim().toLowerCase()
-    return mergedCategories.map(cat => ({
+    return publicCategories.map(cat => ({
       ...cat,
       deities: cat.deities.filter((d: any) =>
-        d.name.toLowerCase().includes(term) ||
-        d.nameHi.includes(term) ||
-        d.description.toLowerCase().includes(term) ||
-        d.descriptionHi.includes(term) ||
+        (d.name || '').toLowerCase().includes(term) ||
+        (d.nameHi || '').toLowerCase().includes(term) ||
+        (d.description || '').toLowerCase().includes(term) ||
+        (d.descriptionHi || '').toLowerCase().includes(term) ||
         d.attributes?.some((a: string) => a.toLowerCase().includes(term))
       ),
     })).filter(cat => cat.deities.length > 0)
   }, [search, dbDeities])
 
-  const totalDeities = DEITY_CATEGORIES.reduce((sum, cat) => sum + cat.deities.length, 0)
+  const staticTotalDeities = DEITY_CATEGORIES.reduce((sum, cat) => sum + cat.deities.length, 0)
+  const totalDeities = dbDeities.length > 0 ? dbDeities.length : staticTotalDeities
   const visibleDeityCount = filteredCategories.reduce((sum, cat) => sum + cat.deities.length, 0)
   const heroImage = getDeityHeroImage(DEITIES_HERO_IMAGE)
   const itemListLd = useMemo(() => ({

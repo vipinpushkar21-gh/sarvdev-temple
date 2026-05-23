@@ -2,28 +2,51 @@ import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/db';
 import Deity from '@/models/Deity';
 import { verifyToken, AUTH_COOKIE_NAME } from '@/lib/auth';
+import { resolveCategoryForDeity } from '@/lib/deity-categories';
 
-function isAdmin(req: NextRequest): boolean {
-  const token = req.cookies.get(AUTH_COOKIE_NAME)?.value
-  if (!token) return false
-  const payload = verifyToken(token)
-  return payload?.role === 'admin'
+const VALID_STATUSES = new Set(['pending', 'approved', 'rejected']);
+const STRING_FIELDS = [
+  'name',
+  'nameHi',
+  'description',
+  'descriptionHi',
+  'mantra',
+  'metaTitle',
+  'metaDescription',
+  'metaKeywords',
+] as const;
+const ARRAY_FIELDS = ['attributes', 'images'] as const;
+const MEDIA_FIELDS = ['image', 'imageCard', 'imageHero', 'ogImage'] as const;
+
+function getAdmin(req: NextRequest) {
+  const token = req.cookies.get(AUTH_COOKIE_NAME)?.value;
+  if (!token) return null;
+  const payload = verifyToken(token);
+  return payload?.role === 'admin' ? payload : null;
 }
 
-// ─── In-memory cache (60s TTL) ───
-let _cache: { data: any[]; ts: number } | null = null;
-const CACHE_TTL = 60_000;
+function normalizeStatus(status: unknown) {
+  return typeof status === 'string' && VALID_STATUSES.has(status) ? status : undefined;
+}
 
-// GET all deities
+function isNonEmptyString(value: unknown) {
+  return typeof value === 'string' && value.trim().length > 0;
+}
+
+function isMongoObjectId(value: unknown) {
+  return typeof value === 'string' && /^[a-f0-9]{24}$/i.test(value);
+}
+
+// GET all deities. DB is the source of truth, so do not serve stale in-memory data.
 export async function GET() {
   try {
-    if (_cache && Date.now() - _cache.ts < CACHE_TTL) {
-      return NextResponse.json(_cache.data);
-    }
     await connectDB();
-    const deities = await Deity.find({}, { __v: 0 }).sort({ createdAt: -1 }).lean();
-    _cache = { data: deities, ts: Date.now() };
-    return NextResponse.json(deities);
+    const deities = await Deity.find({}, { __v: 0 }).sort({ order: 1, createdAt: -1 }).lean();
+    return NextResponse.json(deities, {
+      headers: {
+        'Cache-Control': 'no-store, max-age=0',
+      },
+    });
   } catch (error) {
     console.error('Deity API Error:', error);
     return NextResponse.json({ error: 'Failed to fetch deities' }, { status: 500 });
@@ -35,46 +58,187 @@ export async function POST(req: NextRequest) {
   try {
     await connectDB();
     const data = await req.json();
-    // Allow public submissions (status defaults to 'pending')
-    if (data.status === 'approved' && !isAdmin(req)) {
+    const admin = getAdmin(req);
+
+    // Allow public submissions, but only admins can directly approve.
+    if (data.status === 'approved' && !admin) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    // Handle multiple categories (new format)
+    if (Array.isArray(data.categories) && data.categories.length > 0) {
+      // Validate and normalize categories
+      const validatedCategories = data.categories
+        .map((cat: any) => {
+          const canonical = resolveCategoryForDeity(cat, null);
+          return canonical || null;
+        })
+        .filter(Boolean);
+
+      if (validatedCategories.length === 0) {
+        return NextResponse.json({ error: 'Invalid categories. Please choose valid deity categories.' }, { status: 400 });
+      }
+
+      data.categories = validatedCategories;
+      data.categoryIds = validatedCategories;
+      // For backward compatibility, set the first category as the primary category
+      data.category = validatedCategories[0];
+      data.categoryId = validatedCategories[0];
+    } else {
+      // Legacy single category support
+      const canonicalCategory = resolveCategoryForDeity(data.category, data.categoryId);
+      if (!canonicalCategory) {
+        return NextResponse.json({ error: 'Invalid category. Please choose a canonical deity category.' }, { status: 400 });
+      }
+      data.category = canonicalCategory;
+      data.categoryId = canonicalCategory;
+      data.categories = [canonicalCategory];
+      data.categoryIds = [canonicalCategory];
+    }
+
+    delete data.categorySlug;
+    delete data.categoryName;
+
+    const status = normalizeStatus(data.status);
+    if (status) {
+      data.status = status;
+    } else {
+      delete data.status;
+    }
+
+    if (admin) {
+      data.source = 'manual';
+      data.isCustomized = true;
+      data.customizedAt = new Date();
+    } else {
+      data.source = 'public-submission';
+      data.isCustomized = false;
+    }
+    data.updatedAt = new Date();
+
     const deity = await Deity.create(data);
-    _cache = null;
     return NextResponse.json(deity, { status: 201 });
   } catch (error) {
+    console.error('Create deity error:', error);
     return NextResponse.json({ error: 'Failed to create deity' }, { status: 500 });
   }
 }
 
 // PUT update deity (admin only)
 export async function PUT(req: NextRequest) {
-  if (!isAdmin(req)) {
+  const admin = getAdmin(req);
+  if (!admin) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
+
   try {
     await connectDB();
-    const { id, ...update } = await req.json();
+    const { id, allowSlugChange, ...update } = await req.json();
     if (!id) {
       return NextResponse.json({ error: 'Missing deity id' }, { status: 400 });
     }
-    // Remove form-only fields that don't belong in the model
-    delete (update as any).imageUrl;
-    update.updatedAt = new Date();
+    if (!isMongoObjectId(id)) {
+      return NextResponse.json({ error: 'Invalid deity id. Admin edits must use Mongo _id.' }, { status: 400 });
+    }
 
-    // If slug would collide with another deity, keep existing slug
-    if (update.slug) {
-      const existing = await Deity.findOne({ slug: update.slug, _id: { $ne: id } }).lean();
-      if (existing) {
-        delete update.slug; // keep the deity's current slug
+    const existingDeity = await Deity.findById(id);
+    if (!existingDeity) {
+      return NextResponse.json({ error: 'Deity not found' }, { status: 404 });
+    }
+
+    if (!isNonEmptyString(update.name) || !isNonEmptyString(update.nameHi)) {
+      return NextResponse.json({ error: 'Name and Hindi name are required' }, { status: 400 });
+    }
+
+    const safeUpdate: Record<string, unknown> = {};
+
+    // Handle multiple categories (new format)
+    if (Array.isArray(update.categories) && update.categories.length > 0) {
+      // Validate and normalize categories
+      const validatedCategories = update.categories
+        .map((cat: any) => {
+          const canonical = resolveCategoryForDeity(cat, null);
+          return canonical || null;
+        })
+        .filter(Boolean);
+
+      if (validatedCategories.length === 0) {
+        return NextResponse.json({ error: 'Invalid categories. Please choose valid deity categories.' }, { status: 400 });
+      }
+
+      safeUpdate.categories = validatedCategories;
+      safeUpdate.categoryIds = validatedCategories;
+      // For backward compatibility, set the first category as the primary category
+      safeUpdate.category = validatedCategories[0];
+      safeUpdate.categoryId = validatedCategories[0];
+    } else if (isNonEmptyString(update.category)) {
+      // Legacy single category support
+      const canonicalCategory = resolveCategoryForDeity(update.category, null);
+      if (!canonicalCategory) {
+        return NextResponse.json({ error: 'Invalid category. Please choose a canonical deity category.' }, { status: 400 });
+      }
+      safeUpdate.category = canonicalCategory;
+      safeUpdate.categoryId = canonicalCategory;
+      safeUpdate.categories = [canonicalCategory];
+      safeUpdate.categoryIds = [canonicalCategory];
+    } else {
+      // Keep existing categories if not provided
+      const existingCategories = Array.isArray(existingDeity.categories) && existingDeity.categories.length > 0
+        ? existingDeity.categories
+        : [existingDeity.category || existingDeity.categoryId];
+      safeUpdate.categories = existingCategories;
+      safeUpdate.categoryIds = existingCategories;
+      safeUpdate.category = existingCategories[0] || existingDeity.category;
+      safeUpdate.categoryId = existingCategories[0] || existingDeity.categoryId;
+    }
+
+    for (const field of STRING_FIELDS) {
+      if (isNonEmptyString(update[field])) {
+        safeUpdate[field] = String(update[field]).trim();
       }
     }
 
-    const deity = await Deity.findByIdAndUpdate(id, { $set: update }, { new: true, runValidators: true });
+    for (const field of ARRAY_FIELDS) {
+      if (Array.isArray(update[field]) && update[field].length > 0) {
+        safeUpdate[field] = update[field].map((item: unknown) => String(item || '').trim()).filter(Boolean);
+      }
+    }
+
+    for (const field of MEDIA_FIELDS) {
+      if (isNonEmptyString(update[field])) {
+        safeUpdate[field] = String(update[field]).trim();
+      }
+    }
+
+    const status = normalizeStatus(update.status);
+    if (status) {
+      safeUpdate.status = status;
+    }
+
+    // Slugs are permanent identity keys unless a future explicit slug editor opts in.
+    if (allowSlugChange === true && isNonEmptyString(update.slug) && update.slug !== existingDeity.slug) {
+      const existingSlug = await Deity.findOne({ slug: update.slug, _id: { $ne: id } }).lean();
+      if (existingSlug) {
+        return NextResponse.json({ error: 'Slug already exists. Existing slug was preserved.' }, { status: 409 });
+      }
+      safeUpdate.slug = String(update.slug).trim();
+      safeUpdate.slugAliases = Array.from(new Set([...(existingDeity.slugAliases || []), existingDeity.slug].filter(Boolean)));
+    }
+
+    if (!existingDeity.staticSlug && isNonEmptyString(update.staticSlug)) {
+      safeUpdate.staticSlug = String(update.staticSlug).trim();
+    }
+
+    safeUpdate.source = 'manual';
+    safeUpdate.isCustomized = true;
+    safeUpdate.customizedAt = new Date();
+    safeUpdate.updatedBy = admin.id;
+    safeUpdate.updatedAt = new Date();
+
+    const deity = await Deity.findByIdAndUpdate(id, { $set: safeUpdate }, { new: true, runValidators: true });
     if (!deity) {
       return NextResponse.json({ error: 'Deity not found' }, { status: 404 });
     }
-    _cache = null;
     return NextResponse.json(deity);
   } catch (error: any) {
     console.error('Update deity error:', error);
@@ -85,9 +249,11 @@ export async function PUT(req: NextRequest) {
 
 // DELETE deity (admin only)
 export async function DELETE(req: NextRequest) {
-  if (!isAdmin(req)) {
+  const admin = getAdmin(req);
+  if (!admin) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
+
   try {
     await connectDB();
     const { id } = await req.json();
@@ -95,7 +261,6 @@ export async function DELETE(req: NextRequest) {
     if (!deity) {
       return NextResponse.json({ error: 'Deity not found' }, { status: 404 });
     }
-    _cache = null;
     return NextResponse.json({ success: true });
   } catch (error) {
     return NextResponse.json({ error: 'Failed to delete deity' }, { status: 500 });

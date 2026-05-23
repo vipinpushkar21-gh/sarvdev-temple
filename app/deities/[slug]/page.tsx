@@ -9,6 +9,7 @@ import AdminEditBar from '../../../components/AdminEditBar'
 import { DEITY_CATEGORIES } from '../page'
 import { getDeityCardImage, getDeityHeroImage, getGalleryImage } from '../../../lib/temple-image'
 import SarvdevImage from '../../../components/SarvdevImage'
+import { findBestDeityMatch, mergeStaticDeityWithDb } from '../../../lib/deity-identity'
 
 const BASE_URL = 'https://sarvdev.com'
 
@@ -51,11 +52,14 @@ export default function DeityDetailPage({ params }: Props) {
         const { slug } = await params
         let foundDeity = null
         let dbDeities: any[] = []
+        let dbFetchSucceeded = false
 
         try {
-          const response = await fetch('/api/deities')
+          const response = await fetch('/api/deities', { cache: 'no-store' })
           if (response.ok) {
-            dbDeities = await response.json()
+            dbFetchSucceeded = true
+            const data = await response.json()
+            dbDeities = Array.isArray(data) ? data : []
             if (Array.isArray(dbDeities)) {
               foundDeity = dbDeities.find((d: any) => d.slug === slug)
             }
@@ -75,16 +79,11 @@ export default function DeityDetailPage({ params }: Props) {
           return
         }
 
-        const dbMatch = dbDeities.find((d: any) => d.name?.toLowerCase() === staticDeity.name?.toLowerCase())
-        if (dbMatch?.image || dbMatch?.imageCard || dbMatch?.imageHero) {
-          setDeity({
-            ...staticDeity,
-            _id: dbMatch._id,
-            image: dbMatch.image || staticDeity.image,
-            imageCard: dbMatch.imageCard || dbMatch.image || staticDeity.imageCard || staticDeity.image,
-            imageHero: dbMatch.imageHero || dbMatch.imageCard || dbMatch.image || staticDeity.imageHero || staticDeity.imageCard || staticDeity.image,
-            ogImage: dbMatch.ogImage || dbMatch.imageHero || dbMatch.imageCard || dbMatch.image || staticDeity.ogImage,
-          })
+        const dbMatch = findBestDeityMatch(staticDeity, dbDeities)?.deity as any
+        if (dbMatch) {
+          setDeity(mergeStaticDeityWithDb(staticDeity, dbMatch))
+        } else if (dbFetchSucceeded && dbDeities.length > 0) {
+          setError('Deity not found')
         } else {
           setDeity(staticDeity)
         }
@@ -205,10 +204,7 @@ export default function DeityDetailPage({ params }: Props) {
             </div>
             <h1 className="text-[clamp(3rem,8vw,7rem)] font-serif leading-[0.92] tracking-normal text-white drop-shadow-2xl">{deity.nameHi}</h1>
             <p className="mt-4 text-2xl font-bold text-amber-100 md:text-3xl">{deity.name}</p>
-            {(deity.descriptionHi || deity.description) && (
-              <p className="mt-6 max-w-3xl text-lg leading-8 text-stone-100">{deity.descriptionHi || deity.description}</p>
-            )}
-            <div className="mt-8 flex flex-wrap items-center gap-3">
+            <div className="mt-6 flex flex-wrap items-center gap-3">
               <ShareButtons title={`${deity.nameHi} - ${deity.name}`} url={typeof window !== 'undefined' ? window.location.href : ''} />
             </div>
           </div>
@@ -227,6 +223,13 @@ export default function DeityDetailPage({ params }: Props) {
 
         <div className="page-container pt-10 grid gap-8 lg:grid-cols-[minmax(0,1fr)_22rem]">
           <div className="space-y-8">
+            {deity.mantra && (
+              <section className="deity-mantra-panel">
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-orange-700">Mantra</p>
+                <p className="mt-4 text-center font-devanagari text-2xl font-bold leading-10 text-stone-950">{deity.mantra}</p>
+              </section>
+            )}
+
             <section className="deity-detail-panel">
               <p className="text-xs font-black uppercase tracking-[0.18em] text-orange-700">About</p>
               <h2 className="mt-1 text-3xl font-serif text-stone-950">{deity.nameHi}</h2>
@@ -235,13 +238,6 @@ export default function DeityDetailPage({ params }: Props) {
                 {deity.description && <p className="text-lg leading-9 text-stone-700">{deity.description}</p>}
               </div>
             </section>
-
-            {deity.mantra && (
-              <section className="deity-mantra-panel">
-                <p className="text-xs font-black uppercase tracking-[0.18em] text-orange-700">Mantra</p>
-                <p className="mt-4 text-center font-devanagari text-2xl font-bold leading-10 text-stone-950">{deity.mantra}</p>
-              </section>
-            )}
 
             {deity.attributes && deity.attributes.length > 0 && (
               <section className="deity-detail-panel">
