@@ -1,48 +1,54 @@
 import type { Metadata } from 'next'
+import mongoose from 'mongoose'
 import { connectDB } from '@/lib/db'
 import Blog from '@/models/Blog'
 import { getOGImage } from '@/lib/temple-image'
+import { getBlogExcerpt, getBlogPath } from '@/lib/blog-utils'
 
 export const revalidate = 300
 
 const BASE = 'https://sarvdev.com'
-const DEFAULT_IMAGE = 'https://res.cloudinary.com/dc2qg7bwr/image/upload/image_2_xljqwa'
+
+async function findBlog(slug: string) {
+  await connectDB()
+  const lookup: Record<string, any>[] = [{ slug }]
+  if (mongoose.Types.ObjectId.isValid(slug)) lookup.push({ _id: slug })
+  return Blog.findOne({ $or: lookup }).lean() as any
+}
 
 export async function generateMetadata(
   { params }: { params: Promise<{ slug: string }> }
 ): Promise<Metadata> {
   try {
     const { slug } = await params
-    await connectDB()
-    const blog = await Blog.findById(slug).lean() as any
+    const blog = await findBlog(slug)
 
     if (!blog) {
       return {
-        title: 'Blog — Sarvdev',
+        title: 'Blog - Sarvdev',
         description: 'Read spiritual articles and temple guides on Sarvdev.',
       }
     }
 
-    const title = `${blog.title} — Sarvdev Blog`
-    const description = blog.excerpt
-      ? blog.excerpt.slice(0, 155)
-      : `Read "${blog.title}" — spiritual insights and temple stories on Sarvdev.`
-    const image = getOGImage(blog).src || DEFAULT_IMAGE
-    const url = `${BASE}/blog/${slug}`
-    const publishedAt = blog.date ? new Date(blog.date).toISOString() : new Date(blog.createdAt).toISOString()
+    const title = blog.metaTitle || `${blog.title} - Sarvdev Blog`
+    const description = blog.metaDescription || getBlogExcerpt(blog) || `Read ${blog.title} on Sarvdev.`
+    const image = getOGImage(blog).src
+    const url = `${BASE}${getBlogPath(blog)}`
+    const publishedAt = blog.publishedAt || blog.date || blog.createdAt
 
     return {
       title,
       description,
-      keywords: ['Hindu temple', 'spirituality', 'blog', 'Sarvdev', blog.title],
-      alternates: { canonical: url },
+      keywords: Array.isArray(blog.metaKeywords) ? blog.metaKeywords : String(blog.metaKeywords || '').split(',').filter(Boolean),
+      alternates: { canonical: blog.canonicalUrl || url },
       openGraph: {
         title,
         description,
         url,
         type: 'article',
         siteName: 'Sarvdev',
-        publishedTime: publishedAt,
+        publishedTime: publishedAt ? new Date(publishedAt).toISOString() : undefined,
+        modifiedTime: blog.updatedAt ? new Date(blog.updatedAt).toISOString() : undefined,
         images: [{ url: image, width: 1200, height: 630, alt: blog.title }],
       },
       twitter: {
@@ -53,44 +59,10 @@ export async function generateMetadata(
       },
     }
   } catch {
-    return { title: 'Blog — Sarvdev' }
+    return { title: 'Blog - Sarvdev' }
   }
 }
 
-export default async function BlogSlugLayout({
-  children,
-  params,
-}: {
-  children: React.ReactNode
-  params: Promise<{ slug: string }>
-}) {
-  let breadcrumbLd: object | null = null
-  try {
-    const { slug } = await params
-    await connectDB()
-    const blog = await Blog.findById(slug).lean() as any
-    if (blog) {
-      breadcrumbLd = {
-        '@context': 'https://schema.org',
-        '@type': 'BreadcrumbList',
-        itemListElement: [
-          { '@type': 'ListItem', position: 1, name: 'Home', item: BASE },
-          { '@type': 'ListItem', position: 2, name: 'Blog', item: `${BASE}/blog` },
-          { '@type': 'ListItem', position: 3, name: blog.title, item: `${BASE}/blog/${slug}` },
-        ],
-      }
-    }
-  } catch { /* silent */ }
-
-  return (
-    <>
-      {breadcrumbLd && (
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
-        />
-      )}
-      {children}
-    </>
-  )
+export default function BlogSlugLayout({ children }: { children: React.ReactNode }) {
+  return children
 }

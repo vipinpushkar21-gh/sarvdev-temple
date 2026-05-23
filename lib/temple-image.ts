@@ -27,7 +27,7 @@ type ImageInput =
       ogImage?: string | null
     }
 
-type ImageRole = 'templeHero' | 'templeCard' | 'deityHero' | 'deityCard' | 'gallery' | 'galleryLightbox' | 'og'
+type ImageRole = 'templeHero' | 'templeCard' | 'deityHero' | 'deityCard' | 'blogHero' | 'blogCard' | 'gallery' | 'galleryLightbox' | 'og'
 export type ImageRenderMode = 'auto' | 'safe-cover' | 'safe-contain' | 'cinematic-cover' | 'focal-safe'
 
 type ImagePreset = {
@@ -100,6 +100,26 @@ const PRESETS: Record<ImageRole, ImagePreset> = {
     crop: 'limit',
     gravity: 'north',
     objectPosition: DEFAULT_SAFE_POSITION,
+    renderMode: 'auto',
+  },
+  blogHero: {
+    role: 'blogHero',
+    widths: [768, 1024, 1366, 1600, 1920, 2400],
+    aspectRatio: '21:9',
+    sizes: '100vw',
+    crop: 'limit',
+    gravity: 'north',
+    objectPosition: 'center center',
+    renderMode: 'auto',
+  },
+  blogCard: {
+    role: 'blogCard',
+    widths: [360, 480, 640, 768, 960, 1200],
+    aspectRatio: '16:9',
+    sizes: '(max-width: 640px) 92vw, (max-width: 1024px) 45vw, 30vw',
+    crop: 'fill',
+    gravity: 'auto',
+    objectPosition: 'center center',
     renderMode: 'auto',
   },
   gallery: {
@@ -251,7 +271,7 @@ function buildImageSource(
     : source
 
   const responsiveSources =
-    preset.role === 'templeHero'
+    preset.role === 'templeHero' || preset.role === 'blogHero'
       ? [
           {
             media: '(max-width: 640px)',
@@ -305,6 +325,14 @@ export function getDeityHeroImage(input: ImageInput): SarvdevImageSource {
 
 export function getDeityCardImage(input: ImageInput): SarvdevImageSource {
   return buildImageSource(input, PRESETS.deityCard, 'imageCard')
+}
+
+export function getBlogHeroImage(input: ImageInput): SarvdevImageSource {
+  return buildImageSource(input, PRESETS.blogHero, 'imageHero')
+}
+
+export function getBlogCardImage(input: ImageInput): SarvdevImageSource {
+  return buildImageSource(input, PRESETS.blogCard, 'imageCard')
 }
 
 export function getGalleryImage(input: ImageInput, mode: 'thumb' | 'lightbox' = 'thumb'): SarvdevImageSource {

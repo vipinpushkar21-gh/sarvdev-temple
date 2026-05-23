@@ -715,6 +715,33 @@
     backdrop-filter: blur(14px);
   }
 
+  .blog-magazine-hero {
+    background:
+      radial-gradient(circle at 18% 18%, rgba(251, 191, 36, 0.2), transparent 28%),
+      linear-gradient(135deg, #24140d, #100b08 62%, #32180c);
+  }
+  .blog-premium-card {
+    box-shadow: 0 10px 32px rgba(120, 53, 15, 0.07);
+  }
+  .blog-premium-card:hover {
+    border-color: rgba(245, 158, 11, 0.45);
+  }
+  .blog-article-shell {
+    border-radius: 2rem;
+    border: 1px solid rgba(245, 158, 11, 0.18);
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(255, 251, 235, 0.9));
+    box-shadow: 0 18px 60px rgba(120, 53, 15, 0.08);
+    padding: clamp(1.25rem, 3vw, 3rem);
+  }
+  .blog-article-shell h2,
+  .blog-article-shell h3 {
+    letter-spacing: 0;
+  }
+  .blog-article-shell p {
+    overflow-wrap: anywhere;
+  }
+
   .sacred-deity-hero-frame {
     min-height: clamp(420px, 68vw, 620px);
     background:
@@ -1212,6 +1239,132 @@
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+  }
+
+  .admin-page-header {
+    @apply flex flex-col gap-4 rounded-3xl border p-5 md:flex-row md:items-center md:justify-between;
+    background:
+      linear-gradient(135deg, rgba(255,255,255,0.96), rgba(255,247,237,0.72)),
+      radial-gradient(circle at 0% 0%, rgba(255,153,51,0.12), transparent 34%);
+    border-color: rgba(245, 158, 11, 0.16);
+    box-shadow: 0 14px 44px rgba(120, 53, 15, 0.07);
+  }
+  .admin-page-actions {
+    @apply flex shrink-0 flex-wrap items-center gap-2;
+  }
+  .admin-eyebrow {
+    @apply mb-1 text-[11px] font-black uppercase tracking-[0.2em];
+    color: #C2410C;
+  }
+  .admin-section-card {
+    @apply overflow-hidden;
+  }
+  .admin-section-card-head {
+    @apply flex flex-col gap-3 border-b px-5 py-4 sm:flex-row sm:items-center sm:justify-between;
+    border-color: rgba(0,0,0,0.06);
+    background: linear-gradient(180deg, rgba(249,250,251,0.85), rgba(255,255,255,0.7));
+  }
+  .admin-section-card-body {
+    @apply p-5;
+  }
+  .admin-empty-state {
+    @apply rounded-3xl border border-dashed p-10 text-center;
+    border-color: rgba(245, 158, 11, 0.28);
+    background: linear-gradient(135deg, rgba(255,251,235,0.78), rgba(255,255,255,0.9));
+  }
+  .admin-empty-state h2 {
+    @apply mt-4 text-xl font-black text-gray-950;
+  }
+  .admin-empty-state p {
+    @apply mx-auto mt-2 max-w-md text-sm font-medium leading-6 text-gray-500;
+  }
+  .admin-empty-mark {
+    @apply mx-auto flex h-12 w-12 items-center justify-center rounded-2xl text-base font-black;
+    background: linear-gradient(135deg, #FF9933, #E67E22);
+    color: white;
+    box-shadow: 0 12px 26px rgba(255,153,51,0.25);
+  }
+  .admin-tabs {
+    @apply flex gap-1 overflow-x-auto rounded-2xl border bg-white p-1;
+    border-color: rgba(0,0,0,0.06);
+  }
+  .admin-tabs button {
+    @apply inline-flex shrink-0 items-center gap-2 rounded-xl px-3 py-2 text-xs font-black text-gray-500 transition;
+  }
+  .admin-tabs button:hover {
+    background: #F9FAFB;
+    color: #111827;
+  }
+  .admin-tabs button.active {
+    background: linear-gradient(135deg, #111827, #374151);
+    color: white;
+    box-shadow: 0 8px 18px rgba(17,24,39,0.18);
+  }
+  .admin-tab-count {
+    @apply rounded-full px-2 py-0.5 text-[10px];
+    background: rgba(255,255,255,0.16);
+  }
+  .admin-image-preview {
+    @apply relative overflow-hidden rounded-xl bg-gray-100;
+    aspect-ratio: 16 / 10;
+  }
+  .admin-quick-actions {
+    @apply grid gap-3 sm:grid-cols-2 xl:grid-cols-3;
+  }
+  .admin-quick-action {
+    @apply flex items-start gap-3 rounded-2xl border bg-white p-4 no-underline transition hover:-translate-y-0.5 hover:no-underline;
+    border-color: rgba(0,0,0,0.06);
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+  }
+  .admin-quick-action:hover {
+    border-color: rgba(245, 158, 11, 0.32);
+    box-shadow: 0 16px 34px rgba(120, 53, 15, 0.1);
+  }
+  .admin-quick-action-icon {
+    @apply flex h-10 w-10 shrink-0 items-center justify-center rounded-xl;
+    background: rgba(255,153,51,0.1);
+    color: #EA580C;
+  }
+  .admin-tone-saffron .stat-icon,
+  .admin-tone-saffron .admin-quick-action-icon { background: rgba(255,153,51,0.12); color: #EA580C; }
+  .admin-tone-green .stat-icon,
+  .admin-tone-green .admin-quick-action-icon { background: rgba(16,185,129,0.12); color: #059669; }
+  .admin-tone-blue .stat-icon,
+  .admin-tone-blue .admin-quick-action-icon { background: rgba(59,130,246,0.12); color: #2563EB; }
+  .admin-tone-purple .stat-icon,
+  .admin-tone-purple .admin-quick-action-icon { background: rgba(124,58,237,0.12); color: #7C3AED; }
+  .admin-tone-red .stat-icon,
+  .admin-tone-red .admin-quick-action-icon { background: rgba(239,68,68,0.12); color: #DC2626; }
+  .admin-tone-gold .stat-icon,
+  .admin-tone-gold .admin-quick-action-icon { background: rgba(212,175,55,0.16); color: #A16207; }
+  .admin-tone-slate .stat-icon,
+  .admin-tone-slate .admin-quick-action-icon { background: rgba(15,23,42,0.08); color: #334155; }
+  .admin-stat.premium {
+    min-height: 128px;
+  }
+  .admin-command-panel {
+    @apply fixed left-1/2 top-20 z-[80] w-[min(640px,calc(100vw-2rem))] -translate-x-1/2 overflow-hidden rounded-3xl border bg-white shadow-2xl;
+    border-color: rgba(245, 158, 11, 0.2);
+  }
+  .admin-command-panel a {
+    @apply block rounded-2xl px-4 py-3 text-sm font-bold text-gray-700 no-underline transition hover:bg-orange-50 hover:text-orange-700 hover:no-underline;
+  }
+  .admin-topbar-pill {
+    @apply inline-flex items-center gap-2 rounded-2xl border bg-white px-3 py-2 text-xs font-bold text-gray-600 shadow-sm;
+    border-color: rgba(0,0,0,0.06);
+  }
+  .admin-form-sticky-bar {
+    @apply sticky bottom-4 z-20 mt-6 rounded-2xl border bg-white/90 p-3 shadow-2xl backdrop-blur-xl;
+    border-color: rgba(245,158,11,0.2);
+  }
+  .admin-shell-surface {
+    @apply space-y-6;
+  }
+  .admin-form-section {
+    scroll-margin-top: 6rem;
+  }
+  .admin-form-section .admin-section-card-head {
+    background: linear-gradient(135deg, rgba(255,247,237,0.78), rgba(255,255,255,0.92));
   }
 }
 

@@ -1,52 +1,108 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useEffect, useMemo, useState, type ComponentType } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
+import {
+  Activity,
+  Bell,
+  BookOpenText,
+  CalendarDays,
+  ChevronDown,
+  CircleGauge,
+  Database,
+  FileSearch,
+  Globe,
+  Image as ImageIcon,
+  LayoutDashboard,
+  LogOut,
+  Mail,
+  Menu,
+  Music,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Search,
+  Settings,
+  ShieldCheck,
+  Sparkles,
+  Star,
+  SunMedium,
+  Users,
+  Video,
+  X,
+} from 'lucide-react'
 
-const NAV_SECTIONS = [
+type AdminUser = { name: string; email: string; role: string }
+type NavItem = { href: string; label: string; icon: ComponentType<{ className?: string }> }
+type NavGroup = { title: string; items: NavItem[] }
+
+const NAV_GROUPS: NavGroup[] = [
   {
-    title: 'Overview',
+    title: 'Main',
     items: [
-      { href: '/admin/dashboard', label: 'Dashboard', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
-      { href: '/admin/analytics', label: 'Analytics', icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' },
-      { href: '/admin/activity', label: 'Activity Log', icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z' },
+      { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+      { href: '/admin/analytics', label: 'Analytics', icon: CircleGauge },
+      { href: '/admin/activity', label: 'Activity Log', icon: Activity },
     ],
   },
   {
     title: 'Content',
     items: [
-      { href: '/admin/temples', label: 'Temples', icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4' },
-      { href: '/admin/deities', label: 'Deities', icon: 'M12 3.75l1.95 4.45 4.8.43-3.62 3.17 1.08 4.7L12 14.08 7.79 16.5l1.08-4.7-3.62-3.17 4.8-.43L12 3.75z M12 14.08v6.17 M8.75 20.25h6.5' },
-      { href: '/admin/devotionals', label: 'Devotionals', icon: 'M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2z' },
-      { href: '/admin/blogs', label: 'Blogs', icon: 'M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z' },
-      { href: '/admin/events', label: 'Events', icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
-      { href: '/admin/darshan', label: 'Darshan', icon: 'M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z' },
-      { href: '/admin/spiritual-icons', label: 'Spiritual Icons', icon: 'M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z' },
-      { href: '/admin/forum', label: 'Forum', icon: 'M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z' },
-      { href: '/admin/media', label: 'Media Library', icon: 'M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z' },
-      { href: '/admin/images/audit', label: 'Image Audit', icon: 'M9 12.75l2.25 2.25L15 9.75m-9.75 8.25h13.5A2.25 2.25 0 0021 15.75V8.25A2.25 2.25 0 0018.75 6H5.25A2.25 2.25 0 003 8.25v7.5A2.25 2.25 0 005.25 18zM7.5 6V4.5m9 1.5V4.5' },
+      { href: '/admin/temples', label: 'Temples', icon: Sparkles },
+      { href: '/admin/deities', label: 'Deities', icon: Star },
+      { href: '/admin/devotionals', label: 'Devotionals', icon: Music },
+      { href: '/admin/blogs', label: 'Blog', icon: BookOpenText },
+      { href: '/admin/events', label: 'Events', icon: CalendarDays },
+      { href: '/admin/darshan', label: 'Daily Darshan', icon: Video },
+      { href: '/admin/spiritual-icons', label: 'Spiritual Icons', icon: SunMedium },
     ],
   },
   {
-    title: 'System',
+    title: 'Temple Intelligence',
     items: [
-      { href: '/admin/notifications', label: 'Notifications', icon: 'M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0' },
-      { href: '/admin/users', label: 'Users', icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z' },
-      { href: '/admin/subscribers', label: 'Subscribers', icon: 'M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75' },
-      { href: '/admin/seo', label: 'SEO', icon: 'M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z' },
-      { href: '/admin/import', label: 'Bulk Import', icon: 'M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12' },
-      { href: '/admin/settings', label: 'Settings', icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z' },
+      { href: '/admin/temples/missing-data', label: 'Missing Data', icon: FileSearch },
+      { href: '/admin/temples/shakti-peeth-mapping', label: 'Shakti Peeth Mapping', icon: ShieldCheck },
+      { href: '/admin/images/audit', label: 'Image Audit', icon: ImageIcon },
+      { href: '/admin/images/external-audit', label: 'External Image Audit', icon: ImageIcon },
+      { href: '/admin/seo', label: 'SEO Center', icon: Globe },
+      { href: '/admin/import', label: 'Bulk Import', icon: Database },
+    ],
+  },
+  {
+    title: 'Community',
+    items: [
+      { href: '/admin/subscribers', label: 'Subscribers', icon: Mail },
+      { href: '/admin/forum', label: 'Forum', icon: Users },
+      { href: '/admin/users', label: 'Admin Users', icon: Users },
+      { href: '/admin/notifications', label: 'Notifications', icon: Bell },
+    ],
+  },
+  {
+    title: 'Settings',
+    items: [
+      { href: '/admin/media', label: 'Media Library', icon: ImageIcon },
+      { href: '/admin/settings', label: 'Site Settings', icon: Settings },
     ],
   },
 ]
 
-function SvgIcon({ d }: { d: string }) {
-  return (
-    <svg className="w-[18px] h-[18px] flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-      <path strokeLinecap="round" strokeLinejoin="round" d={d} />
-    </svg>
-  )
+const ALL_ITEMS = NAV_GROUPS.flatMap((group) => group.items)
+
+function getInitials(name: string) {
+  return name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toUpperCase() || 'A'
+}
+
+function isItemActive(pathname: string, href: string) {
+  if (href === '/admin/dashboard') return pathname === href || pathname === '/admin'
+  return pathname === href || pathname.startsWith(`${href}/`)
+}
+
+function getPageTitle(pathname: string) {
+  const exact = ALL_ITEMS.find((item) => isItemActive(pathname, item.href))
+  if (exact) return exact.label
+  const segments = pathname.split('/').filter(Boolean).filter((segment) => !/^[a-f0-9]{24}$/i.test(segment))
+  const last = segments[segments.length - 1] || 'dashboard'
+  return last.replace(/-/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase())
 }
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -54,246 +110,243 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const router = useRouter()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [collapsed, setCollapsed] = useState(false)
-  const [user, setUser] = useState<{ name: string; email: string; role: string } | null>(null)
+  const [commandOpen, setCommandOpen] = useState(false)
+  const [query, setQuery] = useState('')
+  const [user, setUser] = useState<AdminUser | null>(null)
   const [authChecked, setAuthChecked] = useState(false)
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() =>
+    Object.fromEntries(NAV_GROUPS.map((group) => [group.title, true]))
+  )
 
   useEffect(() => {
-    fetch('/api/auth/me')
-      .then(res => res.json())
-      .then(data => {
-        if (data.user?.role === 'admin') {
-          setUser(data.user)
-        } else {
-          router.push('/login')
-        }
+    fetch('/api/auth/me', { credentials: 'include' })
+      .then((res) => res.ok ? res.json() : null)
+      .then((data) => {
+        if (data?.user?.role === 'admin') setUser(data.user)
+        else router.push('/login')
       })
       .catch(() => router.push('/login'))
       .finally(() => setAuthChecked(true))
   }, [router])
 
-  const handleLogout = async () => {
-    await fetch('/api/auth/logout', { method: 'POST' })
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null
+      const typing = target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA' || target?.isContentEditable
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault()
+        setCommandOpen((value) => !value)
+      }
+      if (event.key === 'Escape') setCommandOpen(false)
+      if (typing) return
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [])
+
+  const filteredItems = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    if (!q) return ALL_ITEMS
+    return ALL_ITEMS.filter((item) => item.label.toLowerCase().includes(q) || item.href.toLowerCase().includes(q))
+  }, [query])
+
+  async function handleLogout() {
+    await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' })
     router.push('/login')
     router.refresh()
   }
 
   if (!authChecked || !user) {
     return (
-      <div className="flex items-center justify-center min-h-screen" style={{ background: '#0C0F1A' }}>
+      <div className="flex min-h-screen items-center justify-center bg-[#0C0F1A]">
         <div className="flex flex-col items-center gap-4">
-          <div className="relative w-12 h-12">
+          <div className="relative h-12 w-12">
             <div className="absolute inset-0 rounded-full border-2 border-orange-500/20" />
-            <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-orange-500 animate-spin" />
-            <div className="absolute inset-2 rounded-full flex items-center justify-center" style={{ background: 'linear-gradient(135deg, rgba(255,153,51,0.15), rgba(255,153,51,0.05))' }}>
-              <span className="text-orange-400 font-bold text-sm">S</span>
+            <div className="absolute inset-0 animate-spin rounded-full border-2 border-transparent border-t-orange-500" />
+            <div className="absolute inset-2 flex items-center justify-center rounded-full bg-orange-500/10">
+              <span className="text-sm font-black text-orange-300">S</span>
             </div>
           </div>
-          <p className="text-sm text-white/40 font-medium tracking-wide">Loading admin panel...</p>
+          <p className="text-sm font-semibold tracking-wide text-white/50">Loading admin back office...</p>
         </div>
       </div>
     )
   }
 
-  // Breadcrumb from pathname (skip MongoDB ObjectId segments)
-  const isObjectId = (s: string) => /^[a-f0-9]{24}$/i.test(s)
-  const segments = pathname.split('/').filter(Boolean)
-  const breadcrumbs = segments
-    .filter(seg => !isObjectId(seg))
-    .map((seg, i, arr) => ({
-      label: seg.charAt(0).toUpperCase() + seg.slice(1).replace(/-/g, ' '),
-      href: '/' + segments.slice(0, segments.indexOf(arr[i]) + 1).join('/'),
-    }))
-
-  // Current page title
-  const pageTitle = breadcrumbs[breadcrumbs.length - 1]?.label || 'Dashboard'
+  const pageTitle = getPageTitle(pathname)
 
   return (
-    <div className="flex min-h-screen">
-      {/* Mobile overlay */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
+    <div className="admin-app-shell flex min-h-screen">
+      {sidebarOpen && <button aria-label="Close admin menu" className="fixed inset-0 z-40 bg-slate-950/60 backdrop-blur-sm lg:hidden" onClick={() => setSidebarOpen(false)} />}
 
-      {/* ── Sidebar ── */}
-      <aside
-        className={`admin-sidebar fixed lg:sticky top-0 left-0 z-50 h-screen flex flex-col transition-all duration-300 ${
-          sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
-        } ${collapsed ? 'w-[72px]' : 'w-[260px]'}`}
-      >
-        {/* Logo */}
-        <div className={`flex items-center h-16 px-4 ${collapsed ? 'justify-center' : 'gap-3'}`} style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(135deg, #FF9933, #E67E22)' }}>
-            <span className="text-white font-bold text-base">S</span>
-          </div>
+      <aside className={`admin-sidebar fixed left-0 top-0 z-50 flex h-screen flex-col transition-all duration-300 lg:sticky ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'} ${collapsed ? 'w-[78px]' : 'w-[292px]'}`}>
+        <div className={`flex h-16 items-center border-b border-white/10 px-4 ${collapsed ? 'justify-center' : 'justify-between gap-3'}`}>
+          <Link href="/admin/dashboard" className={`flex min-w-0 items-center gap-3 no-underline hover:no-underline ${collapsed ? 'justify-center' : ''}`}>
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-400 to-orange-600 text-sm font-black text-white shadow-lg shadow-orange-500/20">S</span>
+            {!collapsed && (
+              <span className="min-w-0">
+                <span className="block text-sm font-black tracking-tight text-white">Sarvdev Admin</span>
+                <span className="block truncate text-[10px] font-bold uppercase tracking-[0.2em] text-white/35">Back office</span>
+              </span>
+            )}
+          </Link>
           {!collapsed && (
-            <div>
-              <span className="font-bold text-[15px] text-white tracking-tight">Sarvdev</span>
-              <span className="block text-[10px] font-medium uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.3)' }}>Admin Panel</span>
-            </div>
-          )}
-        </div>
-
-        {/* Nav sections */}
-        <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-5">
-          {NAV_SECTIONS.map((section) => (
-            <div key={section.title}>
-              {!collapsed && (
-                <p className="px-3 mb-2 text-[10px] font-bold uppercase tracking-[0.15em]" style={{ color: 'rgba(255,255,255,0.25)' }}>
-                  {section.title}
-                </p>
-              )}
-              <div className="space-y-0.5">
-                {section.items.map((item) => {
-                  const active = pathname === item.href || (item.href !== '/admin/dashboard' && pathname.startsWith(item.href))
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      onClick={() => setSidebarOpen(false)}
-                      className={`admin-nav-link ${active ? 'active' : ''} ${collapsed ? 'justify-center px-0' : ''}`}
-                      title={collapsed ? item.label : undefined}
-                    >
-                      <SvgIcon d={item.icon} />
-                      {!collapsed && <span>{item.label}</span>}
-                    </Link>
-                  )
-                })}
-              </div>
-            </div>
-          ))}
-        </nav>
-
-        {/* Collapse toggle (desktop) */}
-        <button
-          onClick={() => setCollapsed(!collapsed)}
-          className="hidden lg:flex items-center justify-center h-9 mx-3 mb-2 rounded-lg transition-colors"
-          style={{ color: 'rgba(255,255,255,0.3)' }}
-          onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.05)')}
-          onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-        >
-          <svg className={`w-4 h-4 transition-transform ${collapsed ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
-          </svg>
-        </button>
-
-        {/* User footer */}
-        <div className={`p-3 ${collapsed ? 'flex flex-col items-center gap-2' : ''}`} style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-          {!collapsed ? (
-            <div className="flex items-center gap-3">
-              <div className="admin-avatar w-9 h-9 rounded-full text-sm">
-                {user.name.charAt(0).toUpperCase()}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-white/90 truncate">{user.name}</p>
-                <p className="text-[11px] truncate" style={{ color: 'rgba(255,255,255,0.35)' }}>{user.email}</p>
-              </div>
-              <button
-                onClick={handleLogout}
-                className="p-1.5 rounded-lg transition-colors"
-                style={{ color: 'rgba(255,255,255,0.3)' }}
-                onMouseEnter={e => { e.currentTarget.style.color = '#EF4444'; e.currentTarget.style.background = 'rgba(239,68,68,0.1)' }}
-                onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.3)'; e.currentTarget.style.background = 'transparent' }}
-                title="Logout"
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                </svg>
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={handleLogout}
-              className="p-2 rounded-lg transition-colors"
-              style={{ color: 'rgba(255,255,255,0.3)' }}
-              onMouseEnter={e => { e.currentTarget.style.color = '#EF4444'; e.currentTarget.style.background = 'rgba(239,68,68,0.1)' }}
-              onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.3)'; e.currentTarget.style.background = 'transparent' }}
-              title="Logout"
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-              </svg>
+            <button className="rounded-xl p-2 text-white/50 transition hover:bg-white/10 hover:text-white lg:hidden" onClick={() => setSidebarOpen(false)} aria-label="Close menu">
+              <X className="h-4 w-4" />
             </button>
           )}
         </div>
+
+        {!collapsed && (
+          <button type="button" onClick={() => setCommandOpen(true)} className="mx-4 mt-4 flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-3 py-2.5 text-left text-xs font-bold text-white/45 transition hover:bg-white/10 hover:text-white">
+            <Search className="h-4 w-4" />
+            Search admin...
+            <span className="ml-auto rounded-lg bg-white/10 px-1.5 py-0.5 text-[10px] text-white/35">Ctrl K</span>
+          </button>
+        )}
+
+        <nav className="flex-1 overflow-y-auto px-3 py-4">
+          {NAV_GROUPS.map((group) => {
+            const groupActive = group.items.some((item) => isItemActive(pathname, item.href))
+            const open = collapsed || openGroups[group.title] || groupActive
+            return (
+              <div key={group.title} className="mb-4">
+                {!collapsed && (
+                  <button
+                    type="button"
+                    className="mb-2 flex w-full items-center justify-between rounded-xl px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-white/30 transition hover:bg-white/5 hover:text-white/55"
+                    onClick={() => setOpenGroups((state) => ({ ...state, [group.title]: !state[group.title] }))}
+                  >
+                    {group.title}
+                    <ChevronDown className={`h-3.5 w-3.5 transition ${open ? 'rotate-180' : ''}`} />
+                  </button>
+                )}
+                {open && (
+                  <div className="space-y-1">
+                    {group.items.map((item) => {
+                      const Icon = item.icon
+                      const active = isItemActive(pathname, item.href)
+                      return (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          onClick={() => setSidebarOpen(false)}
+                          className={`admin-nav-link ${active ? 'active' : ''} ${collapsed ? 'justify-center px-0' : ''}`}
+                          title={collapsed ? item.label : undefined}
+                        >
+                          <Icon className="h-[18px] w-[18px] shrink-0" />
+                          {!collapsed && <span className="truncate">{item.label}</span>}
+                        </Link>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </nav>
+
+        <div className="border-t border-white/10 p-3">
+          <button
+            type="button"
+            onClick={() => setCollapsed((value) => !value)}
+            className="mb-2 hidden w-full items-center justify-center rounded-xl p-2 text-white/35 transition hover:bg-white/10 hover:text-white lg:flex"
+            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            {collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+          </button>
+          <div className={`flex items-center gap-3 rounded-2xl bg-white/5 p-2 ${collapsed ? 'justify-center' : ''}`}>
+            <span className="admin-avatar h-9 w-9 text-xs">{getInitials(user.name)}</span>
+            {!collapsed && (
+              <>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-bold text-white/90">{user.name}</span>
+                  <span className="block truncate text-[11px] font-medium text-white/35">{user.email}</span>
+                </span>
+                <button type="button" onClick={handleLogout} className="rounded-xl p-2 text-white/35 transition hover:bg-red-500/10 hover:text-red-300" aria-label="Logout">
+                  <LogOut className="h-4 w-4" />
+                </button>
+              </>
+            )}
+          </div>
+        </div>
       </aside>
 
-      {/* ── Main content ── */}
-      <div className="flex-1 flex flex-col min-w-0 admin-content">
-        {/* Top header */}
-        <header className="admin-header sticky top-0 z-30 h-16 flex items-center gap-4 px-5 lg:px-8">
-          {/* Mobile menu button */}
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="lg:hidden p-2 rounded-xl text-gray-500 hover:bg-gray-100 transition-colors"
-          >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
+      <div className="admin-content flex min-w-0 flex-1 flex-col">
+        <header className="admin-header sticky top-0 z-30 flex min-h-16 items-center gap-3 px-4 py-3 lg:px-8">
+          <button type="button" onClick={() => setSidebarOpen(true)} className="rounded-xl p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-900 lg:hidden" aria-label="Open menu">
+            <Menu className="h-5 w-5" />
           </button>
 
-          {/* Breadcrumb */}
-          <nav className="flex items-center gap-1.5 text-sm">
-            {breadcrumbs.map((bc, i) => (
-              <span key={bc.href} className="flex items-center gap-1.5">
-                {i > 0 && (
-                  <svg className="w-3.5 h-3.5 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-                  </svg>
-                )}
-                {i === breadcrumbs.length - 1 ? (
-                  <span className="font-semibold text-gray-900">{bc.label}</span>
-                ) : (
-                  <Link href={bc.href} className="text-gray-400 hover:text-gray-600 transition-colors">
-                    {bc.label}
-                  </Link>
-                )}
-              </span>
-            ))}
-          </nav>
+          <div className="min-w-0">
+            <p className="text-[11px] font-black uppercase tracking-[0.18em] text-orange-700">Admin Console</p>
+            <h1 className="truncate text-lg font-black text-gray-950">{pageTitle}</h1>
+          </div>
 
-          <div className="flex-1" />
-
-          {/* Quick add */}
-          <Link
-            href="/admin/temples/new"
-            className="admin-btn admin-btn-primary hidden sm:inline-flex"
-          >
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-            </svg>
-            Add Content
-          </Link>
-
-          {/* View site */}
-          <Link
-            href="/"
-            target="_blank"
-            className="p-2 rounded-xl text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
-            title="View Site"
-          >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
-            </svg>
-          </Link>
-
-          {/* User pill */}
-          <div className="hidden md:flex items-center gap-2 pl-3 ml-1" style={{ borderLeft: '1px solid rgba(0,0,0,0.06)' }}>
-            <div className="admin-avatar w-8 h-8 rounded-full text-xs">
-              {user.name.charAt(0).toUpperCase()}
+          <div className="ml-auto flex items-center gap-2">
+            <button type="button" onClick={() => setCommandOpen(true)} className="admin-topbar-pill hidden md:inline-flex">
+              <Search className="h-4 w-4" />
+              Search
+            </button>
+            <Link href="/" target="_blank" className="admin-topbar-pill no-underline hover:no-underline">
+              <Globe className="h-4 w-4" />
+              <span className="hidden sm:inline">View Site</span>
+            </Link>
+            <Link href="/admin/temples/new" className="admin-btn admin-btn-primary hidden sm:inline-flex px-4 py-2 text-sm">
+              Add Content
+            </Link>
+            <div className="hidden items-center gap-2 border-l border-gray-200 pl-3 md:flex">
+              <span className="admin-avatar h-8 w-8 text-xs">{getInitials(user.name)}</span>
+              <span className="max-w-[160px] truncate text-sm font-bold text-gray-700">{user.name}</span>
             </div>
-            <span className="text-sm font-medium text-gray-700">{user.name}</span>
+            <button type="button" onClick={handleLogout} className="rounded-xl p-2 text-gray-400 transition hover:bg-red-50 hover:text-red-600" aria-label="Logout">
+              <LogOut className="h-5 w-5" />
+            </button>
           </div>
         </header>
 
-        {/* Page content */}
-        <main className="flex-1 p-5 lg:p-8 overflow-auto">
+        <main className="flex-1 overflow-auto p-4 lg:p-8">
           {children}
         </main>
       </div>
+
+      {commandOpen && (
+        <>
+          <button aria-label="Close search" className="fixed inset-0 z-[70] bg-slate-950/30 backdrop-blur-sm" onClick={() => setCommandOpen(false)} />
+          <div className="admin-command-panel">
+            <div className="flex items-center gap-3 border-b border-gray-100 px-4 py-3">
+              <Search className="h-5 w-5 text-orange-600" />
+              <input
+                autoFocus
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Search modules, tools, audits..."
+                className="min-h-10 flex-1 bg-transparent text-sm font-bold text-gray-900 outline-none placeholder:text-gray-400"
+              />
+              <button type="button" onClick={() => setCommandOpen(false)} className="rounded-xl p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-700">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="max-h-[440px] overflow-y-auto p-2">
+              {filteredItems.map((item) => {
+                const Icon = item.icon
+                return (
+                  <Link key={item.href} href={item.href} onClick={() => setCommandOpen(false)} className="flex items-center gap-3">
+                    <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-orange-50 text-orange-700">
+                      <Icon className="h-4 w-4" />
+                    </span>
+                    <span>
+                      <span className="block">{item.label}</span>
+                      <span className="text-xs font-semibold text-gray-400">{item.href}</span>
+                    </span>
+                  </Link>
+                )
+              })}
+              {filteredItems.length === 0 && <p className="px-4 py-8 text-center text-sm font-semibold text-gray-400">No admin module found.</p>}
+            </div>
+          </div>
+        </>
+      )}
     </div>
   )
 }

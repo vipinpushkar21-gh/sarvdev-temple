@@ -9,7 +9,7 @@ type Props = {
   onChange: (url: string) => void
   folder?: string
   label?: string
-  guidance?: 'card' | 'hero' | 'gallery' | 'general' | 'devotionalCard' | 'devotionalHero' | 'darshanCard' | 'darshanHero'
+  guidance?: 'card' | 'hero' | 'gallery' | 'general' | 'devotionalCard' | 'devotionalHero' | 'darshanCard' | 'darshanHero' | 'blogCard' | 'blogHero' | 'blogOg'
 }
 
 type PendingImage = {
@@ -45,6 +45,15 @@ function getClientWarnings(width: number, height: number, size: number, guidance
   }
   if (guidance === 'darshanHero' && (width < 3360 || height < 1440 || ratio < 2.1)) {
     warnings.push('Darshan hero recommendation is 3360x1440 with cinematic safe framing and no crop-risk near edges.')
+  }
+  if (guidance === 'blogCard' && (width < 1600 || height < 900 || ratio < 1.65)) {
+    warnings.push('Blog card/detail recommendation is 1600x900 minimum. AI generation target: 2000x1125 with the subject centered and no text near edges.')
+  }
+  if (guidance === 'blogHero' && (width < 1600 || height < 900 || ratio < 1.65)) {
+    warnings.push('Blog hero recommendation is 1600x900 or wider. Keep the editorial subject centered with generous safe margins.')
+  }
+  if (guidance === 'blogOg' && (width < 1200 || height < 630 || ratio < 1.75 || ratio > 2.05)) {
+    warnings.push('OG image recommendation is 1200x630. Keep text and subject away from the edges.')
   }
   if (guidance === 'card' && (width < 2400 || height < 2400)) {
     warnings.push('Card image recommendation is 3000x3000 square-safe with the subject centered and smaller in frame.')
@@ -98,6 +107,9 @@ function helperText(guidance: Props['guidance'] = 'general') {
   if (guidance === 'devotionalHero') return 'Used in devotional detail heroes and social previews. Recommended 2400x1350 with 15-20% safe margin for cover crops.'
   if (guidance === 'darshanCard') return 'Used for Daily Darshan thumbnails and cards. Recommended 1600x900; AI target 2000x1125.'
   if (guidance === 'darshanHero') return 'Used for Daily Darshan hero visuals. Recommended 3360x1440, cinematic safe framing, no crop-risk.'
+  if (guidance === 'blogCard') return 'Used in blog cards and article previews. Recommended 1600x900; AI target 2000x1125. Keep subject centered, no text near edges.'
+  if (guidance === 'blogHero') return 'Used in blog article heroes. Recommended 1600x900 or wider with editorial subject centered and generous safe margins.'
+  if (guidance === 'blogOg') return 'Used for social sharing. Recommended 1200x630. Keep key content inside the center safe area.'
   if (guidance === 'gallery') return 'Optional gallery image. Recommended 2400px+ wide with important sacred elements away from edges.'
   return 'Safe frame uses top-center panoramic crop.'
 }
@@ -268,7 +280,7 @@ function SafeCropPreview({ src, guidance, width, height }: { src: string; guidan
     { label: 'Tablet', ratio: '16 / 9', note: 'standard hero' },
     { label: 'Mobile', ratio: '4 / 5', note: 'portrait hero' },
   ]
-  const heroLike = guidance === 'hero' || guidance === 'devotionalHero' || guidance === 'darshanHero'
+  const heroLike = guidance === 'hero' || guidance === 'devotionalHero' || guidance === 'darshanHero' || guidance === 'blogHero' || guidance === 'blogOg'
   const warnings = [
     !ratio ? 'Preview uses safe-contain because source dimensions are not available.' : '',
     ratio && ratio < 1 && heroLike ? 'Portrait image in hero: safe-contain will protect top and bottom.' : '',

@@ -1,283 +1,223 @@
 "use client"
 
-import { useState, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import Hero from '../../components/Hero'
-import { hinduEvents, eventCategories } from '../../data/events'
-import type { HinduEvent } from '../../data/events'
+import { eventCategories, hinduEvents } from '../../data/events'
+import { getTempleCardImage } from '../../lib/temple-image'
+import SarvdevImage from '../../components/SarvdevImage'
 
-/* Token-based category badge colours */
-const categoryBadge: Record<string, string> = {
-  festival: 'bg-primary-100 text-primary-800',
-  yatra:    'bg-secondary-100 text-secondary-700',
-  cultural: 'bg-accent-100 text-accent-800',
-  katha:    'bg-primary-50 text-secondary-700',
-  special:  'bg-accent-50 text-accent-800',
+type EventItem = {
+  _id?: string
+  slug: string
+  title: string
+  titleHi?: string
+  shortDescription?: string
+  description?: string
+  category?: string
+  eventType?: string
+  startDate?: string
+  endDate?: string
+  date?: string
+  startTime?: string
+  endTime?: string
+  city?: string
+  state?: string
+  location?: string
+  locationName?: string
+  isOnline?: boolean
+  liveUrl?: string
+  featured?: boolean
+  image?: string
+  imageCard?: string
+  imageHero?: string
+  deityName?: string
+  templeName?: string
+  status?: string
 }
 
-/* Token-based card accent bar colours */
-const categoryAccent: Record<string, string> = {
-  festival: 'bg-primary-500',
-  yatra:    'bg-secondary-500',
-  cultural: 'bg-accent-500',
-  katha:    'bg-primary-400',
-  special:  'bg-accent-600',
+const filters = ['All', 'Today', 'This Week', 'This Month', 'Festivals', 'Temple Events', 'Online/Live', 'Vrat/Fasting', 'Featured']
+
+function staticFallback(): EventItem[] {
+  return hinduEvents.map((event) => ({
+    ...event,
+    startDate: event.date,
+    endDate: event.endDate || event.date,
+    shortDescription: event.description.slice(0, 180),
+    locationName: event.location,
+    eventType: event.category,
+    status: 'published',
+  }))
+}
+
+function dateLabel(event: EventItem) {
+  const start = new Date(`${event.startDate || event.date}T12:00:00`)
+  const endValue = event.endDate && event.endDate !== (event.startDate || event.date) ? new Date(`${event.endDate}T12:00:00`) : null
+  if (endValue) return `${start.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })} - ${endValue.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}`
+  return start.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+}
+
+function daysUntil(event: EventItem) {
+  const start = new Date(`${event.startDate || event.date}T00:00:00`).getTime()
+  const today = new Date(new Date().toISOString().slice(0, 10)).getTime()
+  return Math.ceil((start - today) / 86_400_000)
+}
+
+function calendarHref(event: EventItem) {
+  const start = (event.startDate || event.date || '').replace(/-/g, '')
+  const end = (event.endDate || event.startDate || event.date || '').replace(/-/g, '')
+  return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(event.title)}&dates=${start}/${end}&details=${encodeURIComponent(event.shortDescription || event.description || '')}&location=${encodeURIComponent(event.locationName || event.location || '')}`
 }
 
 export default function EventsPage() {
-  const [activeCategory, setActiveCategory] = useState('all')
-  const [activeYear, setActiveYear] = useState<number>(2026)
-  const [searchQuery, setSearchQuery] = useState('')
+  const [events, setEvents] = useState<EventItem[]>([])
+  const [loading, setLoading] = useState(true)
+  const [filter, setFilter] = useState('All')
+  const [search, setSearch] = useState('')
+  const [city, setCity] = useState('')
+  const [state, setState] = useState('')
+  const [deity, setDeity] = useState('')
 
-  const filteredEvents = useMemo(() => {
-    let events = hinduEvents.filter(e => e.year === activeYear)
-    if (activeCategory !== 'all') {
-      events = events.filter(e => e.category === activeCategory)
-    }
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase()
-      events = events.filter(e =>
-        e.title.toLowerCase().includes(q) ||
-        e.titleHi.includes(q) ||
-        e.location.toLowerCase().includes(q) ||
-        e.state.toLowerCase().includes(q) ||
-        e.description.toLowerCase().includes(q)
-      )
-    }
-    return events.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-  }, [activeCategory, activeYear, searchQuery])
+  useEffect(() => {
+    fetch('/api/events', { cache: 'no-store' })
+      .then((res) => res.ok ? res.json() : [])
+      .then((data) => setEvents(Array.isArray(data) && data.length > 0 ? data : staticFallback()))
+      .catch(() => setEvents(staticFallback()))
+      .finally(() => setLoading(false))
+  }, [])
 
-  const getCategoryCount = (catId: string) => {
-    if (catId === 'all') return hinduEvents.filter(e => e.year === activeYear).length
-    return hinduEvents.filter(e => e.category === catId && e.year === activeYear).length
-  }
+  const today = new Date().toISOString().slice(0, 10)
+  const weekEnd = new Date(Date.now() + 7 * 86_400_000).toISOString().slice(0, 10)
+  const month = today.slice(0, 7)
 
-  function formatDateRange(event: HinduEvent): string {
-    const start = new Date(event.date)
-    const opts: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short', year: 'numeric' }
-    if (event.endDate && event.endDate !== event.date) {
-      const end = new Date(event.endDate)
-      if (start.getMonth() === end.getMonth()) {
-        return `${start.getDate()} – ${end.toLocaleDateString('en-IN', opts)}`
-      }
-      return `${start.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })} – ${end.toLocaleDateString('en-IN', opts)}`
-    }
-    return start.toLocaleDateString('en-IN', opts)
-  }
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    return events.filter((event) => {
+      const start = event.startDate || event.date || ''
+      if (filter === 'Today' && !(start <= today && (event.endDate || start) >= today)) return false
+      if (filter === 'This Week' && !(start >= today && start <= weekEnd)) return false
+      if (filter === 'This Month' && !start.startsWith(month)) return false
+      if (filter === 'Festivals' && event.category !== 'festival') return false
+      if (filter === 'Temple Events' && !event.templeName && !event.locationName?.toLowerCase().includes('temple')) return false
+      if (filter === 'Online/Live' && !event.isOnline && !event.liveUrl) return false
+      if (filter === 'Vrat/Fasting' && !`${event.title} ${event.description}`.toLowerCase().includes('fast')) return false
+      if (filter === 'Featured' && !event.featured) return false
+      if (city && !(event.city || event.locationName || event.location || '').toLowerCase().includes(city.toLowerCase())) return false
+      if (state && !(event.state || '').toLowerCase().includes(state.toLowerCase())) return false
+      if (deity && !(event.deityName || event.title || '').toLowerCase().includes(deity.toLowerCase())) return false
+      if (q && !`${event.title} ${event.titleHi} ${event.description} ${event.city} ${event.state} ${event.templeName} ${event.deityName}`.toLowerCase().includes(q)) return false
+      return true
+    }).sort((a, b) => new Date(a.startDate || a.date || '').getTime() - new Date(b.startDate || b.date || '').getTime())
+  }, [events, filter, search, city, state, deity, today, weekEnd, month])
 
-  function isOngoing(event: HinduEvent): boolean {
-    const today = new Date().toISOString().slice(0, 10)
-    return event.date <= today && (event.endDate ? event.endDate >= today : event.date >= today)
-  }
-
-  function isUpcoming(event: HinduEvent): boolean {
-    const today = new Date().toISOString().slice(0, 10)
-    return event.date > today
-  }
+  const featured = filtered.find((event) => event.featured) || filtered[0]
+  const states = Array.from(new Set(events.map((event) => event.state).filter(Boolean))).sort()
+  const cities = Array.from(new Set(events.map((event) => event.city || event.locationName || event.location).filter(Boolean))).sort()
 
   return (
     <>
-      <Hero
-        title="Hindu Events & Festivals"
-        subtitle="Discover sacred festivals, pilgrimages, cultural programs, and spiritual gatherings worldwide — 2026 &amp; 2027"
-        overline="Sacred Calendar"
-      />
-
-      {/* Year Selector + Category Tabs */}
-      <section className="bg-surface-sunken/80 backdrop-blur-md border-b border-surface-border sticky top-16 z-30">
-        <div className="page-container">
-          {/* Year Toggle */}
-          <div className="flex items-center justify-between py-3 border-b border-surface-border/50">
-            <div className="flex items-center gap-2">
-              <span className="text-caption text-ink-muted font-medium">Year:</span>
-              {[2026, 2027].map(year => (
-                <button
-                  key={year}
-                  onClick={() => { setActiveYear(year); setSearchQuery('') }}
-                  className={`px-4 py-1.5 rounded-lg text-body-sm font-semibold transition-all duration-200 ${
-                    activeYear === year
-                      ? 'bg-gradient-to-r from-primary to-primary-600 text-white shadow-md shadow-primary/25'
-                      : 'bg-surface-raised text-secondary-600 hover:bg-secondary-50 border border-surface-border hover:shadow-sm'
-                  }`}
-                >
-                  {year}
-                </button>
-              ))}
-            </div>
-            <span className="text-caption text-ink-muted bg-surface-raised px-3 py-1 rounded-full border border-surface-border">
-              {filteredEvents.length} event{filteredEvents.length !== 1 ? 's' : ''}
-            </span>
-          </div>
-
-          {/* Category Tabs */}
-          <div className="flex items-center gap-1.5 overflow-x-auto py-3 scrollbar-hide" style={{ scrollbarWidth: 'none' }}>
-            {eventCategories.map(cat => {
-              const count = getCategoryCount(cat.id)
-              const isActive = activeCategory === cat.id
-              return (
-                <button
-                  key={cat.id}
-                  onClick={() => { setActiveCategory(cat.id); setSearchQuery('') }}
-                  className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-body-sm font-medium whitespace-nowrap transition-all duration-200 ${
-                    isActive
-                      ? 'bg-primary-100 text-primary-800 shadow-sm'
-                      : 'bg-surface-raised text-secondary-600 hover:bg-secondary-50 border border-surface-border hover:shadow-sm'
-                  }`}
-                >
-                  <span>{cat.label}</span>
-                  <span className={`text-xs px-1.5 py-0.5 rounded-md font-semibold ${
-                    isActive ? 'bg-primary-200 text-primary-800' : 'bg-secondary-100 text-secondary-500'
-                  }`}>
-                    {count}
-                  </span>
-                </button>
-              )
-            })}
-          </div>
+      <section className="relative overflow-hidden bg-[#1b1010] text-white">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_20%,rgba(251,191,36,0.25),transparent_28%),radial-gradient(circle_at_82%_10%,rgba(248,113,113,0.2),transparent_24%),linear-gradient(135deg,rgba(76,29,149,0.35),rgba(24,24,27,0.96))]" />
+        <div className="page-container relative py-16 md:py-20">
+          <p className="text-overline uppercase tracking-[0.18em] text-amber-200 mb-3">Sacred Calendar</p>
+          <h1 className="text-display-lg md:text-display-xl font-serif">Hindu Events & Festivals</h1>
+          <p className="mt-2 text-h2 font-devanagari text-amber-100">उत्सव और पर्व</p>
+          <p className="mt-5 max-w-2xl text-body-lg text-white/75">A premium festival calendar and temple events hub for sacred observances, yatras, vrats, live programs and devotional gatherings.</p>
         </div>
       </section>
 
-      {/* Main Content */}
-      <main className="page-container py-10">
-        {/* Category Description + Search */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-          <div>
-            <h2 className="text-h2 font-serif text-secondary-800">
-              {eventCategories.find(c => c.id === activeCategory)?.label || 'All Events'} — {activeYear}
-            </h2>
-            <p className="text-body-sm text-ink-muted mt-1">
-              {eventCategories.find(c => c.id === activeCategory)?.desc}
-            </p>
-          </div>
+      <main className="bg-[#f8f5ef]">
+        <div className="page-container section-sm space-y-8">
+          {featured && (
+            <section className="grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] overflow-hidden rounded-2xl border border-amber-100 bg-white shadow-sm">
+              <div className="relative min-h-[280px]">
+                <SarvdevImage image={getTempleCardImage({ imageCard: featured.imageCard, image: featured.image })} alt={featured.title} className="absolute inset-0" imgClassName="object-cover" loading="eager" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                <div className="absolute bottom-5 left-5 right-5">
+                  <span className="rounded-full bg-amber-400 px-3 py-1 text-xs font-bold text-gray-950">Featured</span>
+                  <h2 className="mt-3 text-h1 font-serif text-white">{featured.title}</h2>
+                </div>
+              </div>
+              <div className="p-6 md:p-8">
+                <p className="text-overline uppercase tracking-[0.14em] text-amber-600">Upcoming Featured Event</p>
+                <p className="mt-3 text-h3 font-serif text-gray-900">{dateLabel(featured)}</p>
+                <p className="mt-2 text-body-sm text-gray-500">{featured.locationName || featured.location}{featured.state ? `, ${featured.state}` : ''}</p>
+                <p className="mt-5 text-body text-gray-600 line-clamp-4">{featured.shortDescription || featured.description}</p>
+                <div className="mt-6 flex flex-wrap gap-3">
+                  <Link href={`/events/${featured.slug}`} className="btn btn-primary no-underline hover:no-underline">View Details</Link>
+                  <a href={calendarHref(featured)} target="_blank" rel="noopener noreferrer" className="btn btn-outline no-underline hover:no-underline">Add to Calendar</a>
+                </div>
+              </div>
+            </section>
+          )}
 
-          {/* Search */}
-          <div className="relative w-full sm:w-72 group">
-            <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-faint group-focus-within:text-primary-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-            </svg>
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search events..."
-              className="w-full rounded-xl border border-surface-border bg-surface-raised text-ink text-body-sm pl-10 pr-10 py-2.5 placeholder:text-ink-faint focus:outline-none focus:ring-2 focus:ring-primary-300/50 focus:border-primary-400 shadow-sm hover:shadow-md focus:shadow-md transition-all duration-200"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md text-ink-faint hover:text-ink-muted hover:bg-surface-sunken transition-all"
-              >
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Events Grid */}
-        {filteredEvents.length === 0 ? (
-          <div className="text-center py-16">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary-100 to-accent-100 flex items-center justify-center mx-auto mb-5">
-              <svg className="w-7 h-7 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" /></svg>
+          <section className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+              <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search events..." className="input" />
+              <select value={state} onChange={(e) => setState(e.target.value)} className="input"><option value="">All States</option>{states.map((item) => <option key={item} value={item}>{item}</option>)}</select>
+              <select value={city} onChange={(e) => setCity(e.target.value)} className="input"><option value="">All Cities</option>{cities.map((item) => <option key={item} value={item}>{item}</option>)}</select>
+              <input value={deity} onChange={(e) => setDeity(e.target.value)} placeholder="Deity filter..." className="input" />
             </div>
-            <p className="text-body text-ink-muted">No events found{searchQuery ? ` for "${searchQuery}"` : ''}</p>
-            <button onClick={() => { setSearchQuery(''); setActiveCategory('all') }} className="mt-5 btn btn-primary text-body-sm">
-              View All Events
-            </button>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredEvents.map(event => (
-              <EventCard key={event.id} event={event} formatDateRange={formatDateRange} isOngoing={isOngoing} isUpcoming={isUpcoming} />
-            ))}
-          </div>
-        )}
+            <div className="mt-4 flex flex-wrap gap-2">
+              {filters.map((item) => (
+                <button key={item} onClick={() => setFilter(item)} className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${filter === item ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-600 hover:bg-amber-100'}`}>{item}</button>
+              ))}
+            </div>
+          </section>
+
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">{Array.from({ length: 6 }).map((_, index) => <div key={index} className="h-80 animate-pulse rounded-2xl bg-white" />)}</div>
+          ) : filtered.length === 0 ? (
+            <div className="rounded-2xl bg-white p-12 text-center shadow-sm">
+              <h2 className="text-h2 font-serif text-gray-900">No events found</h2>
+              <p className="mt-2 text-gray-500">Try clearing filters or importing existing public events from admin.</p>
+            </div>
+          ) : (
+            <section>
+              <div className="mb-5 flex items-center justify-between">
+                <h2 className="text-h2 font-serif text-gray-900">Festival Calendar</h2>
+                <span className="rounded-full bg-white px-3 py-1 text-caption font-semibold text-gray-500">{filtered.length} events</span>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+                {filtered.map((event) => <EventCard key={event.slug || event._id} event={event} />)}
+              </div>
+            </section>
+          )}
+        </div>
       </main>
     </>
   )
 }
 
-/* ─── Event Card Component ─── */
-function EventCard({ event, formatDateRange, isOngoing, isUpcoming }: {
-  event: HinduEvent
-  formatDateRange: (e: HinduEvent) => string
-  isOngoing: (e: HinduEvent) => boolean
-  isUpcoming: (e: HinduEvent) => boolean
-}) {
-  const badgeClass = categoryBadge[event.category] || 'badge'
-  const accentClass = categoryAccent[event.category] || 'bg-primary-500'
-  const ongoing = isOngoing(event)
-  const upcoming = isUpcoming(event)
-
+function EventCard({ event }: { event: EventItem }) {
+  const days = daysUntil(event)
+  const category = eventCategories.find((item) => item.id === event.category)
   return (
-    <Link href={`/events/${event.slug}`} className="block group no-underline hover:no-underline">
-      <article className="card-interactive overflow-hidden h-full flex flex-col">
-        {/* Accent bar */}
-        <div className={`h-1.5 ${accentClass}`} />
-
-        {/* Content */}
-        <div className="p-5 flex-1 flex flex-col">
-          {/* Top row: badges */}
-          <div className="flex items-center gap-2 mb-3 flex-wrap">
-            <span className={`badge text-xs ${badgeClass}`}>
-              {eventCategories.find(c => c.id === event.category)?.label}
-            </span>
-            {ongoing && (
-              <span className="badge bg-semantic-success text-white text-xs font-semibold flex items-center gap-1">
-                <span className="w-1.5 h-1.5 bg-white rounded-full" /> Live
-              </span>
-            )}
-            {upcoming && !ongoing && (
-              <span className="badge text-xs">Upcoming</span>
-            )}
-          </div>
-
-          {/* Title */}
-          <h3 className="text-h4 font-serif text-secondary-800 leading-snug mb-1 group-hover:text-primary-700 transition-colors">
-            {event.title}
-          </h3>
-          <p className="text-caption text-ink-muted font-medium mb-3">{event.titleHi}</p>
-
-          {/* Date */}
-          <div className="flex items-center gap-1.5 text-caption text-ink-muted mb-1.5">
-            <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
-            </svg>
-            {formatDateRange(event)}
-          </div>
-
-          {/* Location */}
-          <div className="flex items-center gap-1.5 text-caption text-ink-muted mb-3">
-            <svg className="w-3.5 h-3.5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
-            </svg>
-            <span className="truncate">{event.location}</span>
-          </div>
-
-          {/* Description */}
-          <p className="text-body-sm text-ink-muted line-clamp-2 flex-1">{event.description}</p>
-
-          {/* Highlights preview */}
-          <div className="mt-3 flex flex-wrap gap-1.5">
-            {event.highlights.slice(0, 2).map(h => (
-              <span key={h} className="badge text-xs truncate max-w-[180px]">{h}</span>
-            ))}
-            {event.highlights.length > 2 && (
-              <span className="badge badge-primary text-xs">+{event.highlights.length - 2} more</span>
-            )}
-          </div>
-
-          {/* Footer */}
-          <div className="mt-4 pt-3 border-t border-surface-border flex items-center justify-between">
-            <span className="inline-flex items-center gap-1 text-caption text-primary-600 font-semibold group-hover:text-primary-700 transition-colors">
-              View Full Details
-              <svg className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" /></svg>
-            </span>
-            <span className="badge text-xs">{event.state}</span>
-          </div>
+    <article className="group overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
+      <div className="relative h-48">
+        <SarvdevImage image={getTempleCardImage({ imageCard: event.imageCard, image: event.image })} alt={event.title} className="absolute inset-0" imgClassName="object-cover transition-transform duration-700 group-hover:scale-105" />
+        <div className="absolute left-4 top-4 rounded-xl bg-white/95 px-3 py-2 text-center shadow-sm">
+          <span className="block text-xl font-bold text-gray-900">{new Date(`${event.startDate || event.date}T12:00:00`).getDate()}</span>
+          <span className="text-[10px] uppercase tracking-wide text-gray-500">{new Date(`${event.startDate || event.date}T12:00:00`).toLocaleDateString('en-IN', { month: 'short' })}</span>
         </div>
-      </article>
-    </Link>
+        {days >= 0 && <span className="absolute right-4 top-4 rounded-full bg-black/70 px-3 py-1 text-xs font-semibold text-white">{days === 0 ? 'Today' : `${days} days`}</span>}
+      </div>
+      <div className="p-5">
+        <div className="mb-3 flex flex-wrap gap-2">
+          <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800">{category?.label || event.category}</span>
+          {event.featured && <span className="rounded-full bg-rose-100 px-2.5 py-1 text-xs font-semibold text-rose-700">Featured</span>}
+          {(event.isOnline || event.liveUrl) && <span className="rounded-full bg-green-100 px-2.5 py-1 text-xs font-semibold text-green-700">Live/Online</span>}
+        </div>
+        <h3 className="text-h3 font-serif text-gray-900 group-hover:text-primary-700">{event.title}</h3>
+        {event.titleHi && <p className="mt-1 text-body-sm text-gray-500">{event.titleHi}</p>}
+        <p className="mt-3 text-body-sm text-gray-500">{dateLabel(event)} · {event.startTime || 'All day'}</p>
+        <p className="mt-1 text-body-sm text-gray-500">{event.locationName || event.location || event.city}{event.state ? `, ${event.state}` : ''}</p>
+        {(event.templeName || event.deityName) && <p className="mt-2 text-caption font-semibold text-primary-700">{event.templeName || event.deityName}</p>}
+        <p className="mt-3 line-clamp-2 text-body-sm text-gray-600">{event.shortDescription || event.description}</p>
+        <div className="mt-5 flex items-center justify-between border-t border-gray-100 pt-4">
+          <Link href={`/events/${event.slug}`} className="text-body-sm font-semibold text-primary-700 no-underline hover:no-underline">View Details</Link>
+          <a href={calendarHref(event)} target="_blank" rel="noopener noreferrer" className="text-caption font-semibold text-gray-500 hover:text-gray-900">Calendar</a>
+        </div>
+      </div>
+    </article>
   )
 }

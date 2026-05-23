@@ -7,8 +7,26 @@ import Blog from '@/models/Blog'
 import Event from '@/models/Event'
 import User from '@/models/User'
 import Visitor from '@/models/Visitor'
+import Deity from '@/models/Deity'
+import Darshan from '@/models/Darshan'
+import SpiritualIcon from '@/models/SpiritualIcon'
+import Subscriber from '@/models/Subscriber'
+import ActivityLog from '@/models/ActivityLog'
+import { AUTH_COOKIE_NAME, verifyToken } from '@/lib/auth'
+import { NextRequest } from 'next/server'
 
-export async function GET() {
+function isAdmin(req: NextRequest): boolean {
+  const token = req.cookies.get(AUTH_COOKIE_NAME)?.value
+  if (!token) return false
+  const payload = verifyToken(token)
+  return payload?.role === 'admin'
+}
+
+export async function GET(req: NextRequest) {
+  if (!isAdmin(req)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
   try {
     await connectDB()
 
@@ -30,6 +48,10 @@ export async function GET() {
       totalDevotionals,
       totalBlogs,
       totalEvents,
+      totalDeities,
+      totalDarshan,
+      totalSpiritualIcons,
+      totalSubscribers,
       totalUsers,
       totalVisitors,
       todayVisitors,
@@ -49,6 +71,7 @@ export async function GET() {
       monthlyVisitors,
       topPages,
       pendingUsers,
+      recentActivity,
     ] = await Promise.all([
       Temple.countDocuments(),
       Temple.countDocuments({ status: 'approved' }),
@@ -56,6 +79,10 @@ export async function GET() {
       Devotional.countDocuments(),
       Blog.countDocuments(),
       Event.countDocuments(),
+      Deity.countDocuments(),
+      Darshan.countDocuments(),
+      SpiritualIcon.countDocuments(),
+      Subscriber.countDocuments(),
       User.countDocuments(),
       Visitor.countDocuments(),
       Visitor.countDocuments({ timestamp: { $gte: todayStart } }),
@@ -100,6 +127,7 @@ export async function GET() {
       ]),
       // Pending user approvals (temple + pandit)
       User.countDocuments({ status: 'pending', role: { $in: ['temple', 'pandit'] } }),
+      ActivityLog.find({}).sort({ timestamp: -1 }).limit(8).lean(),
     ])
 
     // Growth percentages
@@ -114,13 +142,16 @@ export async function GET() {
         devotionals: totalDevotionals,
         blogs: totalBlogs,
         events: totalEvents,
+        deities: totalDeities || staticDeitiesCount,
+        darshan: totalDarshan,
+        spiritualIcons: totalSpiritualIcons,
+        subscribers: totalSubscribers,
         users: totalUsers,
         pendingUsers,
         visitors: totalVisitors,
         todayVisitors,
         weekVisitors,
         monthVisitors,
-        deities: staticDeitiesCount,
       },
       growth: {
         visitors: pct(weekVisitors, prevWeekVisitors),
@@ -134,6 +165,7 @@ export async function GET() {
         devotionals: recentDevotionals,
         blogs: recentBlogs,
         events: recentEvents,
+        activity: recentActivity,
       },
       dailyVisitors,
       monthlyVisitors,

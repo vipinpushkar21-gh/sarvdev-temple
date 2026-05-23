@@ -1,309 +1,189 @@
 "use client"
 
+import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import Hero from '../../../components/Hero'
-import { getEventBySlug, getRelatedEvents, eventCategories } from '../../../data/events'
-import type { HinduEvent } from '../../../data/events'
+import ShareButtons from '../../../components/ShareButtons'
+import { hinduEvents } from '../../../data/events'
+import { getGalleryImage, getTempleHeroImage } from '../../../lib/temple-image'
+import SarvdevImage from '../../../components/SarvdevImage'
 
-/* Token-based category badge colours */
-const categoryBadge: Record<string, string> = {
-  festival: 'bg-primary-100 text-primary-800',
-  yatra:    'bg-secondary-100 text-secondary-700',
-  cultural: 'bg-accent-100 text-accent-800',
-  katha:    'bg-primary-50 text-secondary-700',
-  special:  'bg-accent-50 text-accent-800',
+type EventItem = any
+
+function fallbackEvent(slug: string) {
+  const event = hinduEvents.find((item) => item.slug === slug)
+  if (!event) return null
+  return {
+    ...event,
+    startDate: event.date,
+    endDate: event.endDate || event.date,
+    shortDescription: event.description.slice(0, 180),
+    locationName: event.location,
+    eventType: event.category,
+    status: 'published',
+  }
 }
 
-/* Token-based card accent bar colours */
-const categoryAccent: Record<string, string> = {
-  festival: 'bg-primary-500',
-  yatra:    'bg-secondary-500',
-  cultural: 'bg-accent-500',
-  katha:    'bg-primary-400',
-  special:  'bg-accent-600',
+function dateLabel(event: EventItem) {
+  const start = new Date(`${event.startDate || event.date}T12:00:00`)
+  const end = event.endDate && event.endDate !== (event.startDate || event.date) ? new Date(`${event.endDate}T12:00:00`) : null
+  if (end) return `${start.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} - ${end.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}`
+  return start.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+}
+
+function countdown(event: EventItem) {
+  const start = new Date(`${event.startDate || event.date}T00:00:00`).getTime()
+  const today = new Date(new Date().toISOString().slice(0, 10)).getTime()
+  const days = Math.ceil((start - today) / 86_400_000)
+  if (days === 0) return 'Today'
+  if (days > 0) return `${days} days to go`
+  return 'Past event'
+}
+
+function calendarHref(event: EventItem) {
+  const start = (event.startDate || event.date || '').replace(/-/g, '')
+  const end = (event.endDate || event.startDate || event.date || '').replace(/-/g, '')
+  return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(event.title)}&dates=${start}/${end}&details=${encodeURIComponent(event.description || '')}&location=${encodeURIComponent(event.locationName || event.location || '')}`
 }
 
 export default function EventDetailPage() {
   const params = useParams()
   const slug = params?.slug as string
+  const [event, setEvent] = useState<EventItem | null>(null)
+  const [loading, setLoading] = useState(true)
 
-  const event = getEventBySlug(slug)
+  useEffect(() => {
+    if (!slug) return
+    fetch(`/api/events/${slug}`, { cache: 'no-store' })
+      .then((res) => res.ok ? res.json() : null)
+      .then((data) => setEvent(data || fallbackEvent(slug)))
+      .catch(() => setEvent(fallbackEvent(slug)))
+      .finally(() => setLoading(false))
+  }, [slug])
+
+  if (loading) return <div className="page-container section-sm"><div className="h-96 rounded-2xl bg-gray-100 animate-pulse" /></div>
 
   if (!event) {
     return (
-      <>
-        <Hero title="Event Not Found" subtitle="This event could not be found." />
-        <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center">
-          <p className="text-body text-ink-muted mb-6">The event you are looking for does not exist.</p>
-          <Link href="/events" className="btn btn-primary no-underline hover:no-underline">
-            Back to Events
-          </Link>
-        </main>
-      </>
+      <main className="page-container section-sm text-center">
+        <h1 className="text-h1 font-serif text-gray-900">Event Not Found</h1>
+        <p className="mt-2 text-gray-500">This event could not be found.</p>
+        <Link href="/events" className="btn btn-primary mt-6 no-underline hover:no-underline">Back to Events</Link>
+      </main>
     )
   }
 
-  const category = eventCategories.find(c => c.id === event.category)
-  const relatedEvents = getRelatedEvents(event, 3)
-  const badgeClass = categoryBadge[event.category] || 'badge'
-
-  function formatDateRange(e: HinduEvent): string {
-    const start = new Date(e.date)
-    const opts: Intl.DateTimeFormatOptions = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }
-    if (e.endDate && e.endDate !== e.date) {
-      const end = new Date(e.endDate)
-      return `${start.toLocaleDateString('en-IN', opts)} — ${end.toLocaleDateString('en-IN', opts)}`
-    }
-    return start.toLocaleDateString('en-IN', opts)
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Event',
+    name: event.title,
+    description: event.description,
+    startDate: event.startDate || event.date,
+    endDate: event.endDate || event.startDate || event.date,
+    eventStatus: 'https://schema.org/EventScheduled',
+    eventAttendanceMode: event.isOnline ? 'https://schema.org/OnlineEventAttendanceMode' : 'https://schema.org/OfflineEventAttendanceMode',
+    image: [event.imageHero || event.imageCard || event.image].filter(Boolean),
+    location: event.isOnline ? undefined : {
+      '@type': 'Place',
+      name: event.locationName || event.location,
+      address: [event.address, event.city, event.state, event.country].filter(Boolean).join(', '),
+    },
   }
-
-  function formatShortDate(e: HinduEvent): string {
-    const start = new Date(e.date)
-    const opts: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short', year: 'numeric' }
-    if (e.endDate && e.endDate !== e.date) {
-      const end = new Date(e.endDate)
-      return `${start.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })} – ${end.toLocaleDateString('en-IN', opts)}`
-    }
-    return start.toLocaleDateString('en-IN', opts)
-  }
-
-  function isOngoing(e: HinduEvent): boolean {
-    const today = new Date().toISOString().slice(0, 10)
-    return e.date <= today && (e.endDate ? e.endDate >= today : e.date >= today)
-  }
-
-  const ongoing = isOngoing(event)
 
   return (
     <>
-      {/* ─── Page Header ─── */}
-      <div className="page-header">
-        <div className="page-header-inner">
-          {/* Breadcrumb */}
-          <nav className="flex items-center gap-2 text-body-sm text-ink-muted mb-4">
-            <Link href="/" className="hover:text-primary-600 transition-colors no-underline hover:no-underline">Home</Link>
-            <span>/</span>
-            <Link href="/events" className="hover:text-primary-600 transition-colors no-underline hover:no-underline">Events</Link>
-            <span>/</span>
-            <span className="text-ink font-medium truncate max-w-[200px]">{event.title}</span>
-          </nav>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <section className="relative min-h-[520px] overflow-hidden bg-gray-950 text-white">
+        <SarvdevImage image={getTempleHeroImage({ imageHero: event.imageHero, imageCard: event.imageCard, image: event.image })} alt={event.title} className="absolute inset-0" imgClassName="object-cover opacity-70" loading="eager" />
+        <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-950/60 to-gray-950/20" />
+        <div className="page-container relative flex min-h-[520px] items-end pb-12">
+          <div className="max-w-4xl">
+            <nav className="mb-5 flex items-center gap-2 text-body-sm text-white/70">
+              <Link href="/" className="text-white/70 no-underline hover:text-white">Home</Link><span>/</span>
+              <Link href="/events" className="text-white/70 no-underline hover:text-white">Events</Link><span>/</span>
+              <span className="truncate">{event.title}</span>
+            </nav>
+            <div className="mb-4 flex flex-wrap gap-2">
+              <span className="rounded-full bg-amber-400 px-3 py-1 text-xs font-bold text-gray-950">{event.category || 'event'}</span>
+              <span className="rounded-full bg-white/15 px-3 py-1 text-xs font-semibold backdrop-blur-md">{countdown(event)}</span>
+              {event.isOnline && <span className="rounded-full bg-green-400 px-3 py-1 text-xs font-bold text-green-950">Online</span>}
+            </div>
+            <h1 className="text-display-lg font-serif leading-tight">{event.title}</h1>
+            {event.titleHi && <p className="mt-2 text-h2 font-devanagari text-amber-100">{event.titleHi}</p>}
+            <p className="mt-5 max-w-2xl text-body-lg text-white/78">{event.shortDescription || event.description}</p>
+          </div>
+        </div>
+      </section>
 
-          {/* Category + Status badges */}
-          <div className="flex items-center gap-2 mb-3 flex-wrap">
-            <span className={`badge text-xs ${badgeClass}`}>{category?.label}</span>
-            <span className="badge text-xs">{event.year}</span>
-            {ongoing && (
-              <span className="badge bg-semantic-success text-white text-xs font-semibold flex items-center gap-1">
-                <span className="w-1.5 h-1.5 bg-white rounded-full" /> Live Now
-              </span>
+      <main className="bg-[#f8f5ef]">
+        <div className="page-container section-sm grid grid-cols-1 lg:grid-cols-[1fr_22rem] gap-8">
+          <div className="space-y-6">
+            <Info title="Significance" body={event.significance} />
+            <ListInfo title="Rituals" items={event.rituals} />
+            <Info title="Puja Vidhi" body={event.pujaVidhi} />
+            <Info title="Fasting Info" body={event.fastingInfo} />
+            <Info title="Best Time To Visit" body={event.bestTimeToVisit} />
+            {(event.templeName || event.deityName || event.relatedDevotionalSlugs?.length > 0) && (
+              <section className="rounded-2xl bg-white p-6 shadow-sm">
+                <h2 className="text-h2 font-serif text-gray-900">Related Sacred Links</h2>
+                <div className="mt-4 flex flex-wrap gap-3">
+                  {event.templeSlug && <Link href={`/temples/${event.templeSlug}`} className="btn btn-outline btn-sm no-underline hover:no-underline">{event.templeName || 'Temple'}</Link>}
+                  {event.deitySlug && <Link href={`/deities/${event.deitySlug}`} className="btn btn-outline btn-sm no-underline hover:no-underline">{event.deityName || 'Deity'}</Link>}
+                  {event.relatedDevotionalSlugs?.map((item: string) => <Link key={item} href={`/devotionals/${item}`} className="btn btn-outline btn-sm no-underline hover:no-underline">Devotional</Link>)}
+                </div>
+              </section>
+            )}
+            {event.galleryImages?.length > 0 && (
+              <section className="rounded-2xl bg-white p-6 shadow-sm">
+                <h2 className="text-h2 font-serif text-gray-900 mb-4">Gallery</h2>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {event.galleryImages.map((image: string, index: number) => (
+                    <div key={image} className="relative aspect-[4/3] overflow-hidden rounded-xl">
+                      <SarvdevImage image={getGalleryImage(image)} alt={`${event.title} ${index + 1}`} className="absolute inset-0" imgClassName="object-cover" />
+                    </div>
+                  ))}
+                </div>
+              </section>
             )}
           </div>
 
-          {/* Title */}
-          <h1>{event.title}</h1>
-          <p className="text-h4 text-ink-muted font-medium mt-1">{event.titleHi}</p>
-
-          {/* Date & Location */}
-          <div className="mt-4 flex flex-col sm:flex-row gap-4 text-ink-muted">
-            <div className="flex items-center gap-2">
-              <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
-              </svg>
-              <span className="text-body-sm">{formatDateRange(event)}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
-              </svg>
-              <span className="text-body-sm">{event.location} · {event.state}</span>
-            </div>
-          </div>
+          <aside className="space-y-5">
+            <section className="rounded-2xl bg-white p-6 shadow-sm lg:sticky lg:top-24">
+              <h2 className="text-h3 font-serif text-gray-900">Event Details</h2>
+              <div className="mt-5 space-y-3 text-body-sm text-gray-600">
+                <p><span className="font-semibold text-gray-900">Date:</span> {dateLabel(event)}</p>
+                <p><span className="font-semibold text-gray-900">Time:</span> {event.isAllDay ? 'All day' : [event.startTime, event.endTime].filter(Boolean).join(' - ') || 'All day'}</p>
+                <p><span className="font-semibold text-gray-900">Location:</span> {event.locationName || event.location || 'Online'}{event.state ? `, ${event.state}` : ''}</p>
+                {event.tithi && <p><span className="font-semibold text-gray-900">Tithi:</span> {event.tithi}</p>}
+                {event.hinduMonth && <p><span className="font-semibold text-gray-900">Hindu Month:</span> {event.hinduMonth}</p>}
+              </div>
+              <div className="mt-6 flex flex-col gap-3">
+                <a href={calendarHref(event)} target="_blank" rel="noopener noreferrer" className="btn btn-primary no-underline hover:no-underline">Add to Calendar</a>
+                {event.mapsLink && <a href={event.mapsLink} target="_blank" rel="noopener noreferrer" className="btn btn-outline no-underline hover:no-underline">Open Map</a>}
+                {event.liveUrl && <a href={event.liveUrl} target="_blank" rel="noopener noreferrer" className="btn btn-outline no-underline hover:no-underline">Watch Live</a>}
+              </div>
+            </section>
+            <ShareButtons title={event.title} url={typeof window !== 'undefined' ? window.location.href : ''} />
+          </aside>
         </div>
-      </div>
-
-      {/* ─── Main Content ─── */}
-      <main className="page-container py-10">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
-          {/* Left Column — Main Content */}
-          <div className="lg:col-span-2 space-y-8">
-
-            {/* About / Description */}
-            <section className="card p-6 md:p-8">
-              <h2 className="text-h3 font-serif text-secondary-800 mb-4">About This Event</h2>
-              <p className="text-body text-ink-muted leading-relaxed">{event.description}</p>
-            </section>
-
-            {/* Spiritual Significance */}
-            <section className="card p-6 md:p-8">
-              <h2 className="text-h3 font-serif text-secondary-800 mb-4">Spiritual Significance</h2>
-              <p className="text-body text-ink-muted leading-relaxed">{event.significance}</p>
-            </section>
-
-            {/* Key Rituals */}
-            <section className="card p-6 md:p-8">
-              <h2 className="text-h3 font-serif text-secondary-800 mb-4">Key Rituals & Traditions</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {event.rituals.map((ritual, i) => (
-                  <div key={i} className="flex items-start gap-3 p-3 rounded-lg bg-surface-sunken">
-                    <span className="text-primary-500 mt-0.5 font-bold">{i + 1}.</span>
-                    <span className="text-body-sm text-secondary-700">{ritual}</span>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            {/* Highlights */}
-            <section className="card p-6 md:p-8">
-              <h2 className="text-h3 font-serif text-secondary-800 mb-4">Highlights & What to Expect</h2>
-              <div className="space-y-3">
-                {event.highlights.map((highlight, i) => (
-                  <div key={i} className="flex items-start gap-3 p-3 rounded-lg bg-primary-50 border border-primary-100">
-                    <span className="text-primary-500 mt-0.5 font-bold">{i + 1}.</span>
-                    <span className="text-body-sm text-secondary-700">{highlight}</span>
-                  </div>
-                ))}
-              </div>
-            </section>
-          </div>
-
-          {/* Right Column — Sidebar */}
-          <div className="space-y-6">
-
-            {/* Quick Info Card */}
-            <div className="card p-6 sticky top-28">
-              <h3 className="text-h4 font-serif text-secondary-800 mb-4">Quick Info</h3>
-
-              <div className="space-y-3">
-                <div className="flex items-center gap-3 p-3 rounded-lg bg-surface-sunken">
-                  <svg className="w-5 h-5 text-primary-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
-                  </svg>
-                  <div>
-                    <span className="text-caption text-ink-muted block">Date</span>
-                    <span className="text-body-sm font-medium text-secondary-700">{formatShortDate(event)}</span>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3 p-3 rounded-lg bg-surface-sunken">
-                  <svg className="w-5 h-5 text-primary-500 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
-                  </svg>
-                  <div>
-                    <span className="text-caption text-ink-muted block">Location</span>
-                    <span className="text-body-sm font-medium text-secondary-700">{event.location}</span>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3 p-3 rounded-lg bg-surface-sunken">
-                  <svg className="w-5 h-5 text-primary-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498l4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 00-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0z" />
-                  </svg>
-                  <div>
-                    <span className="text-caption text-ink-muted block">State</span>
-                    <span className="text-body-sm font-medium text-secondary-700">{event.state}</span>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3 p-3 rounded-lg bg-surface-sunken">
-                  <svg className="w-5 h-5 text-primary-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 6h.008v.008H6V6z" />
-                  </svg>
-                  <div>
-                    <span className="text-caption text-ink-muted block">Category</span>
-                    <span className="text-body-sm font-medium text-secondary-700">{category?.label} ({category?.labelHi})</span>
-                  </div>
-                </div>
-
-                {event.month !== 'All Year' && (
-                  <div className="flex items-center gap-3 p-3 rounded-lg bg-surface-sunken">
-                    <svg className="w-5 h-5 text-primary-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
-                    </svg>
-                    <div>
-                      <span className="text-caption text-ink-muted block">Month</span>
-                      <span className="text-body-sm font-medium text-secondary-700">{event.month} {event.year}</span>
-                    </div>
-                  </div>
-                )}
-
-                {ongoing && (
-                  <div className="p-3 rounded-lg bg-semantic-success/10 border border-semantic-success/20 text-center">
-                    <span className="text-semantic-success font-semibold text-body-sm flex items-center justify-center gap-2">
-                      <span className="w-2 h-2 bg-semantic-success rounded-full" />
-                      This event is happening now!
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              {/* Back button */}
-              <Link
-                href="/events"
-                className="mt-6 btn btn-primary w-full text-center no-underline hover:no-underline flex items-center justify-center gap-2"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
-                </svg>
-                All Events
-              </Link>
-            </div>
-          </div>
-        </div>
-
-        {/* ─── Related Events ─── */}
-        {relatedEvents.length > 0 && (
-          <section className="mt-12 pt-10 border-t border-surface-border">
-            <h2 className="text-h2 font-serif text-secondary-800 mb-6">Related Events</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {relatedEvents.map(rel => (
-                <RelatedEventCard key={rel.id} event={rel} />
-              ))}
-            </div>
-          </section>
-        )}
       </main>
     </>
   )
 }
 
-/* ─── Related Event Card ─── */
-function RelatedEventCard({ event }: { event: HinduEvent }) {
-  const badgeClass = categoryBadge[event.category] || 'badge'
-  const accentClass = categoryAccent[event.category] || 'bg-primary-500'
-  const startDate = new Date(event.date)
+function Info({ title, body }: { title: string; body?: string }) {
+  if (!body) return null
+  return <section className="rounded-2xl bg-white p-6 shadow-sm"><h2 className="text-h2 font-serif text-gray-900">{title}</h2><p className="mt-3 text-body text-gray-600 leading-relaxed">{body}</p></section>
+}
 
+function ListInfo({ title, items }: { title: string; items?: string[] }) {
+  if (!items?.length) return null
   return (
-    <Link href={`/events/${event.slug}`} className="block group no-underline hover:no-underline">
-      <article className="card-interactive overflow-hidden">
-        {/* Accent bar */}
-        <div className={`h-1.5 ${accentClass}`} />
-        <div className="p-5">
-          <span className={`badge text-xs ${badgeClass} mb-2 inline-block`}>
-            {eventCategories.find(c => c.id === event.category)?.label}
-          </span>
-          <h3 className="text-h4 font-serif text-secondary-800 leading-snug mb-2 group-hover:text-primary-700 transition-colors">
-            {event.title}
-          </h3>
-          <div className="flex items-center gap-1 text-caption text-ink-muted mb-1">
-            <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
-            </svg>
-            {startDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
-          </div>
-          <div className="flex items-center gap-1 text-caption text-ink-muted">
-            <svg className="w-3 h-3 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
-            </svg>
-            <span className="truncate">{event.location}</span>
-          </div>
-          <span className="mt-3 text-caption text-primary-600 font-medium group-hover:text-primary-700 transition-colors block">
-            View Details
-          </span>
-        </div>
-      </article>
-    </Link>
+    <section className="rounded-2xl bg-white p-6 shadow-sm">
+      <h2 className="text-h2 font-serif text-gray-900">{title}</h2>
+      <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+        {items.map((item, index) => <div key={item} className="rounded-xl bg-amber-50 p-3 text-body-sm text-gray-700"><span className="font-bold text-amber-700">{index + 1}.</span> {item}</div>)}
+      </div>
+    </section>
   )
 }

@@ -81,9 +81,9 @@ export default function SarvdevImage({
 
     const frameRatio = frame.clientWidth / Math.max(frame.clientHeight, 1)
     const imageRatio = img.naturalWidth / img.naturalHeight
-    const isHero = image.role === 'templeHero' || image.role === 'deityHero'
+    const isHero = image.role === 'templeHero' || image.role === 'deityHero' || image.role === 'blogHero'
     const isDeityHero = image.role === 'deityHero'
-    const isSacredCard = image.role === 'deityCard' || image.role === 'templeCard'
+    const isSacredCard = image.role === 'deityCard' || image.role === 'templeCard' || image.role === 'blogCard'
     const squareIntoWideHero = isHero && frameRatio >= 1.55 && imageRatio <= 1.35
     const portraitIntoWide = frameRatio >= 1.35 && imageRatio <= 0.95
     const panoramaIntoTallMobile = isHero && frameRatio <= 0.9 && imageRatio >= 1.8
