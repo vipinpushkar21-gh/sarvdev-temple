@@ -1,6 +1,7 @@
 import React from 'react';
 import SarvdevImage from '../../../components/SarvdevImage';
-import { getTempleCardImage } from '../../../lib/temple-image';
+import { getDevotionalCardImage } from '../../../lib/devotional-image';
+import type { DeityImageSource } from '../../../lib/devotional-deity-match';
 
 export type DevotionalCardProps = {
   title: string;
@@ -16,6 +17,7 @@ export type DevotionalCardProps = {
   image?: string;
   imageCard?: string;
   imageHero?: string;
+  matchedDeity?: DeityImageSource | null;
   onClick?: () => void;
 };
 
@@ -34,12 +36,10 @@ export const DevotionalCard: React.FC<DevotionalCardProps> = ({
   descriptionNode,
   hasAudio,
   isFeatured,
-  image,
-  imageCard,
-  imageHero,
+  matchedDeity,
   onClick,
 }) => {
-  const cardImage = getTempleCardImage({ imageCard, imageHero, image })
+  const cardImage = getDevotionalCardImage({ matchedDeity })
   return (
   <div
     className="devotional-card-2026 cursor-pointer group overflow-hidden"

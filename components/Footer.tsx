@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useTranslation } from '../lib/translation'
+import { FOOTER_QUICK_LINKS } from '../lib/navigation'
 
 const popularStates = [
   { label: 'Uttar Pradesh', href: '/temples/state/uttar-pradesh' },
@@ -35,16 +36,7 @@ const pilgrimageLinks = [
   { label: 'Panch Kedar', href: '/temples/pilgrimage/panch-kedar' },
 ]
 
-const quickLinks = [
-  { label: 'Browse Temples', href: '/temples' },
-  { label: 'Daily Darshan', href: '/daily-darshan' },
-  { label: 'Devotional Music', href: '/devotionals' },
-  { label: 'Festival Calendar', href: '/events' },
-  { label: 'Panchang Today', href: '/panchang' },
-  { label: 'Submit Temple', href: '/list-temple' },
-  { label: 'Sacred Stories', href: '/stories' },
-  { label: 'Community Forum', href: '/forum' },
-]
+const quickLinks = FOOTER_QUICK_LINKS
 
 const legalLinks = [
   { label: 'About Sarvdev', href: '/contact' },

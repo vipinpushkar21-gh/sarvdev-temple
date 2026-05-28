@@ -437,7 +437,8 @@ function getBookmarkImage(item: BookmarkItem) {
   }
 
   if (item.type === "deity") return getDeityCardImage(input)
-  if (item.type === "devotional" || item.type === "darshan") return getDevotionalCardImage(input)
+  if (item.type === "devotional") return getDevotionalCardImage({ matchedDeity: (item as any).matchedDeity || null })
+  if (item.type === "darshan") return getTempleCardImage(input)
   if (item.type === "blog") return getBlogCardImage(input)
   return getTempleCardImage(input)
 }

@@ -16,6 +16,7 @@ export type DeityCategory = {
   id: string              // Machine-readable slug for DB/URLs
   titleEn: string         // Display name (English)
   titleHi: string         // Display name (Hindi)
+  legacy?: boolean        // Kept for old/admin-only values that may not have public sections yet
 }
 
 /**
@@ -132,6 +133,21 @@ export const DEITY_CATEGORIES: DeityCategory[] = [
     titleEn: 'Pavitra Nadi Deviyan',
     titleHi: 'पवित्र नदी देवियाँ'
   },
+  {
+    id: 'divya-vahan',
+    titleEn: 'Divya Vahan',
+    titleHi: 'दिव्य वाहन'
+  },
+  {
+    id: 'vishnu-roop',
+    titleEn: 'Bhagwan Vishnu ke Anya Prasiddh Roop',
+    titleHi: 'भगवान विष्णु के अन्य प्रसिद्ध रूप'
+  },
+  {
+    id: 'vanar-sena',
+    titleEn: 'Vanar Sena ke Pramukh',
+    titleHi: 'वानर सेना के प्रमुख'
+  },
 
   // Legacy/Alternative Names (for backward compatibility)
   {
@@ -148,6 +164,36 @@ export const DEITY_CATEGORIES: DeityCategory[] = [
     id: 'dwadash-aditya',
     titleEn: 'Dwadash Aditya',
     titleHi: 'द्वादश आदित्य'
+  },
+  {
+    id: 'ganesha-roop',
+    titleEn: 'Ganesha Forms',
+    titleHi: 'गणेश रूप',
+    legacy: true
+  },
+  {
+    id: 'hanuman-roop',
+    titleEn: 'Hanuman Forms',
+    titleHi: 'हनुमान रूप',
+    legacy: true
+  },
+  {
+    id: 'devi-roop',
+    titleEn: 'Devi Forms',
+    titleHi: 'देवी रूप',
+    legacy: true
+  },
+  {
+    id: 'regional-deities',
+    titleEn: 'Regional Deities',
+    titleHi: 'क्षेत्रीय देवता',
+    legacy: true
+  },
+  {
+    id: 'other',
+    titleEn: 'Other / Misc',
+    titleHi: 'अन्य',
+    legacy: true
   },
 ]
 
@@ -189,10 +235,9 @@ export function getCategoryOptions(hindi: boolean = false) {
   return DEITY_CATEGORIES
     .map(cat => ({
       id: cat.id,
-      label: hindi ? cat.titleHi : cat.titleEn,
+      label: `${hindi ? cat.titleHi : cat.titleEn}${cat.legacy ? ' (Legacy)' : ''}`,
       value: cat.id
     }))
-    .sort((a, b) => a.label.localeCompare(b.label))
 }
 
 /**
@@ -238,23 +283,39 @@ export function isCategoryValid(id: string): boolean {
  * Maps old names to canonical names
  */
 export const CATEGORY_ALIASES: Record<string, string> = {
+  'Dashavatara': 'dashavatar',
+  'Dashavatar': 'dashavatar',
+  'Bhagwan Vishnu ke Dashavatar': 'dashavatar',
   'Shiva Forms': 'shiva-roop',
   'Forms of Shiva': 'shiva-roop',
   'Krishna Forms': 'krishna-roop',
   'Forms of Krishna': 'krishna-roop',
+  'Vishnu Forms': 'vishnu-roop',
+  'Forms of Vishnu': 'vishnu-roop',
+  'Bhagwan Vishnu ke Anya Prasiddh Roop': 'vishnu-roop',
   'Vishnu Avatars': 'dashavatar',
-  'Vishnu Forms': 'dashavatar',
   'Durga Forms': 'navadurga',
   'Durga Roop': 'navadurga',
+  'Devi Forms': 'devi-roop',
   'Goddess Forms': 'das-mahavidya',
-  'Divine Vehicles': 'vedic-devta',
-  'Divya Vahan': 'vedic-devta',
-  'Regional Deities': 'vedic-devta',
+  'Divine Vehicles': 'divya-vahan',
+  'Divya Vahan': 'divya-vahan',
+  'Sacred Vehicles': 'divya-vahan',
+  'Vahan': 'divya-vahan',
+  'Vahana': 'divya-vahan',
+  'Regional Deities': 'regional-deities',
+  'Vedic Deities': 'vedic-devta',
+  'River Goddesses': 'pavitra-nadi',
+  'Pavitra Nadi Deviyan': 'pavitra-nadi',
   'Saints': 'saptarishi',
   'Gurus': 'saptarishi',
-  'Hanuman Forms': 'pramukh-devta',
-  'Ganesha Forms': 'pramukh-devta',
-  'Devi Forms': 'das-mahavidya',
+  'Hanuman Forms': 'hanuman-roop',
+  'Ganesha Forms': 'ganesha-roop',
+  'Vanar Sena': 'vanar-sena',
+  'Vanar Sena ke Pramukh': 'vanar-sena',
+  'Other': 'other',
+  'Misc': 'other',
+  'Miscellaneous': 'other',
 }
 
 /**
@@ -262,13 +323,14 @@ export const CATEGORY_ALIASES: Record<string, string> = {
  */
 export function normalizeCategoryWithAliases(raw: string): string {
   if (!raw) return 'other'
-  
-  // Check if it's an alias
-  const aliasTarget = CATEGORY_ALIASES[raw]
+
+  const trimmed = raw.trim()
+  const aliasTarget = Object.entries(CATEGORY_ALIASES)
+    .find(([alias]) => alias.toLowerCase() === trimmed.toLowerCase())?.[1]
   if (aliasTarget) return aliasTarget
   
   // Otherwise use normal normalization
-  return normalizeCategory(raw)
+  return normalizeCategory(trimmed)
 }
 
 export function resolveCanonicalCategoryId(raw?: string | null): string | null {

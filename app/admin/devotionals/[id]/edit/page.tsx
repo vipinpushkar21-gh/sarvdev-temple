@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import ImageUpload from '../../../../../components/ImageUpload'
 
 function createSlug(title: string): string {
   const englishMatch = title.match(/\(([^)]+)\)/)
@@ -34,9 +33,6 @@ export default function EditDevotionalPage() {
     category: '',
     language: '',
     deity: '',
-    image: '',
-    imageCard: '',
-    imageHero: '',
     audio: '',
     lyrics: '',
     duration: '',
@@ -45,7 +41,6 @@ export default function EditDevotionalPage() {
     metaTitle: '',
     metaDescription: '',
     metaKeywords: '',
-    ogImage: ''
   })
 
   useEffect(() => {
@@ -63,9 +58,6 @@ export default function EditDevotionalPage() {
               category: found.category || '',
               language: found.language || '',
               deity: found.deity || '',
-              image: found.image || '',
-              imageCard: found.imageCard || '',
-              imageHero: found.imageHero || '',
               audio: found.audio || '',
               lyrics: found.lyrics || '',
               duration: found.duration || '',
@@ -74,7 +66,6 @@ export default function EditDevotionalPage() {
               metaTitle: found.metaTitle || '',
               metaDescription: found.metaDescription || '',
               metaKeywords: found.metaKeywords || '',
-              ogImage: found.ogImage || '',
             })
           } else {
             showToast('error', 'Devotional not found')
@@ -127,10 +118,7 @@ export default function EditDevotionalPage() {
     ]
     const metaKeywords = [...new Set(keywordSet)].join(', ')
 
-    // OG Image — use cover image if available
-    const ogImage = formData.ogImage || formData.imageHero || formData.imageCard || formData.image || ''
-
-    setFormData(prev => ({ ...prev, metaTitle, metaDescription: metaDescription.slice(0, 160), metaKeywords, ogImage }))
+    setFormData(prev => ({ ...prev, metaTitle, metaDescription: metaDescription.slice(0, 160), metaKeywords }))
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -155,9 +143,6 @@ export default function EditDevotionalPage() {
               category: found.category || '',
               language: found.language || '',
               deity: found.deity || '',
-              image: found.image || '',
-              imageCard: found.imageCard || '',
-              imageHero: found.imageHero || '',
               audio: found.audio || '',
               lyrics: found.lyrics || '',
               duration: found.duration || '',
@@ -166,7 +151,6 @@ export default function EditDevotionalPage() {
               metaTitle: found.metaTitle || '',
               metaDescription: found.metaDescription || '',
               metaKeywords: found.metaKeywords || '',
-              ogImage: found.ogImage || '',
             })
           }
         }
@@ -301,20 +285,9 @@ export default function EditDevotionalPage() {
         <div className="admin-card p-6 space-y-5">
           <h2 className="admin-section-title">Media & Content</h2>
 
-          <ImageUpload
-            value={formData.imageCard}
-            onChange={url => setFormData(prev => ({ ...prev, imageCard: url, image: prev.image || url }))}
-            folder="sarvdev/devotionals/cards"
-            label="Card Image"
-            guidance="devotionalCard"
-          />
-          <ImageUpload
-            value={formData.imageHero}
-            onChange={url => setFormData(prev => ({ ...prev, imageHero: url, image: prev.image || url }))}
-            folder="sarvdev/devotionals/heroes"
-            label="Hero Image"
-            guidance="devotionalHero"
-          />
+          <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-4 text-sm text-amber-900">
+            Images are managed from Deities. Devotional cards, heroes and social images use the matched deity image automatically.
+          </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-1">Audio URL</label>
@@ -378,9 +351,8 @@ export default function EditDevotionalPage() {
             <p className="mt-1 text-xs text-gray-400">Comma-separated keywords</p>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-600 mb-1">OG Image URL <span className="font-normal text-gray-400">(Social sharing — 1200×630px recommended)</span></label>
-            <input type="text" name="ogImage" value={formData.ogImage} onChange={handleChange} placeholder="https://... (leave blank to use cover image)" className="admin-input w-full" />
+          <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 text-xs text-gray-500">
+            OG images are derived from the matched deity image. Update deity card/hero images from the Deities admin area.
           </div>
         </div>
 

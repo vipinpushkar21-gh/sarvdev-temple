@@ -1,10 +1,11 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import ImageUpload from "../../../../../components/ImageUpload"
-import { getCategoryOptions } from "../../../../../lib/deity-categories"
+import { getCategoryOptions, resolveCanonicalCategoryId } from "../../../../../lib/deity-categories"
+import { compactText } from "../../../../../lib/text-formatting"
 
 type FormState = {
   name: string
@@ -25,11 +26,20 @@ type FormState = {
   status: string
 }
 
-const PREDEFINED_CATEGORIES = getCategoryOptions(false).map(opt => opt.value)
-
 const i = "admin-input w-full"
 const l = "block text-sm font-medium text-gray-600 mb-1"
 const e = "mt-1 text-xs text-red-500"
+
+const BASE_CATEGORY_OPTIONS = getCategoryOptions(false)
+
+function normalizeSelectedCategories(values: unknown[]) {
+  return Array.from(new Set(
+    values
+      .map(value => String(value || '').trim())
+      .filter(Boolean)
+      .map(value => resolveCanonicalCategoryId(value) || value)
+  ))
+}
 
 export default function AdminEditDeityPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter()
@@ -81,6 +91,8 @@ export default function AdminEditDeityPage({ params }: { params: Promise<{ id: s
             selectedCategories = [deity.categoryId]
           }
 
+          selectedCategories = normalizeSelectedCategories(selectedCategories)
+
           setForm({
             name: deity.name || "",
             nameHi: deity.nameHi || "",
@@ -114,10 +126,23 @@ export default function AdminEditDeityPage({ params }: { params: Promise<{ id: s
     setForm(prev => ({ ...prev, [field]: value }))
   }
 
+  const categoryOptions = useMemo(() => {
+    const knownValues = new Set(BASE_CATEGORY_OPTIONS.map(option => option.value))
+    const legacyOptions = form.categories
+      .filter(value => value && !knownValues.has(value))
+      .map(value => ({
+        id: `legacy-${value}`,
+        value,
+        label: `Existing/Legacy: ${value}`,
+      }))
+
+    return [...BASE_CATEGORY_OPTIONS, ...legacyOptions]
+  }, [form.categories])
+
   const generateAutoSEO = () => {
     const metaTitle = `${form.nameHi} - ${form.name} | Sarvdev Temple`
-    const metaDescription = `Learn about ${form.nameHi} (${form.name}). ${form.description || form.descriptionHi || ''}`.substring(0, 160)
-    const metaKeywords = `${form.name}, ${form.nameHi}, ${form.category}, Hindu deity, worship, temple`
+    const metaDescription = compactText(`Learn about ${form.nameHi} (${form.name}). ${form.description || form.descriptionHi || ''}`).substring(0, 160)
+    const metaKeywords = `${form.name}, ${form.nameHi}, ${form.categories.join(', ')}, Hindu deity, worship, temple`
     
     setForm(prev => ({
       ...prev,
@@ -261,7 +286,7 @@ export default function AdminEditDeityPage({ params }: { params: Promise<{ id: s
                 }}
                 required
               >
-                {getCategoryOptions(false).map(cat => (
+                {categoryOptions.map(cat => (
                   <option key={cat.id} value={cat.value}>{cat.label}</option>
                 ))}
               </select>
@@ -297,6 +322,7 @@ export default function AdminEditDeityPage({ params }: { params: Promise<{ id: s
                 onChange={(e) => handleChange('description', e.target.value)}
                 placeholder="Detailed description in English"
               />
+              <p className="mt-2 text-xs text-gray-500">Press Enter twice for a new paragraph.</p>
             </div>
 
             <div>
@@ -308,6 +334,7 @@ export default function AdminEditDeityPage({ params }: { params: Promise<{ id: s
                 onChange={(e) => handleChange('descriptionHi', e.target.value)}
                 placeholder="विस्तृत विवरण हिंदी में"
               />
+              <p className="mt-2 text-xs text-gray-500">Press Enter twice for a new paragraph.</p>
             </div>
           </div>
         </div>

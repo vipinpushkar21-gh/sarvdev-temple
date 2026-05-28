@@ -11,6 +11,7 @@ import DevotionalFilterChips from './components/DevotionalFilterChips'
 import DevotionalHero from './components/DevotionalHero'
 import { SearchBar } from './components/SearchBar'
 import type { Devotional } from './types'
+import { attachMatchedDeities } from '../../lib/devotional-deity-match'
 import {
   getDailyPracticeGroups,
   getDevotionalHref,
@@ -53,11 +54,18 @@ export default function ClientPage() {
     let cancelled = false
     async function fetchDevotionals() {
       try {
-        const res = await fetch('/api/devotionals')
+        const [res, deityRes] = await Promise.all([
+          fetch('/api/devotionals'),
+          fetch('/api/deities', { cache: 'no-store' }).catch(() => null),
+        ])
         if (!res.ok) return
-        const data = await res.json()
+        const [data, deityData] = await Promise.all([
+          res.json(),
+          deityRes?.ok ? deityRes.json() : Promise.resolve([]),
+        ])
         if (!cancelled) {
-          setDevotionals((Array.isArray(data) ? data : []).filter((item: Devotional) => item.status === 'approved' || !item.status))
+          const approved = (Array.isArray(data) ? data : []).filter((item: Devotional) => item.status === 'approved' || !item.status)
+          setDevotionals(attachMatchedDeities(approved, Array.isArray(deityData) ? deityData : []))
         }
       } finally {
         if (!cancelled) setLoading(false)
@@ -130,7 +138,7 @@ export default function ClientPage() {
     }
     return list.sort((a, b) =>
       Number(Boolean(b.audio)) - Number(Boolean(a.audio)) ||
-      Number(Boolean(b.imageCard || b.image)) - Number(Boolean(a.imageCard || a.image)) ||
+      Number(Boolean(b.matchedDeity?.imageCard || b.matchedDeity?.image)) - Number(Boolean(a.matchedDeity?.imageCard || a.matchedDeity?.image)) ||
       new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
     )
   }, [filtered, sort])

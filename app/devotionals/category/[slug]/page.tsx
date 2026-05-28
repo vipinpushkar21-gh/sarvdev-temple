@@ -17,6 +17,7 @@ import {
   matchesCategory,
 } from '../../components/devotional-utils'
 import type { Devotional } from '../../types'
+import { attachMatchedDeities } from '../../../../lib/devotional-deity-match'
 
 type SortKey = 'popular' | 'newest' | 'az' | 'audio'
 
@@ -37,11 +38,18 @@ export default function CategoryPage() {
     let cancelled = false
     async function load() {
       try {
-        const res = await fetch('/api/devotionals')
+        const [res, deityRes] = await Promise.all([
+          fetch('/api/devotionals'),
+          fetch('/api/deities', { cache: 'no-store' }).catch(() => null),
+        ])
         if (!res.ok) return
-        const data = await res.json()
+        const [data, deityData] = await Promise.all([
+          res.json(),
+          deityRes?.ok ? deityRes.json() : Promise.resolve([]),
+        ])
         if (!cancelled) {
-          setAllDevotionals((Array.isArray(data) ? data : []).filter((item: Devotional) => item.status === 'approved' || !item.status))
+          const approved = (Array.isArray(data) ? data : []).filter((item: Devotional) => item.status === 'approved' || !item.status)
+          setAllDevotionals(attachMatchedDeities(approved, Array.isArray(deityData) ? deityData : []))
         }
       } finally {
         if (!cancelled) setLoading(false)

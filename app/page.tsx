@@ -5,9 +5,7 @@ import Devotional from '@/models/Devotional'
 import { hinduEvents } from '@/data/events'
 
 // Client islands — interactive parts that need browser APIs
-import HeroSearch from '@/components/home/HeroSearch'
-import HeroTitle from '@/components/home/HeroTitle'
-import HomeStats from '@/components/home/HomeStats'
+import SacredEcosystemHero from '@/components/SacredEcosystemHero'
 import FeaturesGrid from '@/components/home/FeaturesGrid'
 import FestivalCountdown from '../components/FestivalCountdown'
 import PanchangToday from '../components/PanchangToday'
@@ -104,58 +102,8 @@ export default async function HomePage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(templeItemList) }}
       />
 
-      {/* ─── Hero Section — Premium Sacred ─── */}
-      <section className="sacred-hero min-h-[85vh] md:min-h-[90vh] flex items-center relative">
-        {/* Animated sacred orbs */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute top-[15%] right-[8%] w-80 h-80 bg-primary/[0.08] rounded-full blur-[100px] animate-pulse" />
-          <div className="absolute bottom-[20%] left-[5%] w-64 h-64 bg-accent/[0.06] rounded-full blur-[80px]" style={{ animationDelay: '1s', animationDuration: '4s' }} />
-          <div className="absolute top-[40%] left-[40%] w-96 h-96 bg-temple-gold-DEFAULT/[0.03] rounded-full blur-[120px]" />
-          {/* Dot pattern */}
-          <div className="absolute inset-0 opacity-[0.03]">
-            <div className="absolute inset-0 bg-[url('data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2240%22%20height%3D%2240%22%3E%3Ccircle%20cx%3D%2220%22%20cy%3D%2220%22%20r%3D%221%22%20fill%3D%22%23C9A84C%22%2F%3E%3C%2Fsvg%3E')]" />
-          </div>
-          {/* Top saffron accent */}
-          <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-transparent via-primary to-transparent opacity-60" />
-        </div>
-
-        <div className="sacred-hero-content page-container py-24 md:py-36 w-full">
-          <div className="max-w-3xl">
-            {/* Cinzel overline */}
-            <div className="flex items-center gap-3 mb-6 fade-up">
-              <span className="font-cinzel text-overline uppercase tracking-[0.2em] text-temple-gold-light">
-                Temple Directory &amp; Devotional Hub
-              </span>
-              <span className="flex-1 h-px bg-gradient-to-r from-temple-gold-DEFAULT/40 to-transparent max-w-[100px]" />
-            </div>
-
-            {/* SSR h1 — visible to crawlers in raw HTML */}
-            <h1 className="font-display text-display-lg text-white leading-[1.08] tracking-tight text-shadow-divine fade-up delay-1">
-              Discover Sacred Temples.<br />
-              <span className="text-gradient bg-gradient-to-r from-primary-300 via-accent-300 to-temple-gold-light bg-clip-text text-transparent">
-                Deepen Your Devotion.
-              </span>
-            </h1>
-
-            <p className="mt-6 text-body text-sandstone-300 max-w-xl leading-relaxed fade-up delay-2">
-              Explore temples across India, listen to devotional music, track festivals and panchang, and connect with sacred traditions through Sarvdev.
-            </p>
-
-            {/* Client island: overlays translated title for non-English users */}
-            <HeroTitle />
-
-            {/* Client island: search bar + CTA buttons */}
-            <HeroSearch />
-
-            {/* Stats — server-rendered numbers for SEO */}
-            <HomeStats initial={stats} />
-          </div>
-        </div>
-
-        {/* Bottom sacred gradient fade */}
-        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-surface to-transparent z-20 pointer-events-none" />
-      </section>
-
+      {/* ─── Hero Section — Interactive Sacred Ecosystem ─── */}
+      <SacredEcosystemHero stats={stats} />
       {/* ─── Sacred Divider ─── */}
       <div className="sacred-divider" />
 

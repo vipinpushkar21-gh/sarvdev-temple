@@ -2,7 +2,9 @@ import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
 import { connectDB } from '@/lib/db'
 import Devotional from '@/models/Devotional'
+import Deity from '@/models/Deity'
 import { getDevotionalOGImage } from '@/lib/devotional-image'
+import { attachMatchedDeity } from '@/lib/devotional-deity-match'
 import { categoryToSlug, createDevotionalSlug } from '../components/devotional-utils'
 
 export const revalidate = 300
@@ -17,18 +19,23 @@ export async function generateMetadata(
     await connectDB()
     const devotionals = await Devotional.find(
       { status: 'approved' },
-      'title description category deity language image imageCard imageHero ogImage metaTitle metaDescription metaKeywords'
+      'title description category deity language metaTitle metaDescription metaKeywords'
+    ).lean() as any[]
+    const deities = await Deity.find(
+      { $or: [{ status: 'approved' }, { status: { $exists: false } }] },
+      'name nameHi slug staticSlug slugAliases aliases category categories image imageCard imageHero status'
     ).lean() as any[]
 
-    const devotional = devotionals.find((item: any) => createDevotionalSlug(item.title || '') === id || item._id?.toString() === id)
+    const foundDevotional = devotionals.find((item: any) => createDevotionalSlug(item.title || '') === id || item._id?.toString() === id)
 
-    if (!devotional) {
+    if (!foundDevotional) {
       return {
         title: 'Devotional - Sarvdev',
         description: 'Listen to bhajans, aartis, mantras and devotional lyrics on Sarvdev.',
       }
     }
 
+    const devotional = attachMatchedDeity(foundDevotional, deities)
     const url = `${BASE}/devotionals/${id}`
     const categoryLabel = devotional.category || 'Devotional'
     const deityLabel = devotional.deity ? ` - ${devotional.deity}` : ''
@@ -123,4 +130,3 @@ export default async function DevotionalIdLayout({
     </>
   )
 }
-

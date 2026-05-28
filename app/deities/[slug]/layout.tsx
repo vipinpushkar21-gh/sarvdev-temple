@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { connectDB } from '@/lib/db'
 import Deity from '@/models/Deity'
 import { getOGImage } from '@/lib/temple-image'
+import { compactText } from '@/lib/text-formatting'
 
 const BASE_URL = 'https://sarvdev.com'
 
@@ -20,16 +21,17 @@ export async function generateMetadata(
     const nameHi = deity?.nameHi
     const title = `${nameHi ? `${nameHi} - ` : ''}${name} | Sarvdev`
     const description = deity?.metaDescription || deity?.description || deity?.descriptionHi || `Learn about ${name}, mantra, attributes, related temples and devotionals on Sarvdev.`
+    const compactDescription = compactText(description).slice(0, 160)
     const image = getOGImage(deity || {}).src
     const url = `${BASE_URL}/deities/${slug}`
 
     return {
       title,
-      description: String(description).slice(0, 160),
+      description: compactDescription,
       alternates: { canonical: url },
       openGraph: {
         title,
-        description: String(description).slice(0, 160),
+        description: compactDescription,
         url,
         siteName: 'Sarvdev',
         type: 'article',
@@ -38,7 +40,7 @@ export async function generateMetadata(
       twitter: {
         card: 'summary_large_image',
         title,
-        description: String(description).slice(0, 160),
+        description: compactDescription,
         images: [image],
       },
     }

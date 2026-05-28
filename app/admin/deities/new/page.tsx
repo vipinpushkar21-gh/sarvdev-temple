@@ -175,6 +175,7 @@ export default function AdminNewDeityPage() {
                 onChange={(e) => handleChange('description', e.target.value)}
                 placeholder="Detailed description in English"
               />
+              <p className="mt-2 text-xs text-gray-500">Press Enter twice for a new paragraph.</p>
             </div>
 
             <div>
@@ -186,6 +187,7 @@ export default function AdminNewDeityPage() {
                 onChange={(e) => handleChange('descriptionHi', e.target.value)}
                 placeholder="विस्तृत विवरण हिंदी में"
               />
+              <p className="mt-2 text-xs text-gray-500">Press Enter twice for a new paragraph.</p>
             </div>
           </div>
         </div>

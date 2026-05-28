@@ -2,6 +2,9 @@
 
 import { useEffect, useMemo, useState, useCallback } from 'react'
 import Link from 'next/link'
+import SarvdevImage from '../../../components/SarvdevImage'
+import { getDevotionalCardImage } from '../../../lib/devotional-image'
+import { attachMatchedDeities, type DeityImageSource } from '../../../lib/devotional-deity-match'
 
 type Devotional = {
   _id: string
@@ -14,8 +17,32 @@ type Devotional = {
   lyrics?: string
   artist?: string
   duration?: string
+  image?: string
+  imageCard?: string
+  imageHero?: string
+  ogImage?: string
+  thumbnail?: string
+  coverImage?: string
+  matchedDeity?: DeityImageSource | null
+  matchedDeityName?: string
+  matchedDeitySlug?: string
+  matchedDeityReason?: string
   status?: 'approved' | 'pending' | 'rejected'
   createdAt?: string
+}
+
+type CleanupReport = {
+  ok: boolean
+  dryRun: boolean
+  totalScanned: number
+  affectedCount: number
+  imagesFound: number
+  fields: string[]
+  sampleAffectedRecords: { id: string; title?: string; slug?: string; fields: string[] }[]
+  clearedRecords?: number
+  clearedFields?: number
+  logCreated?: boolean
+  error?: string
 }
 
 type SortKey = 'title' | 'category' | 'deity' | 'language' | 'artist' | 'createdAt'
@@ -36,15 +63,68 @@ export default function AdminDevotionalsPage() {
   const [page, setPage] = useState(1)
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [previewId, setPreviewId] = useState<string | null>(null)
+  const [cleanupLoading, setCleanupLoading] = useState(false)
+  const [cleanupReport, setCleanupReport] = useState<CleanupReport | null>(null)
 
   useEffect(() => { fetchDevotionals() }, [])
 
   async function fetchDevotionals() {
     try {
-      const res = await fetch('/api/devotionals')
-      if (res.ok) setDevotionals(await res.json())
+      const [res, deityRes] = await Promise.all([
+        fetch('/api/devotionals', { credentials: 'include', cache: 'no-store' }),
+        fetch('/api/deities', { credentials: 'include', cache: 'no-store' }).catch(() => null),
+      ])
+      if (res.ok) {
+        const [items, deityItems] = await Promise.all([
+          res.json(),
+          deityRes?.ok ? deityRes.json() : Promise.resolve([]),
+        ])
+        setDevotionals(attachMatchedDeities(Array.isArray(items) ? items : [], Array.isArray(deityItems) ? deityItems : []) as Devotional[])
+      }
     } catch (error) { console.error('Failed to fetch devotionals:', error) }
     finally { setLoading(false) }
+  }
+
+  async function runImageCleanup(apply: boolean) {
+    if (apply && !confirm('Clear old devotional image fields now? Devotional text, audio, SEO text and deity images will not be touched.')) return
+    setCleanupLoading(true)
+    try {
+      const res = await fetch('/api/admin/devotionals/clear-images', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ apply }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setCleanupReport({
+          ok: false,
+          dryRun: !apply,
+          totalScanned: 0,
+          affectedCount: 0,
+          imagesFound: 0,
+          fields: [],
+          sampleAffectedRecords: [],
+          error: data?.error || 'Failed to clear devotional images',
+        })
+        return
+      }
+      setCleanupReport(data)
+      if (apply) await fetchDevotionals()
+    } catch {
+      setCleanupReport({
+        ok: false,
+        dryRun: !apply,
+        totalScanned: 0,
+        affectedCount: 0,
+        imagesFound: 0,
+        fields: [],
+        sampleAffectedRecords: [],
+        error: 'Network error while clearing devotional images',
+      })
+    } finally {
+      setCleanupLoading(false)
+    }
   }
 
   // Derived data
@@ -64,7 +144,8 @@ export default function AdminDevotionalsPage() {
     const rejected = devotionals.filter(d => d.status === 'rejected').length
     const withAudio = devotionals.filter(d => d.audio).length
     const withLyrics = devotionals.filter(d => d.lyrics).length
-    return { total: devotionals.length, approved, pending, rejected, withAudio, withLyrics }
+    const matchedDeity = devotionals.filter(d => d.matchedDeity).length
+    return { total: devotionals.length, approved, pending, rejected, withAudio, withLyrics, matchedDeity }
   }, [devotionals])
 
   // Filter + Sort
@@ -161,14 +242,15 @@ export default function AdminDevotionalsPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3">
         {[
           { label: 'Total', value: stats.total, icon: '📊' },
           { label: 'Approved', value: stats.approved, icon: '✅' },
           { label: 'Pending', value: stats.pending, icon: '⏳' },
           { label: 'Rejected', value: stats.rejected, icon: '❌' },
           { label: 'With Audio', value: stats.withAudio, icon: '🎵' },
-          { label: 'With Lyrics', value: stats.withLyrics, icon: '📜' },
+          { label: 'With Lyrics', value: stats.withLyrics, icon: 'Text' },
+          { label: 'Matched Deity', value: stats.matchedDeity, icon: 'Deity' },
         ].map(s => (
           <div key={s.label} className="admin-stat">
             <div className="flex items-center justify-between">
@@ -180,6 +262,70 @@ export default function AdminDevotionalsPage() {
             </div>
           </div>
         ))}
+      </div>
+
+      <div className="admin-card p-5">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <h2 className="admin-section-title">Deity-derived devotional images</h2>
+            <p className="admin-section-subtitle mt-1">
+              Devotional images are auto-derived from matched deity images. Old devotional-specific image fields can be cleared safely after dry-run review.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => runImageCleanup(false)}
+              disabled={cleanupLoading}
+              className="admin-btn admin-btn-ghost px-4 py-2 text-sm disabled:opacity-60"
+            >
+              {cleanupLoading ? 'Checking...' : 'Dry run image cleanup'}
+            </button>
+            <button
+              type="button"
+              onClick={() => runImageCleanup(true)}
+              disabled={cleanupLoading || !cleanupReport?.ok}
+              className="admin-btn admin-btn-primary px-4 py-2 text-sm disabled:opacity-60"
+            >
+              Clear old devotional images
+            </button>
+          </div>
+        </div>
+
+        {cleanupReport && (
+          <div className={`mt-4 rounded-2xl border p-4 text-sm ${cleanupReport.ok ? 'border-amber-200 bg-amber-50/70 text-stone-800' : 'border-red-200 bg-red-50 text-red-700'}`}>
+            {cleanupReport.ok ? (
+              <>
+                <div className="grid gap-3 sm:grid-cols-4">
+                  <div><span className="block text-xs font-bold uppercase text-stone-500">Mode</span>{cleanupReport.dryRun ? 'Dry run' : 'Applied'}</div>
+                  <div><span className="block text-xs font-bold uppercase text-stone-500">Scanned</span>{cleanupReport.totalScanned}</div>
+                  <div><span className="block text-xs font-bold uppercase text-stone-500">Affected</span>{cleanupReport.affectedCount}</div>
+                  <div><span className="block text-xs font-bold uppercase text-stone-500">Fields found</span>{cleanupReport.imagesFound}</div>
+                </div>
+                {cleanupReport.sampleAffectedRecords.length > 0 && (
+                  <div className="mt-3">
+                    <p className="text-xs font-bold uppercase text-stone-500">Sample affected records</p>
+                    <div className="mt-2 grid gap-2 md:grid-cols-2">
+                      {cleanupReport.sampleAffectedRecords.map((record) => (
+                        <div key={record.id} className="rounded-xl bg-white/80 px-3 py-2">
+                          <span className="block truncate font-semibold">{record.title || record.id}</span>
+                          <span className="text-xs text-stone-500">{record.fields.join(', ')}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {!cleanupReport.dryRun && (
+                  <p className="mt-3 text-xs font-semibold text-emerald-700">
+                    Cleared {cleanupReport.clearedRecords || 0} record(s). Activity log: {cleanupReport.logCreated ? 'created' : 'not created'}.
+                  </p>
+                )}
+              </>
+            ) : (
+              cleanupReport.error || 'Cleanup failed'
+            )}
+          </div>
+        )}
       </div>
 
       {/* Category chips */}
@@ -243,6 +389,7 @@ export default function AdminDevotionalsPage() {
               <tr>
                 <th className="w-10"><input type="checkbox" checked={selected.size === paginated.length && paginated.length > 0} onChange={toggleAll} className="rounded" /></th>
                 <th className="cursor-pointer group select-none" onClick={() => handleSort('title')}>Title<SortIcon col="title" /></th>
+                <th>Matched Deity Image</th>
                 <th className="cursor-pointer group select-none" onClick={() => handleSort('category')}>Category<SortIcon col="category" /></th>
                 <th className="cursor-pointer group select-none" onClick={() => handleSort('deity')}>Deity<SortIcon col="deity" /></th>
                 <th className="cursor-pointer group select-none" onClick={() => handleSort('language')}>Language<SortIcon col="language" /></th>
@@ -259,6 +406,23 @@ export default function AdminDevotionalsPage() {
                   <td className="font-medium text-gray-900 max-w-[250px]">
                     <div className="truncate">{d.title}</div>
                     {d.duration && <span className="text-[10px] text-gray-400">{d.duration}</span>}
+                  </td>
+                  <td>
+                    <div className="flex items-center gap-3 min-w-[180px]">
+                      <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-xl bg-orange-50">
+                        <SarvdevImage
+                          image={getDevotionalCardImage(d)}
+                          alt={d.matchedDeityName || d.deity || d.title}
+                          className="absolute inset-0"
+                          imgClassName="object-cover"
+                          renderMode="auto"
+                        />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="truncate text-xs font-bold text-gray-800">{d.matchedDeityName || 'No confident match'}</p>
+                        <p className="truncate text-[10px] text-gray-400">{d.matchedDeityReason || 'Fallback devotional image'}</p>
+                      </div>
+                    </div>
                   </td>
                   <td><span className="admin-badge-purple text-[10px]">{d.category || '-'}</span></td>
                   <td className="text-gray-500 text-xs">{d.deity || '-'}</td>
@@ -288,7 +452,7 @@ export default function AdminDevotionalsPage() {
                 </tr>
               ))}
               {paginated.length === 0 && (
-                <tr><td colSpan={9} className="px-5 py-10 text-center text-gray-400">No devotionals found.</td></tr>
+                <tr><td colSpan={10} className="px-5 py-10 text-center text-gray-400">No devotionals found.</td></tr>
               )}
             </tbody>
           </table>

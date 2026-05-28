@@ -37,6 +37,48 @@ function isMongoObjectId(value: unknown) {
   return typeof value === 'string' && /^[a-f0-9]{24}$/i.test(value);
 }
 
+function uniqueValues(values: unknown[]) {
+  return Array.from(new Set(values.map((value) => String(value || '').trim()).filter(Boolean)));
+}
+
+function getExistingCategoryValues(deity: any) {
+  return uniqueValues([
+    ...(Array.isArray(deity?.categories) ? deity.categories : []),
+    ...(Array.isArray(deity?.categoryIds) ? deity.categoryIds : []),
+    deity?.category,
+    deity?.categoryId,
+  ]);
+}
+
+function normalizeNewCategories(values: unknown[]) {
+  return uniqueValues(values)
+    .map((category) => resolveCategoryForDeity(category, null))
+    .filter(Boolean) as string[];
+}
+
+function normalizeUpdateCategories(values: unknown[], existingDeity: any) {
+  const existingValues = new Set(getExistingCategoryValues(existingDeity));
+  const output: string[] = [];
+  const invalid: string[] = [];
+
+  for (const raw of uniqueValues(values)) {
+    const canonical = resolveCategoryForDeity(raw, null);
+    if (canonical) {
+      output.push(canonical);
+    } else if (existingValues.has(raw)) {
+      // Preserve current legacy values instead of erasing them during edit.
+      output.push(raw);
+    } else {
+      invalid.push(raw);
+    }
+  }
+
+  return {
+    categories: Array.from(new Set(output)),
+    invalid,
+  };
+}
+
 // GET all deities. DB is the source of truth, so do not serve stale in-memory data.
 export async function GET() {
   try {
@@ -67,13 +109,7 @@ export async function POST(req: NextRequest) {
 
     // Handle multiple categories (new format)
     if (Array.isArray(data.categories) && data.categories.length > 0) {
-      // Validate and normalize categories
-      const validatedCategories = data.categories
-        .map((cat: any) => {
-          const canonical = resolveCategoryForDeity(cat, null);
-          return canonical || null;
-        })
-        .filter(Boolean);
+      const validatedCategories = normalizeNewCategories(data.categories);
 
       if (validatedCategories.length === 0) {
         return NextResponse.json({ error: 'Invalid categories. Please choose valid deity categories.' }, { status: 400 });
@@ -154,16 +190,17 @@ export async function PUT(req: NextRequest) {
 
     // Handle multiple categories (new format)
     if (Array.isArray(update.categories) && update.categories.length > 0) {
-      // Validate and normalize categories
-      const validatedCategories = update.categories
-        .map((cat: any) => {
-          const canonical = resolveCategoryForDeity(cat, null);
-          return canonical || null;
-        })
-        .filter(Boolean);
+      const normalized = normalizeUpdateCategories(update.categories, existingDeity);
+      const validatedCategories = normalized.categories;
 
       if (validatedCategories.length === 0) {
         return NextResponse.json({ error: 'Invalid categories. Please choose valid deity categories.' }, { status: 400 });
+      }
+      if (normalized.invalid.length > 0) {
+        return NextResponse.json({
+          error: 'Invalid categories. Please choose valid deity categories.',
+          details: `Unknown category: ${normalized.invalid.join(', ')}`,
+        }, { status: 400 });
       }
 
       safeUpdate.categories = validatedCategories;
@@ -174,18 +211,22 @@ export async function PUT(req: NextRequest) {
     } else if (isNonEmptyString(update.category)) {
       // Legacy single category support
       const canonicalCategory = resolveCategoryForDeity(update.category, null);
-      if (!canonicalCategory) {
+      const existingValues = new Set(getExistingCategoryValues(existingDeity));
+      const legacyCategory = String(update.category).trim();
+      const categoryToSave = canonicalCategory || (existingValues.has(legacyCategory) ? legacyCategory : null);
+      if (!categoryToSave) {
         return NextResponse.json({ error: 'Invalid category. Please choose a canonical deity category.' }, { status: 400 });
       }
-      safeUpdate.category = canonicalCategory;
-      safeUpdate.categoryId = canonicalCategory;
-      safeUpdate.categories = [canonicalCategory];
-      safeUpdate.categoryIds = [canonicalCategory];
+      safeUpdate.category = categoryToSave;
+      safeUpdate.categoryId = categoryToSave;
+      safeUpdate.categories = [categoryToSave];
+      safeUpdate.categoryIds = [categoryToSave];
     } else {
       // Keep existing categories if not provided
-      const existingCategories = Array.isArray(existingDeity.categories) && existingDeity.categories.length > 0
-        ? existingDeity.categories
-        : [existingDeity.category || existingDeity.categoryId];
+      const canonicalExisting = resolveCategoryForDeity(existingDeity.category, existingDeity.categoryId);
+      const existingCategories = canonicalExisting
+        ? [canonicalExisting]
+        : getExistingCategoryValues(existingDeity);
       safeUpdate.categories = existingCategories;
       safeUpdate.categoryIds = existingCategories;
       safeUpdate.category = existingCategories[0] || existingDeity.category;

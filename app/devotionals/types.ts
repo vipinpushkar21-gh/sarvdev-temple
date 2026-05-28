@@ -1,3 +1,5 @@
+import type { DeityImageSource } from '../../lib/devotional-deity-match'
+
 export type Devotional = {
   _id: string
   title: string
@@ -21,5 +23,12 @@ export type Devotional = {
   metaDescription?: string
   metaKeywords?: string
   names?: { sanskrit?: string; mantra?: string; english?: string }[]
+  tags?: string[] | string
+  deitySlug?: string
+  slug?: string
+  matchedDeity?: DeityImageSource | null
+  matchedDeityName?: string
+  matchedDeitySlug?: string
+  matchedDeityScore?: number
+  matchedDeityReason?: string
 }
-

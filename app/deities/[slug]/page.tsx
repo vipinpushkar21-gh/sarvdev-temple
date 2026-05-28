@@ -9,7 +9,10 @@ import AdminEditBar from '../../../components/AdminEditBar'
 import { DEITY_CATEGORIES } from '../page'
 import { getDeityCardImage, getDeityHeroImage, getGalleryImage } from '../../../lib/temple-image'
 import SarvdevImage from '../../../components/SarvdevImage'
+import { renderTextParagraphs } from '../../../components/TextParagraphs'
 import { findBestDeityMatch, mergeStaticDeityWithDb } from '../../../lib/deity-identity'
+import { compactText } from '../../../lib/text-formatting'
+import { useTranslation } from '../../../lib/translation'
 
 const BASE_URL = 'https://sarvdev.com'
 
@@ -40,6 +43,7 @@ function textMatchesDeity(value: unknown, deity: any) {
 }
 
 export default function DeityDetailPage({ params }: Props) {
+  const { language } = useTranslation()
   const [deity, setDeity] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -151,6 +155,12 @@ export default function DeityDetailPage({ params }: Props) {
   const relatedForms = (category?.deities || []).filter((item: any) => item.slug !== deity.slug).slice(0, 6)
   const heroImage = getDeityHeroImage(deity)
   const pageUrl = `${BASE_URL}/deities/${deity.slug}`
+  const wantsHindi = language === 'hi'
+  const aboutText = wantsHindi
+    ? (deity.descriptionHi || deity.description)
+    : (deity.description || deity.descriptionHi)
+  const aboutTextIsHindi = wantsHindi ? Boolean(deity.descriptionHi) : (!deity.description && Boolean(deity.descriptionHi))
+  const aboutTitle = wantsHindi ? (deity.nameHi || deity.name) : (deity.name || deity.nameHi)
   const breadcrumbLd = {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
@@ -165,7 +175,7 @@ export default function DeityDetailPage({ params }: Props) {
     '@type': 'Thing',
     name: deity.name,
     alternateName: deity.nameHi,
-    description: deity.description || deity.descriptionHi,
+    description: compactText(deity.description || deity.descriptionHi),
     image: heroImage.src,
     url: pageUrl,
     category: deity.category || category?.title,
@@ -232,10 +242,16 @@ export default function DeityDetailPage({ params }: Props) {
 
             <section className="deity-detail-panel">
               <p className="text-xs font-black uppercase tracking-[0.18em] text-orange-700">About</p>
-              <h2 className="mt-1 text-3xl font-serif text-stone-950">{deity.nameHi}</h2>
+              <h2 className="mt-1 text-3xl font-serif text-stone-950">{aboutTitle}</h2>
               <div className="mt-5 space-y-5">
-                {deity.descriptionHi && <p className="font-devanagari text-lg leading-9 text-stone-800">{deity.descriptionHi}</p>}
-                {deity.description && <p className="text-lg leading-9 text-stone-700">{deity.description}</p>}
+                {aboutText
+                  ? renderTextParagraphs(
+                    aboutText,
+                    aboutTextIsHindi
+                      ? 'font-devanagari text-lg leading-9 text-stone-800'
+                      : 'text-lg leading-9 text-stone-700'
+                  )
+                  : <p className="text-lg leading-9 text-stone-500">Description will appear here once it is added.</p>}
               </div>
             </section>
 

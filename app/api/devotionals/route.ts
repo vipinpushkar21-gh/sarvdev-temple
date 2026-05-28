@@ -7,9 +7,18 @@ import sarvdev from '@/data/sarvdev'
 // ─── In-memory cache (60s TTL) ───
 let _cache: { data: any[]; ts: number } | null = null
 const CACHE_TTL = 60_000
+const DEVOTIONAL_IMAGE_FIELDS = ['image', 'imageCard', 'imageHero', 'ogImage', 'thumbnail', 'coverImage'] as const
 
 function escapeRegex(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+function removeDevotionalImageFields<T extends Record<string, any>>(input: T): T {
+  const output = { ...input }
+  for (const field of DEVOTIONAL_IMAGE_FIELDS) {
+    delete output[field]
+  }
+  return output
 }
 
 export async function GET(request: NextRequest) {
@@ -21,7 +30,7 @@ export async function GET(request: NextRequest) {
     if (singleId) {
       await connectDB()
       const doc = await Devotional.findById(singleId, { __v: 0 }).lean()
-      if (doc) return NextResponse.json(doc)
+      if (doc) return NextResponse.json(removeDevotionalImageFields(doc as any))
       return NextResponse.json(null, { status: 404 })
     }
 
@@ -56,7 +65,7 @@ export async function GET(request: NextRequest) {
         Devotional.countDocuments(filter),
       ])
 
-      const trimmed = items.map((d: any) => ({
+      const trimmed = items.map((d: any) => removeDevotionalImageFields({
         ...d,
         description: d.description?.length > 200 ? d.description.slice(0, 200) + '…' : d.description,
       }))
@@ -89,7 +98,8 @@ export async function GET(request: NextRequest) {
         clearTimeout(timer)
         if (liveRes.ok) {
           const liveData = await liveRes.json()
-          return NextResponse.json(liveData)
+          const safeLiveData = Array.isArray(liveData) ? liveData.map((item: any) => removeDevotionalImageFields(item)) : liveData
+          return NextResponse.json(safeLiveData)
         }
       } catch (_) {}
       const fallback = (sarvdev.devotionals || []).map((d: any) => ({
@@ -105,7 +115,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(fallback)
     }
 
-    const trimmed = devotionals.map((d: any) => ({
+    const trimmed = devotionals.map((d: any) => removeDevotionalImageFields({
       ...d,
       description: d.description?.length > 200 ? d.description.slice(0, 200) + '…' : d.description,
     }))
@@ -121,7 +131,8 @@ export async function GET(request: NextRequest) {
       clearTimeout(timer)
       if (liveRes.ok) {
         const liveData = await liveRes.json()
-        return NextResponse.json(liveData)
+        const safeLiveData = Array.isArray(liveData) ? liveData.map((item: any) => removeDevotionalImageFields(item)) : liveData
+        return NextResponse.json(safeLiveData)
       }
     } catch (_) {}
     const fallback = (sarvdev.devotionals || []).map((d: any) => ({
@@ -142,7 +153,7 @@ export async function POST(request: NextRequest) {
   try {
     await connectDB()
     const body = await request.json()
-    const devotional = await Devotional.create(body)
+    const devotional = await Devotional.create(removeDevotionalImageFields(body))
     _cache = null // invalidate listing cache
     return NextResponse.json(devotional, { status: 201 })
   } catch (error) {
@@ -155,10 +166,11 @@ export async function PUT(request: NextRequest) {
     await connectDB()
     const body = await request.json()
     const { id, ...updateData } = body
+    const safeUpdateData = removeDevotionalImageFields(updateData)
     
     const devotional = await Devotional.findByIdAndUpdate(
       id,
-      updateData,
+      safeUpdateData,
       { new: true, runValidators: true }
     )
     

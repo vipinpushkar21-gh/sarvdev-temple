@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import ImageUpload from '../../../../components/ImageUpload'
 
 export default function NewDevotionalPage() {
   const router = useRouter()
@@ -14,9 +13,6 @@ export default function NewDevotionalPage() {
     category: 'Bhajan',
     language: 'Hindi',
     deity: '',
-    image: '',
-    imageCard: '',
-    imageHero: '',
     audio: '',
     lyrics: '',
     duration: '',
@@ -25,7 +21,6 @@ export default function NewDevotionalPage() {
     metaTitle: '',
     metaDescription: '',
     metaKeywords: '',
-    ogImage: ''
   })
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -129,20 +124,9 @@ export default function NewDevotionalPage() {
 
         <div className="admin-card p-6 space-y-5">
           <h2 className="admin-section-title">Media & Content</h2>
-          <ImageUpload
-            value={formData.imageCard}
-            onChange={url => setFormData(prev => ({ ...prev, imageCard: url, image: prev.image || url }))}
-            folder="sarvdev/devotionals/cards"
-            label="Card Image"
-            guidance="devotionalCard"
-          />
-          <ImageUpload
-            value={formData.imageHero}
-            onChange={url => setFormData(prev => ({ ...prev, imageHero: url, image: prev.image || url }))}
-            folder="sarvdev/devotionals/heroes"
-            label="Hero Image"
-            guidance="devotionalHero"
-          />
+          <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-4 text-sm text-amber-900">
+            Images are managed from Deities. Devotional cards, heroes and social images use the matched deity image automatically.
+          </div>
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-1">Audio URL</label>
             <input type="url" name="audio" value={formData.audio} onChange={handleChange} className="admin-input w-full" placeholder="https://example.com/audio.mp3" />
@@ -186,9 +170,8 @@ export default function NewDevotionalPage() {
             <p className="mt-1 text-xs text-gray-400">Comma-separated keywords</p>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-600 mb-1">OG Image URL <span className="font-normal text-gray-400">(Social sharing — 1200×630px recommended)</span></label>
-            <input type="text" name="ogImage" value={formData.ogImage} onChange={handleChange} placeholder="https://... (leave blank to use cover image)" className="admin-input w-full" />
+          <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 text-xs text-gray-500">
+            OG images are derived from the matched deity image. Update deity card/hero images from the Deities admin area.
           </div>
         </div>
 

@@ -48,13 +48,13 @@ const NAV_GROUPS: NavGroup[] = [
   {
     title: 'Content',
     items: [
-      { href: '/admin/temples', label: 'Temples', icon: Sparkles },
       { href: '/admin/deities', label: 'Deities', icon: Star },
-      { href: '/admin/devotionals', label: 'Devotionals', icon: Music },
-      { href: '/admin/blogs', label: 'Blog', icon: BookOpenText },
-      { href: '/admin/events', label: 'Events', icon: CalendarDays },
+      { href: '/admin/temples', label: 'Temples', icon: Sparkles },
       { href: '/admin/darshan', label: 'Daily Darshan', icon: Video },
+      { href: '/admin/devotionals', label: 'Devotionals', icon: Music },
+      { href: '/admin/events', label: 'Events', icon: CalendarDays },
       { href: '/admin/spiritual-icons', label: 'Spiritual Icons', icon: SunMedium },
+      { href: '/admin/blogs', label: 'Blog', icon: BookOpenText },
     ],
   },
   {

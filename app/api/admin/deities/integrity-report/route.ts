@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { connectDB } from '@/lib/db'
 import { AUTH_COOKIE_NAME, verifyToken } from '@/lib/auth'
-import { resolveCategoryForDeity } from '@/lib/deity-categories'
+import { DEITY_CATEGORIES, resolveCategoryForDeity } from '@/lib/deity-categories'
 import Deity from '@/models/Deity'
 import ActivityLog from '@/models/ActivityLog'
 
@@ -16,11 +16,34 @@ function makeReport(deities: any[]) {
   const invalidCategoryRecords: any[] = []
   const repairableCategoryRecords: any[] = []
   const badCategoryIdRecords: any[] = []
+  const unknownCategoryRecords: any[] = []
+  const categoriesUsedInDb = new Set<string>()
+  const configuredCategoryIds = new Set(DEITY_CATEGORIES.map((category) => category.id))
   const cloudinaryImageRecords = deities.filter((item) =>
     [item.image, item.imageCard, item.imageHero, item.ogImage].some((value) => String(value || '').includes('res.cloudinary.com'))
   )
 
   for (const deity of deities) {
+    const rawCategoryValues = [
+      ...(Array.isArray(deity.categories) ? deity.categories : []),
+      ...(Array.isArray(deity.categoryIds) ? deity.categoryIds : []),
+      deity.category,
+      deity.categoryId,
+    ].map((value) => String(value || '').trim()).filter(Boolean)
+
+    for (const value of rawCategoryValues) {
+      const canonical = resolveCategoryForDeity(value, null)
+      categoriesUsedInDb.add(canonical || value)
+      if (!canonical && !configuredCategoryIds.has(value)) {
+        unknownCategoryRecords.push({
+          id: String(deity._id),
+          name: deity.name,
+          slug: deity.slug,
+          categoryValue: value,
+        })
+      }
+    }
+
     const canonicalCategory = resolveCategoryForDeity(deity.category, deity.categoryId)
     if (!canonicalCategory) {
       invalidCategoryRecords.push({
@@ -58,6 +81,14 @@ function makeReport(deities: any[]) {
   return {
     ok: true,
     totalDbRecords: deities.length,
+    configuredCategories: DEITY_CATEGORIES.map((category) => ({
+      id: category.id,
+      titleEn: category.titleEn,
+      legacy: Boolean(category.legacy),
+    })),
+    categoriesUsedInDb: Array.from(categoriesUsedInDb).sort(),
+    categoriesMissingFromConfig: Array.from(categoriesUsedInDb).filter((category) => !configuredCategoryIds.has(category)).sort(),
+    unknownCategoryRecords,
     invalidCategoryRecords,
     repairableCategoryRecords,
     badCategoryIdRecords,

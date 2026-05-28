@@ -9,6 +9,7 @@ import AdminEditBar from '../../../components/AdminEditBar'
 import BookmarkButton from '../../../components/BookmarkButton'
 import SarvdevImage from '../../../components/SarvdevImage'
 import { getDevotionalHeroImage } from '../../../lib/devotional-image'
+import { attachMatchedDeities, attachMatchedDeity } from '../../../lib/devotional-deity-match'
 import { useTranslation } from '../../../lib/translation'
 import DevotionalAudioPlayer from '../components/DevotionalAudioPlayer'
 import DevotionalLyricsReader from '../components/DevotionalLyricsReader'
@@ -36,10 +37,20 @@ export default function DevotionalDetailPage() {
 
     async function load() {
       try {
-        const res = await fetch('/api/devotionals')
+        const [res, deityRes] = await Promise.all([
+          fetch('/api/devotionals'),
+          fetch('/api/deities', { cache: 'no-store' }).catch(() => null),
+        ])
         if (!res.ok) return
-        const list = (await res.json()) as Devotional[]
-        const approved = (Array.isArray(list) ? list : []).filter((item) => item.status === 'approved' || !item.status)
+        const [list, deityData] = await Promise.all([
+          res.json() as Promise<Devotional[]>,
+          deityRes?.ok ? deityRes.json() : Promise.resolve([]),
+        ])
+        const deities = Array.isArray(deityData) ? deityData : []
+        const approved = attachMatchedDeities(
+          (Array.isArray(list) ? list : []).filter((item) => item.status === 'approved' || !item.status),
+          deities
+        )
         const found = approved.find((item) => createDevotionalSlug(item.title || '') === slug || item._id === slug)
 
         if (cancelled) return
@@ -52,7 +63,7 @@ export default function DevotionalDetailPage() {
           return
         }
         const fullData = await fullRes.json()
-        if (!cancelled) setDevotional(fullData || found)
+        if (!cancelled) setDevotional(fullData ? attachMatchedDeity(fullData, deities) : found)
       } finally {
         if (!cancelled) setLoading(false)
       }
