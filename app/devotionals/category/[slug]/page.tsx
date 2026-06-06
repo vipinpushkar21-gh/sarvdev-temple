@@ -17,7 +17,6 @@ import {
   matchesCategory,
 } from '../../components/devotional-utils'
 import type { Devotional } from '../../types'
-import { attachMatchedDeities } from '../../../../lib/devotional-deity-match'
 
 type SortKey = 'popular' | 'newest' | 'az' | 'audio'
 
@@ -33,23 +32,18 @@ export default function CategoryPage() {
   const [selectedDeity, setSelectedDeity] = useState('all')
   const [sort, setSort] = useState<SortKey>('popular')
   const [search, setSearch] = useState('')
+  const [visibleCount, setVisibleCount] = useState(24)
 
   useEffect(() => {
     let cancelled = false
     async function load() {
       try {
-        const [res, deityRes] = await Promise.all([
-          fetch('/api/devotionals'),
-          fetch('/api/deities', { cache: 'no-store' }).catch(() => null),
-        ])
+        const res = await fetch('/api/devotionals')
         if (!res.ok) return
-        const [data, deityData] = await Promise.all([
-          res.json(),
-          deityRes?.ok ? deityRes.json() : Promise.resolve([]),
-        ])
+        const data = await res.json()
         if (!cancelled) {
           const approved = (Array.isArray(data) ? data : []).filter((item: Devotional) => item.status === 'approved' || !item.status)
-          setAllDevotionals(attachMatchedDeities(approved, Array.isArray(deityData) ? deityData : []))
+          setAllDevotionals(approved)
         }
       } finally {
         if (!cancelled) setLoading(false)
@@ -100,6 +94,8 @@ export default function CategoryPage() {
       new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
     )
   }, [filtered, sort])
+
+  useEffect(() => setVisibleCount(24), [categorySlug, search, selectedDeity, sort])
 
   const popular = useMemo(() => sorted.slice(0, 6), [sorted])
   const relatedCategories = useMemo(() => {
@@ -254,9 +250,19 @@ export default function CategoryPage() {
                 <button type="button" onClick={() => { setSearch(''); setSelectedDeity('all') }} className="btn btn-primary mt-5">Reset filters</button>
               </div>
             ) : (
-              <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-                {sorted.map((devotional) => <DevotionalCardPremium key={devotional._id} devotional={devotional} />)}
-              </div>
+              <>
+                <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+                  {sorted.slice(0, visibleCount).map((devotional) => <DevotionalCardPremium key={devotional._id} devotional={devotional} />)}
+                </div>
+                {sorted.length > visibleCount && (
+                  <div className="mt-10 text-center">
+                    <button type="button" onClick={() => setVisibleCount((count) => count + 24)} className="btn btn-outline bg-white">
+                      Load more
+                      <span className="text-stone-500">({sorted.length - visibleCount} left)</span>
+                    </button>
+                  </div>
+                )}
+              </>
             )}
           </section>
 

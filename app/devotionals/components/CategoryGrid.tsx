@@ -1,59 +1,57 @@
-import React from 'react';
-import Link from 'next/link';
+import React from 'react'
+import Link from 'next/link'
 
 export type CategoryGridItem = {
-  id: string;
-  label: string;
-  hindi?: string;
-  emoji?: string;
-  count?: number;
-};
+  id: string
+  label: string
+  hindi?: string
+  emoji?: string
+  count?: number
+  description?: string
+}
 
 export type CategoryGridProps = {
-  categories: CategoryGridItem[];
-};
+  categories: CategoryGridItem[]
+}
 
-/**
- * 2026 category grid — glassmorphic cards with animated emoji,
- * gradient hover accents, count badges, and staggered entrance.
- */
 export const CategoryGrid: React.FC<CategoryGridProps> = ({ categories }) => (
-  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 stagger-children">
-    {categories.map((cat) => {
-      const slug = cat.id.toLowerCase().replace(/\s+/g, '-');
-      const href = cat.id === 'all' ? '/devotionals' : `/devotionals/category/${slug}`;
+  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7">
+    {categories.filter((cat) => cat.count && cat.count > 0).map((cat) => {
+      const slug = cat.id.toLowerCase().replace(/\s+/g, '-')
+      const href = cat.id === 'all' ? '/devotionals' : `/devotionals/category/${slug}`
       return (
         <Link
           key={cat.id}
           href={href}
-          className="category-card group focus:outline-none"
-          aria-label={`${cat.label}${cat.hindi ? ` (${cat.hindi})` : ''}${cat.count ? ` — ${cat.count} items` : ''}`}
+          className="group flex flex-col gap-2 rounded-2xl border border-amber-100 bg-white p-4 no-underline shadow-sm transition hover:-translate-y-1 hover:border-orange-300 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-400"
+          aria-label={`${cat.label}${cat.hindi ? ` — ${cat.hindi}` : ''}${cat.count ? `, ${cat.count} items` : ''}`}
         >
-          {/* Emoji icon with gradient ring */}
-          <div className="relative w-14 h-14 rounded-2xl bg-gradient-to-br from-primary-50 via-surface to-accent-50 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-            <span className="text-2xl" role="img" aria-hidden="true">
+          <div className="flex items-center justify-between">
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-50 text-xl transition group-hover:scale-110 group-hover:bg-orange-100" aria-hidden="true">
               {cat.emoji || '📿'}
             </span>
-            {/* Count badge */}
             {typeof cat.count === 'number' && cat.count > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 min-w-[22px] h-[22px] px-1.5 rounded-full bg-gradient-to-r from-primary to-primary-600 text-white text-[10px] font-bold flex items-center justify-center shadow-md tabular-nums">
+              <span className="rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-bold tabular-nums text-orange-800">
                 {cat.count}
               </span>
             )}
           </div>
-          {/* Label */}
-          <div className="text-center leading-tight mt-1">
-            <span className="block text-body-sm font-semibold text-secondary-700 group-hover:text-primary-700 transition-colors duration-200">
+          <div>
+            <span className="block text-sm font-black text-stone-900 group-hover:text-orange-800 transition-colors">
               {cat.label}
             </span>
             {cat.hindi && (
-              <span className="block text-caption text-ink-muted font-devanagari mt-0.5">
+              <span className="block text-xs text-stone-400 font-devanagari leading-snug">
                 {cat.hindi}
               </span>
             )}
           </div>
+          <span className="mt-auto text-[11px] font-bold text-orange-600 opacity-0 transition group-hover:opacity-100">
+            Explore →
+          </span>
         </Link>
-      );
+      )
     })}
   </div>
-);
+)
+

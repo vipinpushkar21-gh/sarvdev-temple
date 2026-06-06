@@ -4,6 +4,7 @@ import Temple from '@/models/Temple';
 import Event from '@/models/Event';
 import { verifyToken, AUTH_COOKIE_NAME } from '@/lib/auth';
 import { getTemplesForSacredCategory, isShaktiPeethCategory } from '@/data/shakti-peethas';
+import { getCategoryBySlug } from '@/lib/sacred-categories';
 
 function isAdmin(req: NextRequest): boolean {
   const token = req.cookies.get(AUTH_COOKIE_NAME)?.value
@@ -14,14 +15,14 @@ function isAdmin(req: NextRequest): boolean {
 
 const SUPPORTED_TEMPLE_FIELDS = [
   // Core
-  'title','titleHi','subtitle','subtitleHi','alternateNames','templeTagline','templeTaglineHi',
+  'title','slug','titleHi','subtitle','subtitleHi','alternateNames','templeTagline','templeTaglineHi',
   'shortDescription','shortDescriptionHi','description','descriptionHi',
   // Media
   'image','imageCard','imageHero','imageGallery','heroImage','images','galleryImages','festivalGallery','architectureGallery',
   'deityGallery','videos','droneShots','ambienceAudio',
   // Location
   'location','locationHi','mapsLink','googleMapsUrl','latitude','longitude',
-  'city','cityHi','state','stateHi','country','pincode','pincodeHi',
+  'city','cityHi','district','state','stateHi','country','pincode','pincodeHi',
   // Deity & Spiritual
   'deity','mainDeity','secondaryDeities','deityForms','sampradaya','sect','spiritualTradition',
   'sacredImportance','sacredImportanceHi','mythology','mythologyHi',
@@ -146,6 +147,17 @@ function normalizeTemplePayload(payload: Record<string, any>) {
 let _cache: { data: any[]; ts: number } | null = null;
 const CACHE_TTL = 60_000;
 
+function slugifyCategory(value: string) {
+  return (value || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+}
+
+function getCategoryQueryValues(category: string) {
+  const trimmed = category.trim()
+  const slug = slugifyCategory(trimmed)
+  const canonical = getCategoryBySlug(slug)
+  return Array.from(new Set([trimmed, slug, canonical?.name, canonical?.slug].filter(Boolean) as string[]))
+}
+
 // GET temples — supports optional pagination via ?page=&limit=&search=
 export async function GET(req: NextRequest) {
   try {
@@ -154,13 +166,20 @@ export async function GET(req: NextRequest) {
     const limitParam = searchParams.get('limit')
     const search = searchParams.get('search') || searchParams.get('q') || ''
     const category = searchParams.get('category') || ''
+    const fresh = searchParams.get('fresh') === '1' || isAdmin(req)
     const useCanonicalShaktiPeethFilter = isShaktiPeethCategory(category)
 
     await connectDB()
 
     // Build filter
     const filter: Record<string, any> = {}
-    if (category && !useCanonicalShaktiPeethFilter) filter.categories = category
+    if (category && !useCanonicalShaktiPeethFilter) {
+      const categoryValues = getCategoryQueryValues(category)
+      filter.$or = [
+        { categories: { $in: categoryValues } },
+        { sacredCategories: { $in: categoryValues } },
+      ]
+    }
     if (search) filter.$text = { $search: search }
 
     // ─── Paginated mode (when page param is present) ───
@@ -197,7 +216,7 @@ export async function GET(req: NextRequest) {
     }
 
     // ─── Legacy mode (no pagination — returns all, used by TempleDataProvider) ───
-    if (_cache && !search && !category && Date.now() - _cache.ts < CACHE_TTL) {
+    if (!fresh && _cache && !search && !category && Date.now() - _cache.ts < CACHE_TTL) {
       const res = NextResponse.json(_cache.data)
       res.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300')
       return res
@@ -205,11 +224,11 @@ export async function GET(req: NextRequest) {
 
     const temples = await Temple.find(filter, { __v: 0 }).sort({ createdAt: -1 }).lean()
     const result = useCanonicalShaktiPeethFilter ? getTemplesForSacredCategory(temples, category) : temples
-    if (!search && !category) {
+    if (!fresh && !search && !category) {
       _cache = { data: temples, ts: Date.now() }
     }
     const res = NextResponse.json(result)
-    res.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300')
+    res.headers.set('Cache-Control', fresh ? 'no-store, max-age=0' : 'public, s-maxage=60, stale-while-revalidate=300')
     return res
   } catch (error) {
     console.error('Temple API Error:', error)

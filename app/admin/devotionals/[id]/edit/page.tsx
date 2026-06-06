@@ -286,7 +286,7 @@ export default function EditDevotionalPage() {
           <h2 className="admin-section-title">Media & Content</h2>
 
           <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-4 text-sm text-amber-900">
-            Images are managed from Deities. Devotional cards, heroes and social images use the matched deity image automatically.
+            Public devotional pages currently use one optimized fallback image for speed. Devotional-specific and deity images are ignored on the public devotional UI for now.
           </div>
 
           <div>
@@ -352,7 +352,7 @@ export default function EditDevotionalPage() {
           </div>
 
           <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 text-xs text-gray-500">
-            OG images are derived from the matched deity image. Update deity card/hero images from the Deities admin area.
+            OG images currently use the same optimized devotional fallback image for stable, fast rendering.
           </div>
         </div>
 

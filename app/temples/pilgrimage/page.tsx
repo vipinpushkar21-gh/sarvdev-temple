@@ -15,6 +15,11 @@ const CLUSTERS = SACRED_CATEGORIES.filter(c => c.isActive).map(cat => ({
   group: cat.group,
 }))
 
+const GROUPED_CLUSTERS = CATEGORY_GROUPS.map(group => ({
+  group,
+  clusters: CLUSTERS.filter(cluster => cluster.group === group.key),
+})).filter(item => item.clusters.length > 0)
+
 export const metadata: Metadata = {
   title: 'Pilgrimage Circuits — Sacred Temple Routes of India',
   description: `Explore ${CLUSTERS.length} sacred pilgrimage circuits across India — Jyotirlinga, Char Dham, Shakti Peeth, ISKCON, Ramayana Circuit, and more. Complete guides with temples, significance, and directions.`,
@@ -31,7 +36,7 @@ export default function PilgrimageIndexPage() {
     '@context': 'https://schema.org',
     '@type': 'CollectionPage',
     name: 'Pilgrimage Circuits of India',
-    description: 'Complete guide to 15 major Hindu pilgrimage circuits across India.',
+    description: `Complete guide to ${CLUSTERS.length} Hindu pilgrimage circuits and sacred temple categories across India.`,
     url: `${BASE}/temples/pilgrimage`,
     mainEntity: {
       '@type': 'ItemList',
@@ -76,20 +81,31 @@ export default function PilgrimageIndexPage() {
       </section>
 
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {CLUSTERS.map((c) => (
-            <Link key={c.slug} href={`/temples/pilgrimage/${c.slug}`}
-              className="group card p-6 hover:shadow-md transition-all duration-300 no-underline">
-              <div className="flex items-start gap-4">
-                <span className="text-3xl flex-shrink-0">{c.icon}</span>
-                <div className="min-w-0 flex-1">
-                  <h2 className="text-body font-semibold text-ink group-hover:text-primary-700 transition-colors">{c.title}</h2>
-                  <p className="text-caption text-ink-muted mt-0.5">{c.titleHi}</p>
-                  <p className="text-caption text-ink-faint mt-2 line-clamp-2">{c.desc}</p>
-                  <span className="inline-block mt-3 text-[11px] font-medium px-2 py-0.5 rounded-full bg-primary-50 text-primary-700">{c.deity}</span>
-                </div>
+        <div className="space-y-12">
+          {GROUPED_CLUSTERS.map(({ group, clusters }) => (
+            <section key={group.key}>
+              <div className="mb-5">
+                <h2 className="text-h3 font-serif text-secondary-700">{group.label}</h2>
+                <p className="text-caption text-ink-faint font-serif">{group.labelHi}</p>
               </div>
-            </Link>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {clusters.map((c) => (
+                  <Link key={c.slug} href={`/temples/pilgrimage/${c.slug}`}
+                    className="group card p-6 hover:shadow-md transition-all duration-300 no-underline">
+                    <div className="flex items-start gap-4">
+                      <span className="text-3xl flex-shrink-0">{c.icon}</span>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="text-body font-semibold text-ink group-hover:text-primary-700 transition-colors">{c.title}</h3>
+                        <p className="text-caption text-ink-muted mt-0.5">{c.titleHi}</p>
+                        <p className="text-caption text-ink-faint mt-2 line-clamp-2">{c.desc}</p>
+                        <span className="inline-block mt-3 text-[11px] font-medium px-2 py-0.5 rounded-full bg-primary-50 text-primary-700">{c.deity}</span>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </section>
           ))}
         </div>
 

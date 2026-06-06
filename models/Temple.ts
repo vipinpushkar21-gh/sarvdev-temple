@@ -4,6 +4,7 @@ import mongoose, { Schema, Model, models } from 'mongoose';
 const TempleSchema = new Schema({
   // ── Core ──
   title: { type: String, required: true },
+  slug: { type: String, index: true },
   titleHi: { type: String },
   subtitle: { type: String },
   subtitleHi: { type: String },
@@ -39,6 +40,7 @@ const TempleSchema = new Schema({
   longitude: { type: Number },
   city: { type: String },
   cityHi: { type: String },
+  district: { type: String },
   state: { type: String },
   stateHi: { type: String },
   country: { type: String, default: 'India' },

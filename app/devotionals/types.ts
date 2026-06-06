@@ -1,5 +1,3 @@
-import type { DeityImageSource } from '../../lib/devotional-deity-match'
-
 export type Devotional = {
   _id: string
   title: string
@@ -26,9 +24,4 @@ export type Devotional = {
   tags?: string[] | string
   deitySlug?: string
   slug?: string
-  matchedDeity?: DeityImageSource | null
-  matchedDeityName?: string
-  matchedDeitySlug?: string
-  matchedDeityScore?: number
-  matchedDeityReason?: string
 }

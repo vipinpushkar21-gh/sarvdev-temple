@@ -3,8 +3,6 @@ import { BookOpen, Library, Music2 } from 'lucide-react'
 import SarvdevImage from '../../../components/SarvdevImage'
 import { getDevotionalHeroImage } from '../../../lib/devotional-image'
 
-const DEFAULT_HERO = 'https://res.cloudinary.com/dc2qg7bwr/image/upload/image_2_xljqwa'
-
 type Props = {
   label: string
   hindi?: string
@@ -15,7 +13,7 @@ type Props = {
 }
 
 export default function CategoryHero({ label, hindi, description, count, deityCount, audioCount }: Props) {
-  const image = getDevotionalHeroImage(DEFAULT_HERO)
+  const image = getDevotionalHeroImage()
 
   return (
     <section className="relative overflow-hidden bg-stone-950 text-white">

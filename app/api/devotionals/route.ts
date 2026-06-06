@@ -8,6 +8,7 @@ import sarvdev from '@/data/sarvdev'
 let _cache: { data: any[]; ts: number } | null = null
 const CACHE_TTL = 60_000
 const DEVOTIONAL_IMAGE_FIELDS = ['image', 'imageCard', 'imageHero', 'ogImage', 'thumbnail', 'coverImage'] as const
+const ALLOW_REMOTE_FALLBACK = process.env.NODE_ENV === 'production'
 
 function escapeRegex(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
@@ -21,15 +22,62 @@ function removeDevotionalImageFields<T extends Record<string, any>>(input: T): T
   return output
 }
 
+function createApiDevotionalSlug(value: string) {
+  const englishMatch = value.match(/\(([^)]+)\)/)
+  const text = englishMatch ? englishMatch[1] : value
+  const slug = text
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+  return slug || value
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    || 'devotional'
+}
+
+function prepareFallbackList(items: any[]) {
+  return (items || []).map((d: any) => ({
+    _id: d.id || d._id || Math.random().toString(36).slice(2),
+    title: d.title,
+    description: d.description,
+    audio: d.audio,
+    category: d.category,
+    language: d.language,
+    deity: d.deity,
+    status: 'approved',
+  }))
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const singleId = searchParams.get('id')
+    const slug = searchParams.get('slug')
 
     // ─── Single devotional fetch (WITH lyrics for detail page) ───
     if (singleId) {
       await connectDB()
       const doc = await Devotional.findById(singleId, { __v: 0 }).lean()
+      if (doc) return NextResponse.json(removeDevotionalImageFields(doc as any))
+      return NextResponse.json(null, { status: 404 })
+    }
+
+    if (slug) {
+      await connectDB()
+      let doc: any = null
+      if (/^[a-f0-9]{24}$/i.test(slug)) {
+        doc = await Devotional.findById(slug, { __v: 0 }).lean()
+      }
+      if (!doc) {
+        const normalizedSlug = createApiDevotionalSlug(slug)
+        const docs = await Devotional.find({ status: { $ne: 'rejected' } }, { __v: 0 }).lean()
+        doc = docs.find((item: any) => createApiDevotionalSlug(item.title || '') === normalizedSlug) || null
+      }
       if (doc) return NextResponse.json(removeDevotionalImageFields(doc as any))
       return NextResponse.json(null, { status: 404 })
     }
@@ -80,7 +128,7 @@ export async function GET(request: NextRequest) {
 
     let query = Devotional.find(
       search || category || deity || status ? filter : {},
-      { lyrics: 0, __v: 0, updatedAt: 0 }
+      { lyrics: 0, __v: 0, updatedAt: 0, descriptionHi: 0 }
     ).sort({ createdAt: -1 })
 
     if (limitParam) {
@@ -92,27 +140,21 @@ export async function GET(request: NextRequest) {
 
     if (!devotionals || devotionals.length === 0) {
       try {
-        const ctrl = new AbortController()
-        const timer = setTimeout(() => ctrl.abort(), 3000)
-        const liveRes = await fetch('https://sarvdev-temple-live.vercel.app/api/devotionals', { cache: 'no-store', signal: ctrl.signal })
-        clearTimeout(timer)
-        if (liveRes.ok) {
-          const liveData = await liveRes.json()
-          const safeLiveData = Array.isArray(liveData) ? liveData.map((item: any) => removeDevotionalImageFields(item)) : liveData
-          return NextResponse.json(safeLiveData)
+        if (ALLOW_REMOTE_FALLBACK) {
+          const ctrl = new AbortController()
+          const timer = setTimeout(() => ctrl.abort(), 1200)
+          const liveRes = await fetch('https://sarvdev-temple-live.vercel.app/api/devotionals', { cache: 'no-store', signal: ctrl.signal })
+          clearTimeout(timer)
+          if (liveRes.ok) {
+            const liveData = await liveRes.json()
+            const safeLiveData = Array.isArray(liveData)
+              ? liveData.map((item: any) => removeDevotionalImageFields(item))
+              : liveData
+            return NextResponse.json(safeLiveData)
+          }
         }
       } catch (_) {}
-      const fallback = (sarvdev.devotionals || []).map((d: any) => ({
-        _id: d.id || d._id || Math.random().toString(36).slice(2),
-        title: d.title,
-        description: d.description,
-        audio: d.audio,
-        category: d.category,
-        language: d.language,
-        deity: d.deity,
-        status: 'approved',
-      }))
-      return NextResponse.json(fallback)
+      return NextResponse.json(prepareFallbackList(sarvdev.devotionals || []))
     }
 
     const trimmed = devotionals.map((d: any) => removeDevotionalImageFields({
@@ -125,27 +167,21 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(trimmed)
   } catch (error) {
     try {
-      const ctrl = new AbortController()
-      const timer = setTimeout(() => ctrl.abort(), 3000)
-      const liveRes = await fetch('https://sarvdev-temple-live.vercel.app/api/devotionals', { cache: 'no-store', signal: ctrl.signal })
-      clearTimeout(timer)
-      if (liveRes.ok) {
-        const liveData = await liveRes.json()
-        const safeLiveData = Array.isArray(liveData) ? liveData.map((item: any) => removeDevotionalImageFields(item)) : liveData
-        return NextResponse.json(safeLiveData)
+      if (ALLOW_REMOTE_FALLBACK) {
+        const ctrl = new AbortController()
+        const timer = setTimeout(() => ctrl.abort(), 1200)
+        const liveRes = await fetch('https://sarvdev-temple-live.vercel.app/api/devotionals', { cache: 'no-store', signal: ctrl.signal })
+        clearTimeout(timer)
+        if (liveRes.ok) {
+          const liveData = await liveRes.json()
+          const safeLiveData = Array.isArray(liveData)
+            ? liveData.map((item: any) => removeDevotionalImageFields(item))
+            : liveData
+          return NextResponse.json(safeLiveData)
+        }
       }
     } catch (_) {}
-    const fallback = (sarvdev.devotionals || []).map((d: any) => ({
-      _id: d.id || d._id || Math.random().toString(36).slice(2),
-      title: d.title,
-      description: d.description,
-      audio: d.audio,
-      category: d.category,
-      language: d.language,
-      deity: d.deity,
-      status: 'approved',
-    }))
-    return NextResponse.json(fallback)
+    return NextResponse.json(prepareFallbackList(sarvdev.devotionals || []))
   }
 }
 

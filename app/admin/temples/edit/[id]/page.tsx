@@ -13,8 +13,10 @@ type FormState = {
   mapsLink: string
   city: string
   cityHi: string
+  district: string
   state: string
   stateHi: string
+  country: string
   pincode: string
   pincodeHi: string
   description: string
@@ -70,7 +72,7 @@ function slugify(text: string): string {
 export default function EditTemplePage({ params }: { params: Promise<{ id: string }> }) {
   const [id, setId] = useState<string>("")
   const [form, setForm] = useState<FormState>({ 
-    title: "", titleHi: "", location: "", locationHi: "", mapsLink: "", city: "", cityHi: "", state: "", stateHi: "", pincode: "", pincodeHi: "",
+    title: "", titleHi: "", location: "", locationHi: "", mapsLink: "", city: "", cityHi: "", district: "", state: "", stateHi: "", country: "India", pincode: "", pincodeHi: "",
     description: "", descriptionHi: "", deity: "", establishedYear: "", establishedYearHi: "", templeType: "", templeTypes: [], sacredCategories: [], speciality: "", specialityHi: "",
     image: "", imageCard: "", imageHero: "", imageGallery: "", timings: "", contact: "", phone: "", email: "", website: "", 
     facebook: "", instagram: "", status: "pending",
@@ -114,8 +116,10 @@ export default function EditTemplePage({ params }: { params: Promise<{ id: strin
             mapsLink: temple.mapsLink || "",
             city: temple.city || "",
             cityHi: temple.cityHi || "",
+            district: temple.district || "",
             state: temple.state || "",
             stateHi: temple.stateHi || "",
+            country: temple.country || "India",
             pincode: temple.pincode || "",
             pincodeHi: temple.pincodeHi || "",
             description: temple.description || "",
@@ -422,7 +426,7 @@ export default function EditTemplePage({ params }: { params: Promise<{ id: strin
             )}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-600 mb-1">📍 City*</label>
               <input value={form.city} onChange={(e) => onChange("city", e.target.value)} className="admin-input w-full" />
@@ -445,6 +449,17 @@ export default function EditTemplePage({ params }: { params: Promise<{ id: strin
             </div>
           </div>
         </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1">District</label>
+              <input value={form.district} onChange={(e) => onChange("district", e.target.value)} className="admin-input w-full" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1">Country</label>
+              <input value={form.country} onChange={(e) => onChange("country", e.target.value)} className="admin-input w-full" />
+            </div>
+          </div>
 
         {/* Visit Information */}
         <div className="admin-card p-6 space-y-5">

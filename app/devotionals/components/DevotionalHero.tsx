@@ -4,8 +4,6 @@ import SarvdevImage from '../../../components/SarvdevImage'
 import { getDevotionalHeroImage } from '../../../lib/devotional-image'
 import type { Devotional } from '../types'
 
-const DEFAULT_HERO = 'https://res.cloudinary.com/dc2qg7bwr/image/upload/image_2_xljqwa'
-
 type Props = {
   title: string
   eyebrow?: string
@@ -16,11 +14,11 @@ type Props = {
 }
 
 export default function DevotionalHero({ title, eyebrow, subtitle, image, stats, children }: Props) {
-  const heroImage = getDevotionalHeroImage(image || DEFAULT_HERO)
+  const heroImage = getDevotionalHeroImage(image)
 
   return (
     <section className="relative min-h-[520px] overflow-hidden bg-stone-950 text-white md:min-h-[560px]">
-      <SarvdevImage image={heroImage} alt={title} className="absolute inset-0" imgClassName="object-cover" loading="eager" renderMode="auto" />
+      <SarvdevImage image={heroImage} alt={title} className="absolute inset-0" imgClassName="object-cover" loading="eager" renderMode="cinematic-cover" />
       <div className="absolute inset-0 bg-gradient-to-r from-stone-950/90 via-stone-950/62 to-stone-950/20" />
       <div className="absolute inset-x-0 bottom-0 h-44 bg-gradient-to-t from-surface to-transparent" />
 

@@ -33,6 +33,10 @@ const HONORIFIC_WORDS = new Set([
   'maharaj',
 ])
 
+const SLUG_ALIAS_GROUPS = [
+  ['ganesh-ji', 'lord-ganesh', 'lord-ganesha', 'ganesh', 'ganesha'],
+]
+
 export function normalizeDeityIdentity(value: unknown) {
   return String(value || '')
     .toLowerCase()
@@ -49,6 +53,31 @@ export function normalizeDeityIdentity(value: unknown) {
 function slugKey(value: unknown) {
   const slug = String(value || '').trim().toLowerCase()
   return slug ? `slug:${slug}` : ''
+}
+
+function normalizedSlug(value: unknown) {
+  return String(value || '').trim().toLowerCase()
+}
+
+function slugsShareAlias(left: unknown, right: unknown) {
+  const a = normalizedSlug(left)
+  const b = normalizedSlug(right)
+  if (!a || !b) return false
+  if (a === b) return true
+  return SLUG_ALIAS_GROUPS.some((group) => group.includes(a) && group.includes(b))
+}
+
+function hasSlugAlias(slug: unknown, candidates: unknown[]) {
+  return candidates.some((candidate) => slugsShareAlias(slug, candidate))
+}
+
+function isGaneshPrimarySlug(slug: unknown) {
+  return hasSlugAlias(slug, ['ganesh-ji', 'lord-ganesh', 'lord-ganesha'])
+}
+
+function isMushakIdentity(deity: DeityIdentityLike) {
+  const text = `${deity.name || ''} ${deity.slug || ''} ${deity.staticSlug || ''}`.toLowerCase()
+  return text.includes('mushak') || text.includes('mushika') || text.includes('mushakraj')
 }
 
 function coreKey(value: unknown) {
@@ -86,8 +115,10 @@ export function scoreDeityMatch(staticDeity: DeityIdentityLike, dbDeity: DeityId
   const dbSlugCore = normalizeDeityIdentity(dbDeity.slug)
 
   let score = 0
+  if (isGaneshPrimarySlug(staticSlug) && isMushakIdentity(dbDeity)) return 0
   if (staticSlug && dbStaticSlug === staticSlug) score += 600
   if (staticSlug && aliases.includes(staticSlug)) score += 550
+  if (staticSlug && hasSlugAlias(staticSlug, [dbSlug, dbStaticSlug, ...aliases])) score += 540
   if (staticSlug && dbSlug === staticSlug) score += 500
   if (staticCore && (dbNameCore === staticCore || dbSlugCore === staticCore)) score += 260
   if (

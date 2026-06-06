@@ -38,6 +38,13 @@ interface DeityCategory {
 
 const BASE_URL = 'https://sarvdev.com'
 const DEITIES_HERO_IMAGE = 'https://res.cloudinary.com/dc2qg7bwr/image/upload/v1774363519/hero-bg.jpg.jpg'
+const KOTI_DEVTA_IMAGES = {
+  ashtaVasu: 'https://res.cloudinary.com/dc2qg7bwr/image/upload/v1779961531/asth_vasu_card_m8skhw.png',
+  ekadashRudra: 'https://res.cloudinary.com/dc2qg7bwr/image/upload/v1779961712/Ekadash_Rudra_card_pivq6f.png',
+  dwadashAditya: 'https://res.cloudinary.com/dc2qg7bwr/image/upload/v1779961708/Dwadash_Aditya_card_fslufd.png',
+  indra: 'https://res.cloudinary.com/dc2qg7bwr/image/upload/v1779011718/sarvdev/zxfjzys54vele7cjs8gk.jpg',
+  prajapati: 'https://res.cloudinary.com/dc2qg7bwr/image/upload/v1779533763/sarvdev/deities/cards/brahma-ji-card-1-1779533755108.png',
+}
 
 export const DEITY_CATEGORIES: DeityCategory[] = [
   {
@@ -1505,12 +1512,153 @@ const FAQ_DATA = [
   },
 ]
 
+const MAJOR_DEITY_TERMS = [
+  'shiva',
+  'vishnu',
+  'krishna',
+  'rama',
+  'ram',
+  'durga',
+  'hanuman',
+  'lakshmi',
+  'ganesh',
+  'ganesha',
+]
+
+const SEARCH_ALIASES: Record<string, string[]> = {
+  shiva: ['shiv', 'mahadev', 'shankar', 'bholenath', 'rudra', 'nilkanth'],
+  ganesh: ['ganesha', 'ganpati', 'ganapati', 'vinayak', 'vighnaharta', 'gajanan'],
+  vishnu: ['narayan', 'narayana', 'hari', 'vasudev'],
+  krishna: ['kanha', 'gopal', 'govind', 'banke bihari', 'dwarkadhish', 'shyam'],
+  rama: ['ram', 'shri ram', 'raghunath', 'sitaram'],
+  hanuman: ['bajrangbali', 'bajrang bali', 'maruti', 'anjaneya', 'pavanputra'],
+  durga: ['ambe', 'jagdamba', 'navadurga', 'shakti'],
+  lakshmi: ['laxmi', 'mahalakshmi', 'shri'],
+  saraswati: ['sharda', 'sharada', 'vidya'],
+  parvati: ['gauri', 'uma', 'shakti'],
+  kali: ['mahakali', 'kalika'],
+  surya: ['aditya', 'sun'],
+  shani: ['shanidev', 'shani dev'],
+  vahan: ['vahana', 'vehicle', 'divya vahan'],
+}
+
+const EXPLORE_FILTERS = [
+  { id: 'all', label: 'All' },
+  { id: 'category', label: 'Category' },
+  { id: 'avatar', label: 'Avatar' },
+  { id: 'shakti', label: 'Shakti' },
+  { id: 'graha', label: 'Graha' },
+  { id: 'vahana', label: 'Vahana' },
+  { id: 'region', label: 'Region' },
+  { id: 'festival', label: 'Festival' },
+  { id: 'temple', label: 'Temple' },
+] as const
+
+const CATEGORY_THEMES = [
+  'from-blue-950 via-amber-950 to-stone-950',
+  'from-rose-950 via-pink-900 to-amber-950',
+  'from-orange-950 via-stone-950 to-indigo-950',
+  'from-indigo-950 via-stone-950 to-blue-950',
+  'from-red-950 via-stone-950 to-orange-950',
+  'from-slate-950 via-blue-950 to-stone-950',
+  'from-emerald-950 via-stone-950 to-amber-950',
+  'from-violet-950 via-stone-950 to-blue-950',
+]
+
+const COLLAPSE_PREVIEW_COUNT = 9
+
+function normalizeSearchText(value?: string | null) {
+  return (value || '')
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9\u0900-\u097f]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function expandSearchTerms(raw: string) {
+  const term = normalizeSearchText(raw)
+  if (!term) return []
+  const related = Object.entries(SEARCH_ALIASES)
+    .filter(([key, aliases]) => key.includes(term) || term.includes(key) || aliases.some((alias) => alias.includes(term) || term.includes(alias)))
+    .flatMap(([key, aliases]) => [key, ...aliases])
+  return Array.from(new Set([term, ...related.map(normalizeSearchText)]))
+}
+
+function getDeitySearchText(deity: any, category: DeityCategory) {
+  const base = [
+    deity.name,
+    deity.nameHi,
+    deity.slug,
+    deity.description,
+    deity.descriptionHi,
+    deity.mantra,
+    category.title,
+    category.titleHi,
+    category.subtitle,
+    ...(deity.attributes || []),
+  ].join(' ')
+  const normalizedBase = normalizeSearchText(base)
+  const aliasHits = Object.entries(SEARCH_ALIASES)
+    .filter(([key, aliases]) => normalizedBase.includes(key) || aliases.some((alias) => normalizedBase.includes(alias)))
+    .flatMap(([key, aliases]) => [key, ...aliases])
+  return normalizeSearchText([base, ...aliasHits].join(' '))
+}
+
+function deityMatchesSearch(deity: any, category: DeityCategory, search: string) {
+  const terms = expandSearchTerms(search)
+  if (terms.length === 0) return true
+  const text = getDeitySearchText(deity, category)
+  return terms.some((term) => text.includes(term))
+}
+
+function deityMatchesExplore(deity: any, category: DeityCategory, filter: string) {
+  if (filter === 'all' || filter === 'category') return true
+  const text = getDeitySearchText(deity, category)
+  const categoryId = category.id
+  if (filter === 'avatar') return /avatar|avatara|roop|dashavatar|krishna|vishnu/.test(`${categoryId} ${text}`)
+  if (filter === 'shakti') return /shakti|devi|durga|lakshmi|saraswati|parvati|mahavidya|tridevi/.test(`${categoryId} ${text}`)
+  if (filter === 'graha') return /graha|surya|chandra|mangal|budh|guru|shukra|shani|rahu|ketu/.test(`${categoryId} ${text}`)
+  if (filter === 'vahana') return /vahan|vahana|vehicle|garuda|nandi|mushak|peacock|swan|lion|tiger|owl/.test(`${categoryId} ${text}`)
+  if (filter === 'region') return /regional|vrindavan|barsana|shirdi|kerala|rajasthan|tamil|bengal|maharashtra|kashi/.test(`${categoryId} ${text}`)
+  if (filter === 'festival') return /festival|diwali|navratri|janmashtami|shivratri|panchami|ashtami|vivah|vrat/.test(text)
+  if (filter === 'temple') return /temple|mandir|tirth|pilgrimage|sabarimala|shirdi|kailash/.test(text)
+  return true
+}
+
+function isMajorDeity(deity: any) {
+  const text = normalizeSearchText(`${deity.slug || ''} ${deity.name || ''}`)
+  return MAJOR_DEITY_TERMS.some((term) => text.includes(term))
+}
+
+function getRelationshipLinks(deity: any) {
+  const text = normalizeSearchText(`${deity.slug || ''} ${deity.name || ''}`)
+  if (text.includes('shiva')) return [{ label: 'Parvati', href: '/deities/mata-parvati-gauri-uma' }, { label: 'Ganesha', href: '/deities/ganesh-ji' }]
+  if (text.includes('vishnu')) return [{ label: 'Lakshmi', href: '/deities/mata-lakshmi' }, { label: 'Garuda', href: '/deities/garuda' }]
+  if (text.includes('krishna')) return [{ label: 'Radha', href: '/deities/radha-rani' }, { label: 'Balram', href: '/deities/balram-ji' }]
+  if (text.includes('rama') || text.includes('ram')) return [{ label: 'Hanuman', href: '/deities/hanuman-ji' }, { label: 'Sita', href: '/deities/sita-mata' }]
+  if (text.includes('ganesh')) return [{ label: 'Shiva', href: '/deities/shiva-ji-mahadev' }, { label: 'Parvati', href: '/deities/mata-parvati-gauri-uma' }]
+  if (text.includes('hanuman')) return [{ label: 'Rama', href: '/deities/shri-ram' }, { label: 'Sundarkand', href: '/devotionals/sundarkand-path' }]
+  if (text.includes('lakshmi')) return [{ label: 'Vishnu', href: '/deities/vishnu-ji' }]
+  return []
+}
+
+function getAttributePills(deity: any) {
+  const attributes = Array.isArray(deity.attributes) ? deity.attributes : []
+  const pills = deity.mantra ? ['Mantra'] : []
+  return [...pills, ...attributes].slice(0, 4)
+}
+
 /* ─── Page Component ─── */
 
 export default function DeitiesPage() {
   const [activeCategory, setActiveCategory] = useState<string | null>(null)
   const [expandedDeity, setExpandedDeity] = useState<string | null>(null)
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set())
+  const [activeExploreFilter, setActiveExploreFilter] = useState<(typeof EXPLORE_FILTERS)[number]['id']>('all')
   const [search, setSearch] = useState('')
+  const [showBackToTop, setShowBackToTop] = useState(false)
   const [canScrollLeft, setCanScrollLeft] = useState(false)
   const [canScrollRight, setCanScrollRight] = useState(true)
   const [dbDeities, setDbDeities] = useState<any[]>([])
@@ -1596,19 +1744,71 @@ export default function DeitiesPage() {
 
     const publicCategories = hasDbData ? mergedCategories.filter(cat => cat.deities.length > 0) : mergedCategories
 
-    if (!search.trim()) return publicCategories
-    const term = search.trim().toLowerCase()
     return publicCategories.map(cat => ({
       ...cat,
       deities: cat.deities.filter((d: any) =>
-        (d.name || '').toLowerCase().includes(term) ||
-        (d.nameHi || '').toLowerCase().includes(term) ||
-        (d.description || '').toLowerCase().includes(term) ||
-        (d.descriptionHi || '').toLowerCase().includes(term) ||
-        d.attributes?.some((a: string) => a.toLowerCase().includes(term))
+        deityMatchesSearch(d, cat, search) && deityMatchesExplore(d, cat, activeExploreFilter)
       ),
     })).filter(cat => cat.deities.length > 0)
-  }, [search, dbDeities])
+  }, [search, dbDeities, activeExploreFilter])
+
+  useEffect(() => {
+    const onScroll = () => setShowBackToTop(window.scrollY > 720)
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
+  useEffect(() => {
+    const sections = filteredCategories
+      .map((category) => document.getElementById(`cat-${category.id}`))
+      .filter(Boolean) as HTMLElement[]
+    if (sections.length === 0) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0]
+        if (visible?.target?.id) setActiveCategory(visible.target.id.replace('cat-', ''))
+      },
+      { rootMargin: '-28% 0px -58% 0px', threshold: [0.15, 0.35, 0.6] }
+    )
+
+    sections.forEach((section) => observer.observe(section))
+    return () => observer.disconnect()
+  }, [filteredCategories])
+
+  const toggleCategoryExpanded = useCallback((categoryId: string) => {
+    setExpandedCategories((current) => {
+      const next = new Set(current)
+      if (next.has(categoryId)) next.delete(categoryId)
+      else next.add(categoryId)
+      return next
+    })
+  }, [])
+
+  const jumpToCategory = useCallback((categoryId: string | null) => {
+    if (!categoryId) {
+      setActiveCategory(null)
+      document.getElementById('deity-content')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      return
+    }
+
+    const scrollToSection = () => {
+      setActiveCategory(categoryId)
+      document.getElementById(`cat-${categoryId}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+
+    if (!document.getElementById(`cat-${categoryId}`)) {
+      setSearch('')
+      setActiveExploreFilter('all')
+      window.setTimeout(scrollToSection, 80)
+      return
+    }
+
+    scrollToSection()
+  }, [])
 
   const staticTotalDeities = DEITY_CATEGORIES.reduce((sum, cat) => sum + cat.deities.length, 0)
   const totalDeities = dbDeities.length > 0 ? dbDeities.length : staticTotalDeities
@@ -1693,7 +1893,7 @@ export default function DeitiesPage() {
                   type="text"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search deities by name, description..."
+                  placeholder="Search Shiva, Mahadev, Ganpati, Vinayak, Hindi names..."
                   className="w-full rounded-2xl border border-white/15 bg-white/92 py-4 pl-12 pr-12 text-base font-semibold text-stone-900 shadow-2xl outline-none backdrop-blur placeholder:text-stone-500 focus:border-amber-300 focus:ring-4 focus:ring-amber-200/30"
                 />
                 {search && (
@@ -1701,6 +1901,25 @@ export default function DeitiesPage() {
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                   </button>
                 )}
+              </div>
+              <div className="mt-4">
+                <p className="mb-2 text-xs font-black uppercase tracking-[0.18em] text-amber-100/80">Explore By</p>
+                <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+                  {EXPLORE_FILTERS.map((filter) => (
+                    <button
+                      key={filter.id}
+                      type="button"
+                      onClick={() => setActiveExploreFilter(filter.id)}
+                      className={`shrink-0 rounded-full border px-4 py-2 text-sm font-bold transition ${
+                        activeExploreFilter === filter.id
+                          ? 'border-amber-200 bg-amber-300 text-stone-950 shadow-[0_0_26px_rgba(251,191,36,0.35)]'
+                          : 'border-white/15 bg-white/10 text-white/86 backdrop-blur hover:bg-white/18'
+                      }`}
+                    >
+                      {filter.label}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           </motion.div>
@@ -1735,7 +1954,7 @@ export default function DeitiesPage() {
                 type="button"
                 className="category-pill whitespace-nowrap flex-shrink-0"
                 data-active={activeCategory === null ? 'true' : 'false'}
-                onClick={() => setActiveCategory(null)}
+                onClick={() => jumpToCategory(null)}
               >
                 🕉️ All
               </button>
@@ -1745,10 +1964,7 @@ export default function DeitiesPage() {
                   type="button"
                   className="category-pill whitespace-nowrap flex-shrink-0"
                   data-active={activeCategory === cat.id ? 'true' : 'false'}
-                  onClick={() => {
-                    setActiveCategory(cat.id)
-                    document.getElementById('deity-content')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-                  }}
+                  onClick={() => jumpToCategory(cat.id)}
                 >
                   {cat.emoji} {cat.titleHi}
                 </button>
@@ -1810,7 +2026,7 @@ export default function DeitiesPage() {
               <div className="card border-l-4 border-l-amber-500 overflow-hidden">
                 <div className="relative w-full aspect-[4/3] overflow-hidden">
                   <SarvdevImage
-                    image={getDeityHeroImage(undefined)}
+                    image={getDeityCardImage(KOTI_DEVTA_IMAGES.ashtaVasu)}
                     alt="Ashta Vasu"
                     className="absolute inset-0"
                     imgClassName="object-cover"
@@ -1853,7 +2069,7 @@ export default function DeitiesPage() {
               <div className="card border-l-4 border-l-red-500 overflow-hidden">
                 <div className="relative w-full aspect-[4/3] overflow-hidden">
                   <SarvdevImage
-                    image={getDeityHeroImage(undefined)}
+                    image={getDeityCardImage(KOTI_DEVTA_IMAGES.ekadashRudra)}
                     alt="Ekadash Rudra"
                     className="absolute inset-0"
                     imgClassName="object-cover"
@@ -1899,7 +2115,7 @@ export default function DeitiesPage() {
               <div className="card border-l-4 border-l-orange-500 overflow-hidden">
                 <div className="relative w-full aspect-[4/3] overflow-hidden">
                   <SarvdevImage
-                    image={getDeityHeroImage(undefined)}
+                    image={getDeityCardImage(KOTI_DEVTA_IMAGES.dwadashAditya)}
                     alt="Dwadash Aditya"
                     className="absolute inset-0"
                     imgClassName="object-cover"
@@ -1948,7 +2164,7 @@ export default function DeitiesPage() {
               <div className="card border-l-4 border-l-blue-500 overflow-hidden">
                 <div className="relative w-full aspect-[4/3] overflow-hidden">
                   <SarvdevImage
-                    image={getDeityHeroImage(undefined)}
+                    image={getDeityCardImage(KOTI_DEVTA_IMAGES.indra)}
                     alt="Indra"
                     className="absolute inset-0"
                     imgClassName="object-cover"
@@ -1973,7 +2189,7 @@ export default function DeitiesPage() {
               <div className="card border-l-4 border-l-violet-500 overflow-hidden">
                 <div className="relative w-full aspect-[4/3] overflow-hidden">
                   <SarvdevImage
-                    image={getDeityHeroImage(undefined)}
+                    image={getDeityCardImage(KOTI_DEVTA_IMAGES.prajapati)}
                     alt="Prajapati"
                     className="absolute inset-0"
                     imgClassName="object-cover"
@@ -2030,98 +2246,147 @@ export default function DeitiesPage() {
         ) : (
           <div className="space-y-16">
             {filteredCategories
-              .filter(cat => activeCategory === null || cat.id === activeCategory)
-              .map((category, catIdx) => (
+              .map((category, catIdx) => {
+                const isExpanded = expandedCategories.has(category.id) || search.trim().length > 0 || activeExploreFilter !== 'all'
+                const shouldCollapse = category.deities.length > COLLAPSE_PREVIEW_COUNT
+                const visibleDeities = shouldCollapse && !isExpanded ? category.deities.slice(0, COLLAPSE_PREVIEW_COUNT) : category.deities
+                const theme = CATEGORY_THEMES[catIdx % CATEGORY_THEMES.length]
+
+                return (
                 <motion.section
                   key={category.id}
                   id={`cat-${category.id}`}
-                  className="scroll-mt-20"
+                  className={`relative scroll-mt-28 overflow-hidden rounded-[2rem] border border-amber-200/60 bg-gradient-to-br ${theme} p-4 shadow-[0_24px_80px_rgba(68,32,12,0.16)] md:p-8`}
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, margin: '-50px' }}
                   transition={{ duration: 0.5, delay: catIdx * 0.05 }}
                 >
+                  <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_12%,rgba(255,214,122,0.18),transparent_28%),radial-gradient(circle_at_82%_20%,rgba(255,255,255,0.08),transparent_22%)]" />
+                  <div className="pointer-events-none absolute inset-x-8 top-8 h-px bg-gradient-to-r from-transparent via-amber-200/45 to-transparent" />
+
                   {/* Category Header */}
-                  <div className="deity-category-heading text-center mb-10">
-                    <span className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-2xl border border-amber-200 bg-white text-4xl shadow-sm">{category.emoji}</span>
-                    <h2 className="text-display-sm font-serif text-secondary-800">
-                      {category.titleHi}
-                    </h2>
-                    <p className="text-h4 text-primary-700 font-semibold mt-1">{category.title}</p>
-                    <p className="text-body-sm text-ink-muted mt-2 max-w-2xl mx-auto">{category.subtitle}</p>
-                    <p className="text-body-sm text-ink-muted font-devanagari">{category.subtitleHi}</p>
-                    <div className="mt-3 mx-auto w-16 h-1 rounded-full bg-gradient-to-r from-primary to-accent" />
+                  <div className="relative z-10 mb-8 grid gap-6 lg:grid-cols-[1fr_auto] lg:items-end">
+                    <div>
+                      <div className="mb-4 flex items-center gap-3">
+                        <span className="flex h-16 w-16 items-center justify-center rounded-2xl border border-amber-200/35 bg-white/12 text-4xl shadow-2xl backdrop-blur">{category.emoji}</span>
+                        <div className="h-px flex-1 bg-gradient-to-r from-amber-200/65 to-transparent" />
+                      </div>
+                      <p className="font-devanagari text-2xl font-black text-amber-100 md:text-3xl">{category.titleHi}</p>
+                      <h2 className="mt-1 text-[clamp(2.2rem,5vw,4.8rem)] font-serif leading-none tracking-normal text-white drop-shadow">
+                        {category.title}
+                      </h2>
+                      <p className="mt-4 max-w-3xl text-base leading-7 text-white/82 md:text-lg">{category.subtitle}</p>
+                      <p className="mt-2 max-w-3xl font-devanagari text-sm leading-7 text-amber-50/76">{category.subtitleHi}</p>
+                    </div>
+                    <div className="rounded-2xl border border-white/14 bg-white/12 p-4 text-white shadow-xl backdrop-blur">
+                      <div className="text-3xl font-black">{category.deities.length}</div>
+                      <div className="mt-1 text-xs font-bold uppercase tracking-[0.18em] text-amber-100">Sacred Forms</div>
+                    </div>
                   </div>
 
                   {/* Deity Cards Grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {category.deities.map((deity, idx) => {
+                  <AnimatePresence initial={false}>
+                  <motion.div layout className="relative z-10 grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+                    {visibleDeities.map((deity, idx) => {
+                      const major = isMajorDeity(deity)
+                      const relationshipLinks = getRelationshipLinks(deity)
+                      const attributePills = getAttributePills(deity)
                       return (
                         <motion.div
-                          key={`${category.id}-${idx}`}
+                          key={`${category.id}-${deity.slug || idx}`}
+                          layout
                           initial={{ opacity: 0, y: 15 }}
-                          whileInView={{ opacity: 1, y: 0 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -10 }}
                           viewport={{ once: true }}
                           transition={{ duration: 0.3, delay: idx * 0.04 }}
-                          className="group"
+                          className={`group ${major ? 'xl:col-span-2' : ''}`}
                         >
                           <Link
                             href={deity.slug ? `/deities/${deity.slug}` : '#'}
-                            className="block"
+                            className="block h-full no-underline hover:no-underline"
                           >
                           <div
-                            className="deity-card-premium cursor-pointer"
+                            className={`relative flex h-full overflow-hidden rounded-2xl border border-white/16 bg-white/92 shadow-[0_20px_54px_rgba(17,12,8,0.18)] backdrop-blur transition duration-300 hover:-translate-y-1 hover:bg-white hover:shadow-[0_26px_70px_rgba(251,191,36,0.24)] ${major ? 'flex-col lg:flex-row' : 'flex-col'}`}
                           >
                             {/* Deity Image */}
-                            <div className="relative w-full aspect-square overflow-hidden rounded-t-xl">
+                            <div className={`relative overflow-hidden bg-stone-950 ${major ? 'aspect-[16/10] lg:w-[44%]' : 'aspect-square'}`}>
                               <SarvdevImage
                                 image={getDeityCardImage(deity)}
                                 alt={deity.name}
                                 className="absolute inset-0"
-                                imgClassName="object-cover"
+                                imgClassName="object-cover transition duration-700 group-hover:scale-[1.04]"
                                 renderMode="auto"
                               />
+                              <div className="absolute inset-0 bg-gradient-to-t from-stone-950/42 via-transparent to-amber-200/10" />
+                              {major && (
+                                <span className="absolute left-3 top-3 rounded-full border border-amber-200/45 bg-amber-300/90 px-3 py-1 text-xs font-black uppercase tracking-wide text-stone-950 shadow-lg">
+                                  Spotlight
+                                </span>
+                              )}
                             </div>
 
-                            <div className="p-6">
+                            <div className={`${major ? 'p-6 lg:flex-1' : 'p-5'} flex flex-col`}>
                             {/* Deity Name */}
                             <div className="flex items-start justify-between gap-2 mb-3">
                               <div>
-                                <h3 className="text-h4 font-serif text-secondary-800 group-hover:text-primary-700 transition-colors">
+                                <h3 className={`${major ? 'text-3xl' : 'text-2xl'} font-serif leading-tight text-stone-950 transition group-hover:text-orange-800`}>
                                   {deity.nameHi}
                                 </h3>
-                                <p className="text-body-sm text-primary-600 font-medium">{deity.name}</p>
+                                <p className="mt-1 text-sm font-black uppercase tracking-wide text-orange-700">{deity.name}</p>
                               </div>
-                              <span className="text-primary-600 text-sm mt-1">→</span>
+                              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-orange-50 text-orange-700 transition group-hover:bg-orange-600 group-hover:text-white">→</span>
                             </div>
 
                             {/* Attributes */}
-                            {deity.attributes && (
+                            {attributePills.length > 0 && (
                               <div className="flex flex-wrap gap-1.5 mb-3">
-                                {deity.attributes.slice(0, 3).map((attr: string, i: number) => (
-                                  <span key={i} className="px-2 py-0.5 text-caption font-medium rounded-full bg-primary-50 text-primary-700 border border-primary-100">
+                                <span className="rounded-full border border-orange-100 bg-orange-50 px-2.5 py-1 text-[11px] font-bold text-orange-800">{category.title}</span>
+                                {attributePills.map((attr: string, i: number) => (
+                                  <span key={`${attr}-${i}`} className="rounded-full border border-stone-200 bg-stone-50 px-2.5 py-1 text-[11px] font-semibold text-stone-700">
                                     {attr}
                                   </span>
                                 ))}
-                                {deity.attributes.length > 3 && (
-                                  <span className="px-2 py-0.5 text-caption text-ink-muted">+{deity.attributes.length - 3}</span>
-                                )}
                               </div>
                             )}
 
                             {/* Short Description */}
-                            <p className="text-body-sm text-ink-muted leading-relaxed line-clamp-2">
-                              {deity.descriptionHi}
+                            <p className={`${major ? 'line-clamp-4' : 'line-clamp-3'} text-sm leading-7 text-stone-600`}>
+                              {deity.descriptionHi || deity.description}
                             </p>
+                            {relationshipLinks.length > 0 && (
+                              <div className="mt-4 flex flex-wrap gap-2">
+                                {relationshipLinks.map((link) => (
+                                  <span key={link.href} className="rounded-full bg-amber-50 px-3 py-1 text-[11px] font-bold text-amber-900">
+                                    {link.label}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
                             </div>
                           </div>
                           </Link>
                         </motion.div>
                       )
                     })}
-                  </div>
+                  </motion.div>
+                  </AnimatePresence>
+
+                  {shouldCollapse && (
+                    <div className="relative z-10 mt-8 text-center">
+                      <button
+                        type="button"
+                        onClick={() => toggleCategoryExpanded(category.id)}
+                        className="rounded-full border border-amber-200/35 bg-white/14 px-5 py-3 text-sm font-black text-white shadow-xl backdrop-blur transition hover:bg-white/22"
+                      >
+                        {isExpanded ? 'Collapse' : `Show All ${category.deities.length} ${category.title}`}
+                      </button>
+                    </div>
+                  )}
                 </motion.section>
-              ))}
+                )
+              })}
           </div>
         )}
       </main>
@@ -2161,6 +2426,21 @@ export default function DeitiesPage() {
           </div>
         </motion.div>
       </section>
+      <AnimatePresence>
+        {showBackToTop && (
+          <motion.button
+            type="button"
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 16 }}
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            className="fixed bottom-6 right-5 z-40 flex h-12 w-12 items-center justify-center rounded-full border border-amber-200 bg-stone-950 text-xl font-black text-amber-200 shadow-[0_14px_40px_rgba(0,0,0,0.28)] transition hover:bg-orange-700 md:bottom-8 md:right-8"
+            aria-label="Back to top"
+          >
+            ↑
+          </motion.button>
+        )}
+      </AnimatePresence>
     </>
   )
 }

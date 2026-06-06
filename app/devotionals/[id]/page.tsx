@@ -9,12 +9,11 @@ import AdminEditBar from '../../../components/AdminEditBar'
 import BookmarkButton from '../../../components/BookmarkButton'
 import SarvdevImage from '../../../components/SarvdevImage'
 import { getDevotionalHeroImage } from '../../../lib/devotional-image'
-import { attachMatchedDeities, attachMatchedDeity } from '../../../lib/devotional-deity-match'
 import { useTranslation } from '../../../lib/translation'
 import DevotionalAudioPlayer from '../components/DevotionalAudioPlayer'
 import DevotionalLyricsReader from '../components/DevotionalLyricsReader'
 import DevotionalRelatedContent from '../components/DevotionalRelatedContent'
-import { categoryToSlug, createDevotionalSlug, getDevotionalHref } from '../components/devotional-utils'
+import { categoryToSlug, getDevotionalHref } from '../components/devotional-utils'
 import type { Devotional } from '../types'
 import { renderBilingualTitle } from '../utils/bilingual'
 
@@ -37,33 +36,18 @@ export default function DevotionalDetailPage() {
 
     async function load() {
       try {
-        const [res, deityRes] = await Promise.all([
-          fetch('/api/devotionals'),
-          fetch('/api/deities', { cache: 'no-store' }).catch(() => null),
+        const [detailRes, relatedRes] = await Promise.all([
+          fetch(`/api/devotionals?slug=${encodeURIComponent(slug)}`),
+          fetch('/api/devotionals?limit=80'),
         ])
-        if (!res.ok) return
-        const [list, deityData] = await Promise.all([
-          res.json() as Promise<Devotional[]>,
-          deityRes?.ok ? deityRes.json() : Promise.resolve([]),
-        ])
-        const deities = Array.isArray(deityData) ? deityData : []
-        const approved = attachMatchedDeities(
-          (Array.isArray(list) ? list : []).filter((item) => item.status === 'approved' || !item.status),
-          deities
-        )
-        const found = approved.find((item) => createDevotionalSlug(item.title || '') === slug || item._id === slug)
-
-        if (cancelled) return
-        setAllDevotionals(approved)
-
-        if (!found) return
-        const fullRes = await fetch(`/api/devotionals?id=${found._id}`)
-        if (!fullRes.ok) {
-          setDevotional(found)
-          return
+        if (!cancelled && relatedRes.ok) {
+          const list = await relatedRes.json() as Devotional[]
+          const approved = (Array.isArray(list) ? list : []).filter((item) => item.status === 'approved' || !item.status)
+          setAllDevotionals(approved)
         }
-        const fullData = await fullRes.json()
-        if (!cancelled) setDevotional(fullData ? attachMatchedDeity(fullData, deities) : found)
+        if (!detailRes.ok) return
+        const fullData = await detailRes.json()
+        if (!cancelled) setDevotional(fullData)
       } finally {
         if (!cancelled) setLoading(false)
       }

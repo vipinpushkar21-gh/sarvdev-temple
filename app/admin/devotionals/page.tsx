@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState, useCallback } from 'react'
 import Link from 'next/link'
 import SarvdevImage from '../../../components/SarvdevImage'
 import { getDevotionalCardImage } from '../../../lib/devotional-image'
-import { attachMatchedDeities, type DeityImageSource } from '../../../lib/devotional-deity-match'
 
 type Devotional = {
   _id: string
@@ -23,10 +22,6 @@ type Devotional = {
   ogImage?: string
   thumbnail?: string
   coverImage?: string
-  matchedDeity?: DeityImageSource | null
-  matchedDeityName?: string
-  matchedDeitySlug?: string
-  matchedDeityReason?: string
   status?: 'approved' | 'pending' | 'rejected'
   createdAt?: string
 }
@@ -70,16 +65,10 @@ export default function AdminDevotionalsPage() {
 
   async function fetchDevotionals() {
     try {
-      const [res, deityRes] = await Promise.all([
-        fetch('/api/devotionals', { credentials: 'include', cache: 'no-store' }),
-        fetch('/api/deities', { credentials: 'include', cache: 'no-store' }).catch(() => null),
-      ])
+      const res = await fetch('/api/devotionals', { credentials: 'include', cache: 'no-store' })
       if (res.ok) {
-        const [items, deityItems] = await Promise.all([
-          res.json(),
-          deityRes?.ok ? deityRes.json() : Promise.resolve([]),
-        ])
-        setDevotionals(attachMatchedDeities(Array.isArray(items) ? items : [], Array.isArray(deityItems) ? deityItems : []) as Devotional[])
+        const items = await res.json()
+        setDevotionals(Array.isArray(items) ? items : [])
       }
     } catch (error) { console.error('Failed to fetch devotionals:', error) }
     finally { setLoading(false) }
@@ -144,8 +133,7 @@ export default function AdminDevotionalsPage() {
     const rejected = devotionals.filter(d => d.status === 'rejected').length
     const withAudio = devotionals.filter(d => d.audio).length
     const withLyrics = devotionals.filter(d => d.lyrics).length
-    const matchedDeity = devotionals.filter(d => d.matchedDeity).length
-    return { total: devotionals.length, approved, pending, rejected, withAudio, withLyrics, matchedDeity }
+    return { total: devotionals.length, approved, pending, rejected, withAudio, withLyrics }
   }, [devotionals])
 
   // Filter + Sort
@@ -242,7 +230,7 @@ export default function AdminDevotionalsPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         {[
           { label: 'Total', value: stats.total, icon: '📊' },
           { label: 'Approved', value: stats.approved, icon: '✅' },
@@ -250,7 +238,6 @@ export default function AdminDevotionalsPage() {
           { label: 'Rejected', value: stats.rejected, icon: '❌' },
           { label: 'With Audio', value: stats.withAudio, icon: '🎵' },
           { label: 'With Lyrics', value: stats.withLyrics, icon: 'Text' },
-          { label: 'Matched Deity', value: stats.matchedDeity, icon: 'Deity' },
         ].map(s => (
           <div key={s.label} className="admin-stat">
             <div className="flex items-center justify-between">
@@ -267,9 +254,9 @@ export default function AdminDevotionalsPage() {
       <div className="admin-card p-5">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <h2 className="admin-section-title">Deity-derived devotional images</h2>
+            <h2 className="admin-section-title">Optimized devotional public image mode</h2>
             <p className="admin-section-subtitle mt-1">
-              Devotional images are auto-derived from matched deity images. Old devotional-specific image fields can be cleared safely after dry-run review.
+              Devotional public pages currently use one optimized fallback image for speed. Old devotional-specific image fields can be cleared safely after dry-run review.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -389,7 +376,7 @@ export default function AdminDevotionalsPage() {
               <tr>
                 <th className="w-10"><input type="checkbox" checked={selected.size === paginated.length && paginated.length > 0} onChange={toggleAll} className="rounded" /></th>
                 <th className="cursor-pointer group select-none" onClick={() => handleSort('title')}>Title<SortIcon col="title" /></th>
-                <th>Matched Deity Image</th>
+                <th>Public Image</th>
                 <th className="cursor-pointer group select-none" onClick={() => handleSort('category')}>Category<SortIcon col="category" /></th>
                 <th className="cursor-pointer group select-none" onClick={() => handleSort('deity')}>Deity<SortIcon col="deity" /></th>
                 <th className="cursor-pointer group select-none" onClick={() => handleSort('language')}>Language<SortIcon col="language" /></th>
@@ -411,16 +398,16 @@ export default function AdminDevotionalsPage() {
                     <div className="flex items-center gap-3 min-w-[180px]">
                       <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-xl bg-orange-50">
                         <SarvdevImage
-                          image={getDevotionalCardImage(d)}
-                          alt={d.matchedDeityName || d.deity || d.title}
+                          image={getDevotionalCardImage()}
+                          alt={d.title}
                           className="absolute inset-0"
                           imgClassName="object-cover"
                           renderMode="auto"
                         />
                       </div>
                       <div className="min-w-0">
-                        <p className="truncate text-xs font-bold text-gray-800">{d.matchedDeityName || 'No confident match'}</p>
-                        <p className="truncate text-[10px] text-gray-400">{d.matchedDeityReason || 'Fallback devotional image'}</p>
+                        <p className="truncate text-xs font-bold text-gray-800">Fallback image</p>
+                        <p className="truncate text-[10px] text-gray-400">Public pages ignore devotional/deity images</p>
                       </div>
                     </div>
                   </td>

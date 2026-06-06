@@ -15,6 +15,11 @@ function slugify(text: string) {
   return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
 }
 
+function matchesSacredCategory(value: string | undefined | null, cluster: PilgrimageCluster) {
+  if (!value) return false
+  return value === cluster.categoryMatch || slugify(value) === cluster.slug
+}
+
 type PilgrimageCluster = {
   slug: string
   title: string
@@ -80,7 +85,7 @@ export default async function PilgrimageClusterPage({ params }: { params: Promis
     temples = cluster.categoryMatch === SHAKTI_PEETH_CATEGORY
       ? getTemplesForSacredCategory(all, cluster.categoryMatch)
       : all.filter((t: any) =>
-        (t.categories || []).some((c: string) => c === cluster.categoryMatch)
+        [...(t.categories || []), ...(t.sacredCategories || [])].some((c: string) => matchesSacredCategory(c, cluster))
       )
   } catch (e) {
     console.error('Pilgrimage cluster fetch error:', e)

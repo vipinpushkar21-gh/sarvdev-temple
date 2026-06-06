@@ -2,9 +2,7 @@ import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
 import { connectDB } from '@/lib/db'
 import Devotional from '@/models/Devotional'
-import Deity from '@/models/Deity'
 import { getDevotionalOGImage } from '@/lib/devotional-image'
-import { attachMatchedDeity } from '@/lib/devotional-deity-match'
 import { categoryToSlug, createDevotionalSlug } from '../components/devotional-utils'
 
 export const revalidate = 300
@@ -21,10 +19,6 @@ export async function generateMetadata(
       { status: 'approved' },
       'title description category deity language metaTitle metaDescription metaKeywords'
     ).lean() as any[]
-    const deities = await Deity.find(
-      { $or: [{ status: 'approved' }, { status: { $exists: false } }] },
-      'name nameHi slug staticSlug slugAliases aliases category categories image imageCard imageHero status'
-    ).lean() as any[]
 
     const foundDevotional = devotionals.find((item: any) => createDevotionalSlug(item.title || '') === id || item._id?.toString() === id)
 
@@ -35,7 +29,7 @@ export async function generateMetadata(
       }
     }
 
-    const devotional = attachMatchedDeity(foundDevotional, deities)
+    const devotional = foundDevotional
     const url = `${BASE}/devotionals/${id}`
     const categoryLabel = devotional.category || 'Devotional'
     const deityLabel = devotional.deity ? ` - ${devotional.deity}` : ''

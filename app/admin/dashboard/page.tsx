@@ -8,7 +8,6 @@ import {
   BookOpenText,
   CalendarDays,
   CheckCircle2,
-  FileSearch,
   Image as ImageIcon,
   Mail,
   Music,
@@ -224,7 +223,7 @@ export default function AdminDashboardPage() {
         <AdminSectionCard title="Content Health" subtitle={`Overall SEO score ${health?.summary.overallSeoScore ?? 0}%`}>
           <div className="grid gap-3">
             {[
-              { label: 'Temples', value: health?.summary.temples.withIssues || 0, total: health?.summary.temples.total || 0, href: '/admin/temples/missing-data' },
+              { label: 'Temples', value: health?.summary.temples.withIssues || 0, total: health?.summary.temples.total || 0, href: '/admin/temples' },
               { label: 'Devotionals', value: health?.summary.devotionals.withIssues || 0, total: health?.summary.devotionals.total || 0, href: '/admin/devotionals' },
               { label: 'Blogs', value: health?.summary.blogs.withIssues || 0, total: health?.summary.blogs.total || 0, href: '/admin/blogs' },
             ].map((item) => (
@@ -249,7 +248,6 @@ export default function AdminDashboardPage() {
             { href: '/admin/events', label: 'Events', description: 'Manage festivals and events', icon: <CalendarDays className="h-5 w-5" />, tone: 'gold' },
             { href: '/admin/darshan/new', label: 'Add Darshan', description: 'Create a darshan item', icon: <Video className="h-5 w-5" />, tone: 'red' },
             { href: '/admin/images/audit', label: 'Image Audit', description: 'Find weak or missing images', icon: <ImageIcon className="h-5 w-5" />, tone: 'blue' },
-            { href: '/admin/temples/missing-data', label: 'Missing Temple Data', description: 'Improve temple completeness', icon: <FileSearch className="h-5 w-5" />, tone: 'slate' },
             { href: '/admin/seo', label: 'SEO Center', description: 'Review search health', icon: <SearchCheck className="h-5 w-5" />, tone: 'saffron' },
           ]} />
         </AdminSectionCard>
@@ -266,7 +264,7 @@ export default function AdminDashboardPage() {
               </Link>
             ))}
             {contentTasks.slice(0, 5).map((issue) => (
-              <Link key={`${issue.type}-${issue.id}`} href={issue.type === 'temple' ? '/admin/temples/missing-data' : issue.type === 'blog' ? '/admin/blogs' : '/admin/devotionals'} className="flex items-center justify-between gap-3 rounded-2xl border border-red-100 bg-red-50/60 px-4 py-3 no-underline hover:border-red-200 hover:bg-red-50 hover:no-underline">
+              <Link key={`${issue.type}-${issue.id}`} href={issue.type === 'temple' ? '/admin/temples' : issue.type === 'blog' ? '/admin/blogs' : '/admin/devotionals'} className="flex items-center justify-between gap-3 rounded-2xl border border-red-100 bg-red-50/60 px-4 py-3 no-underline hover:border-red-200 hover:bg-red-50 hover:no-underline">
                 <span className="min-w-0">
                   <span className="block truncate text-sm font-black text-gray-950">{issue.title}</span>
                   <span className="line-clamp-1 text-xs font-semibold text-gray-500">{issue.issues.join(' / ')}</span>

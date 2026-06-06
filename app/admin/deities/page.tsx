@@ -7,6 +7,25 @@ import { DEITY_CATEGORIES } from "@/app/deities/page"
 import SarvdevImage from "@/components/SarvdevImage"
 import { getDeityCardImage } from "@/lib/temple-image"
 import { findBestDeityMatch, mergeStaticDeityWithDb } from "@/lib/deity-identity"
+import { getCategoryDisplayName } from "@/lib/deity-categories"
+
+function isMushakIdentity(deity: any) {
+  const text = `${deity?.name || ''} ${deity?.nameHi || ''} ${deity?.slug || ''} ${deity?.staticSlug || ''}`.toLowerCase()
+  return text.includes('mushak') || text.includes('mushika') || text.includes('mushakraj') || text.includes('मूषक')
+}
+
+function normalizeAdminDeityRow(deity: any) {
+  if (!isMushakIdentity(deity)) return deity
+  return {
+    ...deity,
+    category: 'Divya Vahan',
+    categoryId: 'divya-vahan',
+    categories: ['divya-vahan'],
+    categoryIds: ['divya-vahan'],
+    staticSlug: deity.staticSlug || 'mushak',
+    slugAliases: Array.from(new Set([...(deity.slugAliases || []), 'mushak', deity.slug].filter(Boolean))),
+  }
+}
 
 export default function AdminDeitiesPage() {
   const router = useRouter()
@@ -26,7 +45,7 @@ export default function AdminDeitiesPage() {
       const response = await fetch('/api/deities', { credentials: 'include', cache: 'no-store' })
       if (!response.ok) throw new Error('Failed to load deities')
       const data = await response.json()
-      const dbDeities = Array.isArray(data) ? data : []
+      const dbDeities = (Array.isArray(data) ? data : []).map(normalizeAdminDeityRow)
 
       const allDeities: any[] = []
       const orderMap = new Map<string, number>()
@@ -48,10 +67,15 @@ export default function AdminDeitiesPage() {
           }
           const match = findBestDeityMatch(staticDeity, dbDeities, addedDbIds)
           const dbDeity = match?.deity as any
-          const deityToAdd = dbDeity ? {
+          if (!dbDeity && isMushakIdentity(staticDeity)) {
+            orderIndex++
+            return
+          }
+
+          const deityToAdd = dbDeity ? normalizeAdminDeityRow({
             ...mergeStaticDeityWithDb(staticDeity, dbDeity, category),
             matchScore: match?.score,
-          } : {
+          }) : {
             ...staticDeity,
             _id: `static-${deity.slug}`,
             status: 'not-seeded',
@@ -75,11 +99,11 @@ export default function AdminDeitiesPage() {
         const uniqueId = deity._id ? `db:${deity._id}` : `slug:${deity.slug}`
         if (dbId && addedDbIds.has(dbId)) return
         if (uniqueId && addedKeys.has(uniqueId)) return
-        allDeities.push({
+        allDeities.push(normalizeAdminDeityRow({
           ...deity,
           source: deity.source || 'manual',
           isStaticFallback: false,
-        })
+        }))
         if (uniqueId) addedKeys.add(uniqueId)
       })
 
@@ -313,7 +337,7 @@ export default function AdminDeitiesPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="text-sm text-ink-muted">{deity.category || '-'}</span>
+                      <span className="text-sm text-ink-muted">{deity.category ? getCategoryDisplayName(deity.category) : '-'}</span>
                     </td>
                     <td className="px-6 py-4">
                       <span className={`inline-block px-2.5 py-1 text-xs font-medium rounded-full ${

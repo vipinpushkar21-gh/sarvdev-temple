@@ -11,7 +11,6 @@ import {
   ChevronDown,
   CircleGauge,
   Database,
-  FileSearch,
   Globe,
   Image as ImageIcon,
   LayoutDashboard,
@@ -23,7 +22,6 @@ import {
   PanelLeftOpen,
   Search,
   Settings,
-  ShieldCheck,
   Sparkles,
   Star,
   SunMedium,
@@ -60,8 +58,6 @@ const NAV_GROUPS: NavGroup[] = [
   {
     title: 'Temple Intelligence',
     items: [
-      { href: '/admin/temples/missing-data', label: 'Missing Data', icon: FileSearch },
-      { href: '/admin/temples/shakti-peeth-mapping', label: 'Shakti Peeth Mapping', icon: ShieldCheck },
       { href: '/admin/images/audit', label: 'Image Audit', icon: ImageIcon },
       { href: '/admin/images/external-audit', label: 'External Image Audit', icon: ImageIcon },
       { href: '/admin/seo', label: 'SEO Center', icon: Globe },

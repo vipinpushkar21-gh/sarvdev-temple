@@ -9,9 +9,9 @@ import { EXCLUDED_CATEGORY_IDS, FULL_CATEGORIES } from './components/categories'
 import DevotionalCardPremium from './components/DevotionalCardPremium'
 import DevotionalFilterChips from './components/DevotionalFilterChips'
 import DevotionalHero from './components/DevotionalHero'
+import FeaturedDevotionalSlider from './components/FeaturedDevotionalSlider'
 import { SearchBar } from './components/SearchBar'
 import type { Devotional } from './types'
-import { attachMatchedDeities } from '../../lib/devotional-deity-match'
 import {
   getDailyPracticeGroups,
   getDevotionalHref,
@@ -20,11 +20,65 @@ import {
 
 type SortKey = 'featured' | 'newest' | 'az'
 
-function SectionHeader({ title, subtitle, action }: { title: string; subtitle?: string; action?: ReactNode }) {
+const DEITY_EMOJI: Record<string, string> = {
+  shiva: '🕉️', mahadev: '🕉️', shiv: '🕉️', bholenath: '🕉️',
+  hanuman: '🙏', bajrangbali: '🙏',
+  krishna: '🪷', kanha: '🪷', gopal: '🪷', govind: '🪷',
+  durga: '🌸', devi: '🌸', mata: '🌸',
+  lakshmi: '🌺', laxmi: '🌺', mahalakshmi: '🌺',
+  vishnu: '🔱', narayan: '🔱', hari: '🔱',
+  ganesha: '🐘', ganesh: '🐘', ganpati: '🐘', vinayak: '🐘',
+  saraswati: '🎵', sharada: '🎵',
+  rama: '🏹', ram: '🏹',
+  surya: '☀️',
+  kali: '⚡',
+  parvati: '🌙', gauri: '🌙',
+  sai: '✨',
+}
+
+const DEITY_BG = [
+  'from-orange-50 to-amber-50',
+  'from-purple-50 to-violet-50',
+  'from-blue-50 to-sky-50',
+  'from-emerald-50 to-teal-50',
+  'from-rose-50 to-pink-50',
+  'from-yellow-50 to-orange-50',
+  'from-indigo-50 to-blue-50',
+  'from-cyan-50 to-emerald-50',
+]
+
+const HERO_CTA_CHIPS = [
+  { label: 'Aarti', href: '/devotionals/category/aarti', emoji: '🪔' },
+  { label: 'Mantra', href: '/devotionals/category/mantra', emoji: '📿' },
+  { label: 'Chalisa', href: '/devotionals/category/chalisa', emoji: '📖' },
+  { label: 'Stotra', href: '/devotionals/category/stotra', emoji: '🎵' },
+  { label: 'Vrat Katha', href: '/devotionals/category/vrat-katha', emoji: '🌿' },
+]
+
+function getDeityEmoji(name: string): string {
+  const key = name.toLowerCase()
+  for (const [k, v] of Object.entries(DEITY_EMOJI)) {
+    if (key.includes(k)) return v
+  }
+  return '🕉️'
+}
+
+function deityToSlug(name: string): string {
+  return name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+}
+
+function SectionHeader({ title, subtitle, action, eyebrow }: {
+  title: string
+  subtitle?: string
+  action?: ReactNode
+  eyebrow?: string
+}) {
   return (
     <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
       <div>
-        <p className="text-xs font-black uppercase tracking-[0.18em] text-orange-700">Sarvdev Devotionals</p>
+        {eyebrow && (
+          <p className="text-xs font-black uppercase tracking-[0.18em] text-orange-700">{eyebrow}</p>
+        )}
         <h2 className="mt-1 text-3xl font-black tracking-normal text-stone-950">{title}</h2>
         {subtitle && <p className="mt-2 max-w-2xl text-sm leading-6 text-stone-600">{subtitle}</p>}
       </div>
@@ -40,7 +94,7 @@ export default function ClientPage() {
   const [activeCategory, setActiveCategory] = useState('all')
   const [activeDeity, setActiveDeity] = useState('all')
   const [sort, setSort] = useState<SortKey>('featured')
-  const [visibleCount, setVisibleCount] = useState(18)
+  const [visibleCount, setVisibleCount] = useState(24)
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -52,20 +106,15 @@ export default function ClientPage() {
 
   useEffect(() => {
     let cancelled = false
+
     async function fetchDevotionals() {
       try {
-        const [res, deityRes] = await Promise.all([
-          fetch('/api/devotionals'),
-          fetch('/api/deities', { cache: 'no-store' }).catch(() => null),
-        ])
+        const res = await fetch('/api/devotionals')
         if (!res.ok) return
-        const [data, deityData] = await Promise.all([
-          res.json(),
-          deityRes?.ok ? deityRes.json() : Promise.resolve([]),
-        ])
+        const data = await res.json()
         if (!cancelled) {
           const approved = (Array.isArray(data) ? data : []).filter((item: Devotional) => item.status === 'approved' || !item.status)
-          setDevotionals(attachMatchedDeities(approved, Array.isArray(deityData) ? deityData : []))
+          setDevotionals(approved)
         }
       } finally {
         if (!cancelled) setLoading(false)
@@ -75,7 +124,7 @@ export default function ClientPage() {
     return () => { cancelled = true }
   }, [])
 
-  useEffect(() => setVisibleCount(18), [search, activeCategory, activeDeity, sort])
+  useEffect(() => setVisibleCount(24), [search, activeCategory, activeDeity, sort])
 
   const categoriesWithCounts = useMemo(() => {
     return FULL_CATEGORIES
@@ -89,14 +138,15 @@ export default function ClientPage() {
       }))
   }, [devotionals])
 
-  const deityChips = useMemo(() => {
+  const deityGrid = useMemo(() => {
     const counts = new Map<string, number>()
     devotionals.forEach((devotional) => {
-      if (!devotional.deity) return
-      counts.set(devotional.deity, (counts.get(devotional.deity) || 0) + 1)
+      if (devotional.deity) counts.set(devotional.deity, (counts.get(devotional.deity) || 0) + 1)
     })
-    return Array.from(counts.entries()).sort((a, b) => b[1] - a[1]).slice(0, 12)
+    return Array.from(counts.entries()).sort((a, b) => b[1] - a[1]).slice(0, 24)
   }, [devotionals])
+
+  const deityChips = useMemo(() => deityGrid.slice(0, 12), [deityGrid])
 
   const categoryChips = useMemo(() => [
     { id: 'all', label: 'All', meta: devotionals.length },
@@ -138,15 +188,15 @@ export default function ClientPage() {
     }
     return list.sort((a, b) =>
       Number(Boolean(b.audio)) - Number(Boolean(a.audio)) ||
-      Number(Boolean(b.matchedDeity?.imageCard || b.matchedDeity?.image)) - Number(Boolean(a.matchedDeity?.imageCard || a.matchedDeity?.image)) ||
       new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
     )
   }, [filtered, sort])
 
   const featured = useMemo(() => getFeaturedDevotionals(devotionals), [devotionals])
-  const recent = useMemo(() => [...devotionals].sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()).slice(0, 6), [devotionals])
   const dailyGroups = useMemo(() => getDailyPracticeGroups(devotionals), [devotionals])
   const audioCount = devotionals.filter((item) => item.audio).length
+  const isFiltered = !!(search || activeCategory !== 'all' || activeDeity !== 'all')
+  const showDiscovery = !isFiltered
 
   function clearFilters() {
     setSearch('')
@@ -171,18 +221,30 @@ export default function ClientPage() {
   return (
     <>
       <DevotionalHero
-        title="Devotionals"
-        eyebrow="Chanting, Lyrics and Audio"
-        subtitle="A premium collection for mantras, bhajans, aartis, chalisas, stotras and daily spiritual practice."
-        image={featured[0] || devotionals[0] || null}
+        title="Sarvdev Devotionals"
+        eyebrow="Bhakti · Lyrics · Audio"
+        subtitle="भजन, आरती, मंत्र, चालीसा और स्तोत्र — एक शांत, तेज devotional library."
+        image={null}
         stats={[
-          { label: 'Devotionals', value: devotionals.length },
-          { label: 'Categories', value: categoriesWithCounts.filter((c) => c.count > 0).length },
-          { label: 'Deities', value: deityChips.length },
-          { label: 'Audio', value: audioCount },
+          { label: 'Sacred Texts', value: `${devotionals.length}+` },
+          { label: 'Devotional Types', value: categoriesWithCounts.filter((c) => c.count > 0).length },
+          { label: 'Deity Streams', value: `${deityGrid.length}+` },
+          { label: 'With Audio', value: audioCount },
         ]}
       >
-        <SearchBar value={search} onChange={setSearch} placeholder="Search mantra, aarti, deity or lyrics..." size="lg" />
+        <SearchBar value={search} onChange={setSearch} placeholder="Search aarti, mantra, chalisa, deity or lyrics..." size="lg" />
+        <div className="mt-3 flex flex-wrap gap-2 px-1">
+          {HERO_CTA_CHIPS.map((chip) => (
+            <Link
+              key={chip.label}
+              href={chip.href}
+              className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/12 px-3.5 py-1.5 text-xs font-bold text-white no-underline backdrop-blur transition hover:border-amber-300/50 hover:bg-amber-400/20 hover:text-amber-100"
+            >
+              <span aria-hidden="true">{chip.emoji}</span>
+              {chip.label}
+            </Link>
+          ))}
+        </div>
       </DevotionalHero>
 
       <main className="min-h-screen bg-surface pb-16">
@@ -193,22 +255,159 @@ export default function ClientPage() {
         </div>
 
         <div className="page-container space-y-16 py-12">
-          <section>
-            <SectionHeader title="Browse by Category" subtitle="Jump into the kind of chanting or reading practice you need today." />
-            <CategoryGrid categories={categoriesWithCounts} />
-          </section>
 
-          {featured.length > 0 && (
+          {/* ── Featured Today Slider ── */}
+          {showDiscovery && featured.length > 0 && (
             <section>
-              <SectionHeader title="Featured Devotionals" subtitle="Audio-ready, image-rich and popular entries from the Sarvdev collection." />
-              <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-                {featured.map((devotional) => <DevotionalCardPremium key={devotional._id} devotional={devotional} featured />)}
+              <SectionHeader
+                eyebrow="Handpicked Collection"
+                title="Featured Today"
+                subtitle="Top mantras, chalisas, aartis and stotras from the Sarvdev devotional library."
+              />
+              <FeaturedDevotionalSlider items={featured} />
+            </section>
+          )}
+
+          {/* ── Browse by Devotional Type ── */}
+          {showDiscovery && (
+            <section>
+              <SectionHeader
+                eyebrow="Devotional Types"
+                title="Browse by Type"
+                subtitle="Choose the kind of practice you need — chanting, reading, listening, or contemplation."
+              />
+              <CategoryGrid categories={categoriesWithCounts} />
+            </section>
+          )}
+
+          {/* ── Explore by Deity ── */}
+          {showDiscovery && deityGrid.length > 0 && (
+            <section>
+              <SectionHeader
+                eyebrow="Deity Streams"
+                title="Explore by Deity"
+                subtitle="Find all mantras, aartis, stotras, chalisas and more for a specific deity."
+                action={
+                  <Link href="/devotionals/deity/other" className="btn btn-outline shrink-0 bg-white text-sm no-underline">
+                    Other Devotionals →
+                  </Link>
+                }
+              />
+              <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
+                {deityGrid.slice(0, 18).map(([name, count], i) => (
+                  <Link
+                    key={name}
+                    href={`/devotionals/deity/${deityToSlug(name)}`}
+                    className={`group relative overflow-hidden rounded-2xl border border-amber-100 bg-gradient-to-br ${DEITY_BG[i % DEITY_BG.length]} p-5 no-underline shadow-sm transition hover:-translate-y-1 hover:border-orange-300 hover:shadow-lg`}
+                  >
+                    <div className="mb-2 flex items-start justify-between">
+                      <span className="text-2xl" aria-hidden="true">{getDeityEmoji(name)}</span>
+                      <span className="text-[9px] font-black uppercase tracking-widest text-orange-600">Stream</span>
+                    </div>
+                    <h3 className="text-base font-black leading-snug text-stone-900 group-hover:text-orange-800">{name}</h3>
+                    <p className="text-[11px] text-stone-400">Devotional Stream</p>
+                    <div className="mt-3 flex items-end justify-between">
+                      <span className="text-xl font-black text-stone-300">{count}</span>
+                      <span className="translate-x-2 text-xs font-bold text-orange-600 opacity-0 transition group-hover:translate-x-0 group-hover:opacity-100">
+                        Explore →
+                      </span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+              {deityGrid.length > 18 && (
+                <p className="mt-4 text-center text-sm text-stone-400">
+                  Showing 18 of {deityGrid.length} deity streams
+                </p>
+              )}
+            </section>
+          )}
+
+          {/* ── Daily Sadhana ── */}
+          {showDiscovery && (
+            <section>
+              <SectionHeader
+                eyebrow="Daily Practice"
+                title="Daily Sadhana"
+                subtitle="Build a meaningful rhythm — morning mantras, evening aarti, protection paths and peaceful stotras."
+              />
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                {dailyGroups.map((group, index) => {
+                  const icons = [SunMedium, Moon, Shield, Sparkles]
+                  const Icon = icons[index] || Sparkles
+                  return (
+                    <div key={group.label} className="rounded-2xl border border-amber-200 bg-white p-5 shadow-sm">
+                      <div className="mb-4 flex items-center gap-3">
+                        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-100 text-orange-700">
+                          <Icon className="h-5 w-5" />
+                        </span>
+                        <h3 className="text-lg font-black text-stone-900">{group.label}</h3>
+                      </div>
+                      <div className="space-y-2">
+                        {group.items.length > 0 ? group.items.map((item) => (
+                          <Link
+                            key={item._id}
+                            href={getDevotionalHref(item)}
+                            className="block truncate rounded-lg bg-orange-50/70 px-3 py-2 text-sm font-semibold text-stone-700 no-underline hover:bg-orange-100 hover:text-orange-800"
+                          >
+                            {item.title}
+                          </Link>
+                        )) : (
+                          <p className="text-sm text-stone-500">More entries coming as the collection grows.</p>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
             </section>
           )}
 
+          {/* ── Most Recited This Week ── */}
+          {showDiscovery && featured.length > 0 && (
+            <section>
+              <SectionHeader
+                eyebrow="Popular"
+                title="Most Recited This Week"
+                subtitle="Frequently visited chants, aartis and mantras from the Sarvdev collection."
+              />
+              <div className="grid gap-3 md:grid-cols-2">
+                {featured.slice(0, 8).map((devotional, i) => (
+                  <Link
+                    key={devotional._id}
+                    href={getDevotionalHref(devotional)}
+                    className="group flex items-center gap-4 rounded-xl border border-amber-100 bg-white p-4 no-underline shadow-sm transition hover:border-orange-200 hover:shadow-md"
+                  >
+                    <span className="w-9 shrink-0 text-xl font-black text-stone-200 tabular-nums">
+                      {String(i + 1).padStart(2, '0')}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      {devotional.category && (
+                        <span className="mb-1 inline-block rounded-full bg-orange-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-orange-700">
+                          {devotional.category}
+                        </span>
+                      )}
+                      <p className="truncate text-sm font-bold text-stone-900 group-hover:text-orange-800">
+                        {devotional.title}
+                      </p>
+                      {devotional.deity && (
+                        <p className="text-xs text-orange-600">{devotional.deity}</p>
+                      )}
+                    </div>
+                    {devotional.audio && <Headphones className="h-4 w-4 shrink-0 text-emerald-500" />}
+                  </Link>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* ── Discover by Deity filter chips ── */}
           <section>
-            <SectionHeader title="Discover by Deity" subtitle="Quickly move into Shiva, Rama, Ganesha, Durga, Vishnu, Hanuman and other devotional streams." />
+            <SectionHeader
+              eyebrow="Filter by Deity"
+              title="Discover by Deity"
+              subtitle="Quickly switch into Shiva, Rama, Ganesha, Durga, Vishnu, Hanuman and other devotional streams."
+            />
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
@@ -233,57 +432,26 @@ export default function ClientPage() {
             </div>
           </section>
 
-          <section>
-            <SectionHeader title="Daily Practice" subtitle="A guided way to pick content for morning, evening, protection and peaceful recitation." />
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-              {dailyGroups.map((group, index) => {
-                const icons = [SunMedium, Moon, Shield, Sparkles]
-                const Icon = icons[index] || Sparkles
-                return (
-                  <div key={group.label} className="rounded-2xl border border-amber-200 bg-white p-5 shadow-sm">
-                    <div className="mb-4 flex items-center gap-3">
-                      <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-100 text-orange-700">
-                        <Icon className="h-5 w-5" />
-                      </span>
-                      <h3 className="text-lg font-black text-stone-900">{group.label}</h3>
-                    </div>
-                    <div className="space-y-2">
-                      {group.items.length > 0 ? group.items.map((item) => (
-                        <Link key={item._id} href={getDevotionalHref(item)} className="block truncate rounded-lg bg-orange-50/70 px-3 py-2 text-sm font-semibold text-stone-700 no-underline hover:bg-orange-100 hover:text-orange-800">
-                          {item.title}
-                        </Link>
-                      )) : (
-                        <p className="text-sm text-stone-500">More entries will appear here as the collection grows.</p>
-                      )}
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          </section>
-
-          {recent.length > 0 && (
-            <section>
-              <SectionHeader title="Recently Added" subtitle="Freshly added devotional lyrics, chants and audio resources." />
-              <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-                {recent.map((devotional) => <DevotionalCardPremium key={devotional._id} devotional={devotional} />)}
-              </div>
-            </section>
-          )}
-
+          {/* ── All Devotionals ── */}
           <section>
             <SectionHeader
               title="All Devotionals"
-              subtitle={`${sorted.length} result${sorted.length === 1 ? '' : 's'} available across chanting, lyrics and audio.`}
+              subtitle={`${sorted.length} result${sorted.length === 1 ? '' : 's'} across chanting, lyrics and audio.`}
               action={
                 <div className="flex flex-wrap gap-2">
-                  <select value={sort} onChange={(event) => setSort(event.target.value as SortKey)} className="input w-auto bg-white">
+                  <select
+                    value={sort}
+                    onChange={(event) => setSort(event.target.value as SortKey)}
+                    className="input w-auto bg-white"
+                  >
                     <option value="featured">Featured first</option>
                     <option value="newest">Newest first</option>
                     <option value="az">A to Z</option>
                   </select>
-                  {(search || activeCategory !== 'all' || activeDeity !== 'all') && (
-                    <button type="button" onClick={clearFilters} className="btn btn-outline bg-white">Clear</button>
+                  {isFiltered && (
+                    <button type="button" onClick={clearFilters} className="btn btn-outline bg-white">
+                      Clear filters
+                    </button>
                   )}
                 </div>
               }
@@ -303,18 +471,37 @@ export default function ClientPage() {
                     <DevotionalCardPremium key={devotional._id} devotional={devotional} />
                   ))}
                 </div>
+
                 {sorted.length > visibleCount && (
-                  <div className="mt-10 text-center">
-                    <button type="button" onClick={() => setVisibleCount((count) => count + 18)} className="btn btn-outline bg-white">
-                      Load more
-                      <span className="text-stone-500">({sorted.length - visibleCount} left)</span>
-                    </button>
+                  <div className="mt-10 space-y-4">
+                    <div className="h-1.5 overflow-hidden rounded-full bg-amber-100">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-amber-400 to-orange-500 transition-all duration-500"
+                        style={{ width: `${Math.min(Math.round((visibleCount / sorted.length) * 100), 100)}%` }}
+                      />
+                    </div>
+                    <div className="flex flex-col items-center gap-3">
+                      <p className="text-sm text-stone-500">
+                        Showing {Math.min(visibleCount, sorted.length)} of {sorted.length} devotionals
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setVisibleCount((count) => count + 24)}
+                        className="btn btn-outline bg-white"
+                      >
+                        Show Next 24
+                        <span className="ml-2 text-xs text-stone-400">
+                          {sorted.length - visibleCount} more chants &amp; texts
+                        </span>
+                      </button>
+                    </div>
                   </div>
                 )}
               </>
             )}
           </section>
 
+          {/* ── Bottom CTA ── */}
           <section className="rounded-3xl border border-amber-200 bg-gradient-to-br from-stone-950 via-stone-900 to-orange-950 p-6 text-white shadow-2xl md:p-8">
             <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
               <div>
@@ -322,8 +509,12 @@ export default function ClientPage() {
                   <CalendarClock className="h-4 w-4" />
                   Build a daily rhythm
                 </p>
-                <h2 className="mt-2 text-3xl font-black text-white">Start with one chant, then continue by deity or category.</h2>
-                <p className="mt-3 max-w-2xl text-stone-200">Use audio where available, TTS for lyrics, and bookmark the devotionals you return to every day.</p>
+                <h2 className="mt-2 text-3xl font-black text-white">
+                  Start with one chant. Continue by deity or category.
+                </h2>
+                <p className="mt-3 max-w-2xl text-stone-200">
+                  Use audio where available, TTS for lyrics, and bookmark the devotionals you return to every day.
+                </p>
               </div>
               <div className="flex items-center gap-3 rounded-2xl bg-white/10 p-4">
                 <Headphones className="h-8 w-8 text-amber-200" />
@@ -334,6 +525,7 @@ export default function ClientPage() {
               </div>
             </div>
           </section>
+
         </div>
       </main>
     </>

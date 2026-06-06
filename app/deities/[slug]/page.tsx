@@ -42,6 +42,15 @@ function textMatchesDeity(value: unknown, deity: any) {
   return names.some((name: string) => haystack.includes(name))
 }
 
+function isGaneshAlias(slug: string) {
+  return ['ganesh-ji', 'lord-ganesh', 'lord-ganesha', 'ganesh', 'ganesha'].includes(slug)
+}
+
+function isGaneshaRecord(deity: any) {
+  const text = `${deity?.name || ''} ${deity?.slug || ''} ${deity?.staticSlug || ''}`.toLowerCase()
+  return /(^|\s|-)ganesh(a)?($|\s|-)/.test(text) && !text.includes('mushak') && !text.includes('mushika') && !text.includes('mushakraj')
+}
+
 export default function DeityDetailPage({ params }: Props) {
   const { language } = useTranslation()
   const [deity, setDeity] = useState<any>(null)
@@ -78,12 +87,28 @@ export default function DeityDetailPage({ params }: Props) {
         }
 
         const staticDeity = STATIC_DEITIES.find((d: any) => d.slug === slug)
+        if (!staticDeity && isGaneshAlias(slug)) {
+          const ganeshStatic = STATIC_DEITIES.find((d: any) => d.slug === 'ganesh-ji')
+          const ganeshDb = dbDeities.find(isGaneshaRecord)
+          if (ganeshStatic && ganeshDb) {
+            setDeity({ ...mergeStaticDeityWithDb(ganeshStatic, ganeshDb), slug })
+          } else if (ganeshDb) {
+            setDeity({ ...ganeshDb, slug })
+          } else if (ganeshStatic) {
+            setDeity({ ...ganeshStatic, slug })
+          } else {
+            setError('Deity not found')
+          }
+          return
+        }
         if (!staticDeity) {
           setError('Deity not found')
           return
         }
 
-        const dbMatch = findBestDeityMatch(staticDeity, dbDeities)?.deity as any
+        const dbMatch = isGaneshAlias(slug)
+          ? dbDeities.find(isGaneshaRecord)
+          : findBestDeityMatch(staticDeity, dbDeities)?.deity as any
         if (dbMatch) {
           setDeity(mergeStaticDeityWithDb(staticDeity, dbMatch))
         } else if (dbFetchSucceeded && dbDeities.length > 0) {
@@ -212,8 +237,7 @@ export default function DeityDetailPage({ params }: Props) {
               {category?.titleHi && <span className="deity-detail-badge">{category.titleHi}</span>}
               <span className="deity-detail-badge">Sacred profile</span>
             </div>
-            <h1 className="text-[clamp(3rem,8vw,7rem)] font-serif leading-[0.92] tracking-normal text-white drop-shadow-2xl">{deity.nameHi}</h1>
-            <p className="mt-4 text-2xl font-bold text-amber-100 md:text-3xl">{deity.name}</p>
+            <h1 className="text-[clamp(2rem,5vw,4.5rem)] font-serif leading-tight tracking-normal text-white drop-shadow-2xl">{aboutTitle}</h1>
             <div className="mt-6 flex flex-wrap items-center gap-3">
               <ShareButtons title={`${deity.nameHi} - ${deity.name}`} url={typeof window !== 'undefined' ? window.location.href : ''} />
             </div>
@@ -266,7 +290,20 @@ export default function DeityDetailPage({ params }: Props) {
               </section>
             )}
 
-            <RelatedSection title="Related devotionals" empty="Related mantras, aarti and stotras will appear here as devotional content is mapped.">
+            <RelatedSection
+              title="Related devotionals"
+              empty="Related mantras, aarti and stotras will appear here as devotional content is mapped."
+              footer={
+                deity.slug && relatedDevotionals.length > 0 ? (
+                  <Link
+                    href={`/devotionals/deity/${deity.slug}`}
+                    className="text-sm font-semibold text-orange-700 no-underline hover:text-orange-900"
+                  >
+                    View all {deity.name} devotionals →
+                  </Link>
+                ) : undefined
+              }
+            >
               {relatedDevotionals.map((item) => (
                 <RelatedTextCard key={item._id || item.title} href={`/devotionals/${item.slug || slugify(item.title || '')}`} title={item.title} subtitle={[item.category, item.language].filter(Boolean).join(' - ')} />
               ))}
@@ -325,12 +362,13 @@ function DeityFact({ label, value }: { label: string; value: string }) {
   )
 }
 
-function RelatedSection({ title, empty, children }: { title: string; empty: string; children: ReactNode }) {
+function RelatedSection({ title, empty, children, footer }: { title: string; empty: string; children: ReactNode; footer?: ReactNode }) {
   const hasChildren = Array.isArray(children) ? children.length > 0 : Boolean(children)
   return (
     <section className="deity-detail-panel">
       <p className="text-xs font-black uppercase tracking-[0.18em] text-orange-700">{title}</p>
       {hasChildren ? <div className="mt-4 grid gap-3 sm:grid-cols-2">{children}</div> : <p className="mt-4 text-sm text-stone-500">{empty}</p>}
+      {footer && <div className="mt-4">{footer}</div>}
     </section>
   )
 }
