@@ -104,22 +104,14 @@ export default function TemplesPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
+  const [totalTemples, setTotalTemples] = useState(0)
+  const [hasMore, setHasMore] = useState(false)
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false)
   const [filterState, setFilterState] = useState('')
   const [filterDeity, setFilterDeity] = useState('')
   const [filterVerified, setFilterVerified] = useState(false)
   const [filterHasImage, setFilterHasImage] = useState(false)
   const searchRef = useRef<HTMLDivElement>(null)
-
-  function getTemplesForSelectedCategory(category: string) {
-    if (category === SHAKTI_PEETH_CATEGORY) {
-      return getTemplesForSacredCategory(temples, category)
-    }
-    return temples.filter(t => {
-      const cats = getTempleCategories(t)
-      return cats.some(c => c === category || c.toLowerCase().includes(category.toLowerCase()))
-    })
-  }
 
   // Read ?category= param from URL and apply filter
   useEffect(() => {
@@ -144,76 +136,54 @@ export default function TemplesPage() {
   }, [])
 
   useEffect(() => {
+    const ctrl = new AbortController()
     async function fetchTemples() {
       try {
-        const res = await fetch('/api/temples')
-        if (res.ok) {
-          const data = await res.json()
-          const approved = data.filter((t: Temple) => t.status === 'approved')
-          setTemples(approved)
-          setFilteredTemples(approved)
-        } else {
+        setLoading(true)
+        setError('')
+        const params = new URLSearchParams({
+          page: String(currentPage),
+          limit: String(ITEMS_PER_PAGE),
+        })
+        const searchParts = [searchQuery.trim(), activeChip !== 'all' ? activeChip : ''].filter(Boolean)
+        if (searchParts.length > 0) params.set('search', searchParts.join(' '))
+        if (selectedCategory !== 'all') params.set('category', selectedCategory)
+        if (filterState) params.set('state', filterState)
+        if (filterDeity) params.set('deity', filterDeity)
+
+        const res = await fetch(`/api/temples?${params.toString()}`, { signal: ctrl.signal })
+        if (!res.ok) {
           setError('Failed to fetch temples')
+          return
         }
-      } catch (err) {
+        const payload = await res.json()
+        const data = Array.isArray(payload) ? payload : (payload.data || payload.items || [])
+        setTemples(data)
+        setFilteredTemples(data)
+        setTotalTemples(Number(payload.total || data.length || 0))
+        setHasMore(Boolean(payload.hasMore))
+      } catch (err: any) {
+        if (err?.name === 'AbortError') return
         console.error('Failed to fetch temples:', err)
         setError('Network error. Please try again.')
       } finally {
-        setLoading(false)
+        if (!ctrl.signal.aborted) setLoading(false)
       }
     }
     fetchTemples()
-  }, [])
+    return () => ctrl.abort()
+  }, [selectedCategory, activeChip, searchQuery, filterState, filterDeity, currentPage])
 
   useEffect(() => {
     let result = temples
-
-    // Filter by sacred category dropdown
-    if (selectedCategory !== 'all') {
-      result = getTemplesForSelectedCategory(selectedCategory)
-    }
-
-    // Filter by quick chip (acts as search-based filter)
-    if (activeChip !== 'all') {
-      const chip = activeChip.toLowerCase()
-      result = result.filter(tp => {
-        const text = [
-          tp.title, tp.deity, tp.state, tp.city, tp.location,
-          ...(getTempleCategories(tp))
-        ].filter(Boolean).join(' ').toLowerCase()
-        return text.includes(chip)
-      })
-    }
-
-    // Filter by search query
-    if (searchQuery.trim()) {
-      const words = searchQuery.toLowerCase().split(/\s+/).filter(Boolean)
-      result = result.filter(tp => {
-        const text = [
-          tp.title, tp.location, tp.deity, tp.state, tp.description,
-          tp.city, tp.district, tp.speciality, ...(getTempleCategories(tp))
-        ].filter(Boolean).join(' ').toLowerCase()
-        return words.every(w => text.includes(w))
-      })
-    }
-
-    // Advanced filters
-    if (filterState) {
-      result = result.filter(tp => tp.state?.toLowerCase() === filterState.toLowerCase())
-    }
-    if (filterDeity) {
-      result = result.filter(tp => tp.deity?.toLowerCase().includes(filterDeity.toLowerCase()))
-    }
-    if (filterVerified) {
-      result = result.filter(tp => tp.verified === 'verified')
-    }
-    if (filterHasImage) {
-      result = result.filter(tp => tp.image && tp.image.trim() !== '')
-    }
-
+    if (filterVerified) result = result.filter(tp => tp.verified === 'verified')
+    if (filterHasImage) result = result.filter(tp => tp.image && tp.image.trim() !== '')
     setFilteredTemples(result)
+  }, [temples, filterVerified, filterHasImage])
+
+  useEffect(() => {
     setCurrentPage(1)
-  }, [selectedCategory, activeChip, searchQuery, temples, filterState, filterDeity, filterVerified, filterHasImage])
+  }, [selectedCategory, activeChip, searchQuery, filterState, filterDeity, filterVerified, filterHasImage])
 
   // Compute derived data
   const uniqueStates = useMemo(() => {
@@ -287,7 +257,10 @@ export default function TemplesPage() {
     )
   }
 
-  const totalPages = Math.ceil(filteredTemples.length / ITEMS_PER_PAGE)
+  const totalPages = Math.max(1, Math.ceil(totalTemples / ITEMS_PER_PAGE))
+  const visiblePages = Array.from(new Set([1, currentPage - 1, currentPage, currentPage + 1, totalPages]))
+    .filter(page => page >= 1 && page <= totalPages)
+    .sort((a, b) => a - b)
 
   return (
     <>
@@ -315,7 +288,7 @@ export default function TemplesPage() {
           {/* Stats */}
           <div className="mt-6 flex flex-wrap gap-6">
             <div className="flex items-center gap-2">
-              <span className="text-2xl font-bold text-primary">{temples.length}</span>
+              <span className="text-2xl font-bold text-primary">{totalTemples}</span>
               <span className="text-sm text-sandstone-400">Temples</span>
             </div>
             <div className="flex items-center gap-2">
@@ -769,7 +742,7 @@ export default function TemplesPage() {
         {(selectedCategory !== 'all' || activeChip !== 'all' || filterState || filterDeity || filterVerified || filterHasImage) && (
           <div className="mb-6 flex items-center justify-between gap-4 p-3 rounded-xl bg-primary-50/50 border border-primary/10">
             <p className="text-sm text-ink">
-              Showing <span className="font-bold text-primary-600">{filteredTemples.length}</span> temple{filteredTemples.length !== 1 ? 's' : ''}
+              Showing <span className="font-bold text-primary-600">{filteredTemples.length}</span> of <span className="font-bold text-primary-600">{totalTemples}</span> temple{totalTemples !== 1 ? 's' : ''}
               {selectedCategory !== 'all' && <> in <span className="font-semibold">{selectedCategory}</span></>}
               {activeChip !== 'all' && <> matching <span className="font-semibold">{activeChip}</span></>}
               {filterState && <> in <span className="font-semibold">{filterState}</span></>}
@@ -802,7 +775,6 @@ export default function TemplesPage() {
             <>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
                 {filteredTemples
-                  .slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
                   .map((temple) => {
                     const slug = temple.slug || generateSlug(temple.title)
                     const cats = getTempleCategories(temple)
@@ -866,8 +838,7 @@ export default function TemplesPage() {
                       </svg>
                     </button>
 
-                    {Array.from({ length: totalPages }).map((_, i) => {
-                      const page = i + 1
+                    {visiblePages.map((page) => {
                       if (page === 1 || page === totalPages || (page >= currentPage - 1 && page <= currentPage + 1)) {
                         return (
                           <button
@@ -891,7 +862,7 @@ export default function TemplesPage() {
 
                     <button
                       onClick={() => { setCurrentPage(p => Math.min(totalPages, p + 1)); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
-                      disabled={currentPage >= totalPages}
+                      disabled={!hasMore && currentPage >= totalPages}
                       className="px-3 py-2 rounded-xl text-sm font-medium disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gray-50 text-ink transition-colors"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
@@ -901,7 +872,7 @@ export default function TemplesPage() {
                   </div>
 
                   <p className="text-xs text-ink-muted">
-                    Showing <span className="font-semibold text-ink">{Math.min((currentPage - 1) * ITEMS_PER_PAGE + 1, filteredTemples.length)}–{Math.min(currentPage * ITEMS_PER_PAGE, filteredTemples.length)}</span> of <span className="font-semibold text-ink">{filteredTemples.length}</span> temples
+                    Showing <span className="font-semibold text-ink">{Math.min((currentPage - 1) * ITEMS_PER_PAGE + 1, totalTemples)}-{Math.min((currentPage - 1) * ITEMS_PER_PAGE + filteredTemples.length, totalTemples)}</span> of <span className="font-semibold text-ink">{totalTemples}</span> temples
                   </p>
                 </div>
               )}

@@ -5,6 +5,10 @@ import Devotional from '@/models/Devotional'
 import Blog from '@/models/Blog'
 import { verifyToken, AUTH_COOKIE_NAME } from '@/lib/auth'
 
+// ── 5-minute cache — full table scan should not run on every dashboard visit ──
+let _healthCache: { data: any; ts: number } | null = null
+const HEALTH_CACHE_TTL = 5 * 60_000
+
 function isAdmin(req: NextRequest): boolean {
   const token = req.cookies.get(AUTH_COOKIE_NAME)?.value
   if (!token) return false
@@ -28,6 +32,13 @@ type Issue = { id: string; title: string; type: string; issues: string[]; seoSco
 export async function GET(req: NextRequest) {
   if (!isAdmin(req)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  const fresh = new URL(req.url).searchParams.get('fresh') === '1'
+  if (!fresh && _healthCache && Date.now() - _healthCache.ts < HEALTH_CACHE_TTL) {
+    return NextResponse.json(_healthCache.data, {
+      headers: { 'X-Cache': 'HIT', 'Cache-Control': 'no-store' },
+    })
   }
 
   try {
@@ -132,10 +143,9 @@ export async function GET(req: NextRequest) {
       overallSeoScore: avgSeo,
     }
 
-    return NextResponse.json({
-      summary,
-      issues: withProblems,
-    })
+    const result = { summary, issues: withProblems }
+    _healthCache = { data: result, ts: Date.now() }
+    return NextResponse.json(result, { headers: { 'X-Cache': 'MISS', 'Cache-Control': 'no-store' } })
   } catch (error) {
     console.error('Content health audit error:', error)
     return NextResponse.json({ error: 'Audit failed' }, { status: 500 })

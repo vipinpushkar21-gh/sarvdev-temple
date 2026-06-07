@@ -41,13 +41,48 @@ async function createIndexes() {
 
   // ── Temple ──
   const temples = db.collection('temples')
+  const duplicateSlugs = await temples.aggregate([
+    { $match: { slug: { $exists: true, $nin: ['', null] } } },
+    { $group: { _id: '$slug', count: { $sum: 1 }, examples: { $push: '$title' } } },
+    { $match: { count: { $gt: 1 } } },
+    { $limit: 20 },
+  ]).toArray()
   await temples.createIndex({ status: 1, createdAt: -1 }, { name: 'status_created' })
+  await temples.createIndex({ slug: 1 }, { name: 'slug_lookup', sparse: true })
   await temples.createIndex(
     { title: 'text', city: 'text', state: 'text', deity: 'text', speciality: 'text' },
     { name: 'temple_text_search' }
   )
   await temples.createIndex({ latitude: 1, longitude: 1 }, { name: 'geo_coords', sparse: true })
   await temples.createIndex({ categories: 1 }, { name: 'categories' })
+  await temples.createIndex({ sacredCategories: 1 }, { name: 'sacred_categories' })
+  await temples.createIndex({ status: 1, stateNormalized: 1, cityNormalized: 1 }, { name: 'status_state_city_normalized' })
+  await temples.createIndex({ status: 1, deitySlug: 1 }, { name: 'status_deity_slug' })
+  await temples.createIndex({ status: 1, sacredCategorySlugs: 1 }, { name: 'status_sacred_category_slugs' })
+  await temples.createIndex(
+    { titleNormalized: 1, cityNormalized: 1, stateNormalized: 1 },
+    { name: 'temple_normalized_identity' }
+  )
+  if (duplicateSlugs.length === 0) {
+    try {
+      await temples.createIndex(
+        { slug: 1 },
+        {
+          name: 'slug_unique_partial',
+          unique: true,
+          partialFilterExpression: { slug: { $type: 'string', $ne: '' } },
+        }
+      )
+      console.log('Temple slug unique partial index created')
+    } catch (error: any) {
+      console.warn(`Temple slug unique partial index was not created: ${error?.message || error}`)
+    }
+  } else {
+    console.warn('Duplicate temple slugs found; unique slug index skipped until duplicates are repaired:')
+    for (const item of duplicateSlugs) {
+      console.warn(`  - ${item._id}: ${item.count} records (${(item.examples || []).slice(0, 3).join(', ')})`)
+    }
+  }
   console.log('✓ Temple indexes (4)')
 
   // ── Devotional ──

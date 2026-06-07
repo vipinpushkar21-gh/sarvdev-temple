@@ -38,6 +38,24 @@ type CsvImportResult = {
   error?: string
 }
 
+type TempleIntegrityResult = {
+  ok?: boolean
+  mode?: string
+  scanned?: number
+  recordsNeedingUpdates?: number
+  updated?: number
+  skipped?: number
+  errors?: { id?: string; title?: string; reason: string }[]
+  migration?: { fields?: Record<string, number> }
+  slugs?: { duplicateCount?: number; emptyCount?: number; invalidCount?: number; malformedCount?: number }
+  categories?: { orphanCount?: number; duplicateCategoryRecords?: number; missingSacredCategorySlugs?: number; slugMismatchCount?: number }
+  images?: { missingImageCount?: number; invalidUrlCount?: number; duplicateImageFieldCount?: number }
+  locations?: { missingStateCount?: number; missingCityCount?: number; invalidCountryCount?: number; stateAliasCount?: number }
+  deities?: { missingDeitySlugCount?: number; deitySlugMismatchCount?: number; unknownDeityCount?: number }
+  indexes?: { missing?: { name: string }[] }
+  error?: string
+}
+
 const PER_PAGE = 25
 
 export default function AdminTemplesPage() {
@@ -48,20 +66,44 @@ export default function AdminTemplesPage() {
   const [stateFilter, setStateFilter] = useState('')
   const [typeFilter, setTypeFilter] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
+  const [categoryFilter, setCategoryFilter] = useState('')
   const [page, setPage] = useState(1)
+  const [total, setTotal] = useState(0)
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [sortCol, setSortCol] = useState<'title' | 'status'>('title')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
   const [csvImportLoading, setCsvImportLoading] = useState(false)
   const [csvImportResult, setCsvImportResult] = useState<CsvImportResult | null>(null)
+  const [integrityLoading, setIntegrityLoading] = useState<'dry-run' | 'execute' | null>(null)
+  const [integrityResult, setIntegrityResult] = useState<TempleIntegrityResult | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   
-  useEffect(() => { fetchTemples() }, [])
+  useEffect(() => { fetchTemples(page) }, [page, search, deityFilter, stateFilter, typeFilter, statusFilter, categoryFilter, sortCol, sortDir])
+  useEffect(() => { setPage(1) }, [search, deityFilter, stateFilter, typeFilter, statusFilter, categoryFilter, sortCol, sortDir])
   
-  async function fetchTemples() {
+  async function fetchTemples(targetPage = page) {
     try {
-      const res = await fetch(`/api/temples?fresh=1&t=${Date.now()}`, { credentials: 'include', cache: 'no-store' })
-      if (res.ok) setRows(await res.json())
+      setLoading(true)
+      const params = new URLSearchParams({
+        admin: '1',
+        page: String(targetPage),
+        limit: String(PER_PAGE),
+        sort: sortCol === 'title' ? (sortDir === 'asc' ? 'title' : '-title') : (sortDir === 'asc' ? 'status' : '-status'),
+        t: String(Date.now()),
+      })
+      if (search) params.set('search', search)
+      if (deityFilter) params.set('deity', deityFilter)
+      if (stateFilter) params.set('state', stateFilter)
+      if (typeFilter) params.set('templeType', typeFilter)
+      if (statusFilter) params.set('status', statusFilter)
+      if (categoryFilter) params.set('category', categoryFilter)
+      const res = await fetch(`/api/temples?${params.toString()}`, { credentials: 'include', cache: 'no-store' })
+      if (res.ok) {
+        const payload = await res.json()
+        const data = Array.isArray(payload) ? payload : (payload.data || payload.items || [])
+        setRows(data)
+        setTotal(Number(payload.total || data.length || 0))
+      }
     } catch (error) {
       console.error('Failed to fetch temples:', error)
     } finally { setLoading(false) }
@@ -71,28 +113,10 @@ export default function AdminTemplesPage() {
   const states = useMemo(() => Array.from(new Set(rows.map(r => r.state).filter(Boolean))).sort(), [rows])
   const types = useMemo(() => Array.from(new Set(rows.map(r => r.templeType || r.type).filter(Boolean))).sort(), [rows])
 
-  const filtered = useMemo(() => {
-    const q = search.toLowerCase()
-    return rows
-      .filter(r => {
-        if (q && !r.title?.toLowerCase().includes(q) && !r.location?.toLowerCase().includes(q) && !r.deity?.toLowerCase().includes(q)) return false
-        if (deityFilter && r.deity !== deityFilter) return false
-        if (stateFilter && r.state !== stateFilter) return false
-        if (typeFilter && (r.templeType || r.type) !== typeFilter) return false
-        if (statusFilter && r.status !== statusFilter) return false
-        return true
-      })
-      .sort((a, b) => {
-        const av = (a[sortCol] || '').toLowerCase()
-        const bv = (b[sortCol] || '').toLowerCase()
-        return sortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av)
-      })
-  }, [rows, search, deityFilter, stateFilter, typeFilter, statusFilter, sortCol, sortDir])
+  const filtered = useMemo(() => rows, [rows])
 
-  const totalPages = Math.ceil(filtered.length / PER_PAGE)
-  const paginated = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE)
-
-  useEffect(() => { setPage(1) }, [search, deityFilter, stateFilter, typeFilter, statusFilter])
+  const totalPages = Math.max(1, Math.ceil(total / PER_PAGE))
+  const paginated = filtered
 
   const toggleSort = (col: 'title' | 'status') => {
     if (sortCol === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
@@ -189,7 +213,7 @@ export default function AdminTemplesPage() {
     URL.revokeObjectURL(a.href)
   }
 
-  const importCSV = async () => {
+  const importCSV = async (dryRun = false) => {
     const file = fileInputRef.current?.files?.[0]
     if (!file) {
       alert('Please choose a CSV file first.')
@@ -200,6 +224,7 @@ export default function AdminTemplesPage() {
     try {
       const form = new FormData()
       form.append('file', file)
+      if (dryRun) form.append('dryRun', '1')
       const res = await fetch('/api/admin/temples/import-csv', {
         method: 'POST',
         credentials: 'include',
@@ -208,12 +233,38 @@ export default function AdminTemplesPage() {
       const data = await res.json().catch(() => ({}))
       setCsvImportResult(data)
       if (!res.ok) throw new Error(data.error || 'CSV import failed')
-      await fetchTemples()
-      if (fileInputRef.current) fileInputRef.current.value = ''
+      if (!dryRun) {
+        await fetchTemples()
+        if (fileInputRef.current) fileInputRef.current.value = ''
+      }
     } catch (err: any) {
       setCsvImportResult((prev) => prev || { error: err?.message || 'CSV import failed' })
     } finally {
       setCsvImportLoading(false)
+    }
+  }
+
+  const runIntegrityCheck = async (apply = false) => {
+    if (apply && !confirm('Run safe migration now? Only missing normalized fields will be filled. No temple content, images, SEO, descriptions, or duplicate slugs will be overwritten.')) {
+      return
+    }
+    setIntegrityLoading(apply ? 'execute' : 'dry-run')
+    setIntegrityResult(null)
+    try {
+      const res = await fetch('/api/admin/migrate-temples' + (apply ? '' : '?dryRun=1'), {
+        method: apply ? 'POST' : 'GET',
+        credentials: 'include',
+        headers: apply ? { 'Content-Type': 'application/json' } : undefined,
+        body: apply ? JSON.stringify({ batchSize: 500 }) : undefined,
+      })
+      const data = await res.json().catch(() => ({}))
+      setIntegrityResult(data)
+      if (!res.ok) throw new Error(data.error || 'Temple integrity check failed')
+      if (apply) await fetchTemples()
+    } catch (err: any) {
+      setIntegrityResult((prev) => prev || { error: err?.message || 'Temple integrity check failed' })
+    } finally {
+      setIntegrityLoading(null)
     }
   }
 
@@ -278,7 +329,14 @@ export default function AdminTemplesPage() {
             <input ref={fileInputRef} type="file" accept=".csv,text/csv" className="hidden" />
           </label>
           <button
-            onClick={importCSV}
+            onClick={() => importCSV(true)}
+            disabled={csvImportLoading}
+            className="admin-btn admin-btn-ghost px-4 py-2 text-sm disabled:opacity-50"
+          >
+            Dry Run
+          </button>
+          <button
+            onClick={() => importCSV(false)}
             disabled={csvImportLoading}
             className="admin-btn admin-btn-primary px-4 py-2 text-sm disabled:opacity-50"
           >
@@ -344,10 +402,92 @@ export default function AdminTemplesPage() {
         </div>
       )}
 
+      <div className="admin-card p-4">
+        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+          <div>
+            <p className="font-semibold text-sm text-gray-900">Temple Integrity Check</p>
+            <p className="text-xs text-gray-500 mt-1">
+              Dry-run audits temple slugs, categories, images, locations, deities, and indexes. Migration only fills missing normalized fields.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => runIntegrityCheck(false)}
+              disabled={Boolean(integrityLoading)}
+              className="admin-btn admin-btn-ghost px-4 py-2 text-sm disabled:opacity-50"
+            >
+              {integrityLoading === 'dry-run' ? 'Checking...' : 'Dry Run'}
+            </button>
+            <button
+              onClick={() => runIntegrityCheck(true)}
+              disabled={Boolean(integrityLoading)}
+              className="admin-btn admin-btn-primary px-4 py-2 text-sm disabled:opacity-50"
+            >
+              {integrityLoading === 'execute' ? 'Running...' : 'Run Migration'}
+            </button>
+          </div>
+        </div>
+
+        {integrityResult && (
+          <div className={`mt-4 rounded-xl border p-4 ${integrityResult.error ? 'bg-red-50 border-red-100' : 'bg-gray-50 border-gray-100'}`}>
+            {integrityResult.error ? (
+              <p className="text-sm text-red-700">{integrityResult.error}</p>
+            ) : (
+              <div className="space-y-3">
+                <div className="flex flex-wrap gap-2 text-sm">
+                  <span className="admin-badge-blue">{integrityResult.mode || 'dry-run'}</span>
+                  <span className="admin-badge-blue">{integrityResult.scanned || 0} scanned</span>
+                  <span className="admin-badge-yellow">{integrityResult.recordsNeedingUpdates || 0} need normalized fields</span>
+                  <span className="admin-badge-green">{integrityResult.updated || 0} updated</span>
+                  {(integrityResult.errors || []).length > 0 && <span className="admin-badge-red">{integrityResult.errors!.length} errors</span>}
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs text-gray-600">
+                  <div>
+                    <p className="font-semibold text-gray-900">Slugs</p>
+                    <p>Duplicates: {integrityResult.slugs?.duplicateCount || 0}</p>
+                    <p>Empty: {integrityResult.slugs?.emptyCount || 0}</p>
+                    <p>Invalid/malformed: {(integrityResult.slugs?.invalidCount || 0) + (integrityResult.slugs?.malformedCount || 0)}</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-900">Categories</p>
+                    <p>Orphans: {integrityResult.categories?.orphanCount || 0}</p>
+                    <p>Missing slugs: {integrityResult.categories?.missingSacredCategorySlugs || 0}</p>
+                    <p>Slug mismatches: {integrityResult.categories?.slugMismatchCount || 0}</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-900">Media & location</p>
+                    <p>Missing images: {integrityResult.images?.missingImageCount || 0}</p>
+                    <p>Invalid image URLs: {integrityResult.images?.invalidUrlCount || 0}</p>
+                    <p>Missing city/state: {(integrityResult.locations?.missingCityCount || 0) + (integrityResult.locations?.missingStateCount || 0)}</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-900">Deities</p>
+                    <p>Missing deitySlug: {integrityResult.deities?.missingDeitySlugCount || 0}</p>
+                    <p>Slug mismatches: {integrityResult.deities?.deitySlugMismatchCount || 0}</p>
+                    <p>Unknown names: {integrityResult.deities?.unknownDeityCount || 0}</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-900">Indexes</p>
+                    <p>Missing expected indexes: {integrityResult.indexes?.missing?.length || 0}</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-900">Fields to fill</p>
+                    {Object.entries(integrityResult.migration?.fields || {}).map(([field, count]) => (
+                      <p key={field}>{field}: {count}</p>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
       {/* Filters */}
       <div className="admin-filter-bar">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
           <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search title, location, deity..." className="admin-input" />
+          <input type="text" value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} placeholder="Category" className="admin-input" />
           <select value={deityFilter} onChange={e => setDeityFilter(e.target.value)} className="admin-input">
             <option value="">All Deities</option>
             {deities.map(d => <option key={d} value={d}>{d}</option>)}

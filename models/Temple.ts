@@ -1,10 +1,12 @@
 // models/Temple.ts
 import mongoose, { Schema, Model, models } from 'mongoose';
+import { getSacredCategorySlugs, normalizeTempleText, slugifyTemple, uniqueStrings } from '../lib/temple-normalization';
 
 const TempleSchema = new Schema({
   // ── Core ──
   title: { type: String, required: true },
   slug: { type: String, index: true },
+  titleNormalized: { type: String, index: true },
   titleHi: { type: String },
   subtitle: { type: String },
   subtitleHi: { type: String },
@@ -39,9 +41,11 @@ const TempleSchema = new Schema({
   latitude: { type: Number },
   longitude: { type: Number },
   city: { type: String },
+  cityNormalized: { type: String, index: true },
   cityHi: { type: String },
   district: { type: String },
   state: { type: String },
+  stateNormalized: { type: String, index: true },
   stateHi: { type: String },
   country: { type: String, default: 'India' },
   pincode: { type: String },
@@ -49,6 +53,7 @@ const TempleSchema = new Schema({
 
   // ── Deity & Spiritual ──
   deity: { type: String },
+  deitySlug: { type: String, index: true },
   mainDeity: { type: String },
   secondaryDeities: { type: [String], default: [] },
   deityForms: { type: [String], default: [] },
@@ -85,6 +90,7 @@ const TempleSchema = new Schema({
   specialityHi: { type: String },
   categories: { type: [String], default: [] },
   sacredCategories: { type: [String], default: [] },
+  sacredCategorySlugs: { type: [String], default: [], index: true },
 
   // ── Pilgrimage Info ──
   pilgrimageType: { type: String },
@@ -154,7 +160,29 @@ const TempleSchema = new Schema({
   submitterEmail: { type: String },
   moderationNotes: { type: String },
   reviewedAt: { type: Date },
-  createdAt: { type: Date, default: Date.now }
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date }
+});
+
+TempleSchema.index({ status: 1, createdAt: -1 });
+TempleSchema.index({ status: 1, stateNormalized: 1, cityNormalized: 1 });
+TempleSchema.index({ status: 1, deitySlug: 1 });
+TempleSchema.index({ status: 1, sacredCategorySlugs: 1 });
+TempleSchema.index({ titleNormalized: 1, cityNormalized: 1, stateNormalized: 1 });
+TempleSchema.pre('validate', function (next) {
+  const doc = this as any;
+  if (!doc.slug && doc.title) doc.slug = slugifyTemple(doc.title);
+  if (doc.slug) doc.slug = slugifyTemple(doc.slug);
+  if (doc.title) doc.titleNormalized = normalizeTempleText(doc.title);
+  if (doc.city) doc.cityNormalized = normalizeTempleText(doc.city);
+  if (doc.state) doc.stateNormalized = normalizeTempleText(doc.state);
+  if (doc.deity) doc.deitySlug = slugifyTemple(doc.deity);
+  const categoryValues = uniqueStrings([
+    ...(Array.isArray(doc.sacredCategories) ? doc.sacredCategories : []),
+    ...(Array.isArray(doc.categories) ? doc.categories : []),
+  ]);
+  if (categoryValues.length > 0) doc.sacredCategorySlugs = getSacredCategorySlugs(categoryValues);
+  next();
 });
 
 // Mongoose 8 + strict TS: model() infers a union too complex for this schema size.

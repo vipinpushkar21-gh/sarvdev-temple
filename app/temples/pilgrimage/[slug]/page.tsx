@@ -20,6 +20,16 @@ function matchesSacredCategory(value: string | undefined | null, cluster: Pilgri
   return value === cluster.categoryMatch || slugify(value) === cluster.slug
 }
 
+function getCategoryQueryValues(cluster: PilgrimageCluster) {
+  const canonical = getCategoryBySlug(cluster.slug)
+  return Array.from(new Set([
+    cluster.categoryMatch,
+    cluster.slug,
+    canonical?.name,
+    canonical?.slug,
+  ].filter(Boolean) as string[]))
+}
+
 type PilgrimageCluster = {
   slug: string
   title: string
@@ -79,14 +89,38 @@ export default async function PilgrimageClusterPage({ params }: { params: Promis
   if (!cluster) notFound()
 
   let temples: any[] = []
+  let totalTemples = 0
   try {
     await connectDB()
-    const all = await Temple.find({ status: 'approved' }, 'title slug description image city state country deity categories sacredCategories templeType templeTypes canonicalShaktiPeeth canonicalShaktiPeethKey canonicalShaktiPeethName shaktiPeethMeta').lean() as any[]
-    temples = cluster.categoryMatch === SHAKTI_PEETH_CATEGORY
-      ? getTemplesForSacredCategory(all, cluster.categoryMatch)
-      : all.filter((t: any) =>
-        [...(t.categories || []), ...(t.sacredCategories || [])].some((c: string) => matchesSacredCategory(c, cluster))
+    const categoryValues = getCategoryQueryValues(cluster)
+    const categorySlugs = Array.from(new Set(categoryValues.map(slugify).filter(Boolean)))
+    const categoryFilter = {
+      status: 'approved',
+      $or: [
+        { sacredCategorySlugs: { $in: categorySlugs } },
+        { categories: { $in: categoryValues } },
+        { sacredCategories: { $in: categoryValues } },
+        ...(cluster.categoryMatch === SHAKTI_PEETH_CATEGORY ? [{ canonicalShaktiPeeth: true }] : []),
+      ],
+    }
+    const projection = 'title slug description image imageCard city state country deity categories sacredCategories sacredCategorySlugs templeType templeTypes canonicalShaktiPeeth canonicalShaktiPeethKey canonicalShaktiPeethName shaktiPeethMeta'
+
+    if (cluster.categoryMatch === SHAKTI_PEETH_CATEGORY) {
+      const candidates = await Temple.find(categoryFilter, projection).sort({ createdAt: -1 }).limit(250).lean() as any[]
+      const canonicalTemples = getTemplesForSacredCategory(candidates, cluster.categoryMatch)
+      temples = canonicalTemples.slice(0, 96)
+      totalTemples = canonicalTemples.length
+    } else {
+      const [items, total] = await Promise.all([
+        Temple.find(categoryFilter, projection).sort({ createdAt: -1 }).limit(96).lean() as Promise<any[]>,
+        Temple.countDocuments(categoryFilter),
+      ])
+      temples = items.filter((t: any) =>
+        [...(t.categories || []), ...(t.sacredCategories || [])].some((c: string) => matchesSacredCategory(c, cluster)) ||
+        (t.sacredCategorySlugs || []).includes(cluster.slug)
       )
+      totalTemples = total
+    }
   } catch (e) {
     console.error('Pilgrimage cluster fetch error:', e)
   }
@@ -101,7 +135,7 @@ export default async function PilgrimageClusterPage({ params }: { params: Promis
     url: `${BASE}/temples/pilgrimage/${slug}`,
     mainEntity: {
       '@type': 'ItemList',
-      numberOfItems: temples.length,
+      numberOfItems: totalTemples,
       itemListElement: temples.slice(0, 50).map((t: any, i: number) => ({
         '@type': 'ListItem',
         position: i + 1,
@@ -146,7 +180,7 @@ export default async function PilgrimageClusterPage({ params }: { params: Promis
           </div>
           <p className="text-body text-ink-muted max-w-3xl">{cluster.longDescription}</p>
           <p className="mt-4 text-body-sm text-ink-faint">
-            <strong className="text-ink">{temples.length}</strong> temples in this sacred group
+            <strong className="text-ink">{totalTemples}</strong> temples in this sacred group
             {states.length > 0 && <> across <strong className="text-ink">{states.length}</strong> states</>}
           </p>
         </div>

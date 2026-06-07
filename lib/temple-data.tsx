@@ -54,7 +54,8 @@ export function TempleDataProvider({ children }: { children: ReactNode }) {
           const res = await fetch('/api/temples', { signal: ctrl.signal })
           clearTimeout(timer)
           if (!res.ok) throw new Error(`API ${res.status}`)
-          const data = await res.json()
+          const payload = await res.json()
+          const data = Array.isArray(payload) ? payload : (payload.data || payload.items || [])
           if (!cancelled) {
             const approved = data.filter((t: TempleData) => t.status === 'approved' || !t.status)
             setTemples(approved)

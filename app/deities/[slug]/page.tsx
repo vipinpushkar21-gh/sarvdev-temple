@@ -134,10 +134,11 @@ export default function DeityDetailPage({ params }: Props) {
       try {
         const [devotionalRes, templeRes] = await Promise.all([
           fetch('/api/devotionals'),
-          fetch('/api/temples'),
+          fetch(`/api/temples?limit=6&deity=${encodeURIComponent(deity.name || deity.title || deity.slug || '')}`),
         ])
         const devotionals = devotionalRes.ok ? await devotionalRes.json() : []
-        const temples = templeRes.ok ? await templeRes.json() : []
+        const templePayload = templeRes.ok ? await templeRes.json() : []
+        const temples = Array.isArray(templePayload) ? templePayload : (templePayload.data || templePayload.items || [])
         if (cancelled) return
 
         setRelatedDevotionals((Array.isArray(devotionals) ? devotionals : [])

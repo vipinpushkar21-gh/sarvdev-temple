@@ -96,7 +96,8 @@ export default function EditTemplePage({ params }: { params: Promise<{ id: strin
 
   async function fetchTemple(templeId: string) {
     try {
-      const res = await fetch(`/api/temples?t=${Date.now()}`, { 
+      const res = await fetch(`/api/temples/${encodeURIComponent(templeId)}?admin=1&t=${Date.now()}`, { 
+        credentials: 'include',
         cache: 'no-store',
         headers: { 
           'Cache-Control': 'no-cache, no-store, must-revalidate',
@@ -105,8 +106,7 @@ export default function EditTemplePage({ params }: { params: Promise<{ id: strin
         }
       })
       if (res.ok) {
-        const temples = await res.json()
-        const temple = temples.find((t: any) => t._id === templeId)
+        const temple = await res.json()
         if (temple) {
           setForm({
             title: temple.title || "",

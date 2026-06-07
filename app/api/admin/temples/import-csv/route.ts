@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { connectDB } from '@/lib/db'
 import { AUTH_COOKIE_NAME, verifyToken } from '@/lib/auth'
 import { getCategoryByName, getCategoryBySlug } from '@/lib/sacred-categories'
+import { normalizeTempleText, normalizeTempleWrite, slugifyTemple } from '@/lib/temple-normalization'
 import Temple from '@/models/Temple'
 import ActivityLog from '@/models/ActivityLog'
 
@@ -49,23 +50,16 @@ const SCALAR_FIELDS = [
   'verified',
 ] as const
 
+type ParsedRow = {
+  rowNumber: number
+  payload: Record<string, any>
+}
+
 function getAdmin(req: NextRequest) {
   const token = req.cookies.get(AUTH_COOKIE_NAME)?.value
   if (!token) return null
   const payload = verifyToken(token)
   return payload?.role === 'admin' ? payload : null
-}
-
-function slugify(value: string) {
-  return (value || '')
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-}
-
-function normalizeTitle(value: string) {
-  return (value || '').toLowerCase().replace(/\s+/g, ' ').trim()
 }
 
 function normalizeHeader(value: string) {
@@ -133,7 +127,7 @@ function normalizeVerified(value: string) {
 function normalizeSacredCategory(value: string) {
   const trimmed = value.trim()
   if (!trimmed) return null
-  return getCategoryByName(trimmed)?.name || getCategoryBySlug(slugify(trimmed))?.name || trimmed
+  return getCategoryByName(trimmed)?.name || getCategoryBySlug(slugifyTemple(trimmed))?.name || trimmed
 }
 
 function parseSacredCategories(value: string) {
@@ -178,7 +172,7 @@ function rowToPayload(row: Record<string, string>, rowNumber: number) {
   const templeType = row.templeType?.trim()
   const payload: Record<string, any> = {
     title,
-    slug: row.slug?.trim() || (title ? slugify(title) : ''),
+    slug: row.slug?.trim() || (title ? slugifyTemple(title) : ''),
     titleHi: row.titleHi?.trim(),
     location: row.location?.trim(),
     city: row.city?.trim(),
@@ -228,12 +222,17 @@ function buildSafeUpdate(existing: any, incoming: Record<string, any>) {
   return update
 }
 
+function unique(values: string[]) {
+  return Array.from(new Set(values.filter(Boolean)))
+}
+
 export async function POST(req: NextRequest) {
   const admin = getAdmin(req)
   if (!admin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   try {
     const form = await req.formData()
+    const dryRun = form.get('dryRun') === '1' || form.get('dryRun') === 'true'
     const file = form.get('file')
     if (!file || typeof (file as any).text !== 'function') {
       return NextResponse.json({ error: 'CSV file is required' }, { status: 400 })
@@ -250,21 +249,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'CSV header must include Title' }, { status: 400 })
     }
 
-    await connectDB()
-    const existingTemples = await Temple.find({}, 'title slug sacredCategories categories templeType templeTypes titleHi location city district state country deity description descriptionHi speciality specialityHi status verified').lean()
-    const bySlug = new Map<string, any>()
-    const byTitle = new Map<string, any>()
-
-    for (const temple of existingTemples as any[]) {
-      if (temple.slug) bySlug.set(slugify(temple.slug), temple)
-      if (temple.title) {
-        bySlug.set(slugify(temple.title), temple)
-        byTitle.set(normalizeTitle(temple.title), temple)
-      }
-    }
-
     const result = {
       ok: true,
+      dryRun,
       totalRows: rows.length - 1,
       created: 0,
       updated: 0,
@@ -274,6 +261,7 @@ export async function POST(req: NextRequest) {
       warnings: [] as { row: number; title?: string; reason: string }[],
     }
 
+    const parsedRows: ParsedRow[] = []
     for (let index = 1; index < rows.length; index += 1) {
       const rawRow = rows[index]
       const record: Record<string, string> = {}
@@ -290,42 +278,104 @@ export async function POST(req: NextRequest) {
         continue
       }
 
-      const matchKey = slugify(parsed.payload.slug || parsed.payload.title)
-      const existing = bySlug.get(matchKey) || byTitle.get(normalizeTitle(parsed.payload.title))
+      parsedRows.push({ rowNumber: parsed.rowNumber, payload: normalizeTempleWrite(parsed.payload) })
+    }
+
+    await connectDB()
+
+    const slugs = unique(parsedRows.map((row) => slugifyTemple(row.payload.slug || row.payload.title)))
+    const titleNormalized = unique(parsedRows.map((row) => normalizeTempleText(row.payload.title)))
+    const titles = unique(parsedRows.map((row) => String(row.payload.title || '').trim()))
+    const existingQuery: Record<string, any>[] = []
+    if (slugs.length > 0) existingQuery.push({ slug: { $in: slugs } })
+    if (titleNormalized.length > 0) existingQuery.push({ titleNormalized: { $in: titleNormalized } })
+    if (titles.length > 0) existingQuery.push({ title: { $in: titles } })
+
+    const existingTemples = existingQuery.length > 0
+      ? await Temple.find(
+        { $or: existingQuery },
+        'title slug titleNormalized sacredCategories categories sacredCategorySlugs templeType templeTypes titleHi location city cityNormalized district state stateNormalized country deity deitySlug description descriptionHi speciality specialityHi status verified'
+      ).lean()
+      : []
+
+    const bySlug = new Map<string, any>()
+    const byTitle = new Map<string, any>()
+    for (const temple of existingTemples as any[]) {
+      if (temple.slug) bySlug.set(slugifyTemple(temple.slug), temple)
+      if (temple.title) {
+        bySlug.set(slugifyTemple(temple.title), temple)
+        byTitle.set(normalizeTempleText(temple.title), temple)
+      }
+      if (temple.titleNormalized) byTitle.set(temple.titleNormalized, temple)
+    }
+
+    const pendingInserts = new Set<string>()
+    const bulkOps: any[] = []
+
+    for (const parsed of parsedRows) {
+      const matchSlug = slugifyTemple(parsed.payload.slug || parsed.payload.title)
+      const matchTitle = normalizeTempleText(parsed.payload.title)
+      const existing = bySlug.get(matchSlug) || byTitle.get(matchTitle)
 
       if (existing) {
-        const update = buildSafeUpdate(existing, parsed.payload)
-        if (Object.keys(update).length === 0) {
+        const safeUpdate = buildSafeUpdate(existing, parsed.payload)
+        if (Object.keys(safeUpdate).length === 0) {
           result.skipped += 1
           continue
         }
 
-        await Temple.findByIdAndUpdate(existing._id, { $set: update }, { new: true })
+        const update = normalizeTempleWrite(safeUpdate, existing)
+        bulkOps.push({
+          updateOne: {
+            filter: { _id: existing._id },
+            update: { $set: update },
+          },
+        })
         Object.assign(existing, update)
         result.updated += 1
         continue
       }
 
-      const created = await Temple.create(parsed.payload)
-      bySlug.set(slugify(created.slug || created.title), created)
-      byTitle.set(normalizeTitle(created.title), created)
+      if (pendingInserts.has(matchSlug)) {
+        result.skipped += 1
+        result.warnings.push({ row: parsed.rowNumber, title: parsed.payload.title, reason: 'Duplicate temple in CSV skipped' })
+        continue
+      }
+
+      pendingInserts.add(matchSlug)
+      bulkOps.push({ insertOne: { document: parsed.payload } })
       result.created += 1
     }
 
-    try {
-      await ActivityLog.create({
-        action: 'import-temples-csv',
-        entity: 'temple',
-        adminId: (admin as any).id,
-        details: JSON.stringify({
-          totalRows: result.totalRows,
-          created: result.created,
-          updated: result.updated,
-          skipped: result.skipped,
-          failed: result.failed,
-        }),
-      })
-    } catch {}
+    if (!dryRun && bulkOps.length > 0) {
+      try {
+        await Temple.bulkWrite(bulkOps, { ordered: false })
+      } catch (error: any) {
+        const failedWrites = Array.isArray(error?.writeErrors) ? error.writeErrors.length : 1
+        result.failed += failedWrites
+        result.errors.push({
+          row: 0,
+          reason: error?.message || 'Some CSV rows failed during bulk write',
+        })
+      }
+    }
+
+    if (!dryRun) {
+      try {
+        await ActivityLog.create({
+          action: 'import-temples-csv',
+          entity: 'temple',
+          adminId: (admin as any).id,
+          details: JSON.stringify({
+            totalRows: result.totalRows,
+            created: result.created,
+            updated: result.updated,
+            skipped: result.skipped,
+            failed: result.failed,
+          }),
+        })
+      } catch {}
+    }
 
     return NextResponse.json(result)
   } catch (error) {

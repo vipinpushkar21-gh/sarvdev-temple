@@ -24,8 +24,8 @@ export async function connectDB() {
     cached.promise = mongoose.connect(MONGODB_URI, {
       bufferCommands: false,
       maxPoolSize: 10,
-      serverSelectionTimeoutMS: 15000,
-      socketTimeoutMS: 45000,
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 30000,
     }).then((mongoose) => mongoose)
       .catch((err) => {
         cached.promise = null;

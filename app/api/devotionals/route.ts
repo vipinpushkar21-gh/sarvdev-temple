@@ -3,12 +3,20 @@ import { NextRequest, NextResponse } from 'next/server'
 import { connectDB } from '@/lib/db'
 import Devotional from '@/models/Devotional'
 import sarvdev from '@/data/sarvdev'
+import { AUTH_COOKIE_NAME, verifyToken } from '@/lib/auth'
 
 // ─── In-memory cache (60s TTL) ───
 let _cache: { data: any[]; ts: number } | null = null
 const CACHE_TTL = 60_000
 const DEVOTIONAL_IMAGE_FIELDS = ['image', 'imageCard', 'imageHero', 'ogImage', 'thumbnail', 'coverImage'] as const
 const ALLOW_REMOTE_FALLBACK = process.env.NODE_ENV === 'production'
+
+function isAdmin(request: NextRequest) {
+  const token = request.cookies.get(AUTH_COOKIE_NAME)?.value
+  if (!token) return false
+  const payload = verifyToken(token)
+  return payload?.role === 'admin'
+}
 
 function escapeRegex(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
@@ -75,8 +83,24 @@ export async function GET(request: NextRequest) {
       }
       if (!doc) {
         const normalizedSlug = createApiDevotionalSlug(slug)
-        const docs = await Devotional.find({ status: { $ne: 'rejected' } }, { __v: 0 }).lean()
-        doc = docs.find((item: any) => createApiDevotionalSlug(item.title || '') === normalizedSlug) || null
+        // Convert slug back to a title regex to avoid a full-collection scan.
+        // "om-namah-shivaya" → /om[\s\-]+namah[\s\-]+shivaya/i — matches ≤10 docs.
+        const titlePattern = normalizedSlug.replace(/-/g, '[\\s\\-]+')
+        const candidates = await Devotional.find(
+          { title: { $regex: new RegExp(titlePattern, 'i') }, status: { $ne: 'rejected' } },
+          { __v: 0 }
+        ).limit(10).lean()
+        doc = candidates.find((item: any) => createApiDevotionalSlug(item.title || '') === normalizedSlug) || null
+
+        // Fallback: check in-memory listing cache (zero extra DB hit)
+        if (!doc && _cache) {
+          const cachedMatch = _cache.data.find(
+            (item: any) => createApiDevotionalSlug(item.title || '') === normalizedSlug
+          )
+          if (cachedMatch?._id) {
+            doc = await Devotional.findById(cachedMatch._id, { __v: 0 }).lean()
+          }
+        }
       }
       if (doc) return NextResponse.json(removeDevotionalImageFields(doc as any))
       return NextResponse.json(null, { status: 404 })
@@ -186,6 +210,8 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  if (!isAdmin(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
   try {
     await connectDB()
     const body = await request.json()
@@ -198,6 +224,8 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
+  if (!isAdmin(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
   try {
     await connectDB()
     const body = await request.json()
@@ -222,6 +250,8 @@ export async function PUT(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  if (!isAdmin(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
   try {
     await connectDB()
     const body = await request.json()

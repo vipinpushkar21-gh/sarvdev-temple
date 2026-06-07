@@ -5,26 +5,27 @@ import Event from '@/models/Event';
 import { verifyToken, AUTH_COOKIE_NAME } from '@/lib/auth';
 import { getTemplesForSacredCategory, isShaktiPeethCategory } from '@/data/shakti-peethas';
 import { getCategoryBySlug } from '@/lib/sacred-categories';
+import { normalizeTempleText, normalizeTempleWrite, slugifyTemple } from '@/lib/temple-normalization';
 
 function isAdmin(req: NextRequest): boolean {
-  const token = req.cookies.get(AUTH_COOKIE_NAME)?.value
-  if (!token) return false
-  const payload = verifyToken(token)
-  return payload?.role === 'admin'
+  const token = req.cookies.get(AUTH_COOKIE_NAME)?.value;
+  if (!token) return false;
+  const payload = verifyToken(token);
+  return payload?.role === 'admin';
 }
 
 const SUPPORTED_TEMPLE_FIELDS = [
   // Core
-  'title','slug','titleHi','subtitle','subtitleHi','alternateNames','templeTagline','templeTaglineHi',
+  'title','slug','titleNormalized','titleHi','subtitle','subtitleHi','alternateNames','templeTagline','templeTaglineHi',
   'shortDescription','shortDescriptionHi','description','descriptionHi',
   // Media
   'image','imageCard','imageHero','imageGallery','heroImage','images','galleryImages','festivalGallery','architectureGallery',
   'deityGallery','videos','droneShots','ambienceAudio',
   // Location
   'location','locationHi','mapsLink','googleMapsUrl','latitude','longitude',
-  'city','cityHi','district','state','stateHi','country','pincode','pincodeHi',
+  'city','cityNormalized','cityHi','district','state','stateNormalized','stateHi','country','pincode','pincodeHi',
   // Deity & Spiritual
-  'deity','mainDeity','secondaryDeities','deityForms','sampradaya','sect','spiritualTradition',
+  'deity','deitySlug','mainDeity','secondaryDeities','deityForms','sampradaya','sect','spiritualTradition',
   'sacredImportance','sacredImportanceHi','mythology','mythologyHi',
   'templeLegend','templeLegendHi','sacredMystery','sacredMysteryHi',
   // History & Architecture
@@ -32,7 +33,7 @@ const SUPPORTED_TEMPLE_FIELDS = [
   'gopuramCount','mandapamDetails','builtBy','dynasty','renovations',
   // Classification
   'establishedYear','establishedYearHi','templeType','templeTypes',
-  'speciality','specialityHi','categories','sacredCategories',
+  'speciality','specialityHi','categories','sacredCategories','sacredCategorySlugs',
   // Pilgrimage
   'pilgrimageType','pilgrimageCircuit','nearbySacredPlaces','bestSeason','crowdLevel',
   'averageVisitDuration','dressCode','photographyAllowed','prasadamInfo','specialRituals','templeRules',
@@ -143,119 +144,255 @@ function normalizeTemplePayload(payload: Record<string, any>) {
   return data;
 }
 
-// ─── In-memory cache (60s TTL) ───
-let _cache: { data: any[]; ts: number } | null = null;
-const CACHE_TTL = 60_000;
+function escapeRegex(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function safeRegex(value: string) {
+  return new RegExp(escapeRegex(value.trim()), 'i');
+}
+
+function publicTempleFilter() {
+  return {
+    $or: [
+      { status: 'approved' },
+      { status: { $exists: false } },
+      { status: '' },
+      { status: null },
+    ],
+  };
+}
 
 function slugifyCategory(value: string) {
-  return (value || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+  return slugifyTemple(value);
 }
 
 function getCategoryQueryValues(category: string) {
-  const trimmed = category.trim()
-  const slug = slugifyCategory(trimmed)
-  const canonical = getCategoryBySlug(slug)
-  return Array.from(new Set([trimmed, slug, canonical?.name, canonical?.slug].filter(Boolean) as string[]))
+  const trimmed = category.trim();
+  const slug = slugifyCategory(trimmed);
+  const canonical = getCategoryBySlug(slug);
+  return Array.from(new Set([trimmed, slug, canonical?.name, canonical?.slug].filter(Boolean) as string[]));
 }
 
-// GET temples — supports optional pagination via ?page=&limit=&search=
+function addAnd(filter: Record<string, any>, condition: Record<string, any>) {
+  if (!filter.$and) filter.$and = [];
+  filter.$and.push(condition);
+}
+
+function buildTempleFilter(searchParams: URLSearchParams, adminMode: boolean, skipCategory = false) {
+  const filter: Record<string, any> = {};
+
+  if (!adminMode) addAnd(filter, publicTempleFilter());
+
+  const status = searchParams.get('status')?.trim();
+  if (adminMode && status) filter.status = status;
+
+  const search = (searchParams.get('search') || searchParams.get('q') || '').trim();
+  if (search) {
+    const normalizedSearch = normalizeTempleText(search);
+    const searchRegex = safeRegex(search);
+    const normalizedRegex = safeRegex(normalizedSearch || search);
+    addAnd(filter, {
+      $or: [
+        { title: searchRegex },
+        { titleHi: searchRegex },
+        { location: searchRegex },
+        { city: searchRegex },
+        { district: searchRegex },
+        { state: searchRegex },
+        { deity: searchRegex },
+        { speciality: searchRegex },
+        { description: searchRegex },
+        { titleNormalized: normalizedRegex },
+        { cityNormalized: normalizedRegex },
+        { stateNormalized: normalizedRegex },
+        { deitySlug: slugifyTemple(search) },
+        { sacredCategorySlugs: slugifyTemple(search) },
+      ],
+    });
+  }
+
+  const state = searchParams.get('state')?.trim();
+  if (state) {
+    addAnd(filter, {
+      $or: [
+        { stateNormalized: normalizeTempleText(state) },
+        { state: safeRegex(state) },
+      ],
+    });
+  }
+
+  const city = searchParams.get('city')?.trim();
+  if (city) {
+    addAnd(filter, {
+      $or: [
+        { cityNormalized: normalizeTempleText(city) },
+        { city: safeRegex(city) },
+      ],
+    });
+  }
+
+  const deity = (searchParams.get('deity') || '').trim();
+  const deitySlug = (searchParams.get('deitySlug') || '').trim();
+  if (deity || deitySlug) {
+    const deityValue = deity || deitySlug;
+    addAnd(filter, {
+      $or: [
+        { deitySlug: slugifyTemple(deityValue) },
+        { deity: safeRegex(deityValue) },
+      ],
+    });
+  }
+
+  const templeType = (searchParams.get('type') || searchParams.get('templeType') || '').trim();
+  if (templeType) {
+    addAnd(filter, {
+      $or: [
+        { templeType: safeRegex(templeType) },
+        { templeTypes: { $in: [templeType] } },
+      ],
+    });
+  }
+
+  if (!skipCategory) {
+    const category = (
+      searchParams.get('category') ||
+      searchParams.get('sacredCategory') ||
+      searchParams.get('sacredCategorySlug') ||
+      ''
+    ).trim();
+
+    if (category) {
+      const categoryValues = getCategoryQueryValues(category);
+      const categorySlugs = Array.from(new Set(categoryValues.map(slugifyCategory).filter(Boolean)));
+      addAnd(filter, {
+        $or: [
+          { sacredCategorySlugs: { $in: categorySlugs } },
+          { categories: { $in: categoryValues } },
+          { sacredCategories: { $in: categoryValues } },
+        ],
+      });
+    }
+  }
+
+  return filter;
+}
+
+function getTempleSort(sort: string | null): Record<string, 1 | -1> {
+  if (sort === 'title') return { titleNormalized: 1, title: 1 };
+  if (sort === '-title') return { titleNormalized: -1, title: -1 };
+  if (sort === 'status') return { status: 1, createdAt: -1 };
+  if (sort === '-status') return { status: -1, createdAt: -1 };
+  if (sort === 'oldest') return { createdAt: 1, _id: 1 };
+  if (sort === 'state') return { stateNormalized: 1, cityNormalized: 1, titleNormalized: 1 };
+  return { createdAt: -1, _id: -1 };
+}
+
+function parsePagination(searchParams: URLSearchParams) {
+  const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10) || 1);
+  const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '24', 10) || 24));
+  return { page, limit, skip: (page - 1) * limit };
+}
+
 export async function GET(req: NextRequest) {
   try {
-    const { searchParams } = new URL(req.url)
-    const pageParam = searchParams.get('page')
-    const limitParam = searchParams.get('limit')
-    const search = searchParams.get('search') || searchParams.get('q') || ''
-    const category = searchParams.get('category') || ''
-    const fresh = searchParams.get('fresh') === '1' || isAdmin(req)
-    const useCanonicalShaktiPeethFilter = isShaktiPeethCategory(category)
+    const { searchParams } = new URL(req.url);
+    const wantsAdminScope =
+      searchParams.get('admin') === '1' ||
+      searchParams.get('scope') === 'admin' ||
+      searchParams.get('fresh') === '1';
+    const adminMode = wantsAdminScope && isAdmin(req);
+    const category = (
+      searchParams.get('category') ||
+      searchParams.get('sacredCategory') ||
+      searchParams.get('sacredCategorySlug') ||
+      ''
+    ).trim();
+    const useCanonicalShaktiPeethFilter = isShaktiPeethCategory(category);
+    const { page, limit, skip } = parsePagination(searchParams);
+    const sort = getTempleSort(searchParams.get('sort'));
 
-    await connectDB()
+    await connectDB();
 
-    // Build filter
-    const filter: Record<string, any> = {}
-    if (category && !useCanonicalShaktiPeethFilter) {
-      const categoryValues = getCategoryQueryValues(category)
-      filter.$or = [
-        { categories: { $in: categoryValues } },
-        { sacredCategories: { $in: categoryValues } },
-      ]
-    }
-    if (search) filter.$text = { $search: search }
+    const filter = buildTempleFilter(searchParams, adminMode, useCanonicalShaktiPeethFilter);
 
-    // ─── Paginated mode (when page param is present) ───
-    if (pageParam) {
-      const page = Math.max(1, parseInt(pageParam, 10) || 1)
-      const limit = Math.min(100, Math.max(1, parseInt(limitParam || '20', 10)))
-      const skip = (page - 1) * limit
+    if (useCanonicalShaktiPeethFilter) {
+      const categoryValues = getCategoryQueryValues(category);
+      const categorySlugs = Array.from(new Set(categoryValues.map(slugifyCategory).filter(Boolean)));
+      addAnd(filter, {
+        $or: [
+          { canonicalShaktiPeeth: true },
+          { sacredCategorySlugs: { $in: categorySlugs } },
+          { categories: { $in: categoryValues } },
+          { sacredCategories: { $in: categoryValues } },
+        ],
+      });
 
-      if (useCanonicalShaktiPeethFilter) {
-        const allItems = await Temple.find(filter, { __v: 0 })
-          .sort(search ? { score: { $meta: 'textScore' }, createdAt: -1 } : { createdAt: -1 })
-          .lean()
-        const shaktiItems = getTemplesForSacredCategory(allItems, category)
-        const items = shaktiItems.slice(skip, skip + limit)
-        const total = shaktiItems.length
-
-        const res = NextResponse.json({ items, total, page, pages: Math.ceil(total / limit), limit })
-        res.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=120')
-        return res
-      }
-
-      const [items, total] = await Promise.all([
-        Temple.find(filter, { __v: 0 })
-          .sort(search ? { score: { $meta: 'textScore' }, createdAt: -1 } : { createdAt: -1 })
-          .skip(skip)
-          .limit(limit)
-          .lean(),
-        Temple.countDocuments(filter),
-      ])
-
-      const res = NextResponse.json({ items, total, page, pages: Math.ceil(total / limit), limit })
-      res.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=120')
-      return res
+      const candidates = await Temple.find(filter, { __v: 0 })
+        .sort(sort)
+        .limit(250)
+        .lean();
+      const shaktiItems = getTemplesForSacredCategory(candidates, category);
+      const data = shaktiItems.slice(skip, skip + limit);
+      const total = shaktiItems.length;
+      const res = NextResponse.json({
+        data,
+        items: data,
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit),
+        hasMore: skip + data.length < total,
+      });
+      res.headers.set('Cache-Control', adminMode ? 'no-store, max-age=0' : 'public, s-maxage=60, stale-while-revalidate=120');
+      return res;
     }
 
-    // ─── Legacy mode (no pagination — returns all, used by TempleDataProvider) ───
-    if (!fresh && _cache && !search && !category && Date.now() - _cache.ts < CACHE_TTL) {
-      const res = NextResponse.json(_cache.data)
-      res.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300')
-      return res
-    }
+    const [data, total] = await Promise.all([
+      Temple.find(filter, { __v: 0 })
+        .sort(sort)
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      Temple.countDocuments(filter),
+    ]);
 
-    const temples = await Temple.find(filter, { __v: 0 }).sort({ createdAt: -1 }).lean()
-    const result = useCanonicalShaktiPeethFilter ? getTemplesForSacredCategory(temples, category) : temples
-    if (!fresh && !search && !category) {
-      _cache = { data: temples, ts: Date.now() }
-    }
-    const res = NextResponse.json(result)
-    res.headers.set('Cache-Control', fresh ? 'no-store, max-age=0' : 'public, s-maxage=60, stale-while-revalidate=300')
-    return res
+    const res = NextResponse.json({
+      data,
+      items: data,
+      page,
+      limit,
+      total,
+      pages: Math.ceil(total / limit),
+      hasMore: skip + data.length < total,
+    });
+    res.headers.set('Cache-Control', adminMode ? 'no-store, max-age=0' : 'public, s-maxage=60, stale-while-revalidate=120');
+    return res;
   } catch (error) {
-    console.error('Temple API Error:', error)
-    return NextResponse.json({ error: 'Failed to fetch temples' }, { status: 500 })
+    console.error('Temple API Error:', error);
+    return NextResponse.json({ error: 'Failed to fetch temples' }, { status: 500 });
   }
 }
 
-// POST create new temple
 export async function POST(req: NextRequest) {
   try {
     await connectDB();
     const rawData = await req.json();
-    const data = normalizeTemplePayload(pickSupportedTempleFields(rawData));
-    // Allow public submissions (status defaults to 'pending')
+    const data = normalizeTempleWrite(normalizeTemplePayload(pickSupportedTempleFields(rawData)));
+
+    // Public listing submissions remain allowed, but publishing is admin-only.
     if (data.status === 'approved' && !isAdmin(req)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
     const temple = await Temple.create(data);
-    _cache = null;
-    
-    // Auto-create events for each festival
+
     if (data.festivals && Array.isArray(data.festivals) && data.festivals.length > 0) {
       const eventPromises = data.festivals
         .filter((f: { name: string }) => f.name?.trim())
         .map((festival: { name: string; description: string }) =>
           Event.create({
-            title: `${festival.name} — ${temple.title}`,
+            title: `${festival.name} - ${temple.title}`,
             description: festival.description || '',
             temple: temple.title,
             location: temple.city ? `${temple.city}, ${temple.state || ''}`.trim().replace(/,\s*$/, '') : (temple.location || ''),
@@ -264,14 +401,14 @@ export async function POST(req: NextRequest) {
         );
       await Promise.allSettled(eventPromises);
     }
-    
+
     return NextResponse.json(temple, { status: 201 });
   } catch (error) {
+    console.error('Create temple error:', error);
     return NextResponse.json({ error: 'Failed to create temple' }, { status: 500 });
   }
 }
 
-// PUT update temple (admin only)
 export async function PUT(req: NextRequest) {
   if (!isAdmin(req)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -282,12 +419,17 @@ export async function PUT(req: NextRequest) {
     if (!id) {
       return NextResponse.json({ error: 'Missing temple id' }, { status: 400 });
     }
-    const update = normalizeTemplePayload(pickSupportedTempleFields(rawUpdate));
-    const temple = await Temple.findByIdAndUpdate(id, { $set: update }, { new: true });
-    if (!temple) {
+
+    const existing = await Temple.findById(id).lean();
+    if (!existing) {
       return NextResponse.json({ error: 'Temple not found' }, { status: 404 });
     }
-    _cache = null; // Clear cache to force refresh
+
+    const update = normalizeTempleWrite(
+      normalizeTemplePayload(pickSupportedTempleFields(rawUpdate)),
+      existing as Record<string, any>
+    );
+    const temple = await Temple.findByIdAndUpdate(id, { $set: update }, { new: true });
     return NextResponse.json(temple);
   } catch (error) {
     console.error('Update temple error:', error);
@@ -295,7 +437,6 @@ export async function PUT(req: NextRequest) {
   }
 }
 
-// DELETE temple (admin only)
 export async function DELETE(req: NextRequest) {
   if (!isAdmin(req)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -307,7 +448,6 @@ export async function DELETE(req: NextRequest) {
     if (!temple) {
       return NextResponse.json({ error: 'Temple not found' }, { status: 404 });
     }
-    _cache = null;
     return NextResponse.json({ success: true });
   } catch (error) {
     return NextResponse.json({ error: 'Failed to delete temple' }, { status: 500 });

@@ -91,7 +91,8 @@ export default function TemplesPageContent() {
       try {
         const res = await fetch('/api/temples')
         if (res.ok) {
-          const data = await res.json()
+          const payload = await res.json()
+          const data = Array.isArray(payload) ? payload : (payload.data || payload.items || [])
           // Only show approved temples
           const approved = data.filter((t: Temple) => t.status === 'approved')
           setTemples(approved)

@@ -117,14 +117,18 @@ export default function BlogPostPage() {
       const terms = textTerms(currentPost)
       const [blogsRes, templesRes, deitiesRes, devotionalsRes] = await Promise.allSettled([
         fetch('/api/blogs'),
-        fetch('/api/temples'),
+        fetch(`/api/temples?limit=8&search=${encodeURIComponent(terms.slice(0, 3).join(' '))}`),
         fetch('/api/deities'),
         fetch('/api/devotionals'),
       ])
 
       if (cancelled) return
 
-      const readJson = async (result: PromiseSettledResult<Response>) => result.status === 'fulfilled' && result.value.ok ? result.value.json() : []
+      const readJson = async (result: PromiseSettledResult<Response>) => {
+        if (result.status !== 'fulfilled' || !result.value.ok) return []
+        const payload = await result.value.json()
+        return Array.isArray(payload) ? payload : (payload.data || payload.items || [])
+      }
       const [blogs, temples, deities, devotionals] = await Promise.all([
         readJson(blogsRes),
         readJson(templesRes),

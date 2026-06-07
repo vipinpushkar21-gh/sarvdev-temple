@@ -15,6 +15,10 @@ import ActivityLog from '@/models/ActivityLog'
 import { AUTH_COOKIE_NAME, verifyToken } from '@/lib/auth'
 import { NextRequest } from 'next/server'
 
+// ── 30-second in-memory cache — avoids 30 simultaneous DB queries on every refresh ──
+let _statsCache: { data: any; ts: number } | null = null
+const STATS_CACHE_TTL = 30_000
+
 function isAdmin(req: NextRequest): boolean {
   const token = req.cookies.get(AUTH_COOKIE_NAME)?.value
   if (!token) return false
@@ -25,6 +29,14 @@ function isAdmin(req: NextRequest): boolean {
 export async function GET(req: NextRequest) {
   if (!isAdmin(req)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  // Serve from cache if fresh (skip on ?fresh=1)
+  const fresh = new URL(req.url).searchParams.get('fresh') === '1'
+  if (!fresh && _statsCache && Date.now() - _statsCache.ts < STATS_CACHE_TTL) {
+    return NextResponse.json(_statsCache.data, {
+      headers: { 'X-Cache': 'HIT', 'Cache-Control': 'no-store' },
+    })
   }
 
   try {
@@ -134,7 +146,7 @@ export async function GET(req: NextRequest) {
     const pct = (curr: number, prev: number) =>
       prev === 0 ? (curr > 0 ? 100 : 0) : Math.round(((curr - prev) / prev) * 100)
 
-    return NextResponse.json({
+    const payload = {
       counts: {
         temples: totalTemples,
         approvedTemples,
@@ -176,7 +188,10 @@ export async function GET(req: NextRequest) {
         tts: !!(process.env.AZURE_TTS_KEY),
         ga: !!(process.env.NEXT_PUBLIC_GA_ID && process.env.NEXT_PUBLIC_GA_ID !== 'G-XXXXXXXXXX'),
       },
-    })
+    }
+
+    _statsCache = { data: payload, ts: Date.now() }
+    return NextResponse.json(payload, { headers: { 'X-Cache': 'MISS', 'Cache-Control': 'no-store' } })
   } catch (error) {
     console.error('Admin stats error:', error)
     return NextResponse.json({ error: 'Failed to fetch stats' }, { status: 500 })

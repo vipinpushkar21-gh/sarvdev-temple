@@ -131,19 +131,24 @@ export default function AdminDashboardPage() {
   const [refreshing, setRefreshing] = useState(false)
   const [range, setRange] = useState<'7d' | '30d'>('7d')
 
-  const loadDashboard = useCallback(async () => {
+  const loadDashboard = useCallback(async (forceFresh = false) => {
     setRefreshing(true)
     try {
-      const [statsRes, healthRes] = await Promise.all([
-        fetch('/api/admin/stats', { credentials: 'include', cache: 'no-store' }),
-        fetch('/api/admin/content-health', { credentials: 'include', cache: 'no-store' }),
-      ])
+      const statsUrl = forceFresh ? '/api/admin/stats?fresh=1' : '/api/admin/stats'
+      const statsRes = await fetch(statsUrl, { credentials: 'include', cache: 'no-store' })
       if (statsRes.ok) setStats(await statsRes.json())
-      if (healthRes.ok) setHealth(await healthRes.json())
     } finally {
       setLoading(false)
       setRefreshing(false)
     }
+    // Defer content-health — it's a full table scan; load it after stats are visible
+    setTimeout(async () => {
+      try {
+        const healthUrl = forceFresh ? '/api/admin/content-health?fresh=1' : '/api/admin/content-health'
+        const healthRes = await fetch(healthUrl, { credentials: 'include', cache: 'no-store' })
+        if (healthRes.ok) setHealth(await healthRes.json())
+      } catch { /* non-critical */ }
+    }, 800)
   }, [])
 
   useEffect(() => { loadDashboard() }, [loadDashboard])
@@ -167,7 +172,7 @@ export default function AdminDashboardPage() {
   }
 
   if (!stats) {
-    return <AdminEmptyState title="Dashboard could not load" description="The admin stats API did not respond. Please check the server connection and try again." action={<button onClick={loadDashboard} className="admin-btn admin-btn-primary px-4 py-2 text-sm">Retry</button>} />
+    return <AdminEmptyState title="Dashboard could not load" description="The admin stats API did not respond. Please check the server connection and try again." action={<button onClick={() => loadDashboard()} className="admin-btn admin-btn-primary px-4 py-2 text-sm">Retry</button>} />
   }
 
   const pendingApprovals = stats.counts.pendingTemples + stats.counts.pendingUsers
@@ -186,7 +191,7 @@ export default function AdminDashboardPage() {
         subtitle={pendingApprovals > 0 ? `${pendingApprovals} approval task${pendingApprovals === 1 ? '' : 's'} need review.` : 'All critical admin queues are clear.'}
         actions={
           <>
-            <button onClick={loadDashboard} disabled={refreshing} className="admin-btn admin-btn-ghost px-4 py-2 text-sm disabled:opacity-50">
+            <button onClick={() => loadDashboard(true)} disabled={refreshing} className="admin-btn admin-btn-ghost px-4 py-2 text-sm disabled:opacity-50">
               <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
               Refresh
             </button>

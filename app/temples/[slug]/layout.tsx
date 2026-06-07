@@ -3,14 +3,24 @@ import { connectDB } from '@/lib/db'
 import Temple from '@/models/Temple'
 import Review from '@/models/Review'
 import { getOGImage, getTempleHeroImage } from '@/lib/temple-image'
+import { normalizeTempleText } from '@/lib/temple-normalization'
 
 // ISR: revalidate temple detail pages every 5 minutes
 export const revalidate = 300
 
 const BASE = 'https://sarvdev.com'
 
-function slugify(text: string) {
-  return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+function templeSlugQuery(slug: string) {
+  const words = slug.split('-').map((word) => word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).filter(Boolean)
+  const titleRegex = words.length > 0 ? new RegExp(`^${words.join('[\\s\\W]+')}$`, 'i') : null
+  return {
+    status: 'approved',
+    $or: [
+      { slug },
+      { titleNormalized: normalizeTempleText(slug.replace(/-/g, ' ')) },
+      ...(titleRegex ? [{ title: titleRegex }] : []),
+    ],
+  }
 }
 
 export async function generateMetadata(
@@ -19,12 +29,10 @@ export async function generateMetadata(
   try {
     const { slug } = await params
     await connectDB()
-    const temples = await Temple.find(
-      { status: 'approved' },
+    const temple = await Temple.findOne(
+      templeSlugQuery(slug),
       'title description image imageCard imageHero heroImage ogImage city state deity templeType'
-    ).lean() as any[]
-
-    const temple = temples.find((t: any) => slugify(t.title) === slug)
+    ).lean() as any
 
     if (!temple) {
       return {
@@ -89,11 +97,10 @@ export default async function TempleSlugLayout({
   try {
     const { slug } = await params
     await connectDB()
-    const temples = await Temple.find(
-      { status: 'approved' },
+    const temple = await Temple.findOne(
+      templeSlugQuery(slug),
       'title description image city state country deity latitude longitude timings phone website'
-    ).lean() as any[]
-    const temple = temples.find((t: any) => slugify(t.title) === slug)
+    ).lean() as any
     if (temple) {
       // BreadcrumbList
       jsonLdArray.push({

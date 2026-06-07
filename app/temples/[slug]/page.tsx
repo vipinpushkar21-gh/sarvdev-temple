@@ -125,7 +125,7 @@ export default function TemplePage({ params }: Props) {
     
     async function fetchTemple() {
       try {
-        const res = await fetch(`/api/temples?t=${Date.now()}`, { 
+        const res = await fetch(`/api/temples/${encodeURIComponent(slug)}?t=${Date.now()}`, { 
           cache: 'no-store',
           headers: { 
             'Cache-Control': 'no-cache, no-store, must-revalidate',
@@ -137,8 +137,7 @@ export default function TemplePage({ params }: Props) {
           setLoading(false)
           return
         }
-        const temples = await res.json()
-        const found = temples.find((t: any) => slugify(t.title) === slug)
+        const found = await res.json()
         setTemple(found || null)
       } catch (error) {
         console.error('Error fetching temple:', error)

@@ -4,6 +4,10 @@ import Deity from '@/models/Deity';
 import { verifyToken, AUTH_COOKIE_NAME } from '@/lib/auth';
 import { resolveCategoryForDeity } from '@/lib/deity-categories';
 
+// ── 60-second in-memory cache — deities list is read-heavy, rarely changes ──
+let _deityCache: { data: any[]; ts: number } | null = null
+const DEITY_CACHE_TTL = 60_000
+
 const VALID_STATUSES = new Set(['pending', 'approved', 'rejected']);
 const STRING_FIELDS = [
   'name',
@@ -79,15 +83,19 @@ function normalizeUpdateCategories(values: unknown[], existingDeity: any) {
   };
 }
 
-// GET all deities. DB is the source of truth, so do not serve stale in-memory data.
+// GET all deities.
 export async function GET() {
   try {
+    if (_deityCache && Date.now() - _deityCache.ts < DEITY_CACHE_TTL) {
+      return NextResponse.json(_deityCache.data, {
+        headers: { 'X-Cache': 'HIT', 'Cache-Control': 'public, max-age=60, stale-while-revalidate=30' },
+      });
+    }
     await connectDB();
     const deities = await Deity.find({}, { __v: 0 }).sort({ order: 1, createdAt: -1 }).lean();
+    _deityCache = { data: deities as any[], ts: Date.now() };
     return NextResponse.json(deities, {
-      headers: {
-        'Cache-Control': 'no-store, max-age=0',
-      },
+      headers: { 'X-Cache': 'MISS', 'Cache-Control': 'public, max-age=60, stale-while-revalidate=30' },
     });
   } catch (error) {
     console.error('Deity API Error:', error);
@@ -153,6 +161,7 @@ export async function POST(req: NextRequest) {
     data.updatedAt = new Date();
 
     const deity = await Deity.create(data);
+    _deityCache = null;
     return NextResponse.json(deity, { status: 201 });
   } catch (error) {
     console.error('Create deity error:', error);
@@ -280,6 +289,7 @@ export async function PUT(req: NextRequest) {
     if (!deity) {
       return NextResponse.json({ error: 'Deity not found' }, { status: 404 });
     }
+    _deityCache = null;
     return NextResponse.json(deity);
   } catch (error: any) {
     console.error('Update deity error:', error);
@@ -302,6 +312,7 @@ export async function DELETE(req: NextRequest) {
     if (!deity) {
       return NextResponse.json({ error: 'Deity not found' }, { status: 404 });
     }
+    _deityCache = null;
     return NextResponse.json({ success: true });
   } catch (error) {
     return NextResponse.json({ error: 'Failed to delete deity' }, { status: 500 });
