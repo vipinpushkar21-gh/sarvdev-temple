@@ -3,6 +3,7 @@ import { connectDB } from '@/lib/db'
 import Deity from '@/models/Deity'
 import { getOGImage } from '@/lib/temple-image'
 import { compactText } from '@/lib/text-formatting'
+import { buildDeitySchema } from '@/lib/seo'
 
 const BASE_URL = 'https://sarvdev.com'
 
@@ -54,6 +55,34 @@ export async function generateMetadata(
   }
 }
 
-export default function DeitySlugLayout({ children }: { children: React.ReactNode }) {
-  return children
+export default async function DeitySlugLayout({
+  children,
+  params,
+}: {
+  children: React.ReactNode
+  params: Promise<{ slug: string }>
+}) {
+  let schemas: object[] = []
+  try {
+    const { slug } = await params
+    await connectDB()
+    const deity = await Deity.findOne(
+      { slug },
+      'name nameHi description aliases categoryName categorySlug image imageCard wikiUrl'
+    ).lean() as any
+    if (deity) schemas = buildDeitySchema(deity, slug)
+  } catch { /* silent */ }
+
+  return (
+    <>
+      {schemas.map((ld, i) => (
+        <script
+          key={i}
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(ld) }}
+        />
+      ))}
+      {children}
+    </>
+  )
 }

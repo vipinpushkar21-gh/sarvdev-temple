@@ -74,6 +74,8 @@ export default function AdminNewDeityPage() {
         categories: form.categories,
         slug,
         image: form.imageUrl || form.imageCard || form.imageHero,
+        imageCard: form.imageCard,
+        imageHero: form.imageHero,
         attributes: form.attributes.split(',').map(a => a.trim()).filter(a => a),
         images: form.images,
         metaTitle: form.metaTitle,

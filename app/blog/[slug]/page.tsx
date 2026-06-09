@@ -116,10 +116,10 @@ export default function BlogPostPage() {
     async function loadRelated() {
       const terms = textTerms(currentPost)
       const [blogsRes, templesRes, deitiesRes, devotionalsRes] = await Promise.allSettled([
-        fetch('/api/blogs'),
+        fetch('/api/blogs?page=1&limit=12'),
         fetch(`/api/temples?limit=8&search=${encodeURIComponent(terms.slice(0, 3).join(' '))}`),
-        fetch('/api/deities'),
-        fetch('/api/devotionals'),
+        fetch('/api/deities?limit=50'),
+        fetch('/api/devotionals?page=1&limit=40'),
       ])
 
       if (cancelled) return

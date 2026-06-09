@@ -11,6 +11,7 @@ const TempleSchema = new Schema({
   subtitle: { type: String },
   subtitleHi: { type: String },
   alternateNames: { type: [String], default: [] },
+  tags: { type: [String], default: [] },
   templeTagline: { type: String },
   templeTaglineHi: { type: String },
   shortDescription: { type: String },
@@ -19,6 +20,7 @@ const TempleSchema = new Schema({
   descriptionHi: { type: String },
 
   // ── Media ──
+  primaryImage: { type: String },
   image: { type: String },
   imageCard: { type: String },
   imageHero: { type: String },
@@ -34,9 +36,11 @@ const TempleSchema = new Schema({
   ambienceAudio: { type: String },
 
   // ── Location ──
+  streetAddress: { type: String },
   location: { type: String },
   locationHi: { type: String },
   mapsLink: { type: String },
+  googleMapUrl: { type: String },
   googleMapsUrl: { type: String },
   latitude: { type: Number },
   longitude: { type: Number },
@@ -53,6 +57,7 @@ const TempleSchema = new Schema({
 
   // ── Deity & Spiritual ──
   deity: { type: String },
+  deityHi: { type: String },
   deitySlug: { type: String, index: true },
   mainDeity: { type: String },
   secondaryDeities: { type: [String], default: [] },
@@ -62,6 +67,8 @@ const TempleSchema = new Schema({
   spiritualTradition: { type: String },
   sacredImportance: { type: String },
   sacredImportanceHi: { type: String },
+  religiousImportance: { type: String },
+  religiousImportanceHi: { type: String },
   mythology: { type: String },
   mythologyHi: { type: String },
   templeLegend: { type: String },
@@ -72,6 +79,8 @@ const TempleSchema = new Schema({
   // ── History & Architecture ──
   history: { type: String },
   historyHi: { type: String },
+  architecture: { type: String },
+  architectureHi: { type: String },
   architectureStyle: { type: String },
   architectureHighlights: { type: String },
   templeArea: { type: String },
@@ -96,7 +105,10 @@ const TempleSchema = new Schema({
   pilgrimageType: { type: String },
   pilgrimageCircuit: { type: String },
   nearbySacredPlaces: { type: [String], default: [] },
+  nearbyTemples: { type: [String], default: [] },
   bestSeason: { type: String },
+  bestTimeToVisit: { type: String },
+  bestTimeToVisitHi: { type: String },
   crowdLevel: { type: String, enum: ['low', 'moderate', 'high', 'very-high', ''] },
   averageVisitDuration: { type: String },
   dressCode: { type: String },
@@ -131,6 +143,7 @@ const TempleSchema = new Schema({
     }],
     default: []
   },
+  festivalsHi: { type: String },
 
   // ── Contact & Social ──
   contact: { type: String },
@@ -144,6 +157,15 @@ const TempleSchema = new Schema({
   metaTitle: { type: String },
   metaDescription: { type: String },
   metaKeywords: { type: String },
+  keywords: { type: [String], default: [] },
+  faqs: {
+    type: [{
+      question: { type: String },
+      answer: { type: String },
+    }],
+    default: []
+  },
+  sourceUrls: { type: [String], default: [] },
   ogImage: { type: String },
   canonicalUrl: { type: String },
 
@@ -169,6 +191,8 @@ TempleSchema.index({ status: 1, stateNormalized: 1, cityNormalized: 1 });
 TempleSchema.index({ status: 1, deitySlug: 1 });
 TempleSchema.index({ status: 1, sacredCategorySlugs: 1 });
 TempleSchema.index({ titleNormalized: 1, cityNormalized: 1, stateNormalized: 1 });
+TempleSchema.index({ status: 1, sacredCategorySlugs: 1, createdAt: -1 }); // paginated category browse
+TempleSchema.index({ sacredCategorySlugs: 1, status: 1, stateNormalized: 1 }); // geo+category filter
 TempleSchema.pre('validate', function (next) {
   const doc = this as any;
   if (!doc.slug && doc.title) doc.slug = slugifyTemple(doc.title);

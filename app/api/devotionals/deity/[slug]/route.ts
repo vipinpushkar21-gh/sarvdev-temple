@@ -36,6 +36,10 @@ const ALIASES: Record<string, string[]> = {
   radha: ['radha', 'radha rani'],
 }
 
+function escapeRegex(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
 function slugify(value: string) {
   return value
     .toLowerCase()
@@ -59,10 +63,12 @@ function devotionalBelongsToSlug(devotional: any, slug: string) {
 }
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ slug: string }> },
 ) {
   const { slug } = await params
+  const { searchParams } = new URL(req.url)
+  const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '60', 10) || 60))
   const key = slug.toLowerCase().trim()
   const isOther = key === 'other'
 
@@ -74,7 +80,27 @@ export async function GET(
   }
 
   await connectDB()
-  const rawDocs = await Devotional.find({ status: { $ne: 'rejected' } }, OMIT).lean() as any[]
+  const aliases = Array.from(new Set([key, titleFromSlug(key), ...(ALIASES[key] || [])].filter(Boolean)))
+  const exactAliasRegexes = aliases.map((alias) => new RegExp(`^${escapeRegex(alias).replace(/-/g, '[-\\s]')}$`, 'i'))
+  const keywordRegex = new RegExp(aliases.map((alias) => escapeRegex(alias).replace(/-/g, '[-\\s]')).join('|'), 'i')
+  const matchFilter = isOther
+    ? {
+        status: { $ne: 'rejected' },
+        $or: [{ deity: { $exists: false } }, { deity: null }, { deity: '' }],
+      }
+    : {
+        status: { $ne: 'rejected' },
+        $or: [
+          { deity: { $in: exactAliasRegexes } },
+          { title: keywordRegex },
+          { titleHi: keywordRegex },
+          { description: keywordRegex },
+        ],
+      }
+  const rawDocs = await Devotional.find(matchFilter, OMIT)
+    .sort({ createdAt: -1 })
+    .limit(limit)
+    .lean() as any[]
   const matched = rawDocs
     .filter((doc) => isOther ? !doc.deity : devotionalBelongsToSlug(doc, key))
     .map((doc) => ({

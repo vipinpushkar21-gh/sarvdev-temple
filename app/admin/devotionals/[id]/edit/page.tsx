@@ -1,8 +1,9 @@
-"use client"
+﻿"use client"
 
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
+import { FULL_CATEGORIES } from '@/app/devotionals/components/categories'
 
 function createSlug(title: string): string {
   const englishMatch = title.match(/\(([^)]+)\)/)
@@ -26,8 +27,11 @@ export default function EditDevotionalPage() {
     setToast({ type, msg })
     setTimeout(() => setToast(null), 4000)
   }
+
   const [formData, setFormData] = useState({
     title: '',
+    titleHi: '',
+    slug: '',
     description: '',
     descriptionHi: '',
     category: '',
@@ -37,6 +41,7 @@ export default function EditDevotionalPage() {
     lyrics: '',
     duration: '',
     artist: '',
+    featured: false,
     status: 'approved',
     metaTitle: '',
     metaDescription: '',
@@ -53,15 +58,18 @@ export default function EditDevotionalPage() {
           if (found) {
             setFormData({
               title: found.title || '',
+              titleHi: found.titleHi || '',
+              slug: found.slug || '',
               description: found.description || '',
               descriptionHi: found.descriptionHi || '',
               category: found.category || '',
               language: found.language || '',
               deity: found.deity || '',
-              audio: found.audio || '',
-              lyrics: found.lyrics || '',
+              audio: found.audioUrl || found.audio || '',
+              lyrics: found.content || found.lyrics || '',
               duration: found.duration || '',
               artist: found.artist || '',
+              featured: Boolean(found.featured),
               status: found.status || 'approved',
               metaTitle: found.metaTitle || '',
               metaDescription: found.metaDescription || '',
@@ -83,30 +91,24 @@ export default function EditDevotionalPage() {
   }, [id])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value })
+    const { name, value, type } = e.target
+    const checked = (e.target as HTMLInputElement).checked
+    setFormData({ ...formData, [name]: type === 'checkbox' ? checked : value })
   }
 
   const autoGenerateSEO = () => {
-    // Extract English title from parentheses if present, else use full title
     const englishMatch = formData.title.match(/\(([^)]+)\)/)
     const cleanTitle = englishMatch ? englishMatch[1] : formData.title.replace(/[^\x00-\x7F]/g, '').trim() || formData.title
-
     const deity = formData.deity || ''
     const category = formData.category || ''
     const language = formData.language || 'Hindi'
-
-    // Meta Title (max 60)
     const rawMetaTitle = deity
       ? `${cleanTitle} — ${deity} ${category} | Sarvdev`
       : `${cleanTitle} — ${category} | Sarvdev`
     const metaTitle = rawMetaTitle.slice(0, 60)
-
-    // Meta Description (max 160)
     const metaDescription = deity
       ? `Read and listen to ${cleanTitle} — a ${language} ${category} dedicated to ${deity}. Lyrics, meaning and audio on Sarvdev.`
       : `Read and listen to ${cleanTitle} — a ${language} ${category}. Full lyrics and audio available on Sarvdev.`
-
-    // Keywords
     const titleWords = cleanTitle.toLowerCase().replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter(w => w.length > 2)
     const keywordSet = [
       ...titleWords,
@@ -117,7 +119,6 @@ export default function EditDevotionalPage() {
       'sarvdev devotional',
     ]
     const metaKeywords = [...new Set(keywordSet)].join(', ')
-
     setFormData(prev => ({ ...prev, metaTitle, metaDescription: metaDescription.slice(0, 160), metaKeywords }))
   }
 
@@ -131,22 +132,24 @@ export default function EditDevotionalPage() {
         body: JSON.stringify({ id, ...formData })
       })
       if (res.ok) {
-        // Re-fetch from DB to confirm what actually saved
         const fresh = await fetch(`/api/devotionals?id=${id}`)
         if (fresh.ok) {
           const found = await fresh.json()
           if (found) {
             setFormData({
               title: found.title || '',
+              titleHi: found.titleHi || '',
+              slug: found.slug || '',
               description: found.description || '',
               descriptionHi: found.descriptionHi || '',
               category: found.category || '',
               language: found.language || '',
               deity: found.deity || '',
-              audio: found.audio || '',
-              lyrics: found.lyrics || '',
+              audio: found.audioUrl || found.audio || '',
+              lyrics: found.content || found.lyrics || '',
               duration: found.duration || '',
               artist: found.artist || '',
+              featured: Boolean(found.featured),
               status: found.status || 'approved',
               metaTitle: found.metaTitle || '',
               metaDescription: found.metaDescription || '',
@@ -179,12 +182,9 @@ export default function EditDevotionalPage() {
 
   return (
     <div className="max-w-3xl space-y-6">
-      {/* Toast Notification */}
       {toast && (
         <div className={`fixed top-5 right-5 z-50 flex items-center gap-3 px-5 py-3.5 rounded-xl shadow-lg text-sm font-medium transition-all animate-in slide-in-from-right-4 ${
-          toast.type === 'success'
-            ? 'bg-green-600 text-white'
-            : 'bg-red-600 text-white'
+          toast.type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
         }`}>
           {toast.type === 'success' ? (
             <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
@@ -205,18 +205,17 @@ export default function EditDevotionalPage() {
         </div>
         <div className="flex items-center gap-2">
           {formData.title && (
-            <a href={`/devotionals/${createSlug(formData.title)}`} target="_blank" rel="noopener noreferrer"
+            <a href={`/devotionals/${formData.slug || createSlug(formData.title)}`} target="_blank" rel="noopener noreferrer"
               className="admin-btn admin-btn-ghost px-4 py-2 text-sm flex items-center gap-1.5 text-green-700 border-green-200 hover:bg-green-50">
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" /></svg>
               View Live
             </a>
           )}
-          <Link href="/admin/devotionals" className="admin-btn admin-btn-ghost px-4 py-2 text-sm">← Back</Link>
+          <Link href="/admin/devotionals" className="admin-btn admin-btn-ghost px-4 py-2 text-sm">Back</Link>
         </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Basic Details */}
         <div className="admin-card p-6 space-y-5">
           <h2 className="admin-section-title">Basic Details</h2>
 
@@ -225,26 +224,31 @@ export default function EditDevotionalPage() {
             <input type="text" name="title" value={formData.title} onChange={handleChange} required className="admin-input w-full" placeholder="e.g. Shiv Tandav Stotram" />
           </div>
 
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1">Title <span className="text-orange-500 font-normal">(Hindi)</span></label>
+            <input type="text" name="titleHi" value={formData.titleHi} onChange={handleChange} className="admin-input w-full" placeholder="e.g. शिव तांडव स्तोत्रम्" />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1">
+              URL Slug
+              <span className="ml-2 text-xs text-gray-400 font-normal">stable — edit only when necessary</span>
+            </label>
+            <input type="text" name="slug" value={formData.slug} onChange={handleChange} className="admin-input w-full font-mono text-sm" placeholder="e.g. shiv-tandav-stotram" />
+            {formData.slug && (
+              <p className="mt-1 text-xs text-gray-400">Live at: <code className="bg-gray-100 px-1 rounded">/devotionals/{formData.slug}</code></p>
+            )}
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-600 mb-1">Category</label>
               <select name="category" value={formData.category} onChange={handleChange} className="admin-input w-full">
                 <option value="">— Select Category —</option>
-                <option value="Aarti">Aarti - आरती</option>
-                <option value="Bhajan">Bhajan - भजन</option>
-                <option value="Chalisa">Chalisa - चालीसा</option>
-                <option value="Mantra">Mantra - मंत्र</option>
-                <option value="Stotra">Stotra - स्तोत्र</option>
-                <option value="Stuti">Stuti - स्तुति</option>
-                <option value="Shloka">Shloka - श्लोक</option>
-                <option value="Ek Shloki">Ek Shloki - एक श्लोकी</option>
-                <option value="Ashtaka">Ashtaka - अष्टक</option>
-                <option value="Path">Path - पाठ</option>
-                <option value="Namavali">Namavali - नामावली</option>
+                {FULL_CATEGORIES.map((cat) => (
+                  <option key={cat.id} value={cat.id}>{cat.label} - {cat.hindi}</option>
+                ))}
                 <option value="108 Namavali">108 Namavali - १०८ नामावली</option>
-                <option value="Kavacham">Kavacham - कवचम्</option>
-                <option value="Prarthana">Prarthana - प्रार्थना</option>
-                <option value="Vrat Katha">Vrat Katha - व्रत कथा</option>
                 <option value="Other">Other - अन्य</option>
               </select>
             </div>
@@ -279,16 +283,18 @@ export default function EditDevotionalPage() {
               <input type="text" name="duration" value={formData.duration} onChange={handleChange} className="admin-input w-full" placeholder="e.g. 5:30" />
             </div>
           </div>
+
+          <div className="flex items-center gap-3">
+            <input type="checkbox" id="featured" name="featured" checked={formData.featured} onChange={handleChange} className="w-4 h-4 rounded accent-orange-500" />
+            <label htmlFor="featured" className="text-sm font-medium text-gray-600">Featured</label>
+          </div>
         </div>
 
-        {/* Media & Content */}
         <div className="admin-card p-6 space-y-5">
-          <h2 className="admin-section-title">Media & Content</h2>
-
+          <h2 className="admin-section-title">Media &amp; Content</h2>
           <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-4 text-sm text-amber-900">
             Public devotional pages currently use one optimized fallback image for speed. Devotional-specific and deity images are ignored on the public devotional UI for now.
           </div>
-
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-1">Audio URL</label>
             <input type="url" name="audio" value={formData.audio} onChange={handleChange} className="admin-input w-full" placeholder="https://example.com/audio.mp3" />
@@ -299,58 +305,47 @@ export default function EditDevotionalPage() {
               </div>
             )}
           </div>
-
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-1">Description <span className="text-gray-400 font-normal">(English)</span></label>
             <textarea name="description" value={formData.description} onChange={handleChange} rows={3} className="admin-input w-full" placeholder="Brief description of the devotional" />
           </div>
-
           <div>
-            <label className="block text-sm font-medium text-gray-600 mb-1">Description <span className="text-orange-500 font-normal">(हिन्दी)</span></label>
-            <textarea name="descriptionHi" value={formData.descriptionHi} onChange={handleChange} rows={3} className="admin-input w-full" placeholder="संक्षिप्त विवरण हिन्दी में..." />
+            <label className="block text-sm font-medium text-gray-600 mb-1">Description <span className="text-orange-500 font-normal">(Hindi)</span></label>
+            <textarea name="descriptionHi" value={formData.descriptionHi} onChange={handleChange} rows={3} className="admin-input w-full" placeholder="Hindi description..." />
           </div>
-
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-1">Lyrics</label>
             <textarea name="lyrics" value={formData.lyrics} onChange={handleChange} rows={12} className="admin-input w-full font-mono text-sm" placeholder="Devotional lyrics..." />
           </div>
         </div>
 
-        {/* SEO */}
         <div className="admin-card p-6 space-y-5">
           <div className="flex items-start justify-between gap-4">
             <div>
               <h2 className="admin-section-title">SEO &amp; Social Sharing</h2>
               <p className="text-xs text-gray-400 mt-0.5">Leave blank to auto-generate from title / description</p>
             </div>
-            <button
-              type="button"
-              onClick={autoGenerateSEO}
-              className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-primary/10 text-primary-700 border border-primary/30 hover:bg-primary/20 transition-colors"
-            >
+            <button type="button" onClick={autoGenerateSEO}
+              className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-primary/10 text-primary-700 border border-primary/30 hover:bg-primary/20 transition-colors">
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" /></svg>
               Auto-Generate
             </button>
           </div>
-
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-1">Meta Title <span className="font-normal text-gray-400">(max 60 chars)</span></label>
             <input type="text" name="metaTitle" value={formData.metaTitle} onChange={handleChange} maxLength={60} placeholder="Custom title for search engines..." className="admin-input w-full" />
             <p className="mt-1 text-xs text-gray-400">{formData.metaTitle.length}/60 characters</p>
           </div>
-
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-1">Meta Description <span className="font-normal text-gray-400">(max 160 chars)</span></label>
             <textarea name="metaDescription" value={formData.metaDescription} onChange={handleChange} rows={3} maxLength={160} placeholder="Brief description shown in search results..." className="admin-input w-full" />
             <p className="mt-1 text-xs text-gray-400">{formData.metaDescription.length}/160 characters</p>
           </div>
-
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-1">Keywords</label>
             <input type="text" name="metaKeywords" value={formData.metaKeywords} onChange={handleChange} placeholder="bhajan, shiva, stotra, hindi devotional" className="admin-input w-full" />
             <p className="mt-1 text-xs text-gray-400">Comma-separated keywords</p>
           </div>
-
           <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 text-xs text-gray-500">
             OG images currently use the same optimized devotional fallback image for stable, fast rendering.
           </div>

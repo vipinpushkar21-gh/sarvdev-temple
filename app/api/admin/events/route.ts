@@ -32,7 +32,54 @@ function normalizePayload(payload: Record<string, any>) {
 export async function GET(req: NextRequest) {
   if (!isAdmin(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   await connectDB()
-  const events = await Event.find({}, { __v: 0 }).sort({ startDate: 1, date: 1 }).lean()
+  const { searchParams } = new URL(req.url)
+  const pageParam = searchParams.get('page')
+  const limitParam = searchParams.get('limit')
+  const limit = Math.min(100, Math.max(1, parseInt(limitParam || '50', 10) || 50))
+  const filter: Record<string, any> = {}
+  const q = searchParams.get('search') || searchParams.get('q')
+  const status = searchParams.get('status')
+  const category = searchParams.get('category')
+  const city = searchParams.get('city')
+  if (status) filter.status = status
+  if (category) filter.category = category
+  if (city) {
+    const regex = new RegExp(city.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i')
+    filter.$or = [{ city: regex }, { state: regex }, { locationName: regex }, { location: regex }]
+  }
+  if (q?.trim()) {
+    const regex = new RegExp(q.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i')
+    const searchOr = [
+      { title: regex },
+      { titleHi: regex },
+      { festival: regex },
+      { category: regex },
+      { location: regex },
+      { state: regex },
+    ]
+    if (filter.$or) filter.$and = [{ $or: filter.$or }, { $or: searchOr }]
+    else filter.$or = searchOr
+  }
+
+  if (pageParam) {
+    const page = Math.max(1, parseInt(pageParam, 10) || 1)
+    const skip = (page - 1) * limit
+    const [events, total] = await Promise.all([
+      Event.find(filter, { __v: 0 }).sort({ startDate: 1, date: 1 }).skip(skip).limit(limit).lean(),
+      Event.countDocuments(filter),
+    ])
+    return NextResponse.json({
+      items: events.map(eventToPlain),
+      data: events.map(eventToPlain),
+      total,
+      page,
+      pages: Math.ceil(total / limit),
+      limit,
+      hasMore: page * limit < total,
+    })
+  }
+
+  const events = await Event.find(filter, { __v: 0 }).sort({ startDate: 1, date: 1 }).limit(limit).lean()
   return NextResponse.json(events.map(eventToPlain))
 }
 

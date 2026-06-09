@@ -1,13 +1,13 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
-import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { DEITY_CATEGORIES } from "@/app/deities/page"
 import SarvdevImage from "@/components/SarvdevImage"
 import { getDeityCardImage } from "@/lib/temple-image"
-import { findBestDeityMatch, mergeStaticDeityWithDb } from "@/lib/deity-identity"
 import { getCategoryDisplayName } from "@/lib/deity-categories"
+import AdminPagination from "@/components/admin/AdminPagination"
+import { useDebouncedValue } from "@/hooks/useDebouncedValue"
 
 function isMushakIdentity(deity: any) {
   const text = `${deity?.name || ''} ${deity?.nameHi || ''} ${deity?.slug || ''} ${deity?.staticSlug || ''}`.toLowerCase()
@@ -28,92 +28,66 @@ function normalizeAdminDeityRow(deity: any) {
 }
 
 export default function AdminDeitiesPage() {
-  const router = useRouter()
   const [deities, setDeities] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [categoryFilter, setCategoryFilter] = useState("all")
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(50)
+  const [total, setTotal] = useState(0)
+  const [hasMore, setHasMore] = useState(false)
   const [seedResult, setSeedResult] = useState<any>(null)
+
+  const debouncedSearch = useDebouncedValue(searchTerm)
 
   useEffect(() => {
     fetchDeities()
-  }, [])
+  }, [page, pageSize, debouncedSearch, statusFilter, categoryFilter])
+
+  useEffect(() => {
+    setPage(1)
+  }, [pageSize, debouncedSearch, statusFilter, categoryFilter])
 
   async function fetchDeities() {
     try {
-      const response = await fetch('/api/deities', { credentials: 'include', cache: 'no-store' })
-      if (!response.ok) throw new Error('Failed to load deities')
-      const data = await response.json()
-      const dbDeities = (Array.isArray(data) ? data : []).map(normalizeAdminDeityRow)
-
-      const allDeities: any[] = []
-      const orderMap = new Map<string, number>()
-      const addedDbIds = new Set<string>()
-      const addedKeys = new Set<string>()
-      let orderIndex = 0
-
-      DEITY_CATEGORIES.forEach((category: any) => {
-        category.deities.forEach((deity: any) => {
-          const slugKey = deity.slug?.toLowerCase()
-          const nameKey = deity.name?.toLowerCase()
-          if (slugKey) orderMap.set(`slug:${slugKey}`, orderIndex)
-          if (nameKey) orderMap.set(`name:${nameKey}`, orderIndex)
-
-          const staticDeity = {
+      setLoading(true)
+      if (statusFilter === 'not-seeded') {
+        const allStatic = DEITY_CATEGORIES.flatMap((category: any) =>
+          category.deities.map((deity: any) => ({
             ...deity,
+            _id: `static-${deity.slug}`,
             category: category.title,
             categoryId: category.id,
-          }
-          const match = findBestDeityMatch(staticDeity, dbDeities, addedDbIds)
-          const dbDeity = match?.deity as any
-          if (!dbDeity && isMushakIdentity(staticDeity)) {
-            orderIndex++
-            return
-          }
-
-          const deityToAdd = dbDeity ? normalizeAdminDeityRow({
-            ...mergeStaticDeityWithDb(staticDeity, dbDeity, category),
-            matchScore: match?.score,
-          }) : {
-            ...staticDeity,
-            _id: `static-${deity.slug}`,
             status: 'not-seeded',
             source: 'static-fallback',
             isStaticFallback: true,
             createdAt: null,
-          }
-
-          const uniqueId = deityToAdd.isStaticFallback ? `static:${deityToAdd.slug || deityToAdd._id}` : `db:${deityToAdd._id || deityToAdd.slug}`
-          if (!addedKeys.has(uniqueId)) {
-            allDeities.push(deityToAdd)
-            addedKeys.add(uniqueId)
-            if (dbDeity?._id) addedDbIds.add(String(dbDeity._id))
-          }
-          orderIndex++
+          }))
+        ).filter((deity: any) => {
+          const q = debouncedSearch.toLowerCase().trim()
+          if (q && !`${deity.name || ''} ${deity.nameHi || ''} ${deity.category || ''}`.toLowerCase().includes(q)) return false
+          if (categoryFilter !== 'all' && deity.category !== categoryFilter) return false
+          return true
         })
-      })
+        const start = (page - 1) * pageSize
+        setDeities(allStatic.slice(start, start + pageSize))
+        setTotal(allStatic.length)
+        setHasMore(start + pageSize < allStatic.length)
+        return
+      }
 
-      dbDeities.forEach((deity: any) => {
-        const dbId = String(deity?._id || '')
-        const uniqueId = deity._id ? `db:${deity._id}` : `slug:${deity.slug}`
-        if (dbId && addedDbIds.has(dbId)) return
-        if (uniqueId && addedKeys.has(uniqueId)) return
-        allDeities.push(normalizeAdminDeityRow({
-          ...deity,
-          source: deity.source || 'manual',
-          isStaticFallback: false,
-        }))
-        if (uniqueId) addedKeys.add(uniqueId)
-      })
-
-      const sortedDeities = allDeities.sort((a, b) => {
-        const orderA = orderMap.get(`slug:${a.slug?.toLowerCase()}`) ?? orderMap.get(`name:${a.name?.toLowerCase()}`) ?? Infinity
-        const orderB = orderMap.get(`slug:${b.slug?.toLowerCase()}`) ?? orderMap.get(`name:${b.name?.toLowerCase()}`) ?? Infinity
-        return orderA - orderB
-      })
-
-      setDeities(sortedDeities)
+      const params = new URLSearchParams({ admin: '1', page: String(page), limit: String(pageSize) })
+      if (debouncedSearch) params.set('search', debouncedSearch)
+      if (statusFilter !== 'all') params.set('status', statusFilter)
+      if (categoryFilter !== 'all') params.set('category', categoryFilter)
+      const response = await fetch(`/api/deities?${params.toString()}`, { credentials: 'include', cache: 'no-store' })
+      if (!response.ok) throw new Error('Failed to load deities')
+      const data = await response.json()
+      const items = Array.isArray(data) ? data : (data.items || data.data || [])
+      setDeities(items.map((deity: any) => normalizeAdminDeityRow({ ...deity, isStaticFallback: false })))
+      setTotal(Number(data.total || items.length || 0))
+      setHasMore(Boolean(data.hasMore))
     } catch (error) {
       console.error('Failed to fetch deities:', error)
     } finally {
@@ -152,11 +126,30 @@ export default function AdminDeitiesPage() {
         }))
       )
 
+      const dryRunResponse = await fetch('/api/admin/seed-deities', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ deities: allDeities, dryRun: true }),
+      })
+      const dryRunResult = await dryRunResponse.json()
+
+      if (!dryRunResponse.ok || !dryRunResult.ok) {
+        alert(dryRunResult.error || dryRunResult.errors?.[0]?.reason || 'Failed to run seed dry-run')
+        return
+      }
+
+      const proceed = confirm(`Seed dry-run complete. Would create: ${dryRunResult.wouldCreate || 0}, skipped existing: ${dryRunResult.skippedExisting || 0}, protected customized: ${dryRunResult.protectedCustomized || 0}, failed: ${dryRunResult.failed || 0}. Apply creation of missing records now?`)
+      if (!proceed) {
+        setSeedResult(dryRunResult)
+        return
+      }
+
       const response = await fetch('/api/admin/seed-deities', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ deities: allDeities }),
+        body: JSON.stringify({ deities: allDeities, dryRun: false }),
       })
       const result = await response.json()
       
@@ -175,29 +168,8 @@ export default function AdminDeitiesPage() {
     }
   }
 
-  const filteredDeities = useMemo(() => {
-    const filtered = deities.filter(deity => {
-      const matchesSearch =
-        (deity.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (deity.nameHi || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (deity.category && deity.category.toLowerCase().includes(searchTerm.toLowerCase()))
-
-      const matchesStatus = statusFilter === "all" || deity.status === statusFilter
-      const matchesCategory = categoryFilter === "all" || deity.category === categoryFilter
-
-      return matchesSearch && matchesStatus && matchesCategory
-    })
-    
-    const seenRows = new Set<string>()
-    return filtered.filter(deity => {
-      const rowKey = deity.isStaticFallback ? `static:${deity.slug || deity._id || ''}` : `db:${deity._id || deity.slug || ''}`
-      if (seenRows.has(rowKey)) return false
-      seenRows.add(rowKey)
-      return true
-    })
-  }, [deities, searchTerm, statusFilter, categoryFilter])
-
-  const categoryOptions = useMemo(() => Array.from(new Set(deities.map((deity) => deity.category).filter(Boolean))).sort(), [deities])
+  const filteredDeities = deities
+  const categoryOptions = useMemo(() => DEITY_CATEGORIES.map((category: any) => category.title).filter(Boolean), [])
   const dbCount = deities.filter((deity) => !deity.isStaticFallback).length
   const imageReadyCount = deities.filter((deity) => deity.imageCard || deity.imageHero || deity.image).length
 
@@ -392,6 +364,15 @@ export default function AdminDeitiesPage() {
           </table>
         </div>
       </div>
+      <AdminPagination
+        page={page}
+        limit={pageSize}
+        total={total}
+        hasMore={hasMore}
+        loading={loading}
+        onPageChange={setPage}
+        onLimitChange={(nextLimit) => { setPageSize(nextLimit); setPage(1) }}
+      />
 
       <div className="mt-6 text-center">
         <Link href="/admin" className="text-primary-600 hover:text-primary-700 font-medium">

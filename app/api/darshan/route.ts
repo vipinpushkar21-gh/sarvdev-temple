@@ -4,6 +4,7 @@ import { AUTH_COOKIE_NAME, verifyToken } from '@/lib/auth'
 import { sanitizeImageUrl } from '@/lib/imageGuard'
 import ActivityLog from '@/models/ActivityLog'
 import Darshan from '@/models/Darshan'
+import { buildCursorFilter, paginateCursor, parseCursorLimit, DARSHAN_CARD_PROJ } from '@/lib/cursor-pagination'
 
 type AdminPayload = NonNullable<ReturnType<typeof verifyToken>>
 
@@ -196,6 +197,19 @@ export async function GET(req: NextRequest) {
       return NextResponse.json(item || null)
     }
 
+    // ── Cursor-based pagination (scale mode) ──
+    if (searchParams.has('cursor')) {
+      const cursorToken = searchParams.get('cursor') || undefined
+      const cursorLimit = parseCursorLimit(limitParam, 20)
+      const cursorFilter = buildCursorFilter(cursorToken, filter)
+      const docs = await Darshan.find(cursorFilter, adminMode ? { __v: 0 } : DARSHAN_CARD_PROJ)
+        .sort({ createdAt: -1, _id: -1 })
+        .limit(cursorLimit + 1)
+        .lean()
+      const result = paginateCursor(docs as any[], cursorLimit)
+      return NextResponse.json(result, { headers: { 'Cache-Control': adminMode ? 'no-store' : 'public, s-maxage=60, stale-while-revalidate=120' } })
+    }
+
     if (pageParam) {
       const page = Math.max(1, parseInt(pageParam, 10) || 1)
       const limit = Math.min(100, Math.max(1, parseInt(limitParam || '20', 10)))
@@ -205,16 +219,17 @@ export async function GET(req: NextRequest) {
         Darshan.countDocuments(filter),
       ])
 
-      return NextResponse.json({ items, total, page, pages: Math.ceil(total / limit), limit })
+      return NextResponse.json({ items, data: items, total, page, pages: Math.ceil(total / limit), limit, hasMore: page * limit < total }, { headers: { 'Cache-Control': adminMode ? 'no-store' : 'public, s-maxage=60, stale-while-revalidate=120' } })
     }
 
     if (!adminMode && publicCache && Date.now() - publicCache.ts < CACHE_TTL) {
       return NextResponse.json(publicCache.data)
     }
 
-    const darshan = await Darshan.find(filter, { __v: 0 }).sort(sort).lean()
+    const legacyLimit = Math.min(100, Math.max(1, parseInt(limitParam || (adminMode ? '50' : '30'), 10) || 30))
+    const darshan = await Darshan.find(filter, { __v: 0 }).sort(sort).limit(legacyLimit).lean()
     if (!adminMode) publicCache = { data: darshan, ts: Date.now() }
-    return NextResponse.json(darshan)
+    return NextResponse.json(darshan, { headers: { 'Cache-Control': adminMode ? 'no-store' : 'public, s-maxage=60, stale-while-revalidate=120' } })
   } catch (error) {
     console.error('Darshan API Error:', error)
     return NextResponse.json({ error: 'Failed to fetch darshan' }, { status: 500 })

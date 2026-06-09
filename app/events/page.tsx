@@ -78,9 +78,12 @@ export default function EventsPage() {
   const [deity, setDeity] = useState('')
 
   useEffect(() => {
-    fetch('/api/events', { cache: 'no-store' })
+    fetch('/api/events?page=1&limit=50', { cache: 'no-store' })
       .then((res) => res.ok ? res.json() : [])
-      .then((data) => setEvents(Array.isArray(data) && data.length > 0 ? data : staticFallback()))
+      .then((data) => {
+        const items = Array.isArray(data) ? data : (data.items || data.data || [])
+        setEvents(Array.isArray(items) && items.length > 0 ? items : staticFallback())
+      })
       .catch(() => setEvents(staticFallback()))
       .finally(() => setLoading(false))
   }, [])

@@ -16,6 +16,7 @@ export type DeityCategory = {
   id: string              // Machine-readable slug for DB/URLs
   titleEn: string         // Display name (English)
   titleHi: string         // Display name (Hindi)
+  aliases?: string[]      // Legacy/public labels that resolve to this category
   legacy?: boolean        // Kept for old/admin-only values that may not have public sections yet
 }
 
@@ -314,8 +315,17 @@ export const CATEGORY_ALIASES: Record<string, string> = {
   'Vanar Sena': 'vanar-sena',
   'Vanar Sena ke Pramukh': 'vanar-sena',
   'Other': 'other',
+  'Other / Misc': 'other',
   'Misc': 'other',
   'Miscellaneous': 'other',
+  'Tridev': 'tridev',
+  'Tridevi': 'tridevi',
+  'Navagraha': 'navagraha',
+  'Ashta Dikpal': 'ashta-dikpal',
+  'Ashta Lakshmi': 'ashta-lakshmi',
+  'Saptarishi': 'saptarishi',
+  'Sapta Chiranjeevi': 'sapta-chiranjeevi',
+  'Ram Parivar': 'ram-parivar',
 }
 
 /**

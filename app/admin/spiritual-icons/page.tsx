@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { SPIRITUAL_ICON_CATEGORIES } from '../../../data/spiritual-icon-categories'
 import type { SpiritualIconRecord } from '../../../lib/spiritual-icons'
+import AdminPagination from '@/components/admin/AdminPagination'
+import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 
 type FilterKey = 'all' | 'active' | 'draft' | 'inactive' | 'featured' | 'verified'
 
@@ -24,16 +26,36 @@ export default function AdminSpiritualIconsPage() {
   const [filter, setFilter] = useState<FilterKey>('all')
   const [categoryFilter, setCategoryFilter] = useState('')
   const [stateFilter, setStateFilter] = useState('')
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(50)
+  const [total, setTotal] = useState(0)
+  const [hasMore, setHasMore] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [seedResult, setSeedResult] = useState<{ imported: number; skipped: number } | null>(null)
 
-  useEffect(() => { load() }, [])
+  const debouncedSearch = useDebouncedValue(search)
+
+  useEffect(() => { load() }, [page, pageSize, debouncedSearch, filter, categoryFilter, stateFilter])
+  useEffect(() => { setPage(1) }, [pageSize, debouncedSearch, filter, categoryFilter, stateFilter])
 
   async function load() {
     setLoading(true)
     try {
-      const res = await fetch('/api/admin/spiritual-icons', { cache: 'no-store' })
-      if (res.ok) setRows(await res.json())
+      const params = new URLSearchParams({ page: String(page), limit: String(pageSize) })
+      if (debouncedSearch) params.set('search', debouncedSearch)
+      if (categoryFilter) params.set('category', categoryFilter)
+      if (stateFilter) params.set('state', stateFilter)
+      if (filter === 'active' || filter === 'draft' || filter === 'inactive') params.set('status', filter)
+      if (filter === 'featured') params.set('featured', 'true')
+      if (filter === 'verified') params.set('verified', 'true')
+      const res = await fetch(`/api/admin/spiritual-icons?${params.toString()}`, { cache: 'no-store' })
+      if (res.ok) {
+        const data = await res.json()
+        const items = Array.isArray(data) ? data : (data.items || data.data || [])
+        setRows(items)
+        setTotal(Number(data.total || items.length || 0))
+        setHasMore(Boolean(data.hasMore))
+      }
       else setMessage({ type: 'error', text: 'Unable to load spiritual icons.' })
     } catch {
       setMessage({ type: 'error', text: 'Network error while loading spiritual icons.' })
@@ -52,23 +74,7 @@ export default function AdminSpiritualIconsPage() {
 
   const states = useMemo(() => Array.from(new Set(rows.map((row) => row.state).filter(Boolean) as string[])).sort(), [rows])
 
-  const filtered = useMemo(() => {
-    const q = search.toLowerCase().trim()
-    return rows.filter((row) => {
-      if (filter === 'active' && row.status !== 'active') return false
-      if (filter === 'draft' && row.status !== 'draft') return false
-      if (filter === 'inactive' && row.status !== 'inactive') return false
-      if (filter === 'featured' && !row.featured) return false
-      if (filter === 'verified' && !row.verified) return false
-      if (categoryFilter && row.categorySlug !== categoryFilter) return false
-      if (stateFilter && row.state !== stateFilter) return false
-      if (q) {
-        const haystack = [row.name, row.nameHi, row.title, row.category, row.state, row.city, row.location, ...(row.specializations || [])].filter(Boolean).join(' ').toLowerCase()
-        if (!haystack.includes(q)) return false
-      }
-      return true
-    })
-  }, [categoryFilter, filter, rows, search, stateFilter])
+  const filtered = rows
 
   async function seedStatic() {
     if (!confirm('Import static spiritual icon records into DB? Existing slug/name matches will be skipped.')) return
@@ -232,6 +238,15 @@ export default function AdminSpiritualIconsPage() {
           </table>
         </div>
       </div>
+      <AdminPagination
+        page={page}
+        limit={pageSize}
+        total={total}
+        hasMore={hasMore}
+        loading={loading}
+        onPageChange={setPage}
+        onLimitChange={(nextLimit) => { setPageSize(nextLimit); setPage(1) }}
+      />
     </div>
   )
 }

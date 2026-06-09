@@ -111,7 +111,15 @@ export default function TemplesPage() {
   const [filterDeity, setFilterDeity] = useState('')
   const [filterVerified, setFilterVerified] = useState(false)
   const [filterHasImage, setFilterHasImage] = useState(false)
+  const [categoryCounts, setCategoryCounts] = useState<Record<string, number>>({})
   const searchRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    fetch('/api/temples/category-counts')
+      .then(r => r.json())
+      .then(data => setCategoryCounts(data))
+      .catch(console.error)
+  }, [])
 
   // Read ?category= param from URL and apply filter
   useEffect(() => {
@@ -417,7 +425,7 @@ export default function TemplesPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {SACRED_CATEGORIES.filter(c => c.isActive).slice(0, 16).map((cat) => {
-              const count = categoryTempleCount[cat.slug] || 0
+              const count = Object.keys(categoryCounts).length > 0 ? (categoryCounts[cat.slug] ?? 0) : (categoryTempleCount[cat.slug] ?? 0)
               return (
                 <div key={cat.slug} className="bg-white rounded-2xl border border-gray-100 p-5 hover:shadow-md transition-shadow duration-200 flex flex-col">
                   <div className="flex items-start justify-between mb-3">

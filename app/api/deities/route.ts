@@ -3,10 +3,14 @@ import { connectDB } from '@/lib/db';
 import Deity from '@/models/Deity';
 import { verifyToken, AUTH_COOKIE_NAME } from '@/lib/auth';
 import { resolveCategoryForDeity } from '@/lib/deity-categories';
+import { getCanonicalDeityCategory, normalizeDeityForRead } from '@/lib/deity-normalization';
+import { buildCursorFilter, paginateCursor, parseCursorLimit, DEITY_CARD_PROJ } from '@/lib/cursor-pagination';
 
 // ── 60-second in-memory cache — deities list is read-heavy, rarely changes ──
 let _deityCache: { data: any[]; ts: number } | null = null
 const DEITY_CACHE_TTL = 60_000
+const DEFAULT_DEITY_LIMIT = 50
+const MAX_DEITY_LIMIT = 200
 
 const VALID_STATUSES = new Set(['pending', 'approved', 'rejected']);
 const STRING_FIELDS = [
@@ -19,7 +23,7 @@ const STRING_FIELDS = [
   'metaDescription',
   'metaKeywords',
 ] as const;
-const ARRAY_FIELDS = ['attributes', 'images'] as const;
+const ARRAY_FIELDS = ['attributes', 'images', 'aliases', 'slugAliases'] as const;
 const MEDIA_FIELDS = ['image', 'imageCard', 'imageHero', 'ogImage'] as const;
 
 function getAdmin(req: NextRequest) {
@@ -39,6 +43,16 @@ function isNonEmptyString(value: unknown) {
 
 function isMongoObjectId(value: unknown) {
   return typeof value === 'string' && /^[a-f0-9]{24}$/i.test(value);
+}
+
+function escapeRegex(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function toPositiveInt(value: string | null, fallback: number, max: number) {
+  const parsed = parseInt(value || '', 10);
+  if (!Number.isFinite(parsed) || parsed < 1) return fallback;
+  return Math.min(max, parsed);
 }
 
 function uniqueValues(values: unknown[]) {
@@ -83,19 +97,148 @@ function normalizeUpdateCategories(values: unknown[], existingDeity: any) {
   };
 }
 
-// GET all deities.
-export async function GET() {
+function applyCanonicalCategoryFields(target: Record<string, unknown>, source: Record<string, unknown>) {
+  const category = getCanonicalDeityCategory({
+    ...source,
+    ...target,
+  })
+  target.categorySlug = category.categorySlug
+  target.categoryName = category.categoryName
+  target.categoryNameHi = category.categoryNameHi
+  target.category = category.categorySlug
+  target.categoryId = category.categorySlug
+  if (!Array.isArray(target.categories) || target.categories.length === 0) target.categories = [category.categorySlug]
+  if (!Array.isArray(target.categoryIds) || target.categoryIds.length === 0) target.categoryIds = [category.categorySlug]
+}
+
+function buildDeityFilter(searchParams: URLSearchParams, adminMode: boolean) {
+  const filter: Record<string, unknown> = {};
+  const and: Record<string, unknown>[] = [];
+  const q = searchParams.get('search') || searchParams.get('q');
+  const category = searchParams.get('category');
+  const status = searchParams.get('status');
+  const slug = searchParams.get('slug');
+
+  if (slug) {
+    filter.$or = [
+      { slug },
+      { staticSlug: slug },
+      { slugAliases: slug },
+      { aliases: slug },
+    ];
+  }
+  if (adminMode && status && VALID_STATUSES.has(status)) filter.status = status;
+
+  if (q?.trim()) {
+    const regex = new RegExp(escapeRegex(q.trim()), 'i');
+    and.push({
+      $or: [
+        { name: regex },
+        { nameHi: regex },
+        { slug: regex },
+        { staticSlug: regex },
+        { description: regex },
+        { descriptionHi: regex },
+        { mantra: regex },
+        { attributes: regex },
+        { category: regex },
+        { categories: regex },
+      ],
+    });
+  }
+
+  if (category?.trim()) {
+    const canonical = resolveCategoryForDeity(category, null) || category.trim();
+    const regex = new RegExp(`^${escapeRegex(canonical)}$`, 'i');
+    and.push({
+      $or: [
+        { category: regex },
+        { categoryId: regex },
+        { categorySlug: regex },
+        { categoryName: regex },
+        { categories: regex },
+        { categoryIds: regex },
+      ],
+    });
+  }
+
+  if (and.length > 0) filter.$and = and;
+  return filter;
+}
+
+// GET deities with safe bounded defaults. Use page=1 for paginated response metadata.
+export async function GET(req: NextRequest) {
   try {
-    if (_deityCache && Date.now() - _deityCache.ts < DEITY_CACHE_TTL) {
+    const { searchParams } = new URL(req.url);
+    const adminMode = searchParams.get('admin') === '1';
+    const singleId = searchParams.get('id');
+    const admin = getAdmin(req);
+    if ((adminMode || singleId) && !admin) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    if (singleId) {
+      if (!isMongoObjectId(singleId)) {
+        return NextResponse.json({ error: 'Invalid deity id' }, { status: 400 });
+      }
+      await connectDB();
+      const deity = await Deity.findById(singleId, { __v: 0 }).lean();
+      if (!deity) return NextResponse.json({ error: 'Deity not found' }, { status: 404 });
+      return NextResponse.json(normalizeDeityForRead(deity), { headers: { 'Cache-Control': 'no-store' } });
+    }
+
+    const pageParam = searchParams.get('page');
+    const limit = toPositiveInt(searchParams.get('limit'), DEFAULT_DEITY_LIMIT, MAX_DEITY_LIMIT);
+    const hasFilters = ['search', 'q', 'category', 'status', 'slug'].some((key) => Boolean(searchParams.get(key))) || adminMode;
+    const canUseCache = !pageParam && !hasFilters && limit === DEFAULT_DEITY_LIMIT;
+
+    if (canUseCache && _deityCache && Date.now() - _deityCache.ts < DEITY_CACHE_TTL) {
       return NextResponse.json(_deityCache.data, {
-        headers: { 'X-Cache': 'HIT', 'Cache-Control': 'public, max-age=60, stale-while-revalidate=30' },
+        headers: { 'X-Cache': 'HIT', 'Cache-Control': 'public, s-maxage=900, stale-while-revalidate=1800' },
       });
     }
     await connectDB();
-    const deities = await Deity.find({}, { __v: 0 }).sort({ order: 1, createdAt: -1 }).lean();
-    _deityCache = { data: deities as any[], ts: Date.now() };
-    return NextResponse.json(deities, {
-      headers: { 'X-Cache': 'MISS', 'Cache-Control': 'public, max-age=60, stale-while-revalidate=30' },
+
+    const filter = buildDeityFilter(searchParams, adminMode);
+
+    // ── Cursor-based pagination (scale mode) ──
+    if (searchParams.has('cursor')) {
+      const cursorToken = searchParams.get('cursor') || undefined
+      const cursorLimit = parseCursorLimit(searchParams.get('limit'), DEFAULT_DEITY_LIMIT)
+      const cursorFilter = buildCursorFilter(cursorToken, filter)
+      const docs = await Deity.find(cursorFilter, DEITY_CARD_PROJ)
+        .sort({ createdAt: -1, _id: -1 })
+        .limit(cursorLimit + 1)
+        .lean()
+      const items = paginateCursor(docs.map(normalizeDeityForRead) as any[], cursorLimit)
+      return NextResponse.json(items, { headers: { 'Cache-Control': adminMode ? 'no-store' : 'public, s-maxage=900, stale-while-revalidate=1800' } })
+    }
+
+    if (pageParam) {
+      const page = toPositiveInt(pageParam, 1, Number.MAX_SAFE_INTEGER);
+      const skip = (page - 1) * limit;
+      const [deities, total] = await Promise.all([
+        Deity.find(filter, { __v: 0 }).sort({ order: 1, createdAt: -1 }).skip(skip).limit(limit).lean(),
+        Deity.countDocuments(filter),
+      ]);
+      const normalized = deities.map(normalizeDeityForRead);
+      return NextResponse.json({
+        items: normalized,
+        data: normalized,
+        total,
+        page,
+        pages: Math.ceil(total / limit),
+        limit,
+        hasMore: page * limit < total,
+      }, {
+        headers: { 'Cache-Control': adminMode ? 'no-store' : 'public, s-maxage=900, stale-while-revalidate=1800' },
+      });
+    }
+
+    const deities = await Deity.find(filter, { __v: 0 }).sort({ order: 1, createdAt: -1 }).limit(limit).lean();
+    const normalized = deities.map(normalizeDeityForRead);
+    if (canUseCache) _deityCache = { data: normalized as any[], ts: Date.now() };
+    return NextResponse.json(normalized, {
+      headers: { 'X-Cache': canUseCache ? 'MISS' : 'BYPASS', 'Cache-Control': adminMode ? 'no-store' : 'public, s-maxage=900, stale-while-revalidate=1800' },
     });
   } catch (error) {
     console.error('Deity API Error:', error);
@@ -142,6 +285,8 @@ export async function POST(req: NextRequest) {
 
     delete data.categorySlug;
     delete data.categoryName;
+    delete data.categoryNameHi;
+    applyCanonicalCategoryFields(data, data);
 
     const status = normalizeStatus(data.status);
     if (status) {
@@ -162,7 +307,7 @@ export async function POST(req: NextRequest) {
 
     const deity = await Deity.create(data);
     _deityCache = null;
-    return NextResponse.json(deity, { status: 201 });
+    return NextResponse.json(normalizeDeityForRead(deity.toObject ? deity.toObject() : deity), { status: 201 });
   } catch (error) {
     console.error('Create deity error:', error);
     return NextResponse.json({ error: 'Failed to create deity' }, { status: 500 });
@@ -242,6 +387,8 @@ export async function PUT(req: NextRequest) {
       safeUpdate.categoryId = existingCategories[0] || existingDeity.categoryId;
     }
 
+    applyCanonicalCategoryFields(safeUpdate, existingDeity.toObject ? existingDeity.toObject() : existingDeity);
+
     for (const field of STRING_FIELDS) {
       if (isNonEmptyString(update[field])) {
         safeUpdate[field] = String(update[field]).trim();
@@ -290,7 +437,7 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: 'Deity not found' }, { status: 404 });
     }
     _deityCache = null;
-    return NextResponse.json(deity);
+    return NextResponse.json(normalizeDeityForRead(deity.toObject ? deity.toObject() : deity));
   } catch (error: any) {
     console.error('Update deity error:', error);
     const msg = error instanceof Error ? error.message : 'Unknown error';

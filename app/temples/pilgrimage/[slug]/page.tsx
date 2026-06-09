@@ -83,8 +83,20 @@ export async function generateMetadata(
   }
 }
 
-export default async function PilgrimageClusterPage({ params }: { params: Promise<{ slug: string }> }) {
+const PAGE_SIZE = 48
+
+export default async function PilgrimageClusterPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string }>
+  searchParams: Promise<{ page?: string }>
+}) {
   const { slug } = await params
+  const { page: pageParam } = await searchParams
+  const page = Math.max(1, parseInt(pageParam ?? '1', 10) || 1)
+  const skip = (page - 1) * PAGE_SIZE
+
   const cluster = CLUSTER_MAP[slug]
   if (!cluster) notFound()
 
@@ -106,13 +118,17 @@ export default async function PilgrimageClusterPage({ params }: { params: Promis
     const projection = 'title slug description image imageCard city state country deity categories sacredCategories sacredCategorySlugs templeType templeTypes canonicalShaktiPeeth canonicalShaktiPeethKey canonicalShaktiPeethName shaktiPeethMeta'
 
     if (cluster.categoryMatch === SHAKTI_PEETH_CATEGORY) {
-      const candidates = await Temple.find(categoryFilter, projection).sort({ createdAt: -1 }).limit(250).lean() as any[]
+      const candidates = await Temple.find(categoryFilter, projection).sort({ createdAt: -1 }).limit(300).lean() as any[]
       const canonicalTemples = getTemplesForSacredCategory(candidates, cluster.categoryMatch)
-      temples = canonicalTemples.slice(0, 96)
       totalTemples = canonicalTemples.length
+      temples = canonicalTemples.slice(skip, skip + PAGE_SIZE)
     } else {
       const [items, total] = await Promise.all([
-        Temple.find(categoryFilter, projection).sort({ createdAt: -1 }).limit(96).lean() as Promise<any[]>,
+        Temple.find(categoryFilter, projection)
+          .sort({ createdAt: -1, _id: 1 })
+          .skip(skip)
+          .limit(PAGE_SIZE)
+          .lean() as Promise<any[]>,
         Temple.countDocuments(categoryFilter),
       ])
       temples = items.filter((t: any) =>
@@ -125,7 +141,11 @@ export default async function PilgrimageClusterPage({ params }: { params: Promis
     console.error('Pilgrimage cluster fetch error:', e)
   }
 
-  const states = Array.from(new Set(temples.map((t: any) => t.state).filter(Boolean))).sort() as string[]
+  const totalPages = Math.max(1, Math.ceil(totalTemples / PAGE_SIZE))
+
+  const states = page === 1
+    ? Array.from(new Set(temples.map((t: any) => t.state).filter(Boolean))).sort() as string[]
+    : []
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -237,6 +257,32 @@ export default async function PilgrimageClusterPage({ params }: { params: Promis
               </Link>
             ))}
           </div>
+        )}
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <nav className="mt-10 flex items-center justify-center gap-3" aria-label="Pagination">
+            {page > 1 && (
+              <Link
+                href={`/temples/pilgrimage/${slug}?page=${page - 1}`}
+                className="px-4 py-2 rounded-lg border border-surface-border text-body-sm font-medium text-ink hover:bg-surface-sunken transition-colors no-underline"
+              >
+                ← Previous
+              </Link>
+            )}
+            <span className="text-body-sm text-ink-muted">
+              Page {page} of {totalPages}
+              <span className="ml-2 text-ink-faint">({totalTemples.toLocaleString()} temples)</span>
+            </span>
+            {page < totalPages && (
+              <Link
+                href={`/temples/pilgrimage/${slug}?page=${page + 1}`}
+                className="px-4 py-2 rounded-lg border border-surface-border text-body-sm font-medium text-ink hover:bg-surface-sunken transition-colors no-underline"
+              >
+                Next →
+              </Link>
+            )}
+          </nav>
         )}
 
         {/* Related Pilgrimage Circuits */}

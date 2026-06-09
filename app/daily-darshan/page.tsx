@@ -296,12 +296,11 @@ export default function DailyDarshanPage() {
 
     async function fetchDarshan() {
       try {
-        const res = await fetch('/api/darshan')
+        const res = await fetch('/api/darshan?limit=50')
         if (!res.ok) return
         const data = await res.json()
-        const approved = Array.isArray(data)
-          ? data.filter((d: Darshan) => isPublicActive(d))
-          : []
+        const items = Array.isArray(data) ? data : (data.items || data.data || [])
+        const approved = items.filter((d: Darshan) => isPublicActive(d))
         if (!cancelled) setItems(approved)
       } catch (error) {
         console.error('Failed to fetch darshan:', error)

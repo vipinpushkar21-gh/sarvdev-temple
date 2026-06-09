@@ -1,5 +1,4 @@
 import './globals.css'
-import { Inter, Noto_Serif_Devanagari, Playfair_Display, Cinzel } from 'next/font/google'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
 import Disclaimer from '../components/Disclaimer'
@@ -20,33 +19,7 @@ import SpiritualChatbot from '../components/SpiritualChatbot'
 import { ThemeProvider } from '../lib/theme'
 import PWARegister from '../components/PWARegister'
 import ScrollRevealInit from '../components/ScrollRevealInit'
-
-const inter = Inter({
-  subsets: ['latin'],
-  variable: '--font-inter',
-  display: 'swap',
-})
-
-const notoSerif = Noto_Serif_Devanagari({
-  subsets: ['devanagari'],
-  variable: '--font-devanagari',
-  display: 'swap',
-  weight: ['400', '600', '700'],
-})
-
-const playfair = Playfair_Display({
-  subsets: ['latin'],
-  variable: '--font-playfair',
-  display: 'swap',
-  weight: ['400', '500', '600', '700'],
-})
-
-const cinzel = Cinzel({
-  subsets: ['latin'],
-  variable: '--font-cinzel',
-  display: 'swap',
-  weight: ['400', '500', '600', '700'],
-})
+import ScrollRestorer from '../components/ScrollRestorer'
 
 export const viewport = {
   themeColor: '#FF9933',
@@ -139,7 +112,7 @@ const jsonLd = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${inter.variable} ${notoSerif.variable} ${playfair.variable} ${cinzel.variable}`} suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning>
       <head>
         <link rel="dns-prefetch" href="https://res.cloudinary.com" />
         <link rel="preconnect" href="https://res.cloudinary.com" crossOrigin="anonymous" />
@@ -177,6 +150,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <ScrollToTop />
             <SpiritualChatbot />
             <ScrollRevealInit />
+            <ScrollRestorer />
           </ToastProvider>
           </AudioPlayerProvider>
           </FavouritesProvider>

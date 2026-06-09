@@ -23,10 +23,11 @@ export default function SpiritualIconsPage() {
 
     async function loadIcons() {
       try {
-        const res = await fetch('/api/spiritual-icons')
+        const res = await fetch('/api/spiritual-icons?limit=50')
         if (!res.ok) return
         const data = await res.json()
-        if (!cancelled && Array.isArray(data) && data.length > 0) setIcons(data)
+        const items = Array.isArray(data) ? data : (data.items || data.data || [])
+        if (!cancelled && Array.isArray(items) && items.length > 0) setIcons(items)
       } catch {
       } finally {
         if (!cancelled) setLoading(false)

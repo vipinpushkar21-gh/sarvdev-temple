@@ -9,14 +9,30 @@ import { getGroupedCategories } from '../../../../lib/sacred-categories'
 
 type FormState = {
   name: string
+  nameHi: string
   location: string
+  slug: string
   mapsLink: string
   city: string
   state: string
   country: string
   pincode: string
+  latitude: string
+  longitude: string
   description: string
   descriptionHi: string
+  history: string
+  historyHi: string
+  architecture: string
+  architectureHi: string
+  religiousImportance: string
+  religiousImportanceHi: string
+  festivalsHi: string
+  bestTimeToVisit: string
+  bestTimeToVisitHi: string
+  nearbyTemples: string
+  faqs: string
+  sourceUrls: string
   deity: string
   establishedYear: string
   templeType: string
@@ -35,6 +51,8 @@ type FormState = {
   metaTitle: string
   metaDescription: string
   metaKeywords: string
+  tags: string
+  keywords: string
   ogImage: string
 }
 
@@ -68,12 +86,27 @@ const i = "admin-input w-full"
 const l = "block text-sm font-medium text-gray-600 mb-1"
 const e = "mt-1 text-xs text-red-500"
 
+const splitList = (value: string) => value.split(/\r?\n|,/).map(item => item.trim()).filter(Boolean)
+const parseFaqs = (value: string) =>
+  value
+    .split(/\r?\n|;/)
+    .map(item => item.trim())
+    .filter(Boolean)
+    .map(item => {
+      const [question, ...answerParts] = item.split('|')
+      return { question: (question || '').trim(), answer: answerParts.join('|').trim() }
+    })
+    .filter(item => item.question || item.answer)
+const hasEnglishLetters = (value: string) => /[A-Za-z]/.test(value)
+
 const emptyForm = (): FormState => ({
-  name: "", location: "", mapsLink: "", city: "", state: "", country: "India", pincode: "",
-  description: "", descriptionHi: "", deity: "", establishedYear: "", templeType: "",
+  name: "", nameHi: "", location: "", slug: "", mapsLink: "", city: "", state: "", country: "India", pincode: "", latitude: "", longitude: "",
+  description: "", descriptionHi: "", history: "", historyHi: "", architecture: "", architectureHi: "",
+  religiousImportance: "", religiousImportanceHi: "", festivalsHi: "", bestTimeToVisit: "", bestTimeToVisitHi: "",
+  nearbyTemples: "", faqs: "", sourceUrls: "", deity: "", establishedYear: "", templeType: "",
   speciality: "", categories: [], imageUrl: "", imageCard: "", imageHero: "", imageGallery: "", contact: "", phone: "", email: "",
   website: "", facebook: "", instagram: "",
-  metaTitle: "", metaDescription: "", metaKeywords: "", ogImage: ""
+  metaTitle: "", metaDescription: "", metaKeywords: "", tags: "", keywords: "", ogImage: ""
 })
 
 export default function AdminNewTemplePage() {
@@ -158,26 +191,51 @@ export default function AdminNewTemplePage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title: form.name,
+          titleHi: form.nameHi,
+          slug: form.slug,
           location: [form.location, form.city, form.state, form.country, form.pincode ? `- ${form.pincode}` : ''].filter(Boolean).join(', '),
+          streetAddress: form.location,
           mapsLink: form.mapsLink,
           city: form.city,
           state: form.state,
           country: form.country,
           pincode: form.pincode,
+          latitude: form.latitude,
+          longitude: form.longitude,
           description: form.description,
           descriptionHi: form.descriptionHi,
+          history: form.history,
+          historyHi: form.historyHi,
+          architecture: form.architecture,
+          architectureHi: form.architectureHi,
+          architectureHighlights: form.architecture,
+          religiousImportance: form.religiousImportance,
+          religiousImportanceHi: form.religiousImportanceHi,
+          sacredImportance: form.religiousImportance,
+          sacredImportanceHi: form.religiousImportanceHi,
+          festivalsHi: form.festivalsHi,
+          bestTimeToVisit: form.bestTimeToVisit,
+          bestTimeToVisitHi: form.bestTimeToVisitHi,
+          bestSeason: form.bestTimeToVisit,
+          nearbyTemples: splitList(form.nearbyTemples),
+          nearbySacredPlaces: splitList(form.nearbyTemples),
+          faqs: parseFaqs(form.faqs),
+          sourceUrls: splitList(form.sourceUrls),
           deity: form.deity,
           establishedYear: form.establishedYear,
           templeType: form.templeType,
           speciality: form.speciality,
           categories: form.categories,
           sacredCategories: form.categories, // Sync both fields
+          primaryImage: form.imageUrl,
           image: form.imageUrl || form.imageCard || form.imageHero,
           imageCard: form.imageCard,
           imageHero: form.imageHero,
           heroImage: form.imageHero,
           imageGallery: form.imageGallery.split(/\r?\n|,/).map(url => url.trim()).filter(Boolean),
           galleryImages: form.imageGallery.split(/\r?\n|,/).map(url => url.trim()).filter(Boolean),
+          googleMapUrl: form.mapsLink,
+          googleMapsUrl: form.mapsLink,
           timings: filledSlots.join(', '),
           timingSlots: filledSlots,
           festivals: festivals.filter(f => f.name.trim()),
@@ -188,9 +246,11 @@ export default function AdminNewTemplePage() {
           facebook: form.facebook,
           instagram: form.instagram,
           status: 'approved',
+          tags: splitList(form.tags),
           metaTitle: form.metaTitle,
           metaDescription: form.metaDescription,
-          metaKeywords: form.metaKeywords,
+          metaKeywords: form.metaKeywords || form.keywords,
+          keywords: splitList(form.keywords || form.metaKeywords),
           ogImage: form.ogImage
         }),
       })
@@ -242,6 +302,15 @@ export default function AdminNewTemplePage() {
             <label className={l}>{T.templeName} *</label>
             <input value={form.name} onChange={ev => onChange("name", ev.target.value)} placeholder={hi ? 'जैसे श्री राम मंदिर' : 'e.g. Shri Ram Mandir'} className={`${i} ${errors.name ? 'border-red-400' : ''}`} />
             {errors.name && <p className={e}>{errors.name}</p>}
+          </div>
+
+          <div>
+            <label className={l}>Hindi Temple Name (Devanagari)</label>
+            <input value={form.nameHi} onChange={ev => onChange("nameHi", ev.target.value)} placeholder="जैसे श्री विष्णु मंदिर" className={i} />
+            <p className="mt-1 text-xs text-gray-400">Optional. Leave blank if the Hindi name is not available.</p>
+            {form.nameHi.trim() && hasEnglishLetters(form.nameHi) && (
+              <p className="mt-1 text-xs text-amber-600">Use Devanagari only in this field. English name belongs in Temple Name.</p>
+            )}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -348,9 +417,20 @@ export default function AdminNewTemplePage() {
               </select>
             </div>
             <div>
-              <label className={l}>{T.mapsLink}</label>
+              <label className={l}>GoogleMapUrl</label>
               <input value={form.mapsLink} onChange={ev => onChange("mapsLink", ev.target.value)} placeholder="https://maps.app.goo.gl/..." className={i} />
               <p className="mt-1 text-xs text-gray-400">{hi ? 'इस मंदिर का Google Maps URL पेस्ट करें' : 'Paste the Google Maps URL for this temple'}</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className={l}>Latitude</label>
+              <input type="number" step="any" value={form.latitude} onChange={ev => onChange("latitude", ev.target.value)} placeholder="25.3176" className={i} />
+            </div>
+            <div>
+              <label className={l}>Longitude</label>
+              <input type="number" step="any" value={form.longitude} onChange={ev => onChange("longitude", ev.target.value)} placeholder="82.9739" className={i} />
             </div>
           </div>
         </div>
@@ -392,6 +472,13 @@ export default function AdminNewTemplePage() {
           </div>
 
           <div className="space-y-6">
+            <ImageUpload
+              label={hi ? 'मुख्य छवि' : 'Primary Image'}
+              value={form.imageUrl}
+              onChange={url => onChange("imageUrl", url)}
+              folder="sarvdev/temples"
+              guidance="card"
+            />
             <ImageUpload
               label={hi ? 'कार्ड छवि' : 'Card Image'}
               value={form.imageCard}
@@ -459,6 +546,85 @@ export default function AdminNewTemplePage() {
               ))}
             </div>
           )}
+        </div>
+
+        {/* SEO Content & CSV Fields */}
+        <div className="admin-card p-6 space-y-5">
+          <div>
+            <h2 className="admin-section-title">SEO Content &amp; CSV Fields</h2>
+            <p className="text-xs text-gray-400 mt-0.5">Optional admin-only fields used by imports, SEO, and rich temple pages.</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className={l}>Slug</label>
+              <input value={form.slug} onChange={ev => onChange("slug", ev.target.value)} placeholder="sample-vishnu-temple" className={i} />
+              <p className="mt-1 text-xs text-gray-400">Leave blank to auto-generate from title.</p>
+            </div>
+            <div>
+              <label className={l}>Tags</label>
+              <input value={form.tags} onChange={ev => onChange("tags", ev.target.value)} placeholder="vishnu, darshan, uttar pradesh" className={i} />
+              <p className="mt-1 text-xs text-gray-400">Comma-separated tags.</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className={l}>History</label>
+              <textarea value={form.history} onChange={ev => onChange("history", ev.target.value)} rows={4} className={i} placeholder="Historical background..." />
+            </div>
+            <div>
+              <label className={l}>History (Hindi)</label>
+              <textarea value={form.historyHi} onChange={ev => onChange("historyHi", ev.target.value)} rows={4} className={i} placeholder="Hindi history..." />
+            </div>
+            <div>
+              <label className={l}>Architecture</label>
+              <textarea value={form.architecture} onChange={ev => onChange("architecture", ev.target.value)} rows={3} className={i} placeholder="Architectural style and highlights..." />
+            </div>
+            <div>
+              <label className={l}>Architecture (Hindi)</label>
+              <textarea value={form.architectureHi} onChange={ev => onChange("architectureHi", ev.target.value)} rows={3} className={i} placeholder="Hindi architecture summary..." />
+            </div>
+            <div>
+              <label className={l}>Religious Importance</label>
+              <textarea value={form.religiousImportance} onChange={ev => onChange("religiousImportance", ev.target.value)} rows={3} className={i} placeholder="Spiritual significance..." />
+            </div>
+            <div>
+              <label className={l}>Religious Importance (Hindi)</label>
+              <textarea value={form.religiousImportanceHi} onChange={ev => onChange("religiousImportanceHi", ev.target.value)} rows={3} className={i} placeholder="Hindi spiritual significance..." />
+            </div>
+            <div>
+              <label className={l}>Best Time To Visit</label>
+              <input value={form.bestTimeToVisit} onChange={ev => onChange("bestTimeToVisit", ev.target.value)} placeholder="October to March" className={i} />
+            </div>
+            <div>
+              <label className={l}>Best Time To Visit (Hindi)</label>
+              <input value={form.bestTimeToVisitHi} onChange={ev => onChange("bestTimeToVisitHi", ev.target.value)} placeholder="Hindi visit guidance" className={i} />
+            </div>
+          </div>
+
+          <div>
+            <label className={l}>Festivals (Hindi summary)</label>
+            <input value={form.festivalsHi} onChange={ev => onChange("festivalsHi", ev.target.value)} placeholder="Hindi festival names or summary" className={i} />
+          </div>
+
+          <div>
+            <label className={l}>Nearby Temples</label>
+            <input value={form.nearbyTemples} onChange={ev => onChange("nearbyTemples", ev.target.value)} placeholder="Temple One, Temple Two" className={i} />
+            <p className="mt-1 text-xs text-gray-400">Comma-separated names.</p>
+          </div>
+
+          <div>
+            <label className={l}>FAQs</label>
+            <textarea value={form.faqs} onChange={ev => onChange("faqs", ev.target.value)} rows={3} className={i} placeholder="Question?|Answer; Another question?|Another answer" />
+            <p className="mt-1 text-xs text-gray-400">Use one FAQ per line or semicolon. Separate question and answer with |.</p>
+          </div>
+
+          <div>
+            <label className={l}>Source URLs</label>
+            <textarea value={form.sourceUrls} onChange={ev => onChange("sourceUrls", ev.target.value)} rows={2} className={i} placeholder="https://example.com/source" />
+            <p className="mt-1 text-xs text-gray-400">Comma-separated or one URL per line.</p>
+          </div>
         </div>
 
         {/* Contact Information */}

@@ -132,7 +132,7 @@ export default function SacredEcosystemHero({ stats }: SacredEcosystemHeroProps)
   ]
 
   return (
-    <section className="relative isolate overflow-hidden bg-[#140b07] text-white">
+    <section className="relative isolate bg-[#140b07] text-white">
       <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_18%_18%,rgba(255,153,51,0.22),transparent_34%),radial-gradient(circle_at_80%_28%,rgba(255,215,0,0.14),transparent_30%),linear-gradient(135deg,#160b07_0%,#32160d_45%,#130806_100%)]" />
       <div className="absolute inset-0 -z-10 opacity-[0.18] bg-[linear-gradient(rgba(255,255,255,0.06)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.06)_1px,transparent_1px)] bg-[size:48px_48px]" />
       <div className="absolute inset-x-0 top-0 -z-10 h-px bg-gradient-to-r from-transparent via-temple-gold-light/70 to-transparent" />
@@ -176,7 +176,7 @@ export default function SacredEcosystemHero({ stats }: SacredEcosystemHeroProps)
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.65, delay: 0.24 }}
-            className="mt-8 rounded-card border border-white/10 bg-white/[0.08] p-3 shadow-[0_18px_60px_rgba(0,0,0,0.26)] backdrop-blur-xl sm:p-4"
+            className="relative z-20 mt-8 rounded-card border border-white/10 bg-white/[0.08] p-3 shadow-[0_18px_60px_rgba(0,0,0,0.26)] backdrop-blur-xl sm:p-4"
           >
             <div className="mb-3 flex items-center gap-2 px-1 text-caption font-semibold uppercase text-temple-gold-light">
               <Search className="h-4 w-4" aria-hidden="true" />

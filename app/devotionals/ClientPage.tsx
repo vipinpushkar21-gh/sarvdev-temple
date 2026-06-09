@@ -109,11 +109,12 @@ export default function ClientPage() {
 
     async function fetchDevotionals() {
       try {
-        const res = await fetch('/api/devotionals')
+        const res = await fetch('/api/devotionals?page=1&limit=60')
         if (!res.ok) return
         const data = await res.json()
         if (!cancelled) {
-          const approved = (Array.isArray(data) ? data : []).filter((item: Devotional) => item.status === 'approved' || !item.status)
+          const items = Array.isArray(data) ? data : (data.items || data.data || [])
+          const approved = items.filter((item: Devotional) => item.status === 'approved' || !item.status)
           setDevotionals(approved)
         }
       } finally {

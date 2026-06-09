@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import ImageUpload from '../../../components/ImageUpload'
+import AdminPagination from '@/components/admin/AdminPagination'
+import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 
 type EventRow = any
 type ImportResult = {
@@ -80,6 +82,10 @@ export default function AdminEventsPage() {
   const [statusFilter, setStatusFilter] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('')
   const [cityFilter, setCityFilter] = useState('')
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(50)
+  const [total, setTotal] = useState(0)
+  const [hasMore, setHasMore] = useState(false)
   const [editing, setEditing] = useState<EventRow | null>(null)
   const [form, setForm] = useState<any>(emptyForm)
   const [saving, setSaving] = useState(false)
@@ -87,13 +93,28 @@ export default function AdminEventsPage() {
   const [importResult, setImportResult] = useState<ImportResult | null>(null)
   const [toast, setToast] = useState('')
 
-  useEffect(() => { fetchEvents() }, [])
+  const debouncedSearch = useDebouncedValue(search)
+  const debouncedCity = useDebouncedValue(cityFilter)
+
+  useEffect(() => { fetchEvents() }, [page, pageSize, debouncedSearch, statusFilter, categoryFilter, debouncedCity])
+  useEffect(() => { setPage(1) }, [pageSize, debouncedSearch, statusFilter, categoryFilter, debouncedCity])
 
   async function fetchEvents() {
     setLoading(true)
     try {
-      const res = await fetch('/api/admin/events', { credentials: 'include', cache: 'no-store' })
-      if (res.ok) setRows(await res.json())
+      const params = new URLSearchParams({ page: String(page), limit: String(pageSize) })
+      if (debouncedSearch) params.set('search', debouncedSearch)
+      if (statusFilter) params.set('status', statusFilter)
+      if (categoryFilter) params.set('category', categoryFilter)
+      if (debouncedCity) params.set('city', debouncedCity)
+      const res = await fetch(`/api/admin/events?${params.toString()}`, { credentials: 'include', cache: 'no-store' })
+      if (res.ok) {
+        const data = await res.json()
+        const items = Array.isArray(data) ? data : (data.items || data.data || [])
+        setRows(items)
+        setTotal(Number(data.total || items.length || 0))
+        setHasMore(Boolean(data.hasMore))
+      }
     } finally {
       setLoading(false)
     }
@@ -194,14 +215,7 @@ export default function AdminEventsPage() {
     if (res.ok) fetchEvents()
   }
 
-  const filtered = useMemo(() => rows.filter((row) => {
-    const q = search.toLowerCase()
-    if (q && !`${row.title} ${row.templeName} ${row.deityName} ${row.city} ${row.state}`.toLowerCase().includes(q)) return false
-    if (statusFilter && row.status !== statusFilter) return false
-    if (categoryFilter && row.category !== categoryFilter) return false
-    if (cityFilter && !`${row.city} ${row.state}`.toLowerCase().includes(cityFilter.toLowerCase())) return false
-    return true
-  }), [rows, search, statusFilter, categoryFilter, cityFilter])
+  const filtered = rows
 
   const stats = {
     total: rows.length,
@@ -380,6 +394,15 @@ export default function AdminEventsPage() {
           </table>
         </div>
       </div>
+      <AdminPagination
+        page={page}
+        limit={pageSize}
+        total={total}
+        hasMore={hasMore}
+        loading={loading}
+        onPageChange={setPage}
+        onLimitChange={(nextLimit) => { setPageSize(nextLimit); setPage(1) }}
+      />
     </div>
   )
 }

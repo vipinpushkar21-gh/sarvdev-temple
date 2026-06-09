@@ -54,10 +54,11 @@ export default function BlogIndexPage() {
   useEffect(() => {
     async function fetchBlogs() {
       try {
-        const res = await fetch('/api/blogs', { cache: 'no-store' })
+        const res = await fetch('/api/blogs?page=1&limit=30', { cache: 'no-store' })
         if (res.ok) {
           const data = await res.json()
-          setPosts(Array.isArray(data) ? data : [])
+          const items = Array.isArray(data) ? data : (data.items || data.data || [])
+          setPosts(Array.isArray(items) ? items : [])
         }
       } finally {
         setLoading(false)

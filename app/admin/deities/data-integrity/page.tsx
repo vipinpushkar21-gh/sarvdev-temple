@@ -8,17 +8,28 @@ import { findBestDeityMatch, normalizeDeityIdentity } from "@/lib/deity-identity
 export default function DeityDataIntegrityPage() {
   const [dbDeities, setDbDeities] = useState<any[]>([])
   const [categoryReport, setCategoryReport] = useState<any>(null)
+  const [migrationReport, setMigrationReport] = useState<any>(null)
   const [repairing, setRepairing] = useState(false)
+  const [migrating, setMigrating] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
 
   useEffect(() => {
     async function load() {
       try {
-        const response = await fetch("/api/deities", { credentials: "include", cache: "no-store" })
-        if (!response.ok) throw new Error("Failed to load deity records")
-        const data = await response.json()
-        setDbDeities(Array.isArray(data) ? data : [])
+        const loaded: any[] = []
+        let page = 1
+        let hasMore = true
+        while (hasMore) {
+          const response = await fetch(`/api/deities?admin=1&page=${page}&limit=100`, { credentials: "include", cache: "no-store" })
+          if (!response.ok) throw new Error("Failed to load deity records")
+          const data = await response.json()
+          const items = Array.isArray(data) ? data : (data.items || data.data || [])
+          loaded.push(...items)
+          hasMore = Boolean(data.hasMore)
+          page += 1
+        }
+        setDbDeities(loaded)
         const reportResponse = await fetch("/api/admin/deities/integrity-report", { credentials: "include", cache: "no-store" })
         if (reportResponse.ok) setCategoryReport(await reportResponse.json())
       } catch (err) {
@@ -46,6 +57,28 @@ export default function DeityDataIntegrityPage() {
       alert(err instanceof Error ? err.message : "Repair failed")
     } finally {
       setRepairing(false)
+    }
+  }
+
+  async function runMigration(dryRun: boolean) {
+    if (!dryRun && !confirm("Run safe deity metadata migration now? It only fills missing canonical fields and will not overwrite descriptions, images, or customized content.")) return
+    setMigrating(true)
+    try {
+      const response = await fetch("/api/admin/deities/migrate", {
+        method: dryRun ? "GET" : "POST",
+        credentials: "include",
+      })
+      const data = await response.json()
+      if (!response.ok) throw new Error(data.error || "Migration request failed")
+      setMigrationReport(data)
+      if (!dryRun) {
+        const reportResponse = await fetch("/api/admin/deities/integrity-report", { credentials: "include", cache: "no-store" })
+        if (reportResponse.ok) setCategoryReport(await reportResponse.json())
+      }
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Migration request failed")
+    } finally {
+      setMigrating(false)
     }
   }
 
@@ -127,6 +160,49 @@ export default function DeityDataIntegrityPage() {
             >
               {repairing ? "Repairing..." : "Repair Category IDs"}
             </button>
+          </div>
+        </section>
+      )}
+
+      <section className="card p-5">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h2 className="text-lg font-bold text-ink">Canonical Field Migration</h2>
+            <p className="mt-1 text-sm text-ink-muted">
+              Fill only missing slug/categorySlug/categoryName/categoryNameHi/aliases/source markers. No deity content or images are overwritten.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button type="button" disabled={migrating} onClick={() => runMigration(true)} className="rounded-lg border border-orange-200 px-4 py-2 text-sm font-bold text-orange-700 disabled:opacity-50">
+              Dry Run
+            </button>
+            <button type="button" disabled={migrating} onClick={() => runMigration(false)} className="rounded-lg bg-orange-600 px-4 py-2 text-sm font-bold text-white disabled:opacity-50">
+              Run Migration
+            </button>
+          </div>
+        </div>
+        {migrationReport && (
+          <div className="mt-4 rounded-xl bg-orange-50 p-4 text-sm text-orange-900">
+            <p className="font-semibold">
+              {migrationReport.dryRun ? "Dry run" : "Migration"}: scanned {migrationReport.scanned || 0}, needing updates {migrationReport.needingUpdates || 0}, modified {migrationReport.modified || 0}.
+            </p>
+            <p className="mt-1">Fields: {Object.entries(migrationReport.fieldCounts || {}).map(([field, count]) => `${field}: ${count}`).join(", ") || "none"}</p>
+          </div>
+        )}
+      </section>
+
+      {categoryReport && (
+        <section className="card p-5">
+          <h2 className="text-lg font-bold text-ink">DB Canonical Audit</h2>
+          <div className="mt-3 grid gap-2 text-sm text-ink-muted md:grid-cols-2">
+            <p>Duplicate slugs: {categoryReport.duplicateSlugs?.length || 0}</p>
+            <p>Missing slugs: {categoryReport.missingSlugs?.length || 0}</p>
+            <p>Missing names: {categoryReport.missingNames?.length || 0}</p>
+            <p>Missing Hindi names: {categoryReport.missingHindiNames?.length || 0}</p>
+            <p>Missing categories: {categoryReport.missingCategories?.length || 0}</p>
+            <p>Missing canonical fields: {categoryReport.missingCanonicalFields?.length || 0}</p>
+            <p>Missing images: {categoryReport.missingImages?.length || 0}</p>
+            <p>Static/not-in-db markers in DB: {categoryReport.staticSourceRecords?.length || 0}</p>
           </div>
         </section>
       )}

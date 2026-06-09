@@ -14,8 +14,12 @@ const DeitySchema = new Schema({
   images: { type: [String], default: [] },
   category: { type: String }, // Tridev, Tridevi, etc. (legacy - single category)
   categoryId: { type: String }, // For linking to category (legacy)
+  categorySlug: { type: String, index: true },
+  categoryName: { type: String },
+  categoryNameHi: { type: String },
   categories: { type: [String], default: [] }, // NEW: Multiple categories - array of category IDs
   categoryIds: { type: [String], default: [] }, // NEW: Multiple category IDs
+  aliases: { type: [String], default: [] },
   slug: { type: String, required: true, unique: true },
   staticSlug: { type: String, index: true },
   slugAliases: { type: [String], default: [] },
@@ -35,7 +39,7 @@ const DeitySchema = new Schema({
 } as any);
 
 const ExistingDeityModel: any = (mongoose.models as any).Deity || (models.Deity as any);
-if (ExistingDeityModel && (!ExistingDeityModel.schema.path('source') || !ExistingDeityModel.schema.path('staticSlug'))) {
+if (ExistingDeityModel && (!ExistingDeityModel.schema.path('source') || !ExistingDeityModel.schema.path('staticSlug') || !ExistingDeityModel.schema.path('categorySlug'))) {
   delete (mongoose.models as any).Deity;
 }
 

@@ -8,6 +8,7 @@ import { getGroupedCategories } from '../../../../../lib/sacred-categories'
 type FormState = {
   title: string
   titleHi: string
+  slug: string
   location: string
   locationHi: string
   mapsLink: string
@@ -19,9 +20,25 @@ type FormState = {
   country: string
   pincode: string
   pincodeHi: string
+  latitude: string
+  longitude: string
   description: string
   descriptionHi: string
+  tags: string
+  history: string
+  historyHi: string
+  architecture: string
+  architectureHi: string
+  religiousImportance: string
+  religiousImportanceHi: string
+  festivalsHi: string
+  bestTimeToVisit: string
+  bestTimeToVisitHi: string
+  nearbyTemples: string
+  faqs: string
+  sourceUrls: string
   deity: string
+  deityHi: string
   establishedYear: string
   establishedYearHi: string
   templeType: string
@@ -29,6 +46,7 @@ type FormState = {
   sacredCategories: string[]
   speciality: string
   specialityHi: string
+  primaryImage: string
   image: string
   imageCard: string
   imageHero: string
@@ -44,6 +62,7 @@ type FormState = {
   metaTitle: string
   metaDescription: string
   metaKeywords: string
+  keywords: string
   ogImage: string
 }
 
@@ -69,14 +88,33 @@ function slugify(text: string): string {
   return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
 }
 
+const splitList = (value: string) => value.split(/\r?\n|,/).map(item => item.trim()).filter(Boolean)
+const stringifyList = (value: unknown) => Array.isArray(value) ? value.filter(Boolean).join(', ') : String(value || '')
+const parseFaqs = (value: string) =>
+  value
+    .split(/\r?\n|;/)
+    .map(item => item.trim())
+    .filter(Boolean)
+    .map(item => {
+      const [question, ...answerParts] = item.split('|')
+      return { question: (question || '').trim(), answer: answerParts.join('|').trim() }
+    })
+    .filter(item => item.question || item.answer)
+const stringifyFaqs = (value: unknown) =>
+  Array.isArray(value)
+    ? value.map((item: any) => [item?.question, item?.answer].filter(Boolean).join('|')).filter(Boolean).join('\n')
+    : String(value || '')
+const hasEnglishLetters = (value: string) => /[A-Za-z]/.test(value)
+
 export default function EditTemplePage({ params }: { params: Promise<{ id: string }> }) {
   const [id, setId] = useState<string>("")
   const [form, setForm] = useState<FormState>({ 
-    title: "", titleHi: "", location: "", locationHi: "", mapsLink: "", city: "", cityHi: "", district: "", state: "", stateHi: "", country: "India", pincode: "", pincodeHi: "",
-    description: "", descriptionHi: "", deity: "", establishedYear: "", establishedYearHi: "", templeType: "", templeTypes: [], sacredCategories: [], speciality: "", specialityHi: "",
-    image: "", imageCard: "", imageHero: "", imageGallery: "", timings: "", contact: "", phone: "", email: "", website: "", 
+    title: "", titleHi: "", slug: "", location: "", locationHi: "", mapsLink: "", city: "", cityHi: "", district: "", state: "", stateHi: "", country: "India", pincode: "", pincodeHi: "", latitude: "", longitude: "",
+    description: "", descriptionHi: "", tags: "", history: "", historyHi: "", architecture: "", architectureHi: "", religiousImportance: "", religiousImportanceHi: "",
+    festivalsHi: "", bestTimeToVisit: "", bestTimeToVisitHi: "", nearbyTemples: "", faqs: "", sourceUrls: "", deity: "", deityHi: "", establishedYear: "", establishedYearHi: "", templeType: "", templeTypes: [], sacredCategories: [], speciality: "", specialityHi: "",
+    primaryImage: "", image: "", imageCard: "", imageHero: "", imageGallery: "", timings: "", contact: "", phone: "", email: "", website: "", 
     facebook: "", instagram: "", status: "pending",
-    metaTitle: "", metaDescription: "", metaKeywords: "", ogImage: ""
+    metaTitle: "", metaDescription: "", metaKeywords: "", keywords: "", ogImage: ""
   })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -111,9 +149,10 @@ export default function EditTemplePage({ params }: { params: Promise<{ id: strin
           setForm({
             title: temple.title || "",
             titleHi: temple.titleHi || "",
+            slug: temple.slug || "",
             location: temple.location || "",
             locationHi: temple.locationHi || "",
-            mapsLink: temple.mapsLink || "",
+            mapsLink: temple.googleMapUrl || temple.googleMapsUrl || temple.mapsLink || "",
             city: temple.city || "",
             cityHi: temple.cityHi || "",
             district: temple.district || "",
@@ -122,9 +161,25 @@ export default function EditTemplePage({ params }: { params: Promise<{ id: strin
             country: temple.country || "India",
             pincode: temple.pincode || "",
             pincodeHi: temple.pincodeHi || "",
+            latitude: temple.latitude !== undefined && temple.latitude !== null ? String(temple.latitude) : "",
+            longitude: temple.longitude !== undefined && temple.longitude !== null ? String(temple.longitude) : "",
             description: temple.description || "",
             descriptionHi: temple.descriptionHi || "",
+            tags: stringifyList(temple.tags),
+            history: temple.history || "",
+            historyHi: temple.historyHi || "",
+            architecture: temple.architecture || temple.architectureHighlights || "",
+            architectureHi: temple.architectureHi || "",
+            religiousImportance: temple.religiousImportance || temple.sacredImportance || "",
+            religiousImportanceHi: temple.religiousImportanceHi || temple.sacredImportanceHi || "",
+            festivalsHi: temple.festivalsHi || (Array.isArray(temple.festivals) ? temple.festivals.map((f: any) => f?.nameHi).filter(Boolean).join(';') : ""),
+            bestTimeToVisit: temple.bestTimeToVisit || temple.bestSeason || "",
+            bestTimeToVisitHi: temple.bestTimeToVisitHi || "",
+            nearbyTemples: stringifyList(Array.isArray(temple.nearbyTemples) && temple.nearbyTemples.length > 0 ? temple.nearbyTemples : temple.nearbySacredPlaces),
+            faqs: stringifyFaqs(temple.faqs),
+            sourceUrls: stringifyList(temple.sourceUrls),
             deity: temple.deity || "",
+            deityHi: temple.deityHi || "",
             establishedYear: temple.establishedYear || "",
             establishedYearHi: temple.establishedYearHi || "",
             templeType: temple.templeType || "",
@@ -138,6 +193,7 @@ export default function EditTemplePage({ params }: { params: Promise<{ id: strin
                   : []),
             speciality: temple.speciality || "",
             specialityHi: temple.specialityHi || "",
+            primaryImage: temple.primaryImage || temple.image || "",
             image: temple.image || "",
             imageCard: temple.imageCard || "",
             imageHero: temple.imageHero || temple.heroImage || "",
@@ -154,7 +210,8 @@ export default function EditTemplePage({ params }: { params: Promise<{ id: strin
             status: temple.status || "pending",
             metaTitle: temple.metaTitle || "",
             metaDescription: temple.metaDescription || "",
-            metaKeywords: temple.metaKeywords || "",
+            metaKeywords: temple.metaKeywords || stringifyList(temple.keywords),
+            keywords: stringifyList(temple.keywords),
             ogImage: temple.ogImage || "",
           })
         }
@@ -215,7 +272,7 @@ export default function EditTemplePage({ params }: { params: Promise<{ id: strin
       'temple', 'india', 'sarvdev',
     ]
     const metaKeywords = [...new Set(keywordSet)].join(', ')
-    const ogImage = form.ogImage || form.imageHero || form.imageCard || form.image || ''
+    const ogImage = form.ogImage || form.imageHero || form.imageCard || form.primaryImage || form.image || ''
 
     setForm(prev => ({ ...prev, metaTitle, metaDescription, metaKeywords, ogImage }))
   }
@@ -228,7 +285,30 @@ export default function EditTemplePage({ params }: { params: Promise<{ id: strin
       const submitData = {
         id,
         ...form,
-        image: form.image || form.imageCard || form.imageHero,
+        tags: splitList(form.tags),
+        keywords: splitList(form.keywords || form.metaKeywords),
+        metaKeywords: form.metaKeywords || form.keywords,
+        religiousImportance: form.religiousImportance,
+        religiousImportanceHi: form.religiousImportanceHi,
+        sacredImportance: form.religiousImportance,
+        sacredImportanceHi: form.religiousImportanceHi,
+        architecture: form.architecture,
+        architectureHi: form.architectureHi,
+        architectureHighlights: form.architecture,
+        bestTimeToVisit: form.bestTimeToVisit,
+        bestTimeToVisitHi: form.bestTimeToVisitHi,
+        bestSeason: form.bestTimeToVisit,
+        nearbyTemples: splitList(form.nearbyTemples),
+        nearbySacredPlaces: splitList(form.nearbyTemples),
+        faqs: parseFaqs(form.faqs),
+        sourceUrls: splitList(form.sourceUrls),
+        latitude: form.latitude,
+        longitude: form.longitude,
+        googleMapUrl: form.mapsLink,
+        googleMapsUrl: form.mapsLink,
+        mapsLink: form.mapsLink,
+        primaryImage: form.primaryImage,
+        image: form.primaryImage || form.image || form.imageCard || form.imageHero,
         heroImage: form.imageHero,
         imageGallery: form.imageGallery.split(/\r?\n|,/).map(url => url.trim()).filter(Boolean),
         galleryImages: form.imageGallery.split(/\r?\n|,/).map(url => url.trim()).filter(Boolean),
@@ -286,7 +366,7 @@ export default function EditTemplePage({ params }: { params: Promise<{ id: strin
         </div>
         <div className="flex items-center gap-2">
           {form.title && (
-            <a href={`/temples/${slugify(form.title)}`} target="_blank" rel="noopener noreferrer"
+            <a href={`/temples/${form.slug || slugify(form.title)}`} target="_blank" rel="noopener noreferrer"
               className="admin-btn admin-btn-ghost px-4 py-2 text-sm flex items-center gap-1.5 text-green-700 border-green-200 hover:bg-green-50">
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" /></svg>
               View Live
@@ -305,13 +385,28 @@ export default function EditTemplePage({ params }: { params: Promise<{ id: strin
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-1">Temple Name*</label>
             <input value={form.title} onChange={(e) => onChange("title", e.target.value)} className="admin-input w-full" />
-            <input value={form.titleHi} onChange={(e) => onChange("titleHi", e.target.value)} className="admin-input w-full mt-2" placeholder="मंदिर का नाम हिन्दी में" />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1">Hindi Temple Name (Devanagari)</label>
+            <input value={form.titleHi} onChange={(e) => onChange("titleHi", e.target.value)} className="admin-input w-full" placeholder="जैसे श्री विष्णु मंदिर" />
+            <p className="mt-1 text-xs text-gray-400">Optional. Leave blank if the Hindi name is not available.</p>
+            {form.titleHi.trim() && hasEnglishLetters(form.titleHi) && (
+              <p className="mt-1 text-xs text-amber-600">Use Devanagari only in this field. English name belongs in Temple Name.</p>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1">Slug</label>
+            <input value={form.slug} onChange={(e) => onChange("slug", e.target.value)} className="admin-input w-full" placeholder="temple-url-slug" />
+            <p className="mt-1 text-xs text-gray-400">Keep existing slugs stable unless intentionally changing the public URL.</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-600 mb-1">🕉️ Deity</label>
               <input value={form.deity} onChange={(e) => onChange("deity", e.target.value)} className="admin-input w-full" placeholder="e.g. Shiva, Vishnu, Durga..." />
+              <input value={form.deityHi} onChange={(e) => onChange("deityHi", e.target.value)} className="admin-input w-full mt-2" placeholder="Deity name in Hindi" />
             </div>
 
             <div>
@@ -403,7 +498,7 @@ export default function EditTemplePage({ params }: { params: Promise<{ id: strin
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-600 mb-1">🗺️ Google Maps Embed</label>
+            <label className="block text-sm font-medium text-gray-600 mb-1">GoogleMapUrl</label>
             <textarea
               value={form.mapsLink}
               rows={3}
@@ -424,6 +519,17 @@ export default function EditTemplePage({ params }: { params: Promise<{ id: strin
                 <iframe src={form.mapsLink} width="100%" height="100%" style={{ border: 0 }} allowFullScreen loading="lazy" referrerPolicy="no-referrer-when-downgrade" />
               </div>
             )}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1">Latitude</label>
+              <input type="number" step="any" value={form.latitude} onChange={(e) => onChange("latitude", e.target.value)} className="admin-input w-full" placeholder="25.3176" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1">Longitude</label>
+              <input type="number" step="any" value={form.longitude} onChange={(e) => onChange("longitude", e.target.value)} className="admin-input w-full" placeholder="82.9739" />
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
@@ -472,6 +578,13 @@ export default function EditTemplePage({ params }: { params: Promise<{ id: strin
             </div>
 
             <div className="md:col-span-2 space-y-6">
+              <ImageUpload
+                label="Primary Image"
+                value={form.primaryImage}
+                onChange={url => onChange("primaryImage", url)}
+                folder="sarvdev/temples"
+                guidance="card"
+              />
               <ImageUpload
                 label="Card Image"
                 value={form.imageCard}
@@ -544,22 +657,22 @@ export default function EditTemplePage({ params }: { params: Promise<{ id: strin
           <p className="text-xs text-gray-400">Add rich spiritual content — renders automatically on the temple page when filled.</p>
 
           <div>
-            <label className="block text-sm font-medium text-gray-600 mb-1">Sacred Importance (English)</label>
-            <textarea value={(form as any).sacredImportance || ""} onChange={e => setForm(s => ({ ...s, sacredImportance: e.target.value }))} rows={3} className="admin-input w-full" placeholder="Why is this temple spiritually significant?" />
+            <label className="block text-sm font-medium text-gray-600 mb-1">Religious Importance (English)</label>
+            <textarea value={form.religiousImportance} onChange={e => onChange("religiousImportance", e.target.value)} rows={3} className="admin-input w-full" placeholder="Why is this temple spiritually significant?" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-600 mb-1">Sacred Importance (Hindi)</label>
-            <textarea value={(form as any).sacredImportanceHi || ""} onChange={e => setForm(s => ({ ...s, sacredImportanceHi: e.target.value }))} rows={3} className="admin-input w-full" placeholder="आध्यात्मिक महत्व..." />
+            <label className="block text-sm font-medium text-gray-600 mb-1">Religious Importance (Hindi)</label>
+            <textarea value={form.religiousImportanceHi} onChange={e => onChange("religiousImportanceHi", e.target.value)} rows={3} className="admin-input w-full" placeholder="Spiritual importance in Hindi..." />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-600 mb-1">Temple History (English)</label>
-              <textarea value={(form as any).history || ""} onChange={e => setForm(s => ({ ...s, history: e.target.value }))} rows={4} className="admin-input w-full" placeholder="Historical background..." />
+              <textarea value={form.history} onChange={e => onChange("history", e.target.value)} rows={4} className="admin-input w-full" placeholder="Historical background..." />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-600 mb-1">Temple History (Hindi)</label>
-              <textarea value={(form as any).historyHi || ""} onChange={e => setForm(s => ({ ...s, historyHi: e.target.value }))} rows={4} className="admin-input w-full" placeholder="इतिहास..." />
+              <textarea value={form.historyHi} onChange={e => onChange("historyHi", e.target.value)} rows={4} className="admin-input w-full" placeholder="History in Hindi..." />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-600 mb-1">Mythology (English)</label>
@@ -600,6 +713,14 @@ export default function EditTemplePage({ params }: { params: Promise<{ id: strin
         <div className="admin-card p-6 space-y-5">
           <h2 className="admin-section-title">🏛️ Architecture</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1">Architecture</label>
+              <textarea value={form.architecture} onChange={e => onChange("architecture", e.target.value)} rows={3} className="admin-input w-full" placeholder="Architectural summary and highlights..." />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1">Architecture (Hindi)</label>
+              <textarea value={form.architectureHi} onChange={e => onChange("architectureHi", e.target.value)} rows={3} className="admin-input w-full" placeholder="Architecture summary in Hindi..." />
+            </div>
             <div>
               <label className="block text-sm font-medium text-gray-600 mb-1">Architecture Style</label>
               <input value={(form as any).architectureStyle || ""} onChange={e => setForm(s => ({ ...s, architectureStyle: e.target.value }))} className="admin-input w-full" placeholder="e.g. Dravidian, Nagara, Vesara" />
@@ -644,8 +765,9 @@ export default function EditTemplePage({ params }: { params: Promise<{ id: strin
               <input value={(form as any).pilgrimageCircuit || ""} onChange={e => setForm(s => ({ ...s, pilgrimageCircuit: e.target.value }))} className="admin-input w-full" placeholder="e.g. Char Dham, Jyotirlinga" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1">Best Season to Visit</label>
-              <input value={(form as any).bestSeason || ""} onChange={e => setForm(s => ({ ...s, bestSeason: e.target.value }))} className="admin-input w-full" placeholder="e.g. October–March" />
+              <label className="block text-sm font-medium text-gray-600 mb-1">Best Time To Visit</label>
+              <input value={form.bestTimeToVisit} onChange={e => onChange("bestTimeToVisit", e.target.value)} className="admin-input w-full" placeholder="e.g. October-March" />
+              <input value={form.bestTimeToVisitHi} onChange={e => onChange("bestTimeToVisitHi", e.target.value)} className="admin-input w-full mt-2" placeholder="Best time to visit in Hindi" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-600 mb-1">Avg. Visit Duration</label>
@@ -676,8 +798,8 @@ export default function EditTemplePage({ params }: { params: Promise<{ id: strin
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-600 mb-1">Nearby Sacred Places (comma-separated)</label>
-            <input value={(form as any).nearbySacredPlaces?.join(', ') || ""} onChange={e => setForm(s => ({ ...s, nearbySacredPlaces: e.target.value.split(',').map((x: string) => x.trim()).filter(Boolean) }))} className="admin-input w-full" placeholder="e.g. Kashi Vishwanath, Sankat Mochan" />
+            <label className="block text-sm font-medium text-gray-600 mb-1">Nearby Temples (comma-separated)</label>
+            <input value={form.nearbyTemples} onChange={e => onChange("nearbyTemples", e.target.value)} className="admin-input w-full" placeholder="e.g. Kashi Vishwanath, Sankat Mochan" />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-1">Temple Rules</label>
@@ -717,6 +839,33 @@ export default function EditTemplePage({ params }: { params: Promise<{ id: strin
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-1">Accommodation Info</label>
             <textarea value={(form as any).accommodationInfo || ""} onChange={e => setForm(s => ({ ...s, accommodationInfo: e.target.value }))} rows={2} className="admin-input w-full" placeholder="Hotels, dharamshalas, ashrams nearby..." />
+          </div>
+        </div>
+
+        {/* Admin SEO Import Extras */}
+        <div className="admin-card p-6 space-y-5">
+          <div>
+            <h2 className="admin-section-title">Admin SEO Import Extras</h2>
+            <p className="text-xs text-gray-400 mt-0.5">Optional fields used by CSV import/export and rich SEO pages.</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1">Tags</label>
+            <input value={form.tags} onChange={e => onChange("tags", e.target.value)} className="admin-input w-full" placeholder="vishnu, darshan, uttar pradesh" />
+            <p className="mt-1 text-xs text-gray-400">Comma-separated tags.</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1">Festivals (Hindi summary)</label>
+            <input value={form.festivalsHi} onChange={e => onChange("festivalsHi", e.target.value)} className="admin-input w-full" placeholder="Hindi festival names or summary" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1">FAQs</label>
+            <textarea value={form.faqs} onChange={e => onChange("faqs", e.target.value)} rows={3} className="admin-input w-full" placeholder="Question?|Answer; Another question?|Another answer" />
+            <p className="mt-1 text-xs text-gray-400">Use one FAQ per line or semicolon. Separate question and answer with |.</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1">Source URLs</label>
+            <textarea value={form.sourceUrls} onChange={e => onChange("sourceUrls", e.target.value)} rows={2} className="admin-input w-full" placeholder="https://example.com/source" />
+            <p className="mt-1 text-xs text-gray-400">Comma-separated or one URL per line.</p>
           </div>
         </div>
 

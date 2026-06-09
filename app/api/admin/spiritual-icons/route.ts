@@ -80,10 +80,15 @@ export async function GET(req: NextRequest) {
         SpiritualIcon.find(filter, { __v: 0 }).sort({ featured: -1, priority: 1, name: 1 }).skip(skip).limit(limit).lean(),
         SpiritualIcon.countDocuments(filter),
       ])
-      return NextResponse.json({ items: items.map(normalizeSpiritualIcon), total, page, pages: Math.ceil(total / limit), limit })
+      const normalized = items.map(normalizeSpiritualIcon)
+      return NextResponse.json({ items: normalized, data: normalized, total, page, pages: Math.ceil(total / limit), limit, hasMore: page * limit < total })
     }
 
-    const items = await SpiritualIcon.find(filter, { __v: 0 }).sort({ featured: -1, priority: 1, name: 1 }).lean()
+    const legacyLimit = Math.min(100, Math.max(1, parseInt(limitParam || '50', 10) || 50))
+    const items = await SpiritualIcon.find(filter, { __v: 0 })
+      .sort({ featured: -1, priority: 1, name: 1 })
+      .limit(legacyLimit)
+      .lean()
     return NextResponse.json(items.map(normalizeSpiritualIcon))
   } catch (error) {
     return NextResponse.json({ error: 'Failed to fetch spiritual icons' }, { status: 500 })

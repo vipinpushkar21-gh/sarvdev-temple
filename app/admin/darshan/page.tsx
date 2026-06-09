@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
+import AdminPagination from '@/components/admin/AdminPagination'
+import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 
 type DarshanRow = {
   _id: string
@@ -53,17 +55,35 @@ export default function AdminDarshanPage() {
   const [filter, setFilter] = useState<FilterKey>('all')
   const [deityFilter, setDeityFilter] = useState('')
   const [stateFilter, setStateFilter] = useState('')
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(50)
+  const [total, setTotal] = useState(0)
+  const [hasMore, setHasMore] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
-  useEffect(() => { fetchDarshans() }, [])
+  const debouncedSearch = useDebouncedValue(search)
+
+  useEffect(() => { fetchDarshans() }, [page, pageSize, debouncedSearch, filter, deityFilter, stateFilter])
+  useEffect(() => { setPage(1) }, [pageSize, debouncedSearch, filter, deityFilter, stateFilter])
 
   async function fetchDarshans() {
     setLoading(true)
     try {
-      const res = await fetch('/api/darshan?admin=1', { cache: 'no-store' })
+      const params = new URLSearchParams({ admin: '1', page: String(page), limit: String(pageSize) })
+      if (debouncedSearch) params.set('q', debouncedSearch)
+      if (filter === 'live' || filter === 'recorded' || filter === 'upcoming') params.set('type', filter)
+      if (filter === 'featured') params.set('featured', 'true')
+      if (filter === 'active') params.set('status', 'active')
+      if (filter === 'draft') params.set('status', 'draft')
+      if (deityFilter) params.set('deity', deityFilter)
+      if (stateFilter) params.set('state', stateFilter)
+      const res = await fetch(`/api/darshan?${params.toString()}`, { cache: 'no-store' })
       if (res.ok) {
         const data = await res.json()
-        setRows(Array.isArray(data) ? data : data.items || [])
+        const items = Array.isArray(data) ? data : data.items || data.data || []
+        setRows(items)
+        setTotal(Number(data.total || items.length || 0))
+        setHasMore(Boolean(data.hasMore))
       } else {
         setMessage({ type: 'error', text: 'Unable to load darshan records.' })
       }
@@ -86,21 +106,7 @@ export default function AdminDarshanPage() {
   const deities = useMemo(() => unique(rows.map((row) => row.deity).filter(Boolean) as string[]), [rows])
   const states = useMemo(() => unique(rows.map((row) => row.state).filter(Boolean) as string[]), [rows])
 
-  const filtered = useMemo(() => {
-    const q = normalize(search)
-    return rows.filter((row) => {
-      if (filter === 'live' && getKind(row) !== 'live') return false
-      if (filter === 'recorded' && getKind(row) !== 'recorded') return false
-      if (filter === 'upcoming' && getKind(row) !== 'upcoming') return false
-      if (filter === 'featured' && !isFeatured(row)) return false
-      if (filter === 'active' && !isActive(row)) return false
-      if (filter === 'draft' && row.status !== 'draft') return false
-      if (deityFilter && row.deity !== deityFilter) return false
-      if (stateFilter && row.state !== stateFilter) return false
-      if (q && !normalize([row.title, row.titleHi, getTempleName(row), row.deity, row.city, row.state, row.location].filter(Boolean).join(' ')).includes(q)) return false
-      return true
-    })
-  }, [deityFilter, filter, rows, search, stateFilter])
+  const filtered = rows
 
   async function updateDarshan(row: DarshanRow, patch: Partial<DarshanRow>) {
     setSavingId(row._id)
@@ -307,6 +313,15 @@ export default function AdminDarshanPage() {
           </table>
         </div>
       </div>
+      <AdminPagination
+        page={page}
+        limit={pageSize}
+        total={total}
+        hasMore={hasMore}
+        loading={loading}
+        onPageChange={setPage}
+        onLimitChange={(nextLimit) => { setPageSize(nextLimit); setPage(1) }}
+      />
     </div>
   )
 }

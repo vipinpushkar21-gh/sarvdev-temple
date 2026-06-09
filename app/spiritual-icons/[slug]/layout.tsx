@@ -4,6 +4,7 @@ import { connectDB } from '@/lib/db'
 import { getStaticSpiritualIconsForSeed, normalizeSpiritualIcon } from '@/lib/spiritual-icons'
 import SpiritualIcon from '@/models/SpiritualIcon'
 import { getTempleHeroImage } from '@/lib/temple-image'
+import { buildSpiritualIconSchema } from '@/lib/seo'
 
 export const revalidate = 300
 
@@ -75,6 +76,30 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   }
 }
 
-export default function SpiritualIconSlugLayout({ children }: { children: ReactNode }) {
-  return children
+export default async function SpiritualIconSlugLayout({
+  children,
+  params,
+}: {
+  children: ReactNode
+  params: Promise<{ slug: string }>
+}) {
+  let schemas: object[] = []
+  try {
+    const { slug } = await params
+    const icon = await getIconBySlug(slug)
+    if (icon) schemas = buildSpiritualIconSchema(icon, slug)
+  } catch { /* silent */ }
+
+  return (
+    <>
+      {schemas.map((ld, i) => (
+        <script
+          key={i}
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(ld) }}
+        />
+      ))}
+      {children}
+    </>
+  )
 }

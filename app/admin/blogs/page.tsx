@@ -4,7 +4,9 @@ import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import SarvdevImage from '../../../components/SarvdevImage'
 import { getBlogCardImage } from '../../../lib/temple-image'
-import { formatBlogDate, getBlogExcerpt, getBlogPath, listToCsv, normalizeStringList } from '../../../lib/blog-utils'
+import { formatBlogDate, getBlogExcerpt, getBlogPath, normalizeStringList } from '../../../lib/blog-utils'
+import AdminPagination from '@/components/admin/AdminPagination'
+import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 
 type BlogRow = {
   _id: string
@@ -36,8 +38,6 @@ type SeedResponse = {
   error?: string
 }
 
-const PER_PAGE = 25
-
 function canonicalStatus(status?: string) {
   if (status === 'approved') return 'published'
   if (status === 'pending') return 'draft'
@@ -54,16 +54,35 @@ export default function AdminBlogsPage() {
   const [featuredFilter, setFeaturedFilter] = useState('')
   const [authorFilter, setAuthorFilter] = useState('')
   const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(50)
+  const [total, setTotal] = useState(0)
+  const [hasMore, setHasMore] = useState(false)
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [seedResult, setSeedResult] = useState<string>('')
   const [seeding, setSeeding] = useState(false)
 
-  useEffect(() => { fetchBlogs() }, [])
+  const debouncedSearch = useDebouncedValue(search)
+
+  useEffect(() => { fetchBlogs() }, [page, pageSize, debouncedSearch, statusFilter, categoryFilter, featuredFilter, authorFilter])
+  useEffect(() => { setPage(1) }, [pageSize, debouncedSearch, statusFilter, categoryFilter, featuredFilter, authorFilter])
 
   async function fetchBlogs() {
     try {
-      const res = await fetch('/api/blogs?admin=1', { cache: 'no-store' })
-      if (res.ok) setRows(await res.json())
+      const params = new URLSearchParams({ admin: '1', page: String(page), limit: String(pageSize) })
+      if (debouncedSearch) params.set('search', debouncedSearch)
+      if (statusFilter) params.set('status', statusFilter)
+      if (categoryFilter) params.set('category', categoryFilter)
+      if (featuredFilter === 'featured') params.set('featured', 'true')
+      if (featuredFilter === 'not-featured') params.set('featured', 'false')
+      if (authorFilter) params.set('author', authorFilter)
+      const res = await fetch(`/api/blogs?${params.toString()}`, { cache: 'no-store' })
+      if (res.ok) {
+        const data = await res.json()
+        const items = Array.isArray(data) ? data : (data.items || data.data || [])
+        setRows(items)
+        setTotal(Number(data.total || items.length || 0))
+        setHasMore(Boolean(data.hasMore))
+      }
     } finally {
       setLoading(false)
     }
@@ -79,23 +98,7 @@ export default function AdminBlogsPage() {
     archived: rows.filter((row) => canonicalStatus(row.status) === 'archived').length,
   }), [rows])
 
-  const filtered = useMemo(() => {
-    const q = search.toLowerCase()
-    return rows.filter((row) => {
-      const haystack = [row.title, row.titleHi, row.excerpt, row.category, listToCsv(row.tags), row.author].filter(Boolean).join(' ').toLowerCase()
-      if (q && !haystack.includes(q)) return false
-      if (statusFilter && canonicalStatus(row.status) !== statusFilter) return false
-      if (categoryFilter && row.category !== categoryFilter) return false
-      if (featuredFilter === 'featured' && !row.featured) return false
-      if (featuredFilter === 'not-featured' && row.featured) return false
-      if (authorFilter && row.author !== authorFilter) return false
-      return true
-    })
-  }, [rows, search, statusFilter, categoryFilter, featuredFilter, authorFilter])
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE))
-  const paginated = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE)
-  useEffect(() => { setPage(1) }, [search, statusFilter, categoryFilter, featuredFilter, authorFilter])
+  const paginated = rows
 
   const toggleSelect = (id: string) => {
     setSelected((prev) => {
@@ -285,15 +288,15 @@ export default function AdminBlogsPage() {
         </table>
       </div>
 
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between mt-4">
-          <span className="text-sm text-gray-400">Page {page} of {totalPages}</span>
-          <div className="flex gap-1">
-            <button onClick={() => setPage((current) => Math.max(1, current - 1))} disabled={page === 1} className="admin-btn admin-btn-ghost disabled:opacity-40">Prev</button>
-            <button onClick={() => setPage((current) => Math.min(totalPages, current + 1))} disabled={page === totalPages} className="admin-btn admin-btn-ghost disabled:opacity-40">Next</button>
-          </div>
-        </div>
-      )}
+      <AdminPagination
+        page={page}
+        limit={pageSize}
+        total={total}
+        hasMore={hasMore}
+        loading={loading}
+        onPageChange={setPage}
+        onLimitChange={(nextLimit) => { setPageSize(nextLimit); setPage(1) }}
+      />
     </div>
   )
 }

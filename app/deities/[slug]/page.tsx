@@ -10,7 +10,7 @@ import { DEITY_CATEGORIES } from '../page'
 import { getDeityCardImage, getDeityHeroImage, getGalleryImage } from '../../../lib/temple-image'
 import SarvdevImage from '../../../components/SarvdevImage'
 import { renderTextParagraphs } from '../../../components/TextParagraphs'
-import { findBestDeityMatch, mergeStaticDeityWithDb } from '../../../lib/deity-identity'
+import { getCanonicalDeityCategory } from '../../../lib/deity-normalization'
 import { compactText } from '../../../lib/text-formatting'
 import { useTranslation } from '../../../lib/translation'
 
@@ -46,9 +46,23 @@ function isGaneshAlias(slug: string) {
   return ['ganesh-ji', 'lord-ganesh', 'lord-ganesha', 'ganesh', 'ganesha'].includes(slug)
 }
 
-function isGaneshaRecord(deity: any) {
-  const text = `${deity?.name || ''} ${deity?.slug || ''} ${deity?.staticSlug || ''}`.toLowerCase()
-  return /(^|\s|-)ganesh(a)?($|\s|-)/.test(text) && !text.includes('mushak') && !text.includes('mushika') && !text.includes('mushakraj')
+function getStaticFallbackBySlug(slug: string) {
+  const exact = STATIC_DEITIES.find((deity: any) => deity.slug === slug)
+  if (exact) return exact
+  if (isGaneshAlias(slug)) {
+    return STATIC_DEITIES.find((deity: any) => deity.slug === 'ganesh-ji') || null
+  }
+  return null
+}
+
+function getCategoryForDeity(deity: any) {
+  const canonical = getCanonicalDeityCategory(deity)
+  return DEITY_CATEGORIES.find((cat: any) =>
+    cat.id === canonical.categorySlug ||
+    cat.title === canonical.categoryName ||
+    cat.title === deity.category ||
+    cat.deities.some((item: any) => item.slug === deity.slug || item.name === deity.name)
+  )
 }
 
 export default function DeityDetailPage({ params }: Props) {
@@ -63,22 +77,19 @@ export default function DeityDetailPage({ params }: Props) {
     async function fetchDeity() {
       try {
         const { slug } = await params
-        let foundDeity = null
-        let dbDeities: any[] = []
-        let dbFetchSucceeded = false
+        let foundDeity: any = null
 
         try {
-          const response = await fetch('/api/deities', { cache: 'no-store' })
+          const response = await fetch(`/api/deities?slug=${encodeURIComponent(slug)}&limit=1`, { cache: 'no-store' })
           if (response.ok) {
-            dbFetchSucceeded = true
             const data = await response.json()
-            dbDeities = Array.isArray(data) ? data : []
-            if (Array.isArray(dbDeities)) {
-              foundDeity = dbDeities.find((d: any) => d.slug === slug)
-            }
+            const rows = Array.isArray(data) ? data : (data.items || data.data || [])
+            foundDeity = Array.isArray(rows)
+              ? (rows.find((item: any) => item.slug === slug) || rows[0] || null)
+              : null
           }
         } catch {
-          // Static fallback keeps existing slugs working if DB is unavailable.
+          // Static fallback keeps legacy slugs reachable if DB is unavailable.
         }
 
         if (foundDeity) {
@@ -86,36 +97,12 @@ export default function DeityDetailPage({ params }: Props) {
           return
         }
 
-        const staticDeity = STATIC_DEITIES.find((d: any) => d.slug === slug)
-        if (!staticDeity && isGaneshAlias(slug)) {
-          const ganeshStatic = STATIC_DEITIES.find((d: any) => d.slug === 'ganesh-ji')
-          const ganeshDb = dbDeities.find(isGaneshaRecord)
-          if (ganeshStatic && ganeshDb) {
-            setDeity({ ...mergeStaticDeityWithDb(ganeshStatic, ganeshDb), slug })
-          } else if (ganeshDb) {
-            setDeity({ ...ganeshDb, slug })
-          } else if (ganeshStatic) {
-            setDeity({ ...ganeshStatic, slug })
-          } else {
-            setError('Deity not found')
-          }
-          return
-        }
+        const staticDeity = getStaticFallbackBySlug(slug)
         if (!staticDeity) {
           setError('Deity not found')
           return
         }
-
-        const dbMatch = isGaneshAlias(slug)
-          ? dbDeities.find(isGaneshaRecord)
-          : findBestDeityMatch(staticDeity, dbDeities)?.deity as any
-        if (dbMatch) {
-          setDeity(mergeStaticDeityWithDb(staticDeity, dbMatch))
-        } else if (dbFetchSucceeded && dbDeities.length > 0) {
-          setError('Deity not found')
-        } else {
-          setDeity(staticDeity)
-        }
+        setDeity(staticDeity)
       } catch {
         setError('Failed to load deity')
       } finally {
@@ -133,10 +120,11 @@ export default function DeityDetailPage({ params }: Props) {
     async function loadRelated() {
       try {
         const [devotionalRes, templeRes] = await Promise.all([
-          fetch('/api/devotionals'),
+          fetch(`/api/devotionals?page=1&limit=12&deity=${encodeURIComponent(deity.name || deity.title || deity.slug || '')}`),
           fetch(`/api/temples?limit=6&deity=${encodeURIComponent(deity.name || deity.title || deity.slug || '')}`),
         ])
-        const devotionals = devotionalRes.ok ? await devotionalRes.json() : []
+        const devotionalPayload = devotionalRes.ok ? await devotionalRes.json() : []
+        const devotionals = Array.isArray(devotionalPayload) ? devotionalPayload : (devotionalPayload.data || devotionalPayload.items || [])
         const templePayload = templeRes.ok ? await templeRes.json() : []
         const temples = Array.isArray(templePayload) ? templePayload : (templePayload.data || templePayload.items || [])
         if (cancelled) return
@@ -177,7 +165,10 @@ export default function DeityDetailPage({ params }: Props) {
     )
   }
 
-  const category = DEITY_CATEGORIES.find((cat: any) => cat.deities.some((item: any) => item.slug === deity.slug || item.name === deity.name))
+  const category = getCategoryForDeity(deity)
+  const canonicalCategory = getCanonicalDeityCategory(deity)
+  const categoryTitle = deity.categoryName || category?.title || canonicalCategory.categoryName || deity.category || 'Deity'
+  const categoryTitleHi = deity.categoryNameHi || category?.titleHi || canonicalCategory.categoryNameHi
   const relatedForms = (category?.deities || []).filter((item: any) => item.slug !== deity.slug).slice(0, 6)
   const heroImage = getDeityHeroImage(deity)
   const pageUrl = `${BASE_URL}/deities/${deity.slug}`
@@ -204,7 +195,7 @@ export default function DeityDetailPage({ params }: Props) {
     description: compactText(deity.description || deity.descriptionHi),
     image: heroImage.src,
     url: pageUrl,
-    category: deity.category || category?.title,
+    category: categoryTitle,
   }
 
   return (
@@ -234,8 +225,8 @@ export default function DeityDetailPage({ params }: Props) {
         <div className="page-container relative z-10 flex min-h-[680px] flex-col justify-end pb-16 pt-24">
           <div className="max-w-5xl">
             <div className="mb-4 flex flex-wrap gap-2">
-              {(deity.category || category?.title) && <span className="deity-detail-badge">{deity.category || category?.title}</span>}
-              {category?.titleHi && <span className="deity-detail-badge">{category.titleHi}</span>}
+              {categoryTitle && <span className="deity-detail-badge">{categoryTitle}</span>}
+              {categoryTitleHi && <span className="deity-detail-badge">{categoryTitleHi}</span>}
               <span className="deity-detail-badge">Sacred profile</span>
             </div>
             <h1 className="text-[clamp(2rem,5vw,4.5rem)] font-serif leading-tight tracking-normal text-white drop-shadow-2xl">{aboutTitle}</h1>
@@ -249,7 +240,7 @@ export default function DeityDetailPage({ params }: Props) {
       <main className="bg-surface pb-20">
         <div className="page-container -mt-10 relative z-20">
           <div className="grid gap-3 rounded-2xl border border-amber-200 bg-white p-4 shadow-xl sm:grid-cols-2 lg:grid-cols-4">
-            <DeityFact label="Category" value={deity.category || category?.title || 'Deity'} />
+            <DeityFact label="Category" value={categoryTitle} />
             <DeityFact label="Forms nearby" value={`${relatedForms.length} related`} />
             <DeityFact label="Devotionals" value={`${relatedDevotionals.length} linked`} />
             <DeityFact label="Temples" value={`${relatedTemples.length} linked`} />

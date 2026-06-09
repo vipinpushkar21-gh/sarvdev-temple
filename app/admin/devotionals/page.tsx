@@ -1,9 +1,10 @@
-"use client"
+﻿"use client"
 
 import { useEffect, useMemo, useState, useCallback } from 'react'
 import Link from 'next/link'
 import SarvdevImage from '../../../components/SarvdevImage'
 import { getDevotionalCardImage } from '../../../lib/devotional-image'
+import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 
 type Devotional = {
   _id: string
@@ -43,8 +44,6 @@ type CleanupReport = {
 type SortKey = 'title' | 'category' | 'deity' | 'language' | 'artist' | 'createdAt'
 type SortDir = 'asc' | 'desc'
 
-const PER_PAGE = 25
-
 export default function AdminDevotionalsPage() {
   const [devotionals, setDevotionals] = useState<Devotional[]>([])
   const [loading, setLoading] = useState(true)
@@ -56,19 +55,32 @@ export default function AdminDevotionalsPage() {
   const [sortKey, setSortKey] = useState<SortKey>('createdAt')
   const [sortDir, setSortDir] = useState<SortDir>('desc')
   const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(50)
+  const [total, setTotal] = useState(0)
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [previewId, setPreviewId] = useState<string | null>(null)
   const [cleanupLoading, setCleanupLoading] = useState(false)
   const [cleanupReport, setCleanupReport] = useState<CleanupReport | null>(null)
 
-  useEffect(() => { fetchDevotionals() }, [])
+  const debouncedSearch = useDebouncedValue(search)
+
+  useEffect(() => { fetchDevotionals() }, [page, pageSize, debouncedSearch, categoryFilter, statusFilter, languageFilter, deityFilter])
+  useEffect(() => { setPage(1) }, [pageSize, debouncedSearch, categoryFilter, statusFilter, languageFilter, deityFilter])
 
   async function fetchDevotionals() {
     try {
-      const res = await fetch('/api/devotionals', { credentials: 'include', cache: 'no-store' })
+      const params = new URLSearchParams({ page: String(page), limit: String(pageSize) })
+      if (debouncedSearch) params.set('search', debouncedSearch)
+      if (categoryFilter) params.set('category', categoryFilter)
+      if (statusFilter) params.set('status', statusFilter)
+      if (languageFilter) params.set('language', languageFilter)
+      if (deityFilter) params.set('deity', deityFilter)
+      const res = await fetch(`/api/devotionals?${params.toString()}`, { credentials: 'include', cache: 'no-store' })
       if (res.ok) {
-        const items = await res.json()
+        const data = await res.json()
+        const items = Array.isArray(data) ? data : (data.items || data.data || [])
         setDevotionals(Array.isArray(items) ? items : [])
+        setTotal(Number(data.total || items.length || 0))
       }
     } catch (error) { console.error('Failed to fetch devotionals:', error) }
     finally { setLoading(false) }
@@ -136,28 +148,19 @@ export default function AdminDevotionalsPage() {
     return { total: devotionals.length, approved, pending, rejected, withAudio, withLyrics }
   }, [devotionals])
 
-  // Filter + Sort
+  // Sort the current server-returned page. Search and filters are applied by the API.
   const filtered = useMemo(() => {
-    const q = search.toLowerCase()
-    let result = devotionals.filter(d => {
-      if (q && !d.title?.toLowerCase().includes(q) && !d.deity?.toLowerCase().includes(q) && !d.artist?.toLowerCase().includes(q) && !d.category?.toLowerCase().includes(q)) return false
-      if (categoryFilter && d.category !== categoryFilter) return false
-      if (statusFilter && (d.status || 'approved') !== statusFilter) return false
-      if (languageFilter && d.language !== languageFilter) return false
-      if (deityFilter && d.deity !== deityFilter) return false
-      return true
-    })
+    const result = [...devotionals]
     result.sort((a, b) => {
       const av = (a[sortKey] || '').toString().toLowerCase()
       const bv = (b[sortKey] || '').toString().toLowerCase()
       return sortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av)
     })
     return result
-  }, [devotionals, search, categoryFilter, statusFilter, languageFilter, deityFilter, sortKey, sortDir])
+  }, [devotionals, sortKey, sortDir])
 
-  const totalPages = Math.ceil(filtered.length / PER_PAGE)
-  const paginated = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE)
-  useEffect(() => { setPage(1) }, [search, categoryFilter, statusFilter, languageFilter, deityFilter])
+  const paginated = filtered
+  const totalPages = Math.max(1, Math.ceil(total / pageSize))
 
   const toggleSelect = (id: string) => { setSelected(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n }) }
   const toggleAll = () => { selected.size === paginated.length ? setSelected(new Set()) : setSelected(new Set(paginated.map(r => r._id))) }
@@ -225,6 +228,7 @@ export default function AdminDevotionalsPage() {
         </div>
         <div className="flex gap-2">
           <button onClick={exportCSV} className="admin-btn admin-btn-ghost px-4 py-2 text-sm">Export CSV</button>
+          <Link href="/admin/devotionals/data-integrity" className="admin-btn admin-btn-ghost px-4 py-2 text-sm border-orange-200 text-orange-700 hover:bg-orange-50">Data Integrity</Link>
           <Link href="/admin/devotionals/new" className="admin-btn admin-btn-primary px-4 py-2 text-sm">+ New Devotional</Link>
         </div>
       </div>
@@ -329,7 +333,7 @@ export default function AdminDevotionalsPage() {
 
       {/* Filters */}
       <div className="admin-filter-bar">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
           <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search title, deity, artist..." className="admin-input" />
           <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} className="admin-input">
             <option value="">All Categories</option>
@@ -348,6 +352,11 @@ export default function AdminDevotionalsPage() {
             <option value="approved">Approved</option>
             <option value="pending">Pending</option>
             <option value="rejected">Rejected</option>
+          </select>
+          <select value={pageSize} onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1) }} className="admin-input">
+            <option value={20}>20 per page</option>
+            <option value={50}>50 per page</option>
+            <option value={100}>100 per page</option>
           </select>
         </div>
         {(search || categoryFilter || deityFilter || languageFilter || statusFilter) && (
@@ -448,7 +457,7 @@ export default function AdminDevotionalsPage() {
         {/* Pagination */}
         {totalPages > 1 && (
           <div className="flex items-center justify-between px-5 py-3" style={{ borderTop: '1px solid rgba(0,0,0,0.06)' }}>
-            <span className="text-sm text-gray-400">Page {page} of {totalPages} · {(page - 1) * PER_PAGE + 1}–{Math.min(page * PER_PAGE, filtered.length)} of {filtered.length}</span>
+            <span className="text-sm text-gray-400">Page {page} of {totalPages} · {(page - 1) * pageSize + 1}-{Math.min(page * pageSize, total)} of {total}</span>
             <div className="flex gap-1">
               <button onClick={() => setPage(1)} disabled={page === 1} className="admin-btn admin-btn-ghost disabled:opacity-40 text-xs">First</button>
               <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="admin-btn admin-btn-ghost disabled:opacity-40">Prev</button>

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { connectDB } from '@/lib/db'
 import { AUTH_COOKIE_NAME, verifyToken } from '@/lib/auth'
 import { DEITY_CATEGORIES, resolveCategoryForDeity } from '@/lib/deity-categories'
+import { getCanonicalDeityCategory } from '@/lib/deity-normalization'
 import Deity from '@/models/Deity'
 import ActivityLog from '@/models/ActivityLog'
 
@@ -19,11 +20,18 @@ function makeReport(deities: any[]) {
   const unknownCategoryRecords: any[] = []
   const categoriesUsedInDb = new Set<string>()
   const configuredCategoryIds = new Set(DEITY_CATEGORIES.map((category) => category.id))
+  const slugGroups = new Map<string, any[]>()
+  const nameGroups = new Map<string, any[]>()
   const cloudinaryImageRecords = deities.filter((item) =>
     [item.image, item.imageCard, item.imageHero, item.ogImage].some((value) => String(value || '').includes('res.cloudinary.com'))
   )
 
   for (const deity of deities) {
+    const slug = String(deity.slug || '').trim().toLowerCase()
+    const name = String(deity.name || '').trim().toLowerCase()
+    if (slug) slugGroups.set(slug, [...(slugGroups.get(slug) || []), deity])
+    if (name) nameGroups.set(name, [...(nameGroups.get(name) || []), deity])
+
     const rawCategoryValues = [
       ...(Array.isArray(deity.categories) ? deity.categories : []),
       ...(Array.isArray(deity.categoryIds) ? deity.categoryIds : []),
@@ -78,9 +86,23 @@ function makeReport(deities: any[]) {
     }
   }
 
+  const duplicates = (groups: Map<string, any[]>) =>
+    Array.from(groups.entries())
+      .filter(([, group]) => group.length > 1)
+      .map(([key, group]) => ({ key, records: group.map((item) => ({ id: String(item._id), name: item.name, slug: item.slug })) }))
+
   return {
     ok: true,
     totalDbRecords: deities.length,
+    duplicateSlugs: duplicates(slugGroups),
+    duplicateNames: duplicates(nameGroups),
+    missingSlugs: deities.filter((item) => !String(item.slug || '').trim()).map((item) => ({ id: String(item._id), name: item.name })),
+    missingNames: deities.filter((item) => !String(item.name || '').trim()).map((item) => ({ id: String(item._id), slug: item.slug })),
+    missingHindiNames: deities.filter((item) => !String(item.nameHi || '').trim()).map((item) => ({ id: String(item._id), name: item.name, slug: item.slug })),
+    missingCategories: deities.filter((item) => !resolveCategoryForDeity(item.categorySlug || item.category, item.categoryId)).map((item) => ({ id: String(item._id), name: item.name, slug: item.slug })),
+    missingCanonicalFields: deities.filter((item) => !item.categorySlug || !item.categoryName).map((item) => ({ id: String(item._id), name: item.name, slug: item.slug })),
+    missingImages: deities.filter((item) => !item.image && !item.imageCard && !item.imageHero).map((item) => ({ id: String(item._id), name: item.name, slug: item.slug })),
+    staticSourceRecords: deities.filter((item) => String(item.source || '').includes('static') || item.status === 'not-seeded').map((item) => ({ id: String(item._id), name: item.name, slug: item.slug, source: item.source, status: item.status })),
     configuredCategories: DEITY_CATEGORIES.map((category) => ({
       id: category.id,
       titleEn: category.titleEn,
@@ -117,12 +139,16 @@ export async function POST(req: NextRequest) {
   const repairedRecords: any[] = []
 
   for (const item of report.badCategoryIdRecords) {
+    const category = getCanonicalDeityCategory({ category: item.repairTo })
     await Deity.updateOne(
       { _id: item.id },
       {
         $set: {
           category: item.repairTo,
           categoryId: item.repairTo,
+          categorySlug: category.categorySlug,
+          categoryName: category.categoryName,
+          categoryNameHi: category.categoryNameHi,
           updatedAt: new Date(),
         },
       }

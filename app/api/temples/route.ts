@@ -5,7 +5,10 @@ import Event from '@/models/Event';
 import { verifyToken, AUTH_COOKIE_NAME } from '@/lib/auth';
 import { getTemplesForSacredCategory, isShaktiPeethCategory } from '@/data/shakti-peethas';
 import { getCategoryBySlug } from '@/lib/sacred-categories';
+import { validateImportCategories } from '@/lib/sacred-category-registry';
 import { normalizeTempleText, normalizeTempleWrite, slugifyTemple } from '@/lib/temple-normalization';
+import { buildCursorFilter, paginateCursor, parseCursorLimit, TEMPLE_CARD_PROJ } from '@/lib/cursor-pagination';
+import { applyRateLimit } from '@/lib/rate-limit';
 
 function isAdmin(req: NextRequest): boolean {
   const token = req.cookies.get(AUTH_COOKIE_NAME)?.value;
@@ -16,26 +19,26 @@ function isAdmin(req: NextRequest): boolean {
 
 const SUPPORTED_TEMPLE_FIELDS = [
   // Core
-  'title','slug','titleNormalized','titleHi','subtitle','subtitleHi','alternateNames','templeTagline','templeTaglineHi',
+  'title','slug','titleNormalized','titleHi','subtitle','subtitleHi','alternateNames','tags','templeTagline','templeTaglineHi',
   'shortDescription','shortDescriptionHi','description','descriptionHi',
   // Media
-  'image','imageCard','imageHero','imageGallery','heroImage','images','galleryImages','festivalGallery','architectureGallery',
+  'primaryImage','image','imageCard','imageHero','imageGallery','heroImage','images','galleryImages','festivalGallery','architectureGallery',
   'deityGallery','videos','droneShots','ambienceAudio',
   // Location
-  'location','locationHi','mapsLink','googleMapsUrl','latitude','longitude',
+  'streetAddress','location','locationHi','mapsLink','googleMapUrl','googleMapsUrl','latitude','longitude',
   'city','cityNormalized','cityHi','district','state','stateNormalized','stateHi','country','pincode','pincodeHi',
   // Deity & Spiritual
-  'deity','deitySlug','mainDeity','secondaryDeities','deityForms','sampradaya','sect','spiritualTradition',
-  'sacredImportance','sacredImportanceHi','mythology','mythologyHi',
+  'deity','deityHi','deitySlug','mainDeity','secondaryDeities','deityForms','sampradaya','sect','spiritualTradition',
+  'sacredImportance','sacredImportanceHi','religiousImportance','religiousImportanceHi','mythology','mythologyHi',
   'templeLegend','templeLegendHi','sacredMystery','sacredMysteryHi',
   // History & Architecture
-  'history','historyHi','architectureStyle','architectureHighlights','templeArea',
+  'history','historyHi','architecture','architectureHi','architectureStyle','architectureHighlights','templeArea',
   'gopuramCount','mandapamDetails','builtBy','dynasty','renovations',
   // Classification
   'establishedYear','establishedYearHi','templeType','templeTypes',
   'speciality','specialityHi','categories','sacredCategories','sacredCategorySlugs',
   // Pilgrimage
-  'pilgrimageType','pilgrimageCircuit','nearbySacredPlaces','bestSeason','crowdLevel',
+  'pilgrimageType','pilgrimageCircuit','nearbySacredPlaces','nearbyTemples','bestSeason','bestTimeToVisit','bestTimeToVisitHi','crowdLevel',
   'averageVisitDuration','dressCode','photographyAllowed','prasadamInfo','specialRituals','templeRules',
   // Timings
   'timings','timingSlots',
@@ -43,11 +46,11 @@ const SUPPORTED_TEMPLE_FIELDS = [
   'nearestAirport','nearestRailwayStation','nearestBusStand','parkingAvailable',
   'wheelchairAccess','accommodationInfo','localTransport',
   // Festivals
-  'festivals',
+  'festivals','festivalsHi',
   // Contact
   'contact','phone','email','website','facebook','instagram',
   // SEO
-  'metaTitle','metaDescription','metaKeywords','ogImage','canonicalUrl',
+  'metaTitle','metaDescription','metaKeywords','keywords','faqs','sourceUrls','ogImage','canonicalUrl',
   // Admin/Moderation
   'status','verified','submittedBy','submitterEmail','moderationNotes','reviewedAt',
   'canonicalShaktiPeeth','canonicalShaktiPeethKey','canonicalShaktiPeethName','shaktiPeethMeta'
@@ -68,6 +71,40 @@ function cleanStringArray(value: unknown): string[] | undefined {
     .filter((item): item is string => typeof item === 'string')
     .map((item) => item.trim())
     .filter(Boolean);
+}
+
+function cleanStringList(value: unknown): string[] | undefined {
+  if (Array.isArray(value)) return cleanStringArray(value) || [];
+  if (typeof value !== 'string') return undefined;
+  return value
+    .split(/\r?\n|,/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function cleanFaqs(value: unknown) {
+  if (Array.isArray(value)) {
+    return value
+      .map((faq) => ({
+        question: typeof faq?.question === 'string' ? faq.question.trim() : '',
+        answer: typeof faq?.answer === 'string' ? faq.answer.trim() : '',
+      }))
+      .filter((faq) => faq.question || faq.answer);
+  }
+
+  if (typeof value !== 'string') return undefined;
+  return value
+    .split(/\r?\n|;/)
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .map((item) => {
+      const [question, ...answerParts] = item.split('|');
+      return {
+        question: (question || '').trim(),
+        answer: answerParts.join('|').trim(),
+      };
+    })
+    .filter((faq) => faq.question || faq.answer);
 }
 
 function timingSlotsFromTimings(value: unknown): string[] | undefined {
@@ -98,10 +135,82 @@ function cleanFestivals(value: unknown) {
 function normalizeTemplePayload(payload: Record<string, any>) {
   const data = { ...payload };
 
+  if (hasOwn(data, 'primaryImage') && !hasOwn(data, 'image')) {
+    data.image = data.primaryImage;
+  } else if (hasOwn(data, 'image') && !hasOwn(data, 'primaryImage')) {
+    data.primaryImage = data.image;
+  }
+
+  if (hasOwn(data, 'googleMapUrl') && !hasOwn(data, 'googleMapsUrl')) {
+    data.googleMapsUrl = data.googleMapUrl;
+  } else if (hasOwn(data, 'googleMapsUrl') && !hasOwn(data, 'googleMapUrl')) {
+    data.googleMapUrl = data.googleMapsUrl;
+  }
   if (hasOwn(data, 'mapsLink') && !hasOwn(data, 'googleMapsUrl')) {
     data.googleMapsUrl = data.mapsLink;
   } else if (hasOwn(data, 'googleMapsUrl') && !hasOwn(data, 'mapsLink')) {
     data.mapsLink = data.googleMapsUrl;
+  }
+  if (hasOwn(data, 'googleMapsUrl') && !hasOwn(data, 'googleMapUrl')) {
+    data.googleMapUrl = data.googleMapsUrl;
+  }
+  if (hasOwn(data, 'googleMapUrl') && !hasOwn(data, 'mapsLink')) {
+    data.mapsLink = data.googleMapUrl;
+  }
+  if (hasOwn(data, 'streetAddress') && !hasOwn(data, 'location')) {
+    data.location = data.streetAddress;
+  } else if (hasOwn(data, 'location') && !hasOwn(data, 'streetAddress')) {
+    data.streetAddress = data.location;
+  }
+
+  for (const field of ['tags', 'keywords', 'sourceUrls', 'nearbyTemples', 'nearbySacredPlaces', 'secondaryDeities', 'deityForms', 'galleryImages', 'imageGallery', 'images'] as const) {
+    const list = cleanStringList(data[field]);
+    if (list) data[field] = list;
+  }
+  if (Array.isArray(data.galleryImages) && !hasOwn(data, 'images')) data.images = data.galleryImages;
+  if (Array.isArray(data.galleryImages) && !hasOwn(data, 'imageGallery')) data.imageGallery = data.galleryImages;
+  if (Array.isArray(data.imageGallery) && !hasOwn(data, 'galleryImages')) data.galleryImages = data.imageGallery;
+  if (Array.isArray(data.images) && !hasOwn(data, 'galleryImages')) data.galleryImages = data.images;
+
+  for (const field of ['latitude', 'longitude'] as const) {
+    if (typeof data[field] === 'string' && data[field].trim()) {
+      const parsed = Number(data[field]);
+      if (Number.isFinite(parsed)) data[field] = parsed;
+    }
+  }
+  if (Array.isArray(data.nearbyTemples) && !hasOwn(data, 'nearbySacredPlaces')) {
+    data.nearbySacredPlaces = data.nearbyTemples;
+  } else if (Array.isArray(data.nearbySacredPlaces) && !hasOwn(data, 'nearbyTemples')) {
+    data.nearbyTemples = data.nearbySacredPlaces;
+  }
+
+  if (hasOwn(data, 'keywords') && !hasOwn(data, 'metaKeywords')) {
+    data.metaKeywords = Array.isArray(data.keywords) ? data.keywords.join(', ') : data.keywords;
+  } else if (hasOwn(data, 'metaKeywords') && !hasOwn(data, 'keywords')) {
+    data.keywords = cleanStringList(data.metaKeywords) || [];
+  }
+
+  if (hasOwn(data, 'religiousImportance') && !hasOwn(data, 'sacredImportance')) {
+    data.sacredImportance = data.religiousImportance;
+  } else if (hasOwn(data, 'sacredImportance') && !hasOwn(data, 'religiousImportance')) {
+    data.religiousImportance = data.sacredImportance;
+  }
+  if (hasOwn(data, 'religiousImportanceHi') && !hasOwn(data, 'sacredImportanceHi')) {
+    data.sacredImportanceHi = data.religiousImportanceHi;
+  } else if (hasOwn(data, 'sacredImportanceHi') && !hasOwn(data, 'religiousImportanceHi')) {
+    data.religiousImportanceHi = data.sacredImportanceHi;
+  }
+
+  if (hasOwn(data, 'architecture') && !hasOwn(data, 'architectureHighlights')) {
+    data.architectureHighlights = data.architecture;
+  } else if (hasOwn(data, 'architectureHighlights') && !hasOwn(data, 'architecture')) {
+    data.architecture = data.architectureHighlights;
+  }
+
+  if (hasOwn(data, 'bestTimeToVisit') && !hasOwn(data, 'bestSeason')) {
+    data.bestSeason = data.bestTimeToVisit;
+  } else if (hasOwn(data, 'bestSeason') && !hasOwn(data, 'bestTimeToVisit')) {
+    data.bestTimeToVisit = data.bestSeason;
   }
 
   const categories = cleanStringArray(data.categories);
@@ -140,6 +249,8 @@ function normalizeTemplePayload(payload: Record<string, any>) {
 
   const festivals = cleanFestivals(data.festivals);
   if (festivals) data.festivals = festivals;
+  const faqs = cleanFaqs(data.faqs);
+  if (faqs) data.faqs = faqs;
 
   return data;
 }
@@ -196,13 +307,11 @@ function buildTempleFilter(searchParams: URLSearchParams, adminMode: boolean, sk
       $or: [
         { title: searchRegex },
         { titleHi: searchRegex },
-        { location: searchRegex },
         { city: searchRegex },
         { district: searchRegex },
         { state: searchRegex },
         { deity: searchRegex },
         { speciality: searchRegex },
-        { description: searchRegex },
         { titleNormalized: normalizedRegex },
         { cityNormalized: normalizedRegex },
         { stateNormalized: normalizedRegex },
@@ -302,6 +411,12 @@ export async function GET(req: NextRequest) {
       searchParams.get('scope') === 'admin' ||
       searchParams.get('fresh') === '1';
     const adminMode = wantsAdminScope && isAdmin(req);
+
+    // Rate limit public requests (admin bypasses)
+    if (!adminMode) {
+      const limited = applyRateLimit(req, 'temples')
+      if (limited) return limited
+    }
     const category = (
       searchParams.get('category') ||
       searchParams.get('sacredCategory') ||
@@ -314,7 +429,26 @@ export async function GET(req: NextRequest) {
 
     await connectDB();
 
+    const fieldsCard = !adminMode && searchParams.get('fields') === 'card'
+    const listProj = fieldsCard ? TEMPLE_CARD_PROJ : { __v: 0 }
+
     const filter = buildTempleFilter(searchParams, adminMode, useCanonicalShaktiPeethFilter);
+
+    // ── Cursor-based pagination (scale mode) ──
+    // Activated when ?cursor= is present in URL. Backward-compatible — offset callers unchanged.
+    if (searchParams.has('cursor') && !useCanonicalShaktiPeethFilter) {
+      const cursorToken = searchParams.get('cursor') || undefined
+      const cursorLimit = parseCursorLimit(searchParams.get('limit'), 24)
+      const cursorFilter = buildCursorFilter(cursorToken, filter)
+      const docs = await Temple.find(cursorFilter, TEMPLE_CARD_PROJ)
+        .sort({ createdAt: -1, _id: -1 })
+        .limit(cursorLimit + 1)
+        .lean()
+      const result = paginateCursor(docs as any[], cursorLimit)
+      const res = NextResponse.json(result)
+      res.headers.set('Cache-Control', adminMode ? 'no-store, max-age=0' : 'public, s-maxage=300, stale-while-revalidate=600')
+      return res
+    }
 
     if (useCanonicalShaktiPeethFilter) {
       const categoryValues = getCategoryQueryValues(category);
@@ -328,7 +462,7 @@ export async function GET(req: NextRequest) {
         ],
       });
 
-      const candidates = await Temple.find(filter, { __v: 0 })
+      const candidates = await Temple.find(filter, listProj)
         .sort(sort)
         .limit(250)
         .lean();
@@ -344,12 +478,12 @@ export async function GET(req: NextRequest) {
         pages: Math.ceil(total / limit),
         hasMore: skip + data.length < total,
       });
-      res.headers.set('Cache-Control', adminMode ? 'no-store, max-age=0' : 'public, s-maxage=60, stale-while-revalidate=120');
+      res.headers.set('Cache-Control', adminMode ? 'no-store, max-age=0' : 'public, s-maxage=300, stale-while-revalidate=600');
       return res;
     }
 
     const [data, total] = await Promise.all([
-      Temple.find(filter, { __v: 0 })
+      Temple.find(filter, listProj)
         .sort(sort)
         .skip(skip)
         .limit(limit)
@@ -366,7 +500,7 @@ export async function GET(req: NextRequest) {
       pages: Math.ceil(total / limit),
       hasMore: skip + data.length < total,
     });
-    res.headers.set('Cache-Control', adminMode ? 'no-store, max-age=0' : 'public, s-maxage=60, stale-while-revalidate=120');
+    res.headers.set('Cache-Control', adminMode ? 'no-store, max-age=0' : 'public, s-maxage=300, stale-while-revalidate=600');
     return res;
   } catch (error) {
     console.error('Temple API Error:', error);
@@ -385,6 +519,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Validate categories — warn only, never fail import
+    const rawCategoryValues = [
+      ...(Array.isArray(rawData.sacredCategories) ? rawData.sacredCategories : []),
+      ...(Array.isArray(rawData.categories) ? rawData.categories : []),
+    ]
+    const { unknown: unknownCategories } = rawCategoryValues.length
+      ? validateImportCategories(rawCategoryValues)
+      : { unknown: [] }
+
     const temple = await Temple.create(data);
 
     if (data.festivals && Array.isArray(data.festivals) && data.festivals.length > 0) {
@@ -402,7 +545,10 @@ export async function POST(req: NextRequest) {
       await Promise.allSettled(eventPromises);
     }
 
-    return NextResponse.json(temple, { status: 201 });
+    return NextResponse.json({
+      ...temple.toObject(),
+      ...(unknownCategories.length > 0 ? { warnings: { unknownCategories } } : {}),
+    }, { status: 201 });
   } catch (error) {
     console.error('Create temple error:', error);
     return NextResponse.json({ error: 'Failed to create temple' }, { status: 500 });

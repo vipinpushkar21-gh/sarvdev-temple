@@ -2,8 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { connectDB } from '@/lib/db'
 import Event from '@/models/Event'
 import { eventToPlain } from '@/lib/events'
+import { buildCursorFilter, paginateCursor, parseCursorLimit, EVENT_CARD_PROJ } from '@/lib/cursor-pagination'
+import { applyRateLimit } from '@/lib/rate-limit'
 
 export const revalidate = 60
+export const dynamic = 'force-dynamic'
 
 function buildPublicFilter(searchParams: URLSearchParams) {
   const filter: Record<string, any> = { status: { $in: ['published', 'approved'] } }
@@ -42,14 +45,32 @@ function buildPublicFilter(searchParams: URLSearchParams) {
   return filter
 }
 
+const EVENTS_CACHE_CC = 'public, s-maxage=30, stale-while-revalidate=60'
+
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url)
+    const limited = applyRateLimit(req, 'events')
+    if (limited) return limited
+
     const pageParam = searchParams.get('page')
     const limitParam = searchParams.get('limit')
     const filter = buildPublicFilter(searchParams)
 
     await connectDB()
+
+    // ── Cursor-based pagination (scale mode) ──
+    if (searchParams.has('cursor')) {
+      const cursorToken = searchParams.get('cursor') || undefined
+      const cursorLimit = parseCursorLimit(limitParam, 24)
+      const cursorFilter = buildCursorFilter(cursorToken, filter)
+      const docs = await Event.find(cursorFilter, EVENT_CARD_PROJ)
+        .sort({ createdAt: -1, _id: -1 })
+        .limit(cursorLimit + 1)
+        .lean()
+      const result = paginateCursor(docs.map(eventToPlain) as any[], cursorLimit)
+      return NextResponse.json(result, { headers: { 'Cache-Control': EVENTS_CACHE_CC } })
+    }
 
     if (pageParam) {
       const page = Math.max(1, parseInt(pageParam, 10) || 1)
@@ -59,11 +80,12 @@ export async function GET(req: NextRequest) {
         Event.find(filter, { __v: 0 }).sort({ featured: -1, priority: -1, startDate: 1, date: 1 }).skip(skip).limit(limit).lean(),
         Event.countDocuments(filter),
       ])
-      return NextResponse.json({ items: items.map(eventToPlain), total, page, pages: Math.ceil(total / limit), limit })
+      return NextResponse.json({ items: items.map(eventToPlain), total, page, pages: Math.ceil(total / limit), limit }, { headers: { 'Cache-Control': EVENTS_CACHE_CC } })
     }
 
-    const events = await Event.find(filter, { __v: 0 }).sort({ featured: -1, priority: -1, startDate: 1, date: 1 }).lean()
-    return NextResponse.json(events.map(eventToPlain))
+    const legacyLimit = Math.min(100, Math.max(1, parseInt(limitParam || '50', 10) || 50))
+    const events = await Event.find(filter, { __v: 0 }).sort({ featured: -1, priority: -1, startDate: 1, date: 1 }).limit(legacyLimit).lean()
+    return NextResponse.json(events.map(eventToPlain), { headers: { 'Cache-Control': EVENTS_CACHE_CC } })
   } catch (error) {
     console.error('Events API Error:', error)
     return NextResponse.json({ error: 'Failed to fetch events' }, { status: 500 })

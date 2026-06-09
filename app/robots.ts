@@ -1,12 +1,26 @@
 import type { MetadataRoute } from 'next'
 
+const DISALLOW = [
+  '/admin/',
+  '/api/',
+  '/login',
+  '/maintenance',
+  '/temple-portal',
+  '/pandit-portal',
+  '/online-booking',
+  '/user/',
+  '/bookmarks',
+  '/import',
+  '/search',
+]
+
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: [
       {
         userAgent: 'Googlebot',
         allow: '/',
-        disallow: ['/admin/', '/api/', '/login', '/maintenance'],
+        disallow: DISALLOW,
       },
       {
         userAgent: 'Googlebot-Image',
@@ -16,12 +30,12 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: 'Bingbot',
         allow: '/',
-        disallow: ['/admin/', '/api/', '/login', '/maintenance'],
+        disallow: DISALLOW,
       },
       {
         userAgent: '*',
         allow: '/',
-        disallow: ['/admin/', '/api/', '/login', '/maintenance'],
+        disallow: DISALLOW,
       },
     ],
     sitemap: 'https://sarvdev.com/sitemap.xml',

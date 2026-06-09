@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
@@ -38,11 +38,15 @@ export default function CategoryPage() {
     let cancelled = false
     async function load() {
       try {
-        const res = await fetch('/api/devotionals')
+        const params = new URLSearchParams({ page: '1', limit: '60' })
+        params.set('categorySlug', categorySlug)
+        if (categoryInfo?.id) params.set('category', categoryInfo.id)
+        const res = await fetch(`/api/devotionals?${params.toString()}`)
         if (!res.ok) return
         const data = await res.json()
         if (!cancelled) {
-          const approved = (Array.isArray(data) ? data : []).filter((item: Devotional) => item.status === 'approved' || !item.status)
+          const items = Array.isArray(data) ? data : (data.items || data.data || [])
+          const approved = items.filter((item: Devotional) => item.status === 'approved' || !item.status)
           setAllDevotionals(approved)
         }
       } finally {

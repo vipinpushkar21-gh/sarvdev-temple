@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
 import SarvdevImage from '../../components/SarvdevImage'
 import { getDeityCardImage, getDeityHeroImage } from '../../lib/temple-image'
-import { findBestDeityMatch, mergeStaticDeityWithDb } from '../../lib/deity-identity'
 import { resolveCategoryForDeity } from '../../lib/deity-categories'
 
 /* ─── Deity Data ─── */
@@ -1650,6 +1649,36 @@ function getAttributePills(deity: any) {
   return [...pills, ...attributes].slice(0, 4)
 }
 
+function getDbCategorySection(deity: any): DeityCategory {
+  const canonicalCategory = deity.categorySlug || resolveCategoryForDeity(deity?.category, deity?.categoryId)
+  const configured = DEITY_CATEGORIES.find((category) => category.id === canonicalCategory || category.title === deity?.categoryName || category.title === deity?.category)
+  if (configured) return { ...configured, deities: [] }
+
+  const title = deity.categoryName || deity.category || deity.categoryId || 'Other / Misc'
+  const id = canonicalCategory || String(title).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'other'
+  return {
+    id,
+    title,
+    titleHi: deity.categoryNameHi || '',
+    subtitle: 'Existing deity category from database',
+    subtitleHi: '',
+    emoji: '🕉️',
+    deities: [],
+  }
+}
+
+function normalizeDbDeityForPublic(deity: any, category: DeityCategory) {
+  return {
+    ...deity,
+    category: deity.categoryName || category.title,
+    categoryId: deity.categorySlug || category.id,
+    categorySlug: deity.categorySlug || category.id,
+    categoryName: deity.categoryName || category.title,
+    categoryNameHi: deity.categoryNameHi || category.titleHi,
+    isStaticFallback: false,
+  }
+}
+
 /* ─── Page Component ─── */
 
 export default function DeitiesPage() {
@@ -1694,9 +1723,10 @@ export default function DeitiesPage() {
   useEffect(() => {
     async function fetchDbDeities() {
       try {
-        const response = await fetch('/api/deities', { cache: 'no-store' })
+        const response = await fetch('/api/deities?limit=200', { cache: 'no-store' })
         const data = await response.json()
-        setDbDeities(Array.isArray(data) ? data : [])
+        const items = Array.isArray(data) ? data : (data.items || data.data || [])
+        setDbDeities(Array.isArray(items) ? items : [])
       } catch (error) {
         console.error('Failed to fetch database deities:', error)
       }
@@ -1712,37 +1742,23 @@ export default function DeitiesPage() {
 
   const filteredCategories = useMemo(() => {
     const hasDbData = dbDeities.length > 0
-    const addedDbIds = new Set<string>()
-    const mergedCategories = DEITY_CATEGORIES.map(cat => {
-      const deities = cat.deities.map((deity: any) => {
-        const staticDeity = {
-          ...deity,
-          category: cat.title,
-          categoryId: cat.id,
-        }
-        const match = findBestDeityMatch(staticDeity, dbDeities, addedDbIds)
-        const dbDeity = match?.deity as any
-        if (!dbDeity) return hasDbData ? null : deity
-        if (dbDeity._id) addedDbIds.add(String(dbDeity._id))
-
-        return mergeStaticDeityWithDb(staticDeity, dbDeity, cat)
-      }).filter(Boolean)
-      return { ...cat, deities }
-    })
-
-    dbDeities.forEach((deity: any) => {
-      if (deity?._id && addedDbIds.has(String(deity._id))) return
-      const canonicalCategory = resolveCategoryForDeity(deity?.category, deity?.categoryId)
-      const targetCategory = mergedCategories.find((cat) =>
-        canonicalCategory === cat.id || deity?.category === cat.title
-      )
-      if (targetCategory) {
-        targetCategory.deities.push(deity)
-        if (deity?._id) addedDbIds.add(String(deity._id))
-      }
-    })
-
-    const publicCategories = hasDbData ? mergedCategories.filter(cat => cat.deities.length > 0) : mergedCategories
+    const publicCategories = hasDbData
+      ? (() => {
+          const categoryMap = new Map<string, DeityCategory>()
+          for (const deity of dbDeities) {
+            if (deity.status === 'rejected') continue
+            const category = getDbCategorySection(deity)
+            if (!categoryMap.has(category.id)) categoryMap.set(category.id, { ...category, deities: [] })
+            categoryMap.get(category.id)!.deities.push(normalizeDbDeityForPublic(deity, category))
+          }
+          return [
+            ...DEITY_CATEGORIES
+              .map((category) => categoryMap.get(category.id))
+              .filter(Boolean) as DeityCategory[],
+            ...Array.from(categoryMap.values()).filter((category) => !DEITY_CATEGORIES.some((configured) => configured.id === category.id)),
+          ]
+        })()
+      : DEITY_CATEGORIES
 
     return publicCategories.map(cat => ({
       ...cat,

@@ -101,12 +101,12 @@ module.exports = {
 
       /* ─── Typography Scale ─── */
       fontFamily: {
-        serif: ["'Noto Serif Devanagari'", "'Noto Serif'", 'Georgia', 'serif'],
-        sans:  ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
-        devanagari: ["'Noto Serif Devanagari'", 'serif'],
-        display: ["'Playfair Display'", "'Noto Serif'", 'Georgia', 'serif'],
-        cinzel: ['Cinzel', 'Georgia', 'serif'],
-        mukta: ['Mukta', 'sans-serif'],
+        serif: ['Georgia', "'Times New Roman'", "'Nirmala UI'", "'Mangal'", 'serif'],
+        sans:  ['system-ui', '-apple-system', 'BlinkMacSystemFont', "'Segoe UI'", 'Arial', 'sans-serif'],
+        devanagari: ["'Nirmala UI'", "'Mangal'", "'Kohinoor Devanagari'", 'Georgia', 'serif'],
+        display: ['Georgia', "'Times New Roman'", 'serif'],
+        cinzel: ['Georgia', "'Times New Roman'", 'serif'],
+        mukta: ['system-ui', '-apple-system', "'Segoe UI'", 'Arial', 'sans-serif'],
       },
       fontSize: {
         /* Display — Hero / landing headlines */

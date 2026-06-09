@@ -58,6 +58,8 @@ const NAV_GROUPS: NavGroup[] = [
   {
     title: 'Temple Intelligence',
     items: [
+      { href: '/admin/data-quality', label: 'Data Quality', icon: Database },
+      { href: '/admin/media/integrity', label: 'Media Integrity', icon: ImageIcon },
       { href: '/admin/images/audit', label: 'Image Audit', icon: ImageIcon },
       { href: '/admin/images/external-audit', label: 'External Image Audit', icon: ImageIcon },
       { href: '/admin/seo', label: 'SEO Center', icon: Globe },

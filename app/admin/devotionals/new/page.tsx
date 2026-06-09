@@ -1,13 +1,26 @@
-"use client"
+﻿"use client"
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { FULL_CATEGORIES } from '@/app/devotionals/components/categories'
+
+function createSlug(title: string): string {
+  const englishMatch = title.match(/\(([^)]+)\)/)
+  let text = englishMatch ? englishMatch[1] : title
+  let slug = text.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').trim()
+  if (!slug || slug === '-') {
+    slug = title.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').trim()
+  }
+  return slug || 'devotional'
+}
 
 export default function NewDevotionalPage() {
   const router = useRouter()
   const [formData, setFormData] = useState({
     title: '',
+    titleHi: '',
+    slug: '',
     description: '',
     descriptionHi: '',
     category: 'Bhajan',
@@ -17,35 +30,39 @@ export default function NewDevotionalPage() {
     lyrics: '',
     duration: '',
     artist: '',
+    featured: false,
     status: 'approved',
     metaTitle: '',
     metaDescription: '',
     metaKeywords: '',
   })
 
+  const slugPreview = useMemo(() => formData.slug || createSlug(formData.title), [formData.title, formData.slug])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
     try {
+      const payload = { ...formData, slug: slugPreview }
       const res = await fetch('/api/devotionals', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(payload)
       })
-
       if (res.ok) {
         alert('Devotional added successfully!')
         router.push('/admin/devotionals')
       } else {
         alert('Failed to add devotional')
       }
-    } catch (error) {
+    } catch {
       alert('Error adding devotional')
     }
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value })
+    const { name, value, type } = e.target
+    const checked = (e.target as HTMLInputElement).checked
+    setFormData({ ...formData, [name]: type === 'checkbox' ? checked : value })
   }
 
   return (
@@ -55,37 +72,42 @@ export default function NewDevotionalPage() {
           <h1 className="admin-page-title">Add New Devotional</h1>
           <p className="admin-section-subtitle">Fill in the devotional details below</p>
         </div>
-        <Link href="/admin/devotionals" className="admin-btn admin-btn-ghost px-4 py-2 text-sm">← Back to Devotionals</Link>
+        <Link href="/admin/devotionals" className="admin-btn admin-btn-ghost px-4 py-2 text-sm">Back to Devotionals</Link>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Title */}
         <div className="admin-card p-6 space-y-5">
           <h2 className="admin-section-title">Basic Details</h2>
+
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-1">Title *</label>
             <input type="text" name="title" value={formData.title} onChange={handleChange} required className="admin-input w-full" placeholder="e.g. Shiv Tandav Stotram" />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1">Title <span className="text-orange-500 font-normal">(Hindi)</span></label>
+            <input type="text" name="titleHi" value={formData.titleHi} onChange={handleChange} className="admin-input w-full" placeholder="e.g. शिव तांडव स्तोत्रम्" />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1">
+              URL Slug
+              <span className="ml-2 text-xs text-gray-400 font-normal">leave blank to auto-generate</span>
+            </label>
+            <input type="text" name="slug" value={formData.slug} onChange={handleChange} className="admin-input w-full font-mono text-sm" placeholder={slugPreview || 'auto-generated from title'} />
+            {formData.title && (
+              <p className="mt-1 text-xs text-gray-400">Preview: <code className="bg-gray-100 px-1 rounded">/devotionals/{slugPreview}</code></p>
+            )}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-600 mb-1">Category</label>
               <select name="category" value={formData.category} onChange={handleChange} className="admin-input w-full">
-                <option value="Aarti">Aarti - आरती</option>
-                <option value="Bhajan">Bhajan - भजन</option>
-                <option value="Chalisa">Chalisa - चालीसा</option>
-                <option value="Mantra">Mantra - मंत्र</option>
-                <option value="Stotra">Stotra - स्तोत्र</option>
-                <option value="Stuti">Stuti - स्तुति</option>
-                <option value="Shloka">Shloka - श्लोक</option>
-                <option value="Ek Shloki">Ek Shloki - एक श्लोकी</option>
-                <option value="Ashtaka">Ashtaka - अष्टक</option>
-                <option value="Path">Path - पाठ</option>
-                <option value="Namavali">Namavali - नामावली</option>
+                {FULL_CATEGORIES.map((cat) => (
+                  <option key={cat.id} value={cat.id}>{cat.label} - {cat.hindi}</option>
+                ))}
                 <option value="108 Namavali">108 Namavali - १०८ नामावली</option>
-                <option value="Kavacham">Kavacham - कवचम्</option>
-                <option value="Prarthana">Prarthana - प्रार्थना</option>
-                <option value="Vrat Katha">Vrat Katha - व्रत कथा</option>
                 <option value="Other">Other - अन्य</option>
               </select>
             </div>
@@ -120,10 +142,15 @@ export default function NewDevotionalPage() {
               </select>
             </div>
           </div>
+
+          <div className="flex items-center gap-3">
+            <input type="checkbox" id="featured" name="featured" checked={formData.featured} onChange={handleChange} className="w-4 h-4 rounded accent-orange-500" />
+            <label htmlFor="featured" className="text-sm font-medium text-gray-600">Featured (show in featured listings)</label>
+          </div>
         </div>
 
         <div className="admin-card p-6 space-y-5">
-          <h2 className="admin-section-title">Media & Content</h2>
+          <h2 className="admin-section-title">Media &amp; Content</h2>
           <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-4 text-sm text-amber-900">
             Public devotional pages currently use one optimized fallback image for speed. Devotional-specific and deity images are ignored on the public devotional UI for now.
           </div>
@@ -145,31 +172,26 @@ export default function NewDevotionalPage() {
           </div>
         </div>
 
-        {/* SEO */}
         <div className="admin-card p-6 space-y-5">
           <div>
             <h2 className="admin-section-title">SEO &amp; Social Sharing</h2>
             <p className="text-xs text-gray-400 mt-0.5">Leave blank to auto-generate from title / description</p>
           </div>
-
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-1">Meta Title <span className="font-normal text-gray-400">(max 60 chars)</span></label>
             <input type="text" name="metaTitle" value={formData.metaTitle} onChange={handleChange} maxLength={60} placeholder="Custom title for search engines..." className="admin-input w-full" />
             <p className="mt-1 text-xs text-gray-400">{formData.metaTitle.length}/60 characters</p>
           </div>
-
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-1">Meta Description <span className="font-normal text-gray-400">(max 160 chars)</span></label>
             <textarea name="metaDescription" value={formData.metaDescription} onChange={handleChange} rows={3} maxLength={160} placeholder="Brief description shown in search results..." className="admin-input w-full" />
             <p className="mt-1 text-xs text-gray-400">{formData.metaDescription.length}/160 characters</p>
           </div>
-
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-1">Keywords</label>
             <input type="text" name="metaKeywords" value={formData.metaKeywords} onChange={handleChange} placeholder="bhajan, shiva, stotra, hindi devotional" className="admin-input w-full" />
             <p className="mt-1 text-xs text-gray-400">Comma-separated keywords</p>
           </div>
-
           <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 text-xs text-gray-500">
             OG images currently use the same optimized devotional fallback image for stable, fast rendering.
           </div>

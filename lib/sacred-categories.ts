@@ -139,7 +139,7 @@ export const SACRED_CATEGORIES: SacredCategory[] = [
   { slug: 'saraswati-temples', name: 'Saraswati Temples', nameHi: 'सरस्वती मंदिर', description: 'Temples exclusively dedicated to the Goddess of Knowledge, Music, and Arts.', longDescription: 'Saraswati Temples are shrines dedicated to the Goddess of Knowledge, Music, Speech, and Arts. Students, musicians, writers, and seekers of wisdom visit these temples for blessings of learning and creative clarity.', deity: 'Saraswati', icon: '🎼', group: 'unique-deities-avatars', order: 3, isActive: true, relatedSlugs: ['education-temples'] },
   { slug: 'bhairava-temples', name: 'Bhairava Temples', nameHi: 'भैरव मंदिर', description: 'Shrines of Lord Kal Bhairava, the fierce guardian manifestation of Lord Shiva.', longDescription: 'Bhairava Temples are shrines of Lord Kal Bhairava, the fierce guardian manifestation of Lord Shiva. These temples are especially revered for protection, discipline, removal of fear, and sacred guardianship of pilgrimage towns.', deity: 'Shiva', icon: '🐕', group: 'unique-deities-avatars', order: 4, isActive: true, relatedSlugs: ['protection-temples', 'tantra-peethas', '108-shiva-temples'] },
   { slug: 'dattatreya-temples', name: 'Dattatreya Temples', nameHi: 'दत्तात्रेय मंदिर', description: 'Temples dedicated to the combined avatar of the Holy Trinity: Brahma, Vishnu, and Shiva.', longDescription: 'Dattatreya Temples honor Lord Dattatreya, the combined avatar of Brahma, Vishnu, and Shiva. These temples are connected with renunciation, yogic wisdom, saint traditions, and the unity of the Hindu Trinity.', deity: 'Multi', icon: '🧘', group: 'unique-deities-avatars', order: 5, isActive: true, relatedSlugs: ['saptarishi-ashrams', 'adi-shankaracharya-maths'] },
-  { slug: 'sapta-matrika-temples', name: 'Sapta Matrika Temples', nameHi: 'सप्त मातृका मंदिर', description: 'Ancient shrines dedicated to the Seven Divine Mothers, the Matrikas of Hindu mythology.', longDescription: 'Sapta Matrika Temples are ancient shrines dedicated to the Seven Divine Mothers of Hindu mythology. These Matrikas represent protective feminine power and are connected with Shakti worship, village guardianship, and tantric traditions.', deity: 'Devi', icon: '🌺', group: 'unique-deities-avatars', order: 6, isActive: true, relatedSlugs: ['shakti-peeth', 'nava-durga-temples', 'sapta-matrika-temples'] },
+  { slug: 'sapta-matrika-temples', name: 'Sapta Matrika Temples', nameHi: 'सप्त मातृका मंदिर', description: 'Ancient shrines dedicated to the Seven Divine Mothers, the Matrikas of Hindu mythology.', longDescription: 'Sapta Matrika Temples are ancient shrines dedicated to the Seven Divine Mothers of Hindu mythology. These Matrikas represent protective feminine power and are connected with Shakti worship, village guardianship, and tantric traditions.', deity: 'Devi', icon: '🌺', group: 'unique-deities-avatars', order: 6, isActive: true, relatedSlugs: ['shakti-peeth', 'nava-durga-temples', 'tantra-peethas'] },
   { slug: 'dashavatara-temples', name: 'Dashavatara Temples', nameHi: 'दशावतार मंदिर', description: 'Temples honoring all ten principal avatars, Dashavatara, of Lord Vishnu.', longDescription: 'Dashavatara Temples honor the ten principal avatars of Lord Vishnu. These sacred sites celebrate the divine descent of Vishnu across cosmic ages, from Matsya and Kurma to Rama, Krishna, Buddha, and Kalki traditions.', deity: 'Vishnu', icon: '🎭', group: 'unique-deities-avatars', order: 7, isActive: true, relatedSlugs: ['divya-desam', 'pancha-ranga-kshetras', 'krishna-circuit'] },
   { slug: 'ardhanarishvara-temples', name: 'Ardhanarishvara Temples', nameHi: 'अर्धनारीश्वर मंदिर', description: 'Temples worshiping the combined half-male, half-female form of Shiva and Parvati.', longDescription: 'Ardhanarishvara Temples worship the united form of Shiva and Parvati, representing the inseparable balance of masculine and feminine principles. These temples express cosmic unity, harmony, and the completeness of divine consciousness.', deity: 'Shiva', icon: '🌗', group: 'unique-deities-avatars', order: 8, isActive: true, relatedSlugs: ['108-shiva-temples', 'shakti-peeth', 'lalita-tripura-sundari-temples'] },
   { slug: 'harihara-temples', name: 'Harihara Temples', nameHi: 'हरिहर मंदिर', description: 'Sacred shrines dedicated to the fused form of Vishnu, Hari, and Shiva, Hara.', longDescription: 'Harihara Temples are dedicated to the fused form of Vishnu and Shiva, symbolizing the unity of Hari and Hara. These shrines are important examples of devotional harmony between Vaishnava and Shaiva traditions.', deity: 'Multi', icon: '🕉️', group: 'unique-deities-avatars', order: 9, isActive: true, relatedSlugs: ['jyotirlinga', 'divya-desam', 'dattatreya-temples'] },
@@ -186,10 +186,31 @@ for (const cat of SACRED_CATEGORIES) {
   _byName.set(cat.name.toLowerCase(), cat)
 }
 
-// Backward-compatible slug aliases
-_bySlug.set('shakti-peethas', _bySlug.get('shakti-peeth')!)
-_bySlug.set('51-shakti-peethas', _bySlug.get('shakti-peeth')!)
-_bySlug.set('52-shakti-peethas', _bySlug.get('shakti-peeth')!)
+/**
+ * SLUG_ALIASES — canonical normalization map.
+ * Key   = slug variant that may appear in DB or CSV imports.
+ * Value = canonical slug in SACRED_CATEGORIES.
+ * Used by:
+ *   - getCategoryBySlug() for live lookup resolution
+ *   - migrate-category-slugs API for DB repair
+ *   - category-integrity API for orphan classification
+ */
+export const SLUG_ALIASES: Record<string, string> = {
+  // Shakti Peeth variants
+  'shakti-peethas':                    'shakti-peeth',
+  '51-shakti-peethas':                 'shakti-peeth',
+  '52-shakti-peethas':                 'shakti-peeth',
+  'shakti-peeth-51-shakti-peethas':    'shakti-peeth',  // slugified "Shakti Peeth (51 Shakti Peethas)"
+  'shakti-peeth-52-shakti-peethas':    'shakti-peeth',  // slugified "Shakti Peeth (52 Shakti Peethas)"
+  'shakti-peeth-51':                   'shakti-peeth',
+  'shakti-peeth-52':                   'shakti-peeth',
+}
+
+// Register all aliases into the slug lookup map
+for (const [alias, canonical] of Object.entries(SLUG_ALIASES)) {
+  const entry = _bySlug.get(canonical)
+  if (entry) _bySlug.set(alias, entry)
+}
 
 export function getCategoryBySlug(slug: string): SacredCategory | undefined {
   return _bySlug.get(slug)

@@ -4,6 +4,7 @@ import { connectDB } from '@/lib/db'
 import Blog from '@/models/Blog'
 import { getOGImage } from '@/lib/temple-image'
 import { getBlogExcerpt, getBlogPath } from '@/lib/blog-utils'
+import { buildBlogSchema } from '@/lib/seo'
 
 export const revalidate = 300
 
@@ -63,6 +64,30 @@ export async function generateMetadata(
   }
 }
 
-export default function BlogSlugLayout({ children }: { children: React.ReactNode }) {
-  return children
+export default async function BlogSlugLayout({
+  children,
+  params,
+}: {
+  children: React.ReactNode
+  params: Promise<{ slug: string }>
+}) {
+  let schemas: object[] = []
+  try {
+    const { slug } = await params
+    const blog = await findBlog(slug)
+    if (blog) schemas = buildBlogSchema(blog, blog.slug ?? slug)
+  } catch { /* silent */ }
+
+  return (
+    <>
+      {schemas.map((ld, i) => (
+        <script
+          key={i}
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(ld) }}
+        />
+      ))}
+      {children}
+    </>
+  )
 }

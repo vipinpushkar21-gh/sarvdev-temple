@@ -25,15 +25,17 @@ export default function SpiritualIconDetailPage() {
     async function load() {
       try {
         const [detailRes, listRes] = await Promise.all([
-          fetch(`/api/spiritual-icons?slug=${encodeURIComponent(slug)}`),
-          fetch('/api/spiritual-icons'),
+          fetch(`/api/spiritual-icons?slug=${encodeURIComponent(slug)}&limit=1`),
+          fetch('/api/spiritual-icons?limit=12'),
         ])
         if (!cancelled && detailRes.ok) {
           const data = await detailRes.json()
-          if (Array.isArray(data) && data[0]) setIcon(data[0])
+          const items = Array.isArray(data) ? data : (data.items || data.data || [])
+          if (items[0]) setIcon(items[0])
         }
         if (!cancelled && listRes.ok) {
-          const list = await listRes.json()
+          const data = await listRes.json()
+          const list = Array.isArray(data) ? data : (data.items || data.data || [])
           if (Array.isArray(list) && list.length > 0) setAllIcons(list)
         }
       } catch {

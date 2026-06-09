@@ -71,9 +71,9 @@ export default function AdminEditDeityPage({ params }: { params: Promise<{ id: s
     async function fetchDeity() {
       try {
         const { id } = await params
-        const response = await fetch('/api/deities', { credentials: 'include', cache: 'no-store' })
-        const deities = await response.json()
-        const deity = deities.find((d: any) => d._id === id)
+        const response = await fetch(`/api/deities?admin=1&id=${encodeURIComponent(id)}`, { credentials: 'include', cache: 'no-store' })
+        if (!response.ok) throw new Error("Deity not found")
+        const deity = await response.json()
 
         if (deity) {
           setDeitySlug(deity.slug || "")

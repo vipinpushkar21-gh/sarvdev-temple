@@ -4,8 +4,8 @@ import { connectDB } from '@/lib/db'
 import { AUTH_COOKIE_NAME, verifyToken } from '@/lib/auth'
 import Deity from '@/models/Deity'
 import ActivityLog from '@/models/ActivityLog'
-import { findBestDeityMatch } from '@/lib/deity-identity'
 import { resolveCategoryForDeity } from '@/lib/deity-categories'
+import { getCanonicalDeityCategory } from '@/lib/deity-normalization'
 
 type SeedError = {
   slug?: string
@@ -84,7 +84,11 @@ function normalizeSeedRecord(input: any, order: number) {
     images: cleanStringArray(input?.images),
     category: canonicalCategory,
     categoryId: canonicalCategory,
+    categorySlug: canonicalCategory,
+    categoryName: getCanonicalDeityCategory({ category: canonicalCategory }).categoryName,
+    categoryNameHi: getCanonicalDeityCategory({ category: canonicalCategory }).categoryNameHi,
     staticSlug: slug,
+    aliases: [],
     slugAliases: [],
     order,
     metaTitle: cleanString(input?.metaTitle),
@@ -97,6 +101,25 @@ function normalizeSeedRecord(input: any, order: number) {
     lastSeededAt: new Date(),
     updatedAt: new Date(),
   }
+}
+
+function normalizeKey(value: unknown) {
+  return String(value || '').trim().toLowerCase()
+}
+
+function findExistingSeedTarget(seedRecord: ReturnType<typeof normalizeSeedRecord>, existingDeities: any[]) {
+  const seedSlug = normalizeKey(seedRecord.slug)
+  const seedName = normalizeKey(seedRecord.name)
+  return existingDeities.find((deity) => {
+    const slugs = [
+      deity.slug,
+      deity.staticSlug,
+      ...(Array.isArray(deity.slugAliases) ? deity.slugAliases : []),
+      ...(Array.isArray(deity.aliases) ? deity.aliases : []),
+    ].map(normalizeKey).filter(Boolean)
+    if (seedSlug && slugs.includes(seedSlug)) return true
+    return seedName && normalizeKey(deity.name) === seedName
+  })
 }
 
 function buildEmptyFieldMerge(existing: any, seedRecord: ReturnType<typeof normalizeSeedRecord>) {
@@ -141,6 +164,7 @@ export async function POST(req: NextRequest) {
   }
 
   const deities = body?.deities
+  const dryRun = body?.dryRun === true
   if (!Array.isArray(deities)) {
     return NextResponse.json({
       ok: false,
@@ -168,6 +192,7 @@ export async function POST(req: NextRequest) {
   }
 
   let created = 0
+  let wouldCreate = 0
   let skippedExisting = 0
   let mergedMissingFields = 0
   let protectedCustomized = 0
@@ -193,7 +218,7 @@ export async function POST(req: NextRequest) {
     if (!seedRecord) continue
 
     try {
-      const existing = findBestDeityMatch(seedRecord, existingDeities as any[])?.deity as any
+      const existing = findExistingSeedTarget(seedRecord, existingDeities as any[]) as any
 
       if (existing) {
         if ((existing as any).isCustomized) {
@@ -202,21 +227,15 @@ export async function POST(req: NextRequest) {
           continue
         }
 
-        const update = buildEmptyFieldMerge(existing, seedRecord)
-        const mergedFields = Object.keys(update)
+        skippedExisting += 1
+        results.push({ slug: seedRecord.slug, name: seedRecord.name, action: 'skipped-existing' })
+        continue
+      }
 
-        if (mergedFields.length > 0) {
-          update.lastSeededAt = new Date()
-          update.updatedAt = new Date()
-          await Deity.updateOne({ _id: (existing as any)._id }, { $set: update })
-          Object.assign(existing, update)
-          mergedMissingFields += 1
-          results.push({ slug: seedRecord.slug, name: seedRecord.name, action: 'merged-empty-fields', mergedFields })
-        } else {
-          skippedExisting += 1
-          results.push({ slug: seedRecord.slug, name: seedRecord.name, action: 'skipped-existing' })
-        }
-
+      if (dryRun) {
+        wouldCreate += 1
+        existingDeities.push(seedRecord as any)
+        results.push({ slug: seedRecord.slug, name: seedRecord.name, action: 'would-create' })
         continue
       }
 
@@ -240,13 +259,15 @@ export async function POST(req: NextRequest) {
     failed,
     errors,
     source: 'safe-static-deity-seed',
+    dryRun,
   }
-  await logSeedAction(admin, details)
+  if (!dryRun) await logSeedAction(admin, details)
 
   return NextResponse.json({
     ok: true,
     success: true,
     ...details,
+    wouldCreate,
     results,
   })
 }

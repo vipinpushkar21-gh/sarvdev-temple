@@ -20,10 +20,11 @@ export default function LiveDarshanPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch('/api/darshan')
+    fetch('/api/darshan?limit=30')
       .then(r => r.json())
-      .then((data: DarshanItem[]) => {
-        const live = data.filter(d => d.isLive && d.youtubeId && d.status === 'approved')
+      .then((data: DarshanItem[] | { items?: DarshanItem[]; data?: DarshanItem[] }) => {
+        const items = Array.isArray(data) ? data : (data.items || data.data || [])
+        const live = items.filter(d => d.isLive && d.youtubeId && d.status === 'approved')
         setLiveItems(live)
       })
       .catch(() => {})

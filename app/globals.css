@@ -2,7 +2,7 @@
 /*  Sarvdev Design System — Global Styles (Modern)        */
 /* ─────────────────────────────────────────────────────── */
 
-/* Fonts: loaded via next/font in layout.tsx — CSS variables --font-inter and --font-devanagari */
+/* Offline-safe font stacks. Avoid next/font/google so production builds do not need network access. */
 
 @tailwind base;
 @tailwind components;
@@ -35,8 +35,10 @@
   --color-temple-gold: #C9A84C;
 
   /* Premium font variables */
-  --font-cinzel: var(--font-cinzel, 'Cinzel');
-  --font-playfair: var(--font-playfair, 'Playfair Display');
+  --font-inter: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+  --font-devanagari: "Nirmala UI", "Mangal", "Kohinoor Devanagari", Georgia, serif;
+  --font-cinzel: Georgia, "Times New Roman", serif;
+  --font-playfair: Georgia, "Times New Roman", serif;
 }
 
 /* ─── Base Layer ─── */

@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
@@ -36,13 +36,15 @@ export default function DevotionalDetailPage() {
 
     async function load() {
       try {
+        // Use the /[id] route directly — supports both ObjectId and slug
         const [detailRes, relatedRes] = await Promise.all([
-          fetch(`/api/devotionals?slug=${encodeURIComponent(slug)}`),
-          fetch('/api/devotionals?limit=80'),
+          fetch(`/api/devotionals/${encodeURIComponent(slug)}`),
+          fetch('/api/devotionals?page=1&limit=24'),
         ])
         if (!cancelled && relatedRes.ok) {
-          const list = await relatedRes.json() as Devotional[]
-          const approved = (Array.isArray(list) ? list : []).filter((item) => item.status === 'approved' || !item.status)
+          const payload = await relatedRes.json()
+          const list = Array.isArray(payload) ? payload : (payload.items || payload.data || [])
+          const approved = list.filter((item: Devotional) => item.status === 'approved' || !item.status)
           setAllDevotionals(approved)
         }
         if (!detailRes.ok) return
@@ -99,13 +101,14 @@ export default function DevotionalDetailPage() {
 
   const heroImage = getDevotionalHeroImage(devotional)
   const speechLang = detectSpeechLang(devotional)
-  const readingText = devotional.lyrics || devotional.description || devotional.title || ''
+  // Prefer canonical content field; fall back to lyrics
+  const readingText = devotional.content || devotional.lyrics || devotional.description || devotional.title || ''
   const description = language === 'hi' && devotional.descriptionHi ? devotional.descriptionHi : devotional.description
   const pageUrl = `https://sarvdev.com${getDevotionalHref(devotional)}`
 
   const creativeWorkLd = {
     '@context': 'https://schema.org',
-    '@type': devotional.audio ? 'MusicComposition' : 'CreativeWork',
+    '@type': devotional.audio || devotional.audioUrl ? 'MusicComposition' : 'CreativeWork',
     name: devotional.title,
     description: description || undefined,
     inLanguage: devotional.language || speechLang,
@@ -114,10 +117,10 @@ export default function DevotionalDetailPage() {
     genre: devotional.category || 'Devotional',
     about: devotional.deity || undefined,
     ...(devotional.artist ? { byArtist: { '@type': 'Person', name: devotional.artist } } : {}),
-    ...(devotional.audio ? {
+    ...(devotional.audio || devotional.audioUrl ? {
       associatedMedia: {
         '@type': 'AudioObject',
-        contentUrl: devotional.audio,
+        contentUrl: devotional.audioUrl || devotional.audio,
         encodingFormat: 'audio/mpeg',
       },
     } : {}),
@@ -134,7 +137,7 @@ export default function DevotionalDetailPage() {
         '@type': 'ListItem',
         position: 3,
         name: devotional.category,
-        item: `https://sarvdev.com/devotionals/category/${categoryToSlug(devotional.category)}`,
+        item: `https://sarvdev.com/devotionals/category/${devotional.categorySlug || categoryToSlug(devotional.category)}`,
       }] : []),
       { '@type': 'ListItem', position: devotional.category ? 4 : 3, name: devotional.title, item: pageUrl },
     ],
@@ -156,7 +159,7 @@ export default function DevotionalDetailPage() {
             {devotional.category && (
               <>
                 <span>/</span>
-                <Link href={`/devotionals/category/${categoryToSlug(devotional.category)}`} className="text-stone-200 hover:text-amber-200">{devotional.category}</Link>
+                <Link href={`/devotionals/category/${devotional.categorySlug || categoryToSlug(devotional.category)}`} className="text-stone-200 hover:text-amber-200">{devotional.category}</Link>
               </>
             )}
           </nav>
@@ -191,7 +194,7 @@ export default function DevotionalDetailPage() {
             <QuickFact icon={<Music2 className="h-5 w-5" />} label="Category" value={devotional.category || 'Devotional'} />
             <QuickFact icon={<Sparkles className="h-5 w-5" />} label="Deity" value={devotional.deity || 'Universal'} />
             <QuickFact icon={<Languages className="h-5 w-5" />} label="Language" value={devotional.language || 'Hindi'} />
-            <QuickFact icon={<Clock className="h-5 w-5" />} label="Duration" value={devotional.duration || (devotional.audio ? 'Audio available' : 'TTS ready')} />
+            <QuickFact icon={<Clock className="h-5 w-5" />} label="Duration" value={devotional.duration || (devotional.audio || devotional.audioUrl ? 'Audio available' : 'TTS ready')} />
           </div>
 
           <div className="mt-10 grid gap-8 lg:grid-cols-[minmax(0,1fr)_24rem]">
@@ -206,7 +209,7 @@ export default function DevotionalDetailPage() {
 
               <DevotionalLyricsReader
                 title={title.primary || devotional.title}
-                lyrics={devotional.lyrics}
+                lyrics={devotional.content || devotional.lyrics}
                 language={devotional.language}
                 names={devotional.names}
               />
@@ -216,7 +219,7 @@ export default function DevotionalDetailPage() {
               <DevotionalAudioPlayer
                 title={title.primary || devotional.title}
                 text={readingText}
-                audio={devotional.audio}
+                audio={devotional.audioUrl || devotional.audio}
                 lang={speechLang}
               />
 
@@ -224,12 +227,12 @@ export default function DevotionalDetailPage() {
                 <p className="mb-3 text-xs font-black uppercase tracking-[0.18em] text-orange-700">Quick Actions</p>
                 <div className="grid gap-2">
                   {devotional.category && (
-                    <Link href={`/devotionals/category/${categoryToSlug(devotional.category)}`} className="rounded-xl bg-orange-50 px-4 py-3 text-sm font-bold text-stone-800 no-underline hover:bg-orange-100">
+                    <Link href={`/devotionals/category/${devotional.categorySlug || categoryToSlug(devotional.category)}`} className="rounded-xl bg-orange-50 px-4 py-3 text-sm font-bold text-stone-800 no-underline hover:bg-orange-100">
                       More {devotional.category}
                     </Link>
                   )}
                   {devotional.deity && (
-                    <Link href={`/devotionals?deity=${encodeURIComponent(devotional.deity)}`} className="rounded-xl bg-orange-50 px-4 py-3 text-sm font-bold text-stone-800 no-underline hover:bg-orange-100">
+                    <Link href={`/devotionals/deity/${devotional.deitySlug || encodeURIComponent(devotional.deity)}`} className="rounded-xl bg-orange-50 px-4 py-3 text-sm font-bold text-stone-800 no-underline hover:bg-orange-100">
                       More for {devotional.deity}
                     </Link>
                   )}

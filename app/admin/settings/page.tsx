@@ -17,8 +17,8 @@ export default function AdminSettingsPage() {
     try {
       // Hit API endpoints to force cache refresh
       await Promise.all([
-        fetch('/api/temples', { cache: 'no-store' }),
-        fetch('/api/devotionals', { cache: 'no-store' }),
+        fetch('/api/temples?limit=30', { cache: 'no-store' }),
+        fetch('/api/devotionals?limit=50', { cache: 'no-store' }),
       ])
       setCacheCleared(true)
       setTimeout(() => setCacheCleared(false), 3000)

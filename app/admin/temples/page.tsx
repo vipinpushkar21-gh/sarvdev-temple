@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
+import AdminPagination from '@/components/admin/AdminPagination'
+import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 
 type TempleRow = {
   _id: string
@@ -18,10 +20,50 @@ type TempleRow = {
   city?: string
   district?: string
   country?: string
+  primaryImage?: string
+  image?: string
+  galleryImages?: string[]
+  imageGallery?: string[]
+  latitude?: number | string
+  longitude?: number | string
+  timings?: string
+  googleMapUrl?: string
+  googleMapsUrl?: string
+  mapsLink?: string
   description?: string
   descriptionHi?: string
+  history?: string
+  historyHi?: string
+  architecture?: string
+  architectureHi?: string
+  religiousImportance?: string
+  religiousImportanceHi?: string
+  sacredImportance?: string
+  sacredImportanceHi?: string
+  festivals?: { name?: string; nameHi?: string }[]
+  festivalsHi?: string
+  bestTimeToVisit?: string
+  bestTimeToVisitHi?: string
+  bestSeason?: string
+  nearbyTemples?: string[]
+  nearbySacredPlaces?: string[]
+  faqs?: { question?: string; answer?: string }[]
+  sourceUrls?: string[]
+  tags?: string[]
+  keywords?: string[]
+  metaTitle?: string
+  metaDescription?: string
+  metaKeywords?: string
   speciality?: string
   specialityHi?: string
+  deityHi?: string
+  pincode?: string
+  phone?: string
+  email?: string
+  website?: string
+  streetAddress?: string
+  imageCard?: string
+  imageHero?: string
   status?: 'approved' | 'pending' | 'rejected'
   verified?: 'verified' | 'not-verified'
 }
@@ -56,8 +98,6 @@ type TempleIntegrityResult = {
   error?: string
 }
 
-const PER_PAGE = 25
-
 export default function AdminTemplesPage() {
   const [rows, setRows] = useState<TempleRow[]>([])
   const [loading, setLoading] = useState(true)
@@ -68,18 +108,23 @@ export default function AdminTemplesPage() {
   const [statusFilter, setStatusFilter] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('')
   const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(50)
   const [total, setTotal] = useState(0)
+  const [hasMore, setHasMore] = useState(false)
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [sortCol, setSortCol] = useState<'title' | 'status'>('title')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
+  const [exportLoading, setExportLoading] = useState(false)
   const [csvImportLoading, setCsvImportLoading] = useState(false)
   const [csvImportResult, setCsvImportResult] = useState<CsvImportResult | null>(null)
   const [integrityLoading, setIntegrityLoading] = useState<'dry-run' | 'execute' | null>(null)
   const [integrityResult, setIntegrityResult] = useState<TempleIntegrityResult | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   
-  useEffect(() => { fetchTemples(page) }, [page, search, deityFilter, stateFilter, typeFilter, statusFilter, categoryFilter, sortCol, sortDir])
-  useEffect(() => { setPage(1) }, [search, deityFilter, stateFilter, typeFilter, statusFilter, categoryFilter, sortCol, sortDir])
+  const debouncedSearch = useDebouncedValue(search)
+
+  useEffect(() => { fetchTemples(page) }, [page, pageSize, debouncedSearch, deityFilter, stateFilter, typeFilter, statusFilter, categoryFilter, sortCol, sortDir])
+  useEffect(() => { setPage(1) }, [pageSize, debouncedSearch, deityFilter, stateFilter, typeFilter, statusFilter, categoryFilter, sortCol, sortDir])
   
   async function fetchTemples(targetPage = page) {
     try {
@@ -87,11 +132,11 @@ export default function AdminTemplesPage() {
       const params = new URLSearchParams({
         admin: '1',
         page: String(targetPage),
-        limit: String(PER_PAGE),
+        limit: String(pageSize),
         sort: sortCol === 'title' ? (sortDir === 'asc' ? 'title' : '-title') : (sortDir === 'asc' ? 'status' : '-status'),
         t: String(Date.now()),
       })
-      if (search) params.set('search', search)
+      if (debouncedSearch) params.set('search', debouncedSearch)
       if (deityFilter) params.set('deity', deityFilter)
       if (stateFilter) params.set('state', stateFilter)
       if (typeFilter) params.set('templeType', typeFilter)
@@ -103,6 +148,7 @@ export default function AdminTemplesPage() {
         const data = Array.isArray(payload) ? payload : (payload.data || payload.items || [])
         setRows(data)
         setTotal(Number(payload.total || data.length || 0))
+        setHasMore(Boolean(payload.hasMore))
       }
     } catch (error) {
       console.error('Failed to fetch temples:', error)
@@ -115,7 +161,6 @@ export default function AdminTemplesPage() {
 
   const filtered = useMemo(() => rows, [rows])
 
-  const totalPages = Math.max(1, Math.ceil(total / PER_PAGE))
   const paginated = filtered
 
   const toggleSort = (col: 'title' | 'status') => {
@@ -166,8 +211,19 @@ export default function AdminTemplesPage() {
   }
 
   const csvEscape = (value: unknown) => `"${String(value || '').replace(/"/g, '""')}"`
+  const csvList = (value: unknown, separator = ', ') =>
+    Array.isArray(value) ? value.filter(Boolean).join(separator) : String(value || '')
+  const csvFestivals = (value: TempleRow['festivals'], hi = false) =>
+    Array.isArray(value) ? value.map(item => hi ? item?.nameHi : item?.name).filter(Boolean).join(';') : ''
+  const csvFaqs = (value: TempleRow['faqs']) =>
+    Array.isArray(value)
+      ? value.map(item => [item?.question, item?.answer].filter(Boolean).join('|')).filter(Boolean).join('; ')
+      : ''
+  const hasEnglishLetters = (value: unknown) => /[A-Za-z]/.test(String(value || ''))
 
   const downloadCSVTemplate = () => {
+    window.location.href = '/api/admin/temples/import/template'
+    return
     const header = [
       'Title',
       'TempleNameHi',
@@ -268,39 +324,104 @@ export default function AdminTemplesPage() {
     }
   }
 
-  const exportCSV = () => {
-    const header = ['Title', 'TempleNameHi', 'Location', 'City', 'District', 'State', 'Country', 'Deity', 'Type', 'SacredCategories', 'Description', 'DescriptionHi', 'Speciality', 'SpecialityHi', 'Status', 'Verified']
-    const csvRows = [
-      header.join(','),
-      ...filtered.map(r =>
-        [
-          r.title,
-          r.titleHi || '',
-          r.location || '',
-          r.city || '',
-          r.district || '',
-          r.state || '',
-          r.country || '',
-          r.deity || '',
-          r.templeType || r.type || '',
-          (r.sacredCategories || r.categories || []).join(';'),
-          r.description || '',
-          r.descriptionHi || '',
-          r.speciality || '',
-          r.specialityHi || '',
-          r.status || 'approved',
-          r.verified || 'not-verified',
-        ]
-          .map(csvEscape)
-          .join(',')
-      ),
-    ]
-    const blob = new Blob([csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' })
-    const a = document.createElement('a')
-    a.href = URL.createObjectURL(blob)
-    a.download = `sarvdev-temples-${new Date().toISOString().slice(0, 10)}.csv`
-    a.click()
-    URL.revokeObjectURL(a.href)
+  const exportCSV = async () => {
+    setExportLoading(true)
+    try {
+      const allRows: TempleRow[] = []
+      let pg = 1
+      let more = true
+      while (more) {
+        const params = new URLSearchParams({
+          admin: '1',
+          limit: '100',
+          page: String(pg),
+          sort: 'title',
+          t: String(Date.now()),
+        })
+        if (debouncedSearch) params.set('search', debouncedSearch)
+        if (deityFilter) params.set('deity', deityFilter)
+        if (stateFilter) params.set('state', stateFilter)
+        if (typeFilter) params.set('templeType', typeFilter)
+        if (statusFilter) params.set('status', statusFilter)
+        if (categoryFilter) params.set('category', categoryFilter)
+        const res = await fetch(`/api/temples?${params}`, { credentials: 'include', cache: 'no-store' })
+        if (!res.ok) break
+        const payload = await res.json().catch(() => ({}))
+        const data: TempleRow[] = Array.isArray(payload) ? payload : (payload.data || payload.items || [])
+        allRows.push(...data)
+        more = Boolean(payload.hasMore) && data.length > 0
+        pg++
+      }
+      const englishHiCount = allRows.filter(r => hasEnglishLetters(r.titleHi)).length
+      if (englishHiCount > 0) {
+        alert(`${englishHiCount} rows have English letters in TempleNameHi. TempleNameHi should be Hindi/Devanagari or blank.`)
+      }
+      const header = [
+        'templeName', 'templeNameHi', 'slug', 'deity', 'deityHi', 'templeType',
+        'description', 'descriptionHi', 'speciality', 'specialityHi',
+        'streetAddress', 'city', 'district', 'state', 'country', 'pincode',
+        'latitude', 'longitude', 'googleMapsUrl', 'timings',
+        'phone', 'email', 'website',
+        'sacredCategories', 'categories',
+        'image', 'imageCard', 'imageHero', 'galleryImages',
+        'metaTitle', 'metaDescription', 'metaKeywords',
+        'status', 'verified',
+      ]
+      const csvRows = [
+        header.join(','),
+        ...allRows.map(r =>
+          [
+            r.title || '',
+            r.titleHi || '',
+            r.slug || '',
+            r.deity || '',
+            r.deityHi || '',
+            r.templeType || r.type || '',
+            r.description || '',
+            r.descriptionHi || '',
+            r.speciality || '',
+            r.specialityHi || '',
+            r.streetAddress || r.location || '',
+            r.city || '',
+            r.district || '',
+            r.state || '',
+            r.country || '',
+            r.pincode || '',
+            r.latitude ?? '',
+            r.longitude ?? '',
+            r.googleMapsUrl || r.googleMapUrl || r.mapsLink || '',
+            r.timings || '',
+            r.phone || '',
+            r.email || '',
+            r.website || '',
+            (r.sacredCategories || r.categories || []).join(';'),
+            (r.categories || r.sacredCategories || []).join(';'),
+            r.primaryImage || r.image || '',
+            r.imageCard || '',
+            r.imageHero || '',
+            csvList(r.galleryImages && r.galleryImages.length > 0 ? r.galleryImages : r.imageGallery),
+            r.metaTitle || '',
+            r.metaDescription || '',
+            csvList(r.keywords && r.keywords.length > 0 ? r.keywords : r.metaKeywords),
+            r.status || 'approved',
+            r.verified || 'not-verified',
+          ]
+            .map(csvEscape)
+            .join(',')
+        ),
+      ]
+      const BOM = '\uFEFF'
+      const blob = new Blob([BOM + csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' })
+      const a = document.createElement('a')
+      a.href = URL.createObjectURL(blob)
+      a.download = `sarvdev-temples-export-${new Date().toISOString().slice(0, 10)}.csv`
+      a.click()
+      URL.revokeObjectURL(a.href)
+    } catch (err) {
+      console.error('Export failed:', err)
+    } finally {
+      setExportLoading(false)
+    }
   }
 
   if (loading) {
@@ -322,7 +443,8 @@ export default function AdminTemplesPage() {
           <p className="admin-section-subtitle">{rows.length} total · {filtered.length} shown</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button onClick={exportCSV} className="admin-btn admin-btn-ghost px-4 py-2 text-sm">⬇ CSV</button>
+          <button onClick={exportCSV} disabled={exportLoading} className="admin-btn admin-btn-ghost px-4 py-2 text-sm disabled:opacity-50">{exportLoading ? 'Exporting...' : '⬇ Export CSV'}</button>
+          <Link href="/admin/temples/import" className="admin-btn admin-btn-primary px-4 py-2 text-sm">Large Import</Link>
           <button onClick={downloadCSVTemplate} className="admin-btn admin-btn-ghost px-4 py-2 text-sm">CSV Template</button>
           <label className="admin-btn admin-btn-ghost cursor-pointer px-4 py-2 text-sm">
             Choose CSV
@@ -574,24 +696,16 @@ export default function AdminTemplesPage() {
           </table>
         </div>
 
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between px-5 py-3" style={{ borderTop: '1px solid rgba(0,0,0,0.06)' }}>
-            <span className="text-sm text-gray-400">Page {page} of {totalPages}</span>
-            <div className="flex gap-1">
-              <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="admin-btn admin-btn-ghost disabled:opacity-40">Prev</button>
-              {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-                const p = page <= 3 ? i + 1 : Math.min(page - 2 + i, totalPages - 4 + i)
-                if (p < 1 || p > totalPages) return null
-                return (
-                  <button key={p} onClick={() => setPage(p)} className={`admin-btn ${p === page ? 'admin-btn-primary' : 'admin-btn-ghost'}`}>{p}</button>
-                )
-              })}
-              <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="admin-btn admin-btn-ghost disabled:opacity-40">Next</button>
-            </div>
-          </div>
-        )}
       </div>
+      <AdminPagination
+        page={page}
+        limit={pageSize}
+        total={total}
+        hasMore={hasMore}
+        loading={loading}
+        onPageChange={setPage}
+        onLimitChange={(nextLimit) => { setPageSize(nextLimit); setPage(1) }}
+      />
     </div>
   )
 }
