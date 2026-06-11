@@ -1,5 +1,8 @@
 import { getCategoryByName, getCategoryBySlug } from './sacred-categories'
 
+export const TEMPLE_DATA_QUALITY_VALUES = ['A+', 'A', 'B', 'C'] as const
+export type TempleDataQuality = typeof TEMPLE_DATA_QUALITY_VALUES[number]
+
 export function slugifyTemple(value: unknown): string {
   return String(value || '')
     .toLowerCase()
@@ -14,6 +17,32 @@ export function normalizeTempleText(value: unknown): string {
     .toLowerCase()
     .trim()
     .replace(/\s+/g, ' ')
+}
+
+export function cleanTempleIdentityPart(value: unknown): string {
+  return String(value || '').trim().replace(/\s+/g, ' ')
+}
+
+export function buildTempleUniqueKey(title: unknown, district: unknown, state: unknown): string {
+  const parts = [title, district, state].map(cleanTempleIdentityPart).filter(Boolean)
+  return parts.join('|')
+}
+
+export function normalizeTempleUniqueKey(value: unknown): string {
+  return String(value || '')
+    .split('|')
+    .map(cleanTempleIdentityPart)
+    .filter(Boolean)
+    .join('|')
+}
+
+export function normalizeTempleUniqueKeyForCompare(value: unknown): string {
+  return normalizeTempleUniqueKey(value).toLowerCase().replace(/\s+/g, ' ')
+}
+
+export function normalizeTempleDataQuality(value: unknown, fallback: TempleDataQuality = 'B'): TempleDataQuality {
+  const raw = String(value || '').trim().toUpperCase()
+  return (TEMPLE_DATA_QUALITY_VALUES as readonly string[]).includes(raw) ? raw as TempleDataQuality : fallback
 }
 
 export function uniqueStrings(values: unknown[]): string[] {
@@ -53,6 +82,7 @@ export function normalizeTempleWrite<T extends Record<string, any>>(input: T, ex
   const data = { ...input } as T
 
   const title = typeof data.title === 'string' ? data.title : existing?.title
+  const district = typeof data.district === 'string' ? data.district : existing?.district
   const city = typeof data.city === 'string' ? data.city : existing?.city
   const state = typeof data.state === 'string' ? data.state : existing?.state
   const deity = typeof data.deity === 'string' ? data.deity : existing?.deity
@@ -72,6 +102,23 @@ export function normalizeTempleWrite<T extends Record<string, any>>(input: T, ex
   if (city) (data as any).cityNormalized = normalizeTempleText(city)
   if (state) (data as any).stateNormalized = normalizeTempleText(state)
   if (deity) (data as any).deitySlug = slugifyTemple(deity)
+
+  const incomingUniqueKey = typeof data.uniqueKey === 'string' ? data.uniqueKey : undefined
+  const uniqueKey = normalizeTempleUniqueKey(
+    incomingUniqueKey || existing?.uniqueKey || buildTempleUniqueKey(title, district, state)
+  )
+  if (uniqueKey) {
+    ;(data as any).uniqueKey = uniqueKey
+    ;(data as any).uniqueKeyNormalized = normalizeTempleUniqueKeyForCompare(uniqueKey)
+  } else {
+    delete (data as any).uniqueKeyNormalized
+  }
+
+  if ('dataQuality' in data || !existing?.dataQuality) {
+    ;(data as any).dataQuality = normalizeTempleDataQuality((data as any).dataQuality, 'B')
+  } else if (existing?.dataQuality) {
+    ;(data as any).dataQuality = normalizeTempleDataQuality(existing.dataQuality, 'B')
+  }
 
   const incomingSacred = Array.isArray(data.sacredCategories) ? data.sacredCategories : undefined
   const incomingCategories = Array.isArray(data.categories) ? data.categories : undefined

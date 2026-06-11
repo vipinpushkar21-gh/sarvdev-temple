@@ -9,6 +9,8 @@ type FormState = {
   title: string
   titleHi: string
   slug: string
+  uniqueKey: string
+  dataQuality: string
   location: string
   locationHi: string
   mapsLink: string
@@ -89,6 +91,9 @@ function slugify(text: string): string {
 }
 
 const splitList = (value: string) => value.split(/\r?\n|,/).map(item => item.trim()).filter(Boolean)
+const cleanIdentityPart = (value: string) => value.trim().replace(/\s+/g, ' ')
+const buildUniqueKey = (title: string, district: string, state: string) =>
+  [title, district, state].map(cleanIdentityPart).filter(Boolean).join('|')
 const stringifyList = (value: unknown) => Array.isArray(value) ? value.filter(Boolean).join(', ') : String(value || '')
 const parseFaqs = (value: string) =>
   value
@@ -109,7 +114,7 @@ const hasEnglishLetters = (value: string) => /[A-Za-z]/.test(value)
 export default function EditTemplePage({ params }: { params: Promise<{ id: string }> }) {
   const [id, setId] = useState<string>("")
   const [form, setForm] = useState<FormState>({ 
-    title: "", titleHi: "", slug: "", location: "", locationHi: "", mapsLink: "", city: "", cityHi: "", district: "", state: "", stateHi: "", country: "India", pincode: "", pincodeHi: "", latitude: "", longitude: "",
+    title: "", titleHi: "", slug: "", uniqueKey: "", dataQuality: "B", location: "", locationHi: "", mapsLink: "", city: "", cityHi: "", district: "", state: "", stateHi: "", country: "India", pincode: "", pincodeHi: "", latitude: "", longitude: "",
     description: "", descriptionHi: "", tags: "", history: "", historyHi: "", architecture: "", architectureHi: "", religiousImportance: "", religiousImportanceHi: "",
     festivalsHi: "", bestTimeToVisit: "", bestTimeToVisitHi: "", nearbyTemples: "", faqs: "", sourceUrls: "", deity: "", deityHi: "", establishedYear: "", establishedYearHi: "", templeType: "", templeTypes: [], sacredCategories: [], speciality: "", specialityHi: "",
     primaryImage: "", image: "", imageCard: "", imageHero: "", imageGallery: "", timings: "", contact: "", phone: "", email: "", website: "", 
@@ -150,6 +155,8 @@ export default function EditTemplePage({ params }: { params: Promise<{ id: strin
             title: temple.title || "",
             titleHi: temple.titleHi || "",
             slug: temple.slug || "",
+            uniqueKey: temple.uniqueKey || "",
+            dataQuality: temple.dataQuality || "B",
             location: temple.location || "",
             locationHi: temple.locationHi || "",
             mapsLink: temple.googleMapUrl || temple.googleMapsUrl || temple.mapsLink || "",
@@ -285,6 +292,8 @@ export default function EditTemplePage({ params }: { params: Promise<{ id: strin
       const submitData = {
         id,
         ...form,
+        uniqueKey: form.uniqueKey || buildUniqueKey(form.title, form.district, form.state),
+        dataQuality: form.dataQuality || 'B',
         tags: splitList(form.tags),
         keywords: splitList(form.keywords || form.metaKeywords),
         metaKeywords: form.metaKeywords || form.keywords,
@@ -400,6 +409,33 @@ export default function EditTemplePage({ params }: { params: Promise<{ id: strin
             <label className="block text-sm font-medium text-gray-600 mb-1">Slug</label>
             <input value={form.slug} onChange={(e) => onChange("slug", e.target.value)} className="admin-input w-full" placeholder="temple-url-slug" />
             <p className="mt-1 text-xs text-gray-400">Keep existing slugs stable unless intentionally changing the public URL.</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1">UniqueKey</label>
+              <div className="flex gap-2">
+                <input value={form.uniqueKey} onChange={(e) => onChange("uniqueKey", e.target.value)} className="admin-input w-full" placeholder="TempleName|District|State" />
+                <button
+                  type="button"
+                  onClick={() => onChange("uniqueKey", buildUniqueKey(form.title, form.district, form.state))}
+                  className="admin-btn admin-btn-ghost px-3 py-2 text-xs flex-shrink-0"
+                >
+                  Generate
+                </button>
+              </div>
+              <p className="mt-1 text-xs text-gray-400">Used for duplicate prevention. Format: TempleName|District|State.</p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1">DataQuality</label>
+              <select value={form.dataQuality} onChange={(e) => onChange("dataQuality", e.target.value)} className="admin-input w-full">
+                <option value="A+">A+ - full verified SEO</option>
+                <option value="A">A - good verified data</option>
+                <option value="B">B - basic verified data</option>
+                <option value="C">C - minimal record</option>
+              </select>
+              <p className="mt-1 text-xs text-gray-400">Admin-only workflow quality marker. Default is B.</p>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

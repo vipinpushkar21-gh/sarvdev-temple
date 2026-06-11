@@ -1,7 +1,16 @@
 import Temple from '../models/Temple'
 import Deity from '../models/Deity'
 import { getAllCategoryNames, getCategoryByName, getCategoryBySlug } from './sacred-categories'
-import { getSacredCategorySlugs, normalizeTempleText, slugifyTemple, uniqueStrings } from './temple-normalization'
+import {
+  buildTempleUniqueKey,
+  getSacredCategorySlugs,
+  normalizeTempleDataQuality,
+  normalizeTempleText,
+  normalizeTempleUniqueKey,
+  normalizeTempleUniqueKeyForCompare,
+  slugifyTemple,
+  uniqueStrings,
+} from './temple-normalization'
 
 const SAMPLE_LIMIT = 25
 
@@ -12,6 +21,7 @@ const EXPECTED_INDEXES = [
   { name: 'status_deity_slug', keys: ['status', 'deitySlug'] },
   { name: 'status_sacred_category_slugs', keys: ['status', 'sacredCategorySlugs'] },
   { name: 'temple_normalized_identity', keys: ['titleNormalized', 'cityNormalized', 'stateNormalized'] },
+  { name: 'temple_unique_key_lookup', keys: ['uniqueKeyNormalized'] },
   { name: 'categories', keys: ['categories'] },
   { name: 'sacred_categories', keys: ['sacredCategories'] },
 ]
@@ -193,6 +203,9 @@ export async function runTempleIntegrity(options: { apply?: boolean; batchSize?:
         stateNormalized: 0,
         deitySlug: 0,
         sacredCategorySlugs: 0,
+        uniqueKey: 0,
+        uniqueKeyNormalized: 0,
+        dataQuality: 0,
       },
       samples: [] as IssueSample[],
     },
@@ -242,6 +255,9 @@ export async function runTempleIntegrity(options: { apply?: boolean; batchSize?:
   const projection = [
     'title',
     'slug',
+    'uniqueKey',
+    'uniqueKeyNormalized',
+    'dataQuality',
     'titleNormalized',
     'city',
     'cityNormalized',
@@ -297,6 +313,19 @@ export async function runTempleIntegrity(options: { apply?: boolean; batchSize?:
     if (!hasValue(temple.deitySlug) && hasValue(temple.deity)) {
       update.deitySlug = slugifyTemple(temple.deity)
       report.migration.fields.deitySlug += 1
+    }
+    const expectedUniqueKey = normalizeTempleUniqueKey(temple.uniqueKey || buildTempleUniqueKey(title, temple.district, temple.state))
+    if (!hasValue(temple.uniqueKey) && hasValue(expectedUniqueKey)) {
+      update.uniqueKey = expectedUniqueKey
+      report.migration.fields.uniqueKey += 1
+    }
+    if (!hasValue(temple.uniqueKeyNormalized) && hasValue(expectedUniqueKey)) {
+      update.uniqueKeyNormalized = normalizeTempleUniqueKeyForCompare(expectedUniqueKey)
+      report.migration.fields.uniqueKeyNormalized += 1
+    }
+    if (!hasValue(temple.dataQuality)) {
+      update.dataQuality = normalizeTempleDataQuality(temple.dataQuality, 'B')
+      report.migration.fields.dataQuality += 1
     }
 
     const categoryValuesRaw = rawCategoryValues(temple)

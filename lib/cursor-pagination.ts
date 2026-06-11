@@ -131,11 +131,12 @@ export function paginateCursor<T extends { createdAt: any; _id: any }>(
 export const TEMPLE_CARD_PROJ = {
   title: 1, titleHi: 1, slug: 1,
   deity: 1, deitySlug: 1, mainDeity: 1,
-  city: 1, district: 1, state: 1,
-  imageCard: 1, image: 1,
+  city: 1, district: 1, state: 1, location: 1,
+  latitude: 1, longitude: 1,
+  imageCard: 1, imageHero: 1, heroImage: 1, image: 1,
   sacredCategorySlugs: 1, categories: 1,
   status: 1, verified: 1,
-  shortDescription: 1,
+  shortDescription: 1, description: 1,
   createdAt: 1,
 } as const
 

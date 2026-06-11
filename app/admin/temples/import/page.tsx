@@ -46,6 +46,7 @@ type ImportSession = {
 const TEMPLATE_COLUMNS = [
   'Title',
   'TempleNameHi',
+  'UniqueKey',
   'Slug',
   'Location',
   'City',
@@ -82,6 +83,7 @@ const TEMPLATE_COLUMNS = [
   'GoogleMapUrl',
   'Speciality',
   'SpecialityHi',
+  'DataQuality',
   'Status',
   'Verified',
 ]

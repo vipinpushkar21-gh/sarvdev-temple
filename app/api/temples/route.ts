@@ -6,7 +6,14 @@ import { verifyToken, AUTH_COOKIE_NAME } from '@/lib/auth';
 import { getTemplesForSacredCategory, isShaktiPeethCategory } from '@/data/shakti-peethas';
 import { getCategoryBySlug } from '@/lib/sacred-categories';
 import { validateImportCategories } from '@/lib/sacred-category-registry';
-import { normalizeTempleText, normalizeTempleWrite, slugifyTemple } from '@/lib/temple-normalization';
+import {
+  normalizeTempleDataQuality,
+  normalizeTempleText,
+  normalizeTempleUniqueKey,
+  normalizeTempleUniqueKeyForCompare,
+  normalizeTempleWrite,
+  slugifyTemple,
+} from '@/lib/temple-normalization';
 import { buildCursorFilter, paginateCursor, parseCursorLimit, TEMPLE_CARD_PROJ } from '@/lib/cursor-pagination';
 import { applyRateLimit } from '@/lib/rate-limit';
 
@@ -19,7 +26,7 @@ function isAdmin(req: NextRequest): boolean {
 
 const SUPPORTED_TEMPLE_FIELDS = [
   // Core
-  'title','slug','titleNormalized','titleHi','subtitle','subtitleHi','alternateNames','tags','templeTagline','templeTaglineHi',
+  'title','slug','uniqueKey','uniqueKeyNormalized','dataQuality','titleNormalized','titleHi','subtitle','subtitleHi','alternateNames','tags','templeTagline','templeTaglineHi',
   'shortDescription','shortDescriptionHi','description','descriptionHi',
   // Media
   'primaryImage','image','imageCard','imageHero','imageGallery','heroImage','images','galleryImages','festivalGallery','architectureGallery',
@@ -251,6 +258,19 @@ function normalizeTemplePayload(payload: Record<string, any>) {
   if (festivals) data.festivals = festivals;
   const faqs = cleanFaqs(data.faqs);
   if (faqs) data.faqs = faqs;
+  if (hasOwn(data, 'uniqueKey')) {
+    const uniqueKey = normalizeTempleUniqueKey(data.uniqueKey);
+    if (uniqueKey) {
+      data.uniqueKey = uniqueKey;
+      data.uniqueKeyNormalized = normalizeTempleUniqueKeyForCompare(uniqueKey);
+    } else {
+      delete data.uniqueKey;
+      delete data.uniqueKeyNormalized;
+    }
+  }
+  if (hasOwn(data, 'dataQuality')) {
+    data.dataQuality = normalizeTempleDataQuality(data.dataQuality, 'B');
+  }
 
   return data;
 }
@@ -297,6 +317,8 @@ function buildTempleFilter(searchParams: URLSearchParams, adminMode: boolean, sk
 
   const status = searchParams.get('status')?.trim();
   if (adminMode && status) filter.status = status;
+  const dataQuality = searchParams.get('dataQuality')?.trim();
+  if (adminMode && dataQuality) filter.dataQuality = normalizeTempleDataQuality(dataQuality, 'B');
 
   const search = (searchParams.get('search') || searchParams.get('q') || '').trim();
   if (search) {
@@ -514,7 +536,11 @@ export async function POST(req: NextRequest) {
   try {
     await connectDB();
     const rawData = await req.json();
-    const data = normalizeTempleWrite(normalizeTemplePayload(pickSupportedTempleFields(rawData)));
+    const normalizedPayload = normalizeTemplePayload(pickSupportedTempleFields(rawData));
+    if (!isAdmin(req) && !hasOwn(normalizedPayload, 'dataQuality')) {
+      normalizedPayload.dataQuality = 'C';
+    }
+    const data = normalizeTempleWrite(normalizedPayload);
 
     // Public listing submissions remain allowed, but publishing is admin-only.
     if (data.status === 'approved' && !isAdmin(req)) {

@@ -32,6 +32,18 @@ interface TempleDataContextType {
   error: string | null
 }
 
+const TEMPLE_DATA_ENDPOINT = '/api/temples?limit=100&fields=card'
+
+async function getTempleApiError(res: Response) {
+  try {
+    const payload = await res.json()
+    if (payload?.error) return `Temple API ${res.status}: ${payload.error}`
+  } catch {
+    // Non-JSON error body; keep the compact status message below.
+  }
+  return `Temple API ${res.status}`
+}
+
 const TempleDataContext = createContext<TempleDataContextType>({
   temples: [],
   loading: true,
@@ -47,29 +59,46 @@ export function TempleDataProvider({ children }: { children: ReactNode }) {
     let cancelled = false
     async function fetchTemples() {
       const MAX_RETRIES = 3
+      let lastError = 'Failed to load temples'
       for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+        const ctrl = new AbortController()
+        const timer = setTimeout(() => ctrl.abort(new DOMException('Timeout', 'AbortError')), 10000)
         try {
-          const ctrl = new AbortController()
-          const timer = setTimeout(() => ctrl.abort(new DOMException('Timeout', 'AbortError')), 10000)
-          const res = await fetch('/api/temples', { signal: ctrl.signal })
-          clearTimeout(timer)
-          if (!res.ok) throw new Error(`API ${res.status}`)
+          const res = await fetch(TEMPLE_DATA_ENDPOINT, {
+            signal: ctrl.signal,
+            headers: { Accept: 'application/json' },
+          })
+          if (!res.ok) {
+            lastError = await getTempleApiError(res)
+            if (attempt < MAX_RETRIES && !cancelled) {
+              await new Promise(r => setTimeout(r, 1000 * attempt))
+              continue
+            }
+            break
+          }
           const payload = await res.json()
           const data = Array.isArray(payload) ? payload : (payload.data || payload.items || [])
           if (!cancelled) {
             const approved = data.filter((t: TempleData) => t.status === 'approved' || !t.status)
             setTemples(approved)
+            setError(null)
           }
           return // success
         } catch (err) {
           const isAbort = err instanceof DOMException && err.name === 'AbortError'
-          if (!isAbort) console.error(`TempleDataProvider fetch attempt ${attempt}/${MAX_RETRIES}:`, err)
+          lastError = isAbort ? 'Temple request timed out' : 'Temple request failed'
           if (attempt < MAX_RETRIES && !cancelled) {
             await new Promise(r => setTimeout(r, 1000 * attempt))
           } else if (!cancelled) {
-            setError('Failed to load temples')
+            setError(lastError)
           }
+        } finally {
+          clearTimeout(timer)
         }
+      }
+      if (!cancelled) {
+        setTemples([])
+        setError(lastError)
       }
       if (!cancelled) setLoading(false)
     }

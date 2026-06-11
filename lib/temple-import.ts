@@ -1,6 +1,17 @@
 import { randomUUID } from 'crypto'
 import { getCategoryByName, getCategoryBySlug } from './sacred-categories'
-import { getSacredCategorySlugs, normalizeTempleText, normalizeTempleWrite, sacredCategoryName, slugifyTemple, uniqueStrings } from './temple-normalization'
+import {
+  buildTempleUniqueKey,
+  getSacredCategorySlugs,
+  normalizeTempleDataQuality,
+  normalizeTempleText,
+  normalizeTempleUniqueKey,
+  normalizeTempleUniqueKeyForCompare,
+  normalizeTempleWrite,
+  sacredCategoryName,
+  slugifyTemple,
+  uniqueStrings,
+} from './temple-normalization'
 import ActivityLog from '@/models/ActivityLog'
 import Temple from '@/models/Temple'
 import TempleImportSession from '@/models/TempleImportSession'
@@ -8,6 +19,7 @@ import TempleImportSession from '@/models/TempleImportSession'
 export const TEMPLE_IMPORT_COLUMNS = [
   'Title',
   'TempleNameHi',
+  'UniqueKey',
   'Slug',
   'Location',
   'City',
@@ -44,6 +56,7 @@ export const TEMPLE_IMPORT_COLUMNS = [
   'GoogleMapUrl',
   'Speciality',
   'SpecialityHi',
+  'DataQuality',
   'Status',
   'Verified',
 ] as const
@@ -88,6 +101,7 @@ const LEGACY_TEMPLE_IMPORT_SAMPLE_ROW = [
 const TEMPLE_IMPORT_TEMPLATE_SAMPLE_ROW = [
   'Sample Vishnu Temple',
   'श्री विष्णु मंदिर',
+  'Sample Vishnu Temple|Sample District|Uttar Pradesh',
   'sample-vishnu-temple',
   'Main Road',
   'Sample City',
@@ -124,6 +138,7 @@ const TEMPLE_IMPORT_TEMPLATE_SAMPLE_ROW = [
   'https://maps.google.com/?q=25.3176,82.9739',
   'Known for peaceful darshan.',
   'Hindi speciality with the same meaning.',
+  'B',
   'pending',
   'not-verified',
 ] as const
@@ -187,6 +202,12 @@ const HEADER_MAP: Record<string, string> = {
   temple_name: 'templeName',
   templenamehi: 'templeNameHi',
   titlehi: 'templeNameHi',
+  uniquekey: 'uniqueKey',
+  unique_key: 'uniqueKey',
+  templeuniquekey: 'uniqueKey',
+  temple_unique_key: 'uniqueKey',
+  dataquality: 'dataQuality',
+  data_quality: 'dataQuality',
   deity: 'deity',
   deityhi: 'deityHi',
   slug: 'slug',
@@ -522,6 +543,11 @@ function normalizeInputRow(row: Record<string, string>, rowNumber: number): { ro
 
   const verified = normalizeVerified(row.verified)
   if (verified === null) errors.push('verified must be verified/not-verified or yes/no')
+  const rawDataQuality = String(row.dataQuality || '').trim()
+  const dataQuality = normalizeTempleDataQuality(rawDataQuality || 'B', 'B')
+  if (rawDataQuality && dataQuality !== rawDataQuality.toUpperCase()) {
+    warnings.push(`Invalid DataQuality "${rawDataQuality}"; defaulted to B`)
+  }
 
   const latitude = parseCoordinate(row.latitude, 'latitude', errors)
   const longitude = parseCoordinate(row.longitude, 'longitude', errors)
@@ -541,6 +567,7 @@ function normalizeInputRow(row: Record<string, string>, rowNumber: number): { ro
   const sourceUrls = splitLooseList(row.sourceUrls)
   const faqs = parseFaqText(row.faqs)
   const festivals = parseFestivalText(row.festivalsText, row.festivalsHi)
+  const uniqueKey = normalizeTempleUniqueKey(row.uniqueKey || buildTempleUniqueKey(title, row.district, row.state))
   for (const field of ['primaryImage', 'image', 'imageCard', 'imageHero'] as const) {
     validateImageUrl(field, String(row[field] || '').trim(), errors, warnings)
   }
@@ -553,6 +580,9 @@ function normalizeInputRow(row: Record<string, string>, rowNumber: number): { ro
   const payload: Record<string, any> = {
     title,
     titleHi: row.templeNameHi?.trim(),
+    uniqueKey,
+    uniqueKeyNormalized: normalizeTempleUniqueKeyForCompare(uniqueKey),
+    dataQuality,
     slug: slugifyTemple(slugBase),
     deity: row.deity?.trim(),
     deityHi: row.deityHi?.trim(),
@@ -636,7 +666,9 @@ function getRowKeys(payload: Record<string, any>) {
   const titleNormalized = normalizeTempleText(payload.title)
   const cityNormalized = normalizeTempleText(payload.city)
   const stateNormalized = normalizeTempleText(payload.state)
+  const uniqueKeyNormalized = normalizeTempleUniqueKeyForCompare(payload.uniqueKey || buildTempleUniqueKey(payload.title, payload.district, payload.state))
   const keys: string[] = []
+  if (uniqueKeyNormalized) keys.push(`unique:${uniqueKeyNormalized}`)
   if (payload.slug) keys.push(`slug:${slugifyTemple(payload.slug)}`)
   if (titleNormalized && cityNormalized && stateNormalized) keys.push(`norm:${titleNormalized}|${cityNormalized}|${stateNormalized}`)
   if (payload.googleMapsUrl) keys.push(`maps:${String(payload.googleMapsUrl).trim().toLowerCase()}`)
@@ -676,8 +708,10 @@ function makeEmptyResult(mode: ImportMode, importId: string, fileName: string): 
 
 function buildDuplicateQuery(rows: ImportRow[]) {
   const or: Record<string, any>[] = []
+  const uniqueKeys = uniqueStrings(rows.map((row) => normalizeTempleUniqueKeyForCompare(row.payload.uniqueKey)).filter(Boolean))
   const slugs = uniqueStrings(rows.map((row) => slugifyTemple(row.payload.slug)))
   const mapsUrls = uniqueStrings(rows.map((row) => String(row.payload.googleMapsUrl || '').trim()).filter(Boolean))
+  if (uniqueKeys.length > 0) or.push({ uniqueKeyNormalized: { $in: uniqueKeys } })
   if (slugs.length > 0) or.push({ slug: { $in: slugs } })
   if (mapsUrls.length > 0) or.push({ googleMapsUrl: { $in: mapsUrls } })
 
@@ -697,12 +731,15 @@ function buildDuplicateQuery(rows: ImportRow[]) {
 }
 
 function buildExistingMaps(existingRows: ExistingTemple[]) {
+  const byUniqueKey = new Map<string, ExistingTemple>()
   const bySlug = new Map<string, ExistingTemple>()
   const byNormalized = new Map<string, ExistingTemple>()
   const byMaps = new Map<string, ExistingTemple>()
   const byCoords = new Map<string, ExistingTemple>()
 
   for (const temple of existingRows) {
+    const uniqueKeyNormalized = temple.uniqueKeyNormalized || normalizeTempleUniqueKeyForCompare(temple.uniqueKey || buildTempleUniqueKey(temple.title, temple.district, temple.state))
+    if (uniqueKeyNormalized) byUniqueKey.set(uniqueKeyNormalized, temple)
     if (temple.slug) bySlug.set(slugifyTemple(temple.slug), temple)
     const titleNormalized = temple.titleNormalized || normalizeTempleText(temple.title)
     const cityNormalized = temple.cityNormalized || normalizeTempleText(temple.city)
@@ -716,10 +753,12 @@ function buildExistingMaps(existingRows: ExistingTemple[]) {
     }
   }
 
-  return { bySlug, byNormalized, byMaps, byCoords }
+  return { byUniqueKey, bySlug, byNormalized, byMaps, byCoords }
 }
 
 function findExistingTemple(payload: Record<string, any>, maps: ReturnType<typeof buildExistingMaps>) {
+  const uniqueKeyNormalized = normalizeTempleUniqueKeyForCompare(payload.uniqueKey || buildTempleUniqueKey(payload.title, payload.district, payload.state))
+  if (uniqueKeyNormalized && maps.byUniqueKey.has(uniqueKeyNormalized)) return maps.byUniqueKey.get(uniqueKeyNormalized)
   const slug = slugifyTemple(payload.slug)
   if (slug && maps.bySlug.has(slug)) return maps.bySlug.get(slug)
   const titleNormalized = normalizeTempleText(payload.title)
@@ -746,6 +785,10 @@ function buildSafeExistingUpdate(existing: ExistingTemple, incoming: Record<stri
   if (!hasValue(existing.cityNormalized) && hasValue(existing.city || incoming.city)) normalizedPatch.cityNormalized = normalizeTempleText(existing.city || incoming.city)
   if (!hasValue(existing.stateNormalized) && hasValue(existing.state || incoming.state)) normalizedPatch.stateNormalized = normalizeTempleText(existing.state || incoming.state)
   if (!hasValue(existing.deitySlug) && hasValue(existing.deity || incoming.deity)) normalizedPatch.deitySlug = slugifyTemple(existing.deity || incoming.deity)
+  const nextUniqueKey = normalizeTempleUniqueKey(existing.uniqueKey || incoming.uniqueKey || buildTempleUniqueKey(existing.title || incoming.title, existing.district || incoming.district, existing.state || incoming.state))
+  if (!hasValue(existing.uniqueKey) && hasValue(nextUniqueKey)) normalizedPatch.uniqueKey = nextUniqueKey
+  if (!hasValue(existing.uniqueKeyNormalized) && hasValue(nextUniqueKey)) normalizedPatch.uniqueKeyNormalized = normalizeTempleUniqueKeyForCompare(nextUniqueKey)
+  if (!hasValue(existing.dataQuality)) normalizedPatch.dataQuality = normalizeTempleDataQuality(incoming.dataQuality, 'B')
   for (const [field, value] of Object.entries(normalizedPatch)) {
     if (hasValue(value)) {
       update[field] = value
@@ -803,7 +846,7 @@ async function processChunk(rows: ImportRow[], mode: ImportMode, result: TempleI
   const existingRows = query
     ? await Temple.find(
       query,
-      'title slug titleNormalized city cityNormalized state stateNormalized deity deitySlug googleMapsUrl latitude longitude sacredCategories categories sacredCategorySlugs'
+      'title slug uniqueKey uniqueKeyNormalized dataQuality titleNormalized city cityNormalized district state stateNormalized deity deitySlug googleMapsUrl latitude longitude sacredCategories categories sacredCategorySlugs'
     ).lean()
     : []
   const maps = buildExistingMaps(existingRows as ExistingTemple[])
@@ -818,6 +861,13 @@ async function processChunk(rows: ImportRow[], mode: ImportMode, result: TempleI
       if (Object.keys(safe.update).length === 0) {
         result.wouldSkip += mode === 'dry-run' ? 1 : 0
         result.skippedExisting += mode === 'execute' ? 1 : 0
+        if (row.payload.uniqueKey) {
+          result.duplicateReport.push({
+            row: row.rowNumber,
+            templeName: row.payload.title,
+            reason: `Duplicate skipped: ${row.payload.uniqueKey}`,
+          })
+        }
         rowActions.push('skip')
         continue
       }
@@ -973,7 +1023,9 @@ export async function runTempleImport({
           row: physicalRow,
           templeName: parsed.row.payload.title,
           duplicateOf,
-          reason: `Duplicate row inside CSV by ${duplicateKey.split(':')[0]}`,
+          reason: duplicateKey.startsWith('unique:')
+            ? `Duplicate skipped: ${parsed.row.payload.uniqueKey}`
+            : `Duplicate row inside CSV by ${duplicateKey.split(':')[0]}`,
         })
         continue
       }

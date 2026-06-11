@@ -12,8 +12,11 @@ type FormState = {
   nameHi: string
   location: string
   slug: string
+  uniqueKey: string
+  dataQuality: string
   mapsLink: string
   city: string
+  district: string
   state: string
   country: string
   pincode: string
@@ -87,6 +90,9 @@ const l = "block text-sm font-medium text-gray-600 mb-1"
 const e = "mt-1 text-xs text-red-500"
 
 const splitList = (value: string) => value.split(/\r?\n|,/).map(item => item.trim()).filter(Boolean)
+const cleanIdentityPart = (value: string) => value.trim().replace(/\s+/g, ' ')
+const buildUniqueKey = (title: string, district: string, state: string) =>
+  [title, district, state].map(cleanIdentityPart).filter(Boolean).join('|')
 const parseFaqs = (value: string) =>
   value
     .split(/\r?\n|;/)
@@ -100,7 +106,7 @@ const parseFaqs = (value: string) =>
 const hasEnglishLetters = (value: string) => /[A-Za-z]/.test(value)
 
 const emptyForm = (): FormState => ({
-  name: "", nameHi: "", location: "", slug: "", mapsLink: "", city: "", state: "", country: "India", pincode: "", latitude: "", longitude: "",
+  name: "", nameHi: "", location: "", slug: "", uniqueKey: "", dataQuality: "B", mapsLink: "", city: "", district: "", state: "", country: "India", pincode: "", latitude: "", longitude: "",
   description: "", descriptionHi: "", history: "", historyHi: "", architecture: "", architectureHi: "",
   religiousImportance: "", religiousImportanceHi: "", festivalsHi: "", bestTimeToVisit: "", bestTimeToVisitHi: "",
   nearbyTemples: "", faqs: "", sourceUrls: "", deity: "", establishedYear: "", templeType: "",
@@ -193,10 +199,13 @@ export default function AdminNewTemplePage() {
           title: form.name,
           titleHi: form.nameHi,
           slug: form.slug,
+          uniqueKey: form.uniqueKey || buildUniqueKey(form.name, form.district, form.state),
+          dataQuality: form.dataQuality || 'B',
           location: [form.location, form.city, form.state, form.country, form.pincode ? `- ${form.pincode}` : ''].filter(Boolean).join(', '),
           streetAddress: form.location,
           mapsLink: form.mapsLink,
           city: form.city,
+          district: form.district,
           state: form.state,
           country: form.country,
           pincode: form.pincode,
@@ -396,6 +405,10 @@ export default function AdminNewTemplePage() {
               {errors.city && <p className={e}>{errors.city}</p>}
             </div>
             <div>
+              <label className={l}>District</label>
+              <input value={form.district} onChange={ev => onChange("district", ev.target.value)} placeholder="e.g. Ajmer" className={i} />
+            </div>
+            <div>
               <label className={l}>{T.state} *</label>
               <select value={form.state} onChange={ev => onChange("state", ev.target.value)} className={`${i} ${errors.state ? 'border-red-400' : ''}`}>
                 <option value="">{T.selectState}</option>
@@ -403,7 +416,7 @@ export default function AdminNewTemplePage() {
               </select>
               {errors.state && <p className={e}>{errors.state}</p>}
             </div>
-            <div>
+            <div className="md:col-span-3">
               <label className={l}>{T.pincode}</label>
               <input type="number" value={form.pincode} onChange={ev => onChange("pincode", ev.target.value)} placeholder="e.g. 221001" className={i} />
             </div>
@@ -565,6 +578,33 @@ export default function AdminNewTemplePage() {
               <label className={l}>Tags</label>
               <input value={form.tags} onChange={ev => onChange("tags", ev.target.value)} placeholder="vishnu, darshan, uttar pradesh" className={i} />
               <p className="mt-1 text-xs text-gray-400">Comma-separated tags.</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className={l}>UniqueKey</label>
+              <div className="flex gap-2">
+                <input value={form.uniqueKey} onChange={ev => onChange("uniqueKey", ev.target.value)} placeholder="TempleName|District|State" className={i} />
+                <button
+                  type="button"
+                  onClick={() => onChange("uniqueKey", buildUniqueKey(form.name, form.district, form.state))}
+                  className="admin-btn admin-btn-ghost px-3 py-2 text-xs flex-shrink-0"
+                >
+                  Generate
+                </button>
+              </div>
+              <p className="mt-1 text-xs text-gray-400">Stable identity for duplicate prevention. Blank values auto-generate on save.</p>
+            </div>
+            <div>
+              <label className={l}>DataQuality</label>
+              <select value={form.dataQuality} onChange={ev => onChange("dataQuality", ev.target.value)} className={i}>
+                <option value="A+">A+ - full verified SEO</option>
+                <option value="A">A - good verified data</option>
+                <option value="B">B - basic verified data</option>
+                <option value="C">C - minimal record</option>
+              </select>
+              <p className="mt-1 text-xs text-gray-400">Default is B. Public submissions default separately.</p>
             </div>
           </div>
 

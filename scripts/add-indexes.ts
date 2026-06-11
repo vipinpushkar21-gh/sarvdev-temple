@@ -59,6 +59,8 @@ async function createIndexes() {
   await temples.createIndex({ status: 1, stateNormalized: 1, cityNormalized: 1 }, { name: 'status_state_city_normalized' })
   await temples.createIndex({ status: 1, deitySlug: 1 }, { name: 'status_deity_slug' })
   await temples.createIndex({ status: 1, sacredCategorySlugs: 1 }, { name: 'status_sacred_category_slugs' })
+  await temples.createIndex({ uniqueKeyNormalized: 1 }, { name: 'temple_unique_key_lookup', sparse: true })
+  await temples.createIndex({ status: 1, dataQuality: 1, createdAt: -1 }, { name: 'status_data_quality_created' })
   await temples.createIndex(
     { titleNormalized: 1, cityNormalized: 1, stateNormalized: 1 },
     { name: 'temple_normalized_identity' }

@@ -323,6 +323,7 @@ export default function ListTempleClient({ faqs }: { faqs: FaqItem[] }) {
           instagram: form.instagram.trim(),
           submittedBy: form.submitterName.trim(),
           submitterEmail: form.submitterEmail.trim(),
+          dataQuality: "C",
           status: "pending",
         }),
       })

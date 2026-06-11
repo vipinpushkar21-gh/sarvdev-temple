@@ -9,6 +9,8 @@ type TempleRow = {
   _id: string
   title: string
   slug?: string
+  uniqueKey?: string
+  dataQuality?: 'A+' | 'A' | 'B' | 'C'
   titleHi?: string
   deity?: string
   state?: string
@@ -106,6 +108,7 @@ export default function AdminTemplesPage() {
   const [stateFilter, setStateFilter] = useState('')
   const [typeFilter, setTypeFilter] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
+  const [dataQualityFilter, setDataQualityFilter] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('')
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(50)
@@ -123,8 +126,8 @@ export default function AdminTemplesPage() {
   
   const debouncedSearch = useDebouncedValue(search)
 
-  useEffect(() => { fetchTemples(page) }, [page, pageSize, debouncedSearch, deityFilter, stateFilter, typeFilter, statusFilter, categoryFilter, sortCol, sortDir])
-  useEffect(() => { setPage(1) }, [pageSize, debouncedSearch, deityFilter, stateFilter, typeFilter, statusFilter, categoryFilter, sortCol, sortDir])
+  useEffect(() => { fetchTemples(page) }, [page, pageSize, debouncedSearch, deityFilter, stateFilter, typeFilter, statusFilter, dataQualityFilter, categoryFilter, sortCol, sortDir])
+  useEffect(() => { setPage(1) }, [pageSize, debouncedSearch, deityFilter, stateFilter, typeFilter, statusFilter, dataQualityFilter, categoryFilter, sortCol, sortDir])
   
   async function fetchTemples(targetPage = page) {
     try {
@@ -141,6 +144,7 @@ export default function AdminTemplesPage() {
       if (stateFilter) params.set('state', stateFilter)
       if (typeFilter) params.set('templeType', typeFilter)
       if (statusFilter) params.set('status', statusFilter)
+      if (dataQualityFilter) params.set('dataQuality', dataQualityFilter)
       if (categoryFilter) params.set('category', categoryFilter)
       const res = await fetch(`/api/temples?${params.toString()}`, { credentials: 'include', cache: 'no-store' })
       if (res.ok) {
@@ -343,6 +347,7 @@ export default function AdminTemplesPage() {
         if (stateFilter) params.set('state', stateFilter)
         if (typeFilter) params.set('templeType', typeFilter)
         if (statusFilter) params.set('status', statusFilter)
+        if (dataQualityFilter) params.set('dataQuality', dataQualityFilter)
         if (categoryFilter) params.set('category', categoryFilter)
         const res = await fetch(`/api/temples?${params}`, { credentials: 'include', cache: 'no-store' })
         if (!res.ok) break
@@ -357,15 +362,13 @@ export default function AdminTemplesPage() {
         alert(`${englishHiCount} rows have English letters in TempleNameHi. TempleNameHi should be Hindi/Devanagari or blank.`)
       }
       const header = [
-        'templeName', 'templeNameHi', 'slug', 'deity', 'deityHi', 'templeType',
-        'description', 'descriptionHi', 'speciality', 'specialityHi',
-        'streetAddress', 'city', 'district', 'state', 'country', 'pincode',
-        'latitude', 'longitude', 'googleMapsUrl', 'timings',
-        'phone', 'email', 'website',
-        'sacredCategories', 'categories',
-        'image', 'imageCard', 'imageHero', 'galleryImages',
-        'metaTitle', 'metaDescription', 'metaKeywords',
-        'status', 'verified',
+        'Title', 'TempleNameHi', 'UniqueKey', 'Slug', 'Location', 'City', 'District', 'State', 'Country',
+        'Deity', 'Type', 'SacredCategories', 'Tags', 'MetaTitle', 'MetaDescription', 'Keywords',
+        'Description', 'DescriptionHi', 'History', 'HistoryHi', 'Architecture', 'ArchitectureHi',
+        'ReligiousImportance', 'ReligiousImportanceHi', 'Festivals', 'FestivalsHi',
+        'BestTimeToVisit', 'BestTimeToVisitHi', 'NearbyTemples', 'FAQs', 'SourceUrls',
+        'PrimaryImage', 'GalleryImages', 'Latitude', 'Longitude', 'Timings', 'GoogleMapUrl',
+        'Speciality', 'SpecialityHi', 'DataQuality', 'Status', 'Verified',
       ]
       const csvRows = [
         header.join(','),
@@ -373,36 +376,44 @@ export default function AdminTemplesPage() {
           [
             r.title || '',
             r.titleHi || '',
+            r.uniqueKey || '',
             r.slug || '',
-            r.deity || '',
-            r.deityHi || '',
-            r.templeType || r.type || '',
-            r.description || '',
-            r.descriptionHi || '',
-            r.speciality || '',
-            r.specialityHi || '',
             r.streetAddress || r.location || '',
             r.city || '',
             r.district || '',
             r.state || '',
             r.country || '',
-            r.pincode || '',
-            r.latitude ?? '',
-            r.longitude ?? '',
-            r.googleMapsUrl || r.googleMapUrl || r.mapsLink || '',
-            r.timings || '',
-            r.phone || '',
-            r.email || '',
-            r.website || '',
+            r.deity || '',
+            r.templeType || r.type || '',
             (r.sacredCategories || []).join(';'),
-            (r.categories || []).join(';'),
-            r.primaryImage || r.image || '',
-            r.imageCard || '',
-            r.imageHero || '',
-            csvList(r.galleryImages && r.galleryImages.length > 0 ? r.galleryImages : r.imageGallery),
+            csvList(r.tags),
             r.metaTitle || '',
             r.metaDescription || '',
             csvList(r.keywords && r.keywords.length > 0 ? r.keywords : r.metaKeywords),
+            r.description || '',
+            r.descriptionHi || '',
+            r.history || '',
+            r.historyHi || '',
+            r.architecture || '',
+            r.architectureHi || '',
+            r.religiousImportance || r.sacredImportance || '',
+            r.religiousImportanceHi || r.sacredImportanceHi || '',
+            csvFestivals(r.festivals),
+            r.festivalsHi || csvFestivals(r.festivals, true),
+            r.bestTimeToVisit || r.bestSeason || '',
+            r.bestTimeToVisitHi || '',
+            csvList(r.nearbyTemples && r.nearbyTemples.length > 0 ? r.nearbyTemples : r.nearbySacredPlaces),
+            csvFaqs(r.faqs),
+            csvList(r.sourceUrls),
+            r.primaryImage || r.image || '',
+            csvList(r.galleryImages && r.galleryImages.length > 0 ? r.galleryImages : r.imageGallery),
+            r.latitude ?? '',
+            r.longitude ?? '',
+            r.timings || '',
+            r.googleMapsUrl || r.googleMapUrl || r.mapsLink || '',
+            r.speciality || '',
+            r.specialityHi || '',
+            r.dataQuality || 'B',
             r.status || 'approved',
             r.verified || 'not-verified',
           ]
@@ -607,7 +618,7 @@ export default function AdminTemplesPage() {
 
       {/* Filters */}
       <div className="admin-filter-bar">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-3">
           <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search title, location, deity..." className="admin-input" />
           <input type="text" value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} placeholder="Category" className="admin-input" />
           <select value={deityFilter} onChange={e => setDeityFilter(e.target.value)} className="admin-input">
@@ -627,6 +638,13 @@ export default function AdminTemplesPage() {
             <option value="approved">Approved</option>
             <option value="pending">Pending</option>
             <option value="rejected">Rejected</option>
+          </select>
+          <select value={dataQualityFilter} onChange={e => setDataQualityFilter(e.target.value)} className="admin-input">
+            <option value="">All Quality</option>
+            <option value="A+">A+</option>
+            <option value="A">A</option>
+            <option value="B">B</option>
+            <option value="C">C</option>
           </select>
         </div>
       </div>
@@ -654,6 +672,7 @@ export default function AdminTemplesPage() {
                 </th>
                 <th>Location</th>
                 <th>Deity</th>
+                <th>Quality</th>
                 <th className="cursor-pointer hover:text-gray-900" onClick={() => toggleSort('status')}>
                   Status {sortCol === 'status' && (sortDir === 'asc' ? '↑' : '↓')}
                 </th>
@@ -668,6 +687,7 @@ export default function AdminTemplesPage() {
                   <td className="font-medium text-gray-900">{r.title}</td>
                   <td className="text-gray-500 max-w-[200px] truncate">{r.location}</td>
                   <td className="text-gray-500">{r.deity}</td>
+                  <td><span className="admin-badge-blue">{r.dataQuality || 'B'}</span></td>
                   <td>
                     <span className={r.status === 'approved' ? 'admin-badge-green' : r.status === 'pending' ? 'admin-badge-yellow' : 'admin-badge-red'}>
                       {r.status || 'approved'}
@@ -690,7 +710,7 @@ export default function AdminTemplesPage() {
                 </tr>
               ))}
               {paginated.length === 0 && (
-                <tr><td colSpan={7} className="px-5 py-8 text-center text-gray-400">No temples match filters.</td></tr>
+                <tr><td colSpan={8} className="px-5 py-8 text-center text-gray-400">No temples match filters.</td></tr>
               )}
             </tbody>
           </table>

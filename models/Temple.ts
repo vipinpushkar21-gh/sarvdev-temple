@@ -1,11 +1,24 @@
 // models/Temple.ts
 import mongoose, { Schema, Model, models } from 'mongoose';
-import { getSacredCategorySlugs, normalizeTempleText, slugifyTemple, uniqueStrings } from '../lib/temple-normalization';
+import {
+  TEMPLE_DATA_QUALITY_VALUES,
+  buildTempleUniqueKey,
+  getSacredCategorySlugs,
+  normalizeTempleDataQuality,
+  normalizeTempleText,
+  normalizeTempleUniqueKey,
+  normalizeTempleUniqueKeyForCompare,
+  slugifyTemple,
+  uniqueStrings,
+} from '../lib/temple-normalization';
 
 const TempleSchema = new Schema({
   // ── Core ──
   title: { type: String, required: true },
   slug: { type: String, index: true },
+  uniqueKey: { type: String },
+  uniqueKeyNormalized: { type: String, index: true },
+  dataQuality: { type: String, enum: TEMPLE_DATA_QUALITY_VALUES, default: 'B' },
   titleNormalized: { type: String, index: true },
   titleHi: { type: String },
   subtitle: { type: String },
@@ -193,10 +206,18 @@ TempleSchema.index({ status: 1, sacredCategorySlugs: 1 });
 TempleSchema.index({ titleNormalized: 1, cityNormalized: 1, stateNormalized: 1 });
 TempleSchema.index({ status: 1, sacredCategorySlugs: 1, createdAt: -1 }); // paginated category browse
 TempleSchema.index({ sacredCategorySlugs: 1, status: 1, stateNormalized: 1 }); // geo+category filter
+TempleSchema.index({ uniqueKeyNormalized: 1 }, { name: 'temple_unique_key_lookup', sparse: true });
+TempleSchema.index({ status: 1, dataQuality: 1, createdAt: -1 }, { name: 'status_data_quality_created' });
 TempleSchema.pre('validate', function (next) {
   const doc = this as any;
   if (!doc.slug && doc.title) doc.slug = slugifyTemple(doc.title);
   if (doc.slug) doc.slug = slugifyTemple(doc.slug);
+  doc.dataQuality = normalizeTempleDataQuality(doc.dataQuality, 'B');
+  const uniqueKey = normalizeTempleUniqueKey(doc.uniqueKey || buildTempleUniqueKey(doc.title, doc.district, doc.state));
+  if (uniqueKey) {
+    doc.uniqueKey = uniqueKey;
+    doc.uniqueKeyNormalized = normalizeTempleUniqueKeyForCompare(uniqueKey);
+  }
   if (doc.title) doc.titleNormalized = normalizeTempleText(doc.title);
   if (doc.city) doc.cityNormalized = normalizeTempleText(doc.city);
   if (doc.state) doc.stateNormalized = normalizeTempleText(doc.state);
