@@ -15,6 +15,7 @@ const APPROVED_FILTER = {
 }
 
 export async function GET(req: NextRequest) {
+  const _t0 = performance.now();
   const limited = applyRateLimit(req, 'temples')
   if (limited) return limited
 
@@ -66,6 +67,7 @@ export async function GET(req: NextRequest) {
 
     const res = NextResponse.json(counts)
     res.headers.set('Cache-Control', 'public, s-maxage=120, stale-while-revalidate=300')
+    console.log("[api/category-counts] " + (performance.now() - _t0).toFixed(0) + "ms");
     return res
   } catch (error) {
     console.error('Category counts error:', error)

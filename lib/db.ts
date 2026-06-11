@@ -21,12 +21,13 @@ export async function connectDB() {
   }
   if (cached.conn) return cached.conn;
   if (!cached.promise) {
+    const _t0 = performance.now();
     cached.promise = mongoose.connect(MONGODB_URI, {
       bufferCommands: false,
       maxPoolSize: 10,
       serverSelectionTimeoutMS: 5000,
       socketTimeoutMS: 30000,
-    }).then((mongoose) => mongoose)
+    }).then((mongoose) => { console.log("[db] connectDB: " + (performance.now() - _t0).toFixed(0) + "ms"); return mongoose })
       .catch((err) => {
         cached.promise = null;
         console.error('MongoDB connection error:', err);

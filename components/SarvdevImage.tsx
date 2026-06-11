@@ -101,6 +101,8 @@ export default function SarvdevImage({
       sizes={image.sizes}
       alt={alt}
       loading={loading}
+      width={image.width}
+      height={image.height}
       decoding="async"
       draggable={draggable}
       className={`sarvdev-cinematic-image ${imgClassName}`}

@@ -404,6 +404,7 @@ function parsePagination(searchParams: URLSearchParams) {
 }
 
 export async function GET(req: NextRequest) {
+  const _t0 = performance.now();
   try {
     const { searchParams } = new URL(req.url);
     const wantsAdminScope =
@@ -501,6 +502,7 @@ export async function GET(req: NextRequest) {
       hasMore: skip + data.length < total,
     });
     res.headers.set('Cache-Control', adminMode ? 'no-store, max-age=0' : 'public, s-maxage=300, stale-while-revalidate=600');
+    console.log("[api/temples GET] " + (performance.now() - _t0).toFixed(0) + "ms");
     return res;
   } catch (error) {
     console.error('Temple API Error:', error);

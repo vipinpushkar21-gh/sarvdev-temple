@@ -3,12 +3,33 @@ import { connectDB } from '@/lib/db'
 import Temple from '@/models/Temple'
 import Review from '@/models/Review'
 import { getOGImage, getTempleHeroImage } from '@/lib/temple-image'
-import { normalizeTempleText } from '@/lib/temple-normalization'
+import { normalizeTempleText, slugifyTemple } from '@/lib/temple-normalization'
 
 // ISR: revalidate temple detail pages every 5 minutes
 export const revalidate = 300
 
 const BASE = 'https://sarvdev.com'
+
+function cleanText(value: unknown, max = 155) {
+  return String(value || '')
+    .replace(/<[^>]+>/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, max)
+}
+
+function asStringArray(value: unknown): string[] {
+  if (Array.isArray(value)) return value.map((item) => String(item || '').trim()).filter(Boolean)
+  if (typeof value === 'string') {
+    const separator = value.includes('|') ? '|' : value.includes(';') ? ';' : ','
+    return value.split(separator).map((item) => item.trim()).filter(Boolean)
+  }
+  return []
+}
+
+function uniqueStrings(values: unknown[]) {
+  return Array.from(new Set(values.map((value) => String(value || '').trim()).filter(Boolean)))
+}
 
 function templeSlugQuery(slug: string) {
   const words = slug.split('-').map((word) => word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).filter(Boolean)
@@ -31,7 +52,7 @@ export async function generateMetadata(
     await connectDB()
     const temple = await Temple.findOne(
       templeSlugQuery(slug),
-      'title description image imageCard imageHero heroImage ogImage city state deity templeType'
+      'title titleHi description metaTitle metaDescription canonicalUrl image imageCard imageHero heroImage ogImage city state deity templeType templeTypes tags keywords metaKeywords categories sacredCategories'
     ).lean() as any
 
     if (!temple) {
@@ -43,23 +64,30 @@ export async function generateMetadata(
 
     const locationParts = [temple.city, temple.state].filter(Boolean)
     const location = locationParts.join(', ')
-    const title = `${temple.title} — Sarvdev`
-    const description = temple.description
-      ? temple.description.replace(/<[^>]+>/g, '').slice(0, 155)
-      : `Explore ${temple.title}${location ? ` in ${location}` : ''}${temple.deity ? `, dedicated to ${temple.deity}` : ''}. Find timings, history and more on Sarvdev.`
+    const title = cleanText(temple.metaTitle, 80) || `${temple.title} - Sarvdev`
+    const description = cleanText(temple.metaDescription)
+      || (temple.description
+        ? cleanText(temple.description)
+        : `Explore ${temple.title}${location ? ` in ${location}` : ''}${temple.deity ? `, dedicated to ${temple.deity}` : ''}. Find timings, history and more on Sarvdev.`)
     const image = getOGImage(temple).src
-    const url = `${BASE}/temples/${slug}`
-    const keywords = [
+    const url = cleanText(temple.canonicalUrl, 240) || `${BASE}/temples/${slug}`
+    const keywords = uniqueStrings([
+      ...asStringArray(temple.metaKeywords),
+      ...asStringArray(temple.keywords),
+      ...asStringArray(temple.tags),
+      ...asStringArray(temple.categories),
+      ...asStringArray(temple.sacredCategories),
       temple.title,
       temple.deity,
       temple.city,
       temple.state,
       temple.templeType,
+      ...(Array.isArray(temple.templeTypes) ? temple.templeTypes : []),
       'temple',
       'mandir',
       'darshan',
       'Hindu temple India',
-    ].filter(Boolean) as string[]
+    ])
 
     return {
       title,
@@ -99,29 +127,38 @@ export default async function TempleSlugLayout({
     await connectDB()
     const temple = await Temple.findOne(
       templeSlugQuery(slug),
-      'title description image city state country deity latitude longitude timings phone website'
+      'title description image imageCard imageHero heroImage ogImage city district state country deity templeType templeTypes categories sacredCategories latitude longitude timings phone website'
     ).lean() as any
     if (temple) {
+      const pageUrl = `${BASE}/temples/${slug}`
+      const heroImage = getTempleHeroImage(temple).src
+      const breadcrumbItems = [
+        { name: 'Home', item: BASE },
+        { name: 'Temples', item: `${BASE}/temples` },
+        ...(temple.state ? [{ name: temple.state, item: `${BASE}/temples/state/${slugifyTemple(temple.state)}` }] : []),
+        { name: temple.title, item: pageUrl },
+      ]
       // BreadcrumbList
       jsonLdArray.push({
         '@context': 'https://schema.org',
         '@type': 'BreadcrumbList',
-        itemListElement: [
-          { '@type': 'ListItem', position: 1, name: 'Home', item: BASE },
-          { '@type': 'ListItem', position: 2, name: 'Temples', item: `${BASE}/temples` },
-          { '@type': 'ListItem', position: 3, name: temple.title, item: `${BASE}/temples/${slug}` },
-        ],
+        itemListElement: breadcrumbItems.map((item, index) => ({
+          '@type': 'ListItem',
+          position: index + 1,
+          name: item.name,
+          item: item.item,
+        })),
       })
       // HinduTemple / Place structured data
       const placeSchema: Record<string, any> = {
         '@context': 'https://schema.org',
         '@type': 'HinduTemple',
         name: temple.title,
-        url: `${BASE}/temples/${slug}`,
-        image: getTempleHeroImage(temple).src,
+        url: pageUrl,
+        image: heroImage,
       }
       if (temple.description) {
-        placeSchema.description = temple.description.replace(/<[^>]+>/g, '').slice(0, 300)
+        placeSchema.description = cleanText(temple.description, 300)
       }
       const addressParts = [temple.city, temple.state, temple.country].filter(Boolean)
       if (addressParts.length) {
@@ -132,7 +169,7 @@ export default async function TempleSlugLayout({
           addressCountry: temple.country || 'IN',
         }
       }
-      if (temple.latitude && temple.longitude) {
+      if (typeof temple.latitude === 'number' && Number.isFinite(temple.latitude) && typeof temple.longitude === 'number' && Number.isFinite(temple.longitude)) {
         placeSchema.geo = {
           '@type': 'GeoCoordinates',
           latitude: temple.latitude,
@@ -145,7 +182,7 @@ export default async function TempleSlugLayout({
       // ImageObject for Google Images discoverability
       placeSchema.photo = {
         '@type': 'ImageObject',
-        url: getTempleHeroImage(temple).src,
+        url: heroImage,
         name: `${temple.title} Temple Photo`,
         caption: `${temple.title}${temple.city ? ` in ${temple.city}` : ''}${temple.state ? `, ${temple.state}` : ''}`,
       }
@@ -157,7 +194,7 @@ export default async function TempleSlugLayout({
 
       // telephone for local SEO
       if (temple.phone) placeSchema.telephone = temple.phone
-      if (temple.website) placeSchema.url = temple.website
+      if (temple.website) placeSchema.sameAs = [temple.website]
 
       // AggregateRating from reviews
       try {

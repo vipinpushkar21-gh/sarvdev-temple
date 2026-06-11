@@ -176,7 +176,7 @@ export default function SacredEcosystemHero({ stats }: SacredEcosystemHeroProps)
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.65, delay: 0.24 }}
-            className="relative z-20 mt-8 rounded-card border border-white/10 bg-white/[0.08] p-3 shadow-[0_18px_60px_rgba(0,0,0,0.26)] backdrop-blur-xl sm:p-4"
+            className="relative z-[60] mt-8 rounded-card border border-white/10 bg-white/[0.08] p-3 shadow-[0_18px_60px_rgba(0,0,0,0.26)] backdrop-blur-xl sm:p-4"
           >
             <div className="mb-3 flex items-center gap-2 px-1 text-caption font-semibold uppercase text-temple-gold-light">
               <Search className="h-4 w-4" aria-hidden="true" />

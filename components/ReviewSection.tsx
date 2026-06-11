@@ -11,7 +11,13 @@ type Review = {
   createdAt: string
 }
 
-export default function ReviewSection({ templeSlug }: { templeSlug: string }) {
+export default function ReviewSection({
+  templeSlug,
+  hideWhenEmpty = false,
+}: {
+  templeSlug: string
+  hideWhenEmpty?: boolean
+}) {
   const [reviews, setReviews] = useState<Review[]>([])
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
@@ -31,6 +37,10 @@ export default function ReviewSection({ templeSlug }: { templeSlug: string }) {
   const avg = reviews.length
     ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length
     : 0
+
+  if (!loading && hideWhenEmpty && reviews.length === 0 && !showForm && !success) {
+    return null
+  }
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()

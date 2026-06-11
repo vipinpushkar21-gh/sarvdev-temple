@@ -3,9 +3,8 @@
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useTranslation } from '../../../lib/translation'
-import { getTempleHeroImage } from '../../../lib/temple-image'
+import { getTempleHeroImage, getTempleCardImage } from '../../../lib/temple-image'
 import BookmarkButton from '../../../components/BookmarkButton'
-import Breadcrumbs from '../../../components/Breadcrumbs'
 import ShareButtons from '../../../components/ShareButtons'
 import { DetailPageSkeleton } from '../../../components/Skeleton'
 import ReviewSection from '../../../components/ReviewSection'
@@ -73,6 +72,29 @@ function slugify(text: string): string {
   return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
 }
 
+function asStringArray(value: unknown): string[] {
+  if (Array.isArray(value)) return value.map((item) => String(item || '').trim()).filter(Boolean)
+  if (typeof value === 'string') {
+    const separator = value.includes('|') ? '|' : value.includes(';') ? ';' : ','
+    return value.split(separator).map((item) => item.trim()).filter(Boolean)
+  }
+  return []
+}
+
+function uniqueStrings(values: unknown[]): string[] {
+  return Array.from(new Set(values.map((value) => String(value || '').trim()).filter(Boolean)))
+}
+
+function isFiniteNumber(value: unknown): value is number {
+  return typeof value === 'number' && Number.isFinite(value)
+}
+
+function formatDistance(distanceKm: unknown): string {
+  const n = Number(distanceKm)
+  if (!Number.isFinite(n)) return ''
+  return `${n.toFixed(n < 10 ? 1 : 0)} km away`
+}
+
 /** Small helper so we can use useState for the onError fallback */
 function TempleDetailImage({ temple, alt }: { temple: any; alt: string }) {
   const heroImage = getTempleHeroImage(temple)
@@ -108,13 +130,39 @@ function BentoInfoCard({ icon, label, value, className = '', children }: {
   )
 }
 
+function TempleSummaryCard({
+  temple,
+  meta,
+}: {
+  temple: any
+  meta?: React.ReactNode
+}) {
+  const templeSlug = temple.slug || slugify(temple.title || '')
+  return (
+    <Link href={'/temples/' + templeSlug}
+      className="group bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-md transition-shadow duration-200 no-underline flex flex-col">
+      <div className="relative h-36 overflow-hidden bg-gray-50">
+        <SarvdevImage image={getTempleCardImage(temple)} alt={temple.title} className="absolute inset-0" imgClassName="object-cover group-hover:scale-105 transition-transform duration-500" />
+      </div>
+      <div className="p-4 flex-1">
+        <h3 className="text-sm font-semibold text-ink group-hover:text-primary-600 transition-colors leading-snug line-clamp-2">{temple.title}</h3>
+        <p className="text-xs text-ink-muted mt-1">{[temple.city, temple.state].filter(Boolean).join(', ')}</p>
+        {temple.deity && <p className="text-xs text-primary-600 font-medium mt-1">{temple.deity}</p>}
+        {meta && <div className="mt-2">{meta}</div>}
+      </div>
+    </Link>
+  )
+}
+
 export default function TemplePage({ params }: Props) {
   const { t, language } = useTranslation()
   const [temple, setTemple] = useState<any>(null)
+  const [related, setRelated] = useState<any[]>([])
+  const [nearby, setNearby] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [slug, setSlug] = useState<string>('')
-  const [heroScale, setHeroScale] = useState(1)
   const heroRef = useRef<HTMLDivElement>(null)
+  const heroImageLayerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     params.then(p => setSlug(p.slug))
@@ -150,16 +198,76 @@ export default function TemplePage({ params }: Props) {
     fetchTemple()
   }, [slug])
 
+  useEffect(() => {
+    if (!temple) return
+    const controller = new AbortController()
+    const qs = new URLSearchParams()
+    if (slug) qs.set('slug', slug)
+    if (temple._id) qs.set('id', String(temple._id))
+    if (temple.deity) qs.set('deity', temple.deity)
+    if (temple.deitySlug) qs.set('deitySlug', temple.deitySlug)
+    if (temple.state) qs.set('state', temple.state)
+    if (temple.district) qs.set('district', temple.district)
+    const categoryNames = uniqueStrings([
+      ...asStringArray(temple.categories),
+      ...asStringArray(temple.sacredCategories),
+    ])
+    const categorySlugs = asStringArray(temple.sacredCategorySlugs)
+    const templeTypes = uniqueStrings([
+      ...asStringArray(temple.templeTypes),
+      ...(temple.templeType ? [temple.templeType] : []),
+    ])
+    if (categoryNames[0]) qs.set('category', categoryNames[0])
+    if (categoryNames.length > 0) qs.set('categories', categoryNames.join('|'))
+    if (categorySlugs.length > 0) qs.set('sacredCategorySlugs', categorySlugs.join('|'))
+    if (templeTypes.length > 0) qs.set('templeTypes', templeTypes.join('|'))
+    if (isFiniteNumber(temple.latitude) && isFiniteNumber(temple.longitude)) {
+      qs.set('includeNearby', '1')
+      qs.set('lat', String(temple.latitude))
+      qs.set('lng', String(temple.longitude))
+    }
+    fetch('/api/temples/related?' + qs.toString(), { signal: controller.signal })
+      .then(r => r.json())
+      .then(d => {
+        if (Array.isArray(d)) {
+          setRelated(d.slice(0, 8))
+          setNearby([])
+          return
+        }
+        setRelated(Array.isArray(d?.related) ? d.related.slice(0, 8) : [])
+        setNearby(Array.isArray(d?.nearby) ? d.nearby.slice(0, 6) : [])
+      })
+      .catch((error) => {
+        if (error?.name !== 'AbortError') {
+          setRelated([])
+          setNearby([])
+        }
+      })
+    return () => controller.abort()
+  }, [temple, slug])
+
   // Parallax zoom effect on hero image
   useEffect(() => {
+    let raf = 0
     function handleScroll() {
-      if (!heroRef.current) return
-      const rect = heroRef.current.getBoundingClientRect()
-      const scrollProgress = Math.max(0, Math.min(1, -rect.top / rect.height))
-      setHeroScale(1 + scrollProgress * 0.04)
+      if (raf) return
+      raf = window.requestAnimationFrame(() => {
+        if (!heroRef.current || !heroImageLayerRef.current) {
+          raf = 0
+          return
+        }
+        const rect = heroRef.current.getBoundingClientRect()
+        const scrollProgress = Math.max(0, Math.min(1, -rect.top / rect.height))
+        heroImageLayerRef.current.style.transform = `scale(${1 + scrollProgress * 0.04})`
+        raf = 0
+      })
     }
     window.addEventListener('scroll', handleScroll, { passive: true })
-    return () => window.removeEventListener('scroll', handleScroll)
+    handleScroll()
+    return () => {
+      window.removeEventListener('scroll', handleScroll)
+      if (raf) window.cancelAnimationFrame(raf)
+    }
   }, [])
 
   if (loading) {
@@ -188,6 +296,9 @@ export default function TemplePage({ params }: Props) {
   // Use mapsLink embed URL stored in DB
   const mapsLink = (temple.mapsLink && temple.mapsLink.includes('google.com/maps/embed')) ? temple.mapsLink : null
   const displayLocation = ((language === 'hi' && temple.locationHi) ? temple.locationHi : temple.location)?.trim()
+  const descriptionText = String(
+    (language === 'hi' ? temple.descriptionHi || temple.description : temple.description || temple.descriptionHi) || ''
+  ).trim()
 
   // Collect bento items
   const bentoItems: { icon: string; label: string; value: string; span?: boolean }[] = []
@@ -216,45 +327,40 @@ export default function TemplePage({ params }: Props) {
   const specialityVal = (language === 'hi' && temple.specialityHi) ? temple.specialityHi : temple.speciality
   if (specialityVal) bentoItems.push({ icon: '✨', label: t('temple.speciality'), value: specialityVal, span: true })
 
-  const jsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'PlaceOfWorship',
-    name: temple.title,
-    description: temple.description || undefined,
-    image: getTempleHeroImage(temple).src,
-    url: `https://sarvdev.com/temples/${slug}`,
-    ...(temple.city || temple.state ? {
-      address: {
-        '@type': 'PostalAddress',
-        addressLocality: temple.city || undefined,
-        addressRegion: temple.state || undefined,
-        addressCountry: temple.country || 'IN',
-        postalCode: temple.pincode || undefined,
-      },
-    } : {}),
-    ...(temple.latitude && temple.longitude ? {
-      geo: {
-        '@type': 'GeoCoordinates',
-        latitude: temple.latitude,
-        longitude: temple.longitude,
-      },
-    } : {}),
-    ...(temple.timings ? { openingHours: temple.timings } : {}),
-    ...(temple.phone ? { telephone: temple.phone } : {}),
-    ...(temple.website ? { sameAs: temple.website } : {}),
-  }
+  const districtVal = (language === 'hi' && temple.districtHi) ? temple.districtHi : temple.district
+  const sacredCategoryNames = uniqueStrings([
+    ...asStringArray(temple.categories),
+    ...asStringArray(temple.sacredCategories),
+  ])
+  const sacredCategorySlugs = asStringArray(temple.sacredCategorySlugs)
+  const quickFacts = [
+    stateVal && { label: 'State', value: stateVal },
+    districtVal && { label: 'District', value: districtVal },
+    cityVal && { label: 'City', value: cityVal },
+    deityValue && { label: 'Deity', value: deityValue },
+    templeTypeValue && { label: 'Temple Type', value: templeTypeValue },
+    sacredCategoryNames.length > 0 && { label: 'Sacred Categories', value: sacredCategoryNames.join(' · ') },
+  ].filter(Boolean) as { label: string; value: string }[]
+
+  const internalLinks = uniqueStrings([
+    temple.deity ? JSON.stringify({ label: `More ${temple.deity} temples`, href: `/temples/deity/${slugify(temple.deity)}` }) : '',
+    temple.state ? JSON.stringify({ label: `Temples in ${temple.state}`, href: `/temples/state/${slugify(temple.state)}` }) : '',
+    sacredCategoryNames[0]
+      ? JSON.stringify({
+        label: `${sacredCategoryNames[0]} temples`,
+        href: `/temples/pilgrimage/${sacredCategorySlugs[0] || slugify(sacredCategoryNames[0])}`,
+      })
+      : '',
+  ]).map((item) => JSON.parse(item) as { label: string; href: string })
 
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
       {/* ── Immersive Hero Section ── */}
       <div ref={heroRef} className="temple-hero-2030">
         <div
+          ref={heroImageLayerRef}
           className="absolute inset-0 parallax-zoom"
-          style={{ transform: `scale(${heroScale})`, transformOrigin: 'top center' }}
+          style={{ transform: 'scale(1)', transformOrigin: 'top center' }}
         >
           <TempleDetailImage temple={temple} alt={temple.title} />
         </div>
@@ -275,6 +381,12 @@ export default function TemplePage({ params }: Props) {
                 <li className="text-white/40">/</li>
                 <li><Link href="/temples" className="hover:text-white transition-colors text-white/70 no-underline hover:no-underline">{t('nav.temples')}</Link></li>
                 <li className="text-white/40">/</li>
+                {temple.state && (
+                  <>
+                    <li><Link href={`/temples/state/${slugify(temple.state)}`} className="hover:text-white transition-colors text-white/70 no-underline hover:no-underline">{stateVal}</Link></li>
+                    <li className="text-white/40">/</li>
+                  </>
+                )}
                 <li className="text-white font-medium truncate max-w-[250px]">{(language === 'hi' && temple.titleHi) ? temple.titleHi : temple.title}</li>
               </ol>
             </nav>
@@ -322,9 +434,9 @@ export default function TemplePage({ params }: Props) {
             )}
 
             {/* Sacred category badges */}
-            {temple.categories && temple.categories.length > 0 && (
+            {sacredCategoryNames.length > 0 && (
               <div className="mt-4 flex flex-wrap gap-2 reveal-up" style={{ animationDelay: '250ms' }}>
-                {temple.categories.map((cat: string, idx: number) => (
+                {sacredCategoryNames.map((cat: string, idx: number) => (
                   <span key={idx} className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-caption font-semibold bg-white/15 text-white/90 backdrop-blur-sm border border-white/20">
                     <span className="w-1.5 h-1.5 rounded-full bg-temple-gold-light inline-block" />
                     {cat}
@@ -364,7 +476,7 @@ export default function TemplePage({ params }: Props) {
 
       {/* Section Quick Nav */}
       <nav className="section-quick-nav" aria-label="Page sections">
-        <a href="#about" className="section-nav-pill">🙏 About</a>
+        {descriptionText && <a href="#about" className="section-nav-pill">🙏 About</a>}
         {(temple.sacredImportance || temple.sacredImportanceHi) && <a href="#significance" className="section-nav-pill">🕉️ Significance</a>}
         {(temple.history || temple.historyHi) && <a href="#history" className="section-nav-pill">📜 History</a>}
         {(temple.mythology || temple.templeLegend) && <a href="#mythology" className="section-nav-pill">🌟 Mythology</a>}
@@ -379,23 +491,40 @@ export default function TemplePage({ params }: Props) {
       <main className="temple-content-wrap max-w-page mx-auto px-4 sm:px-6 lg:px-8 -mt-4 relative z-30 pb-16 has-mobile-bar">
 
         {/* About Section — premium editorial overlapping hero */}
+        {descriptionText && (
         <section id="about" className="about-editorial p-10 sm:p-12 md:p-14 mb-10 mt-16 reveal-up">
           <div className="section-heading-2030">
             <h2>{t('temple.about')}</h2>
           </div>
           <div className="space-y-4 max-w-content">
-            {(language === 'hi' && temple.descriptionHi
-              ? temple.descriptionHi
-              : temple.description || t('temple.noDescription')
-            ).split(/\n\n+/).filter(Boolean).map((para: string, idx: number) => (
+            {descriptionText.split(/\n\n+/).filter(Boolean).map((para: string, idx: number) => (
               <p key={idx} className="text-body text-ink leading-[1.85] whitespace-pre-line">
                 {para}
               </p>
             ))}
           </div>
         </section>
+        )}
 
-        {/* Bento Grid — Temple Info */}
+        {/* Quick Facts */}
+        {quickFacts.length > 0 && (
+          <section className={`mb-10 reveal-up ${!descriptionText ? 'mt-16' : ''}`}>
+            <div className="rounded-2xl border border-temple-gold-DEFAULT/20 bg-white/85 shadow-sm p-5 sm:p-6">
+              <div className="section-heading-2030 mb-4">
+                <h2>Quick Facts</h2>
+              </div>
+              <dl className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {quickFacts.map((fact) => (
+                  <div key={fact.label} className="rounded-xl bg-sandstone-50/80 border border-sandstone-200/70 p-4">
+                    <dt className="text-caption font-semibold text-ink-muted uppercase tracking-wider">{fact.label}</dt>
+                    <dd className="mt-1 text-body-sm font-semibold text-ink leading-relaxed">{fact.value}</dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+          </section>
+        )}
+
         {bentoItems.length > 0 && (
           <section className="mb-10">
             <div className="section-heading-2030 reveal-up">
@@ -417,14 +546,14 @@ export default function TemplePage({ params }: Props) {
         )}
 
         {/* Sacred Categories */}
-        {temple.categories && temple.categories.length > 0 && (
+        {sacredCategoryNames.length > 0 && (
           <section className="mb-10 reveal-up">
             <div className="sacred-cat-section">
               <div className="section-heading-2030">
                 <h2>{t('temple.sacredCategories')}</h2>
               </div>
               <div className="flex flex-wrap gap-3 mt-2">
-                {temple.categories.map((cat: string, idx: number) => (
+                {sacredCategoryNames.map((cat: string, idx: number) => (
                   <span key={idx} className="sacred-tag-2030" style={{ animationDelay: `${idx * 60}ms` }}>
                     <span className="w-1.5 h-1.5 rounded-full bg-primary inline-block" />
                     {cat}
@@ -593,6 +722,26 @@ export default function TemplePage({ params }: Props) {
                 <span key={idx} className="nearby-place-tag">
                   <span className="text-base">🏛️</span> {place}
                 </span>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {nearby.length > 0 && (
+          <section className="mb-10 reveal-up">
+            <div className="section-heading-2030"><h2>Nearby Temples</h2></div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mt-4 stagger-children">
+              {nearby.map((nt: any) => (
+                <TempleSummaryCard
+                  key={String(nt._id)}
+                  temple={nt}
+                  meta={
+                    <div className="flex flex-wrap gap-2">
+                      {nt.distanceBucket && <span className="text-[11px] px-2 py-1 rounded-full bg-primary-50 text-primary-700 font-semibold">{nt.distanceBucket}</span>}
+                      {formatDistance(nt.distanceKm) && <span className="text-[11px] px-2 py-1 rounded-full bg-sandstone-100 text-ink-muted">{formatDistance(nt.distanceKm)}</span>}
+                    </div>
+                  }
+                />
               ))}
             </div>
           </section>
@@ -799,10 +948,37 @@ export default function TemplePage({ params }: Props) {
         <DeitySmartContent deity={temple.deity} templeName={temple.title} />
 
         {/* ── Ratings & Reviews ── */}
-        <ReviewSection templeSlug={slug} />
+        <ReviewSection templeSlug={slug} hideWhenEmpty />
 
         {/* Claim Temple — visible to temple role users */}
         <ClaimTempleButton templeId={temple._id} templeName={temple.title} />
+
+        {/* Related Temples */}
+        {related.length > 0 && (
+          <section className="mb-10 reveal-up">
+            <div className="section-heading-2030"><h2>Related Temples</h2></div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mt-4 stagger-children">
+              {related.map((rt: any) => (
+                <TempleSummaryCard key={String(rt._id)} temple={rt} />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {internalLinks.length > 0 && (
+          <section className="mb-10 reveal-up">
+            <div className="rounded-2xl border border-sandstone-200 bg-sandstone-50/80 p-5 sm:p-6">
+              <div className="section-heading-2030 mb-4"><h2>Explore More</h2></div>
+              <div className="flex flex-wrap gap-3">
+                {internalLinks.map((link) => (
+                  <Link key={link.href} href={link.href} className="section-nav-pill no-underline">
+                    {link.label}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* Bottom Share Bar */}
         <div className="share-bar-premium reveal-up">

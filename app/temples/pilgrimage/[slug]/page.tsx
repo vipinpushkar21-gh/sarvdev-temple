@@ -189,7 +189,7 @@ export default async function PilgrimageClusterPage({
             <span>/</span>
             <Link href="/temples" className="hover:text-primary-600 transition-colors no-underline">Temples</Link>
             <span>/</span>
-            <span className="text-ink font-medium">Pilgrimage</span>
+            <span className="text-ink font-medium">Pilgrimage Circuits</span>
           </nav>
           <div className="flex items-center gap-3 mb-4">
             <span className="text-4xl">{cluster.icon}</span>
@@ -234,7 +234,7 @@ export default async function PilgrimageClusterPage({
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {temples.map((t: any) => (
-              <Link key={t._id.toString()} href={`/temples/${slugify(t.title)}`}
+              <Link key={t._id.toString()} href={`/temples/${t.slug || slugify(t.title)}`}
                 className="group card overflow-hidden hover:shadow-md transition-all duration-300 no-underline">
                 <div className="relative h-48 overflow-hidden">
                   <SarvdevImage

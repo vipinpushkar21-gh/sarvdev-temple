@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState, useRef, useMemo } from 'react'
+import { useDebouncedValue } from '../../hooks/useDebouncedValue'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { TempleGridSkeleton } from '../../components/Skeleton'
@@ -100,11 +101,12 @@ export default function TemplesPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [activeChip, setActiveChip] = useState<string>('all')
   const [searchQuery, setSearchQuery] = useState('')
-  const [showDropdown, setShowDropdown] = useState(false)
-  const [loading, setLoading] = useState(true)
+  const [isInitialLoading, setIsInitialLoading] = useState(true)
+  const [isSearching, setIsSearching] = useState(false)
   const [error, setError] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [totalTemples, setTotalTemples] = useState(0)
+  const [baseTotalTemples, setBaseTotalTemples] = useState(0)
   const [hasMore, setHasMore] = useState(false)
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false)
   const [filterState, setFilterState] = useState('')
@@ -112,12 +114,38 @@ export default function TemplesPage() {
   const [filterVerified, setFilterVerified] = useState(false)
   const [filterHasImage, setFilterHasImage] = useState(false)
   const [categoryCounts, setCategoryCounts] = useState<Record<string, number>>({})
+  const [sortOrder, setSortOrder] = useState<string>('newest')
+  const debouncedSearchQuery = useDebouncedValue(searchQuery, 300)
+  const [allStates, setAllStates] = useState<string[]>([])
+  const [allDeities, setAllDeities] = useState<string[]>([])
   const searchRef = useRef<HTMLDivElement>(null)
+  const hasLoadedRef = useRef(false)
+  const activeSearchQuery = debouncedSearchQuery.trim()
+  const typedSearchQuery = searchQuery.trim()
+  const hasActiveFilters = Boolean(
+    typedSearchQuery ||
+    activeSearchQuery ||
+    selectedCategory !== 'all' ||
+    activeChip !== 'all' ||
+    filterState ||
+    filterDeity ||
+    filterVerified ||
+    filterHasImage
+  )
+  const resultStart = totalTemples > 0 ? Math.min((currentPage - 1) * ITEMS_PER_PAGE + 1, totalTemples) : 0
+  const resultEnd = totalTemples > 0 ? Math.min((currentPage - 1) * ITEMS_PER_PAGE + filteredTemples.length, totalTemples) : 0
 
   useEffect(() => {
     fetch('/api/temples/category-counts')
       .then(r => r.json())
       .then(data => setCategoryCounts(data))
+      .catch(console.error)
+  }, [])
+
+  useEffect(() => {
+    fetch('/api/temples/filter-options')
+      .then(r => r.json())
+      .then(d => { if (d.states) setAllStates(d.states); if (d.deities) setAllDeities(d.deities) })
       .catch(console.error)
   }, [])
 
@@ -132,28 +160,24 @@ export default function TemplesPage() {
     }
   }, [searchParams])
 
-  // Close dropdown on outside click
-  useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
-        setShowDropdown(false)
-      }
-    }
-    document.addEventListener('mousedown', handleClick)
-    return () => document.removeEventListener('mousedown', handleClick)
-  }, [])
-
   useEffect(() => {
     const ctrl = new AbortController()
     async function fetchTemples() {
+      const isFirstLoad = !hasLoadedRef.current
+      const hasServerFilters = Boolean(activeSearchQuery || selectedCategory !== 'all' || activeChip !== 'all' || filterState || filterDeity)
       try {
-        setLoading(true)
+        if (isFirstLoad) {
+          setIsInitialLoading(true)
+        } else {
+          setIsSearching(true)
+        }
         setError('')
         const params = new URLSearchParams({
           page: String(currentPage),
           limit: String(ITEMS_PER_PAGE),
+          sort: sortOrder === 'newest' ? '' : sortOrder === 'oldest' ? 'oldest' : sortOrder === 'alphabetical' ? 'title' : '',
         })
-        const searchParts = [searchQuery.trim(), activeChip !== 'all' ? activeChip : ''].filter(Boolean)
+        const searchParts = [activeSearchQuery, activeChip !== 'all' ? activeChip : ''].filter(Boolean)
         if (searchParts.length > 0) params.set('search', searchParts.join(' '))
         if (selectedCategory !== 'all') params.set('category', selectedCategory)
         if (filterState) params.set('state', filterState)
@@ -169,18 +193,25 @@ export default function TemplesPage() {
         setTemples(data)
         setFilteredTemples(data)
         setTotalTemples(Number(payload.total || data.length || 0))
+        if (!hasServerFilters) {
+          setBaseTotalTemples(Number(payload.total || data.length || 0))
+        }
         setHasMore(Boolean(payload.hasMore))
       } catch (err: any) {
         if (err?.name === 'AbortError') return
         console.error('Failed to fetch temples:', err)
         setError('Network error. Please try again.')
       } finally {
-        if (!ctrl.signal.aborted) setLoading(false)
+        if (!ctrl.signal.aborted) {
+          hasLoadedRef.current = true
+          setIsInitialLoading(false)
+          setIsSearching(false)
+        }
       }
     }
     fetchTemples()
     return () => ctrl.abort()
-  }, [selectedCategory, activeChip, searchQuery, filterState, filterDeity, currentPage])
+  }, [selectedCategory, activeChip, activeSearchQuery, filterState, filterDeity, currentPage, sortOrder])
 
   useEffect(() => {
     let result = temples
@@ -191,7 +222,7 @@ export default function TemplesPage() {
 
   useEffect(() => {
     setCurrentPage(1)
-  }, [selectedCategory, activeChip, searchQuery, filterState, filterDeity, filterVerified, filterHasImage])
+  }, [selectedCategory, activeChip, debouncedSearchQuery, filterState, filterDeity, filterVerified, filterHasImage, sortOrder])
 
   // Compute derived data
   const uniqueStates = useMemo(() => {
@@ -239,8 +270,12 @@ export default function TemplesPage() {
     }
   }
 
+  function scrollToResults() {
+    templeGridRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
   // ─── Loading State ───
-  if (loading) {
+  if (isInitialLoading) {
     return (
       <>
         <section className="sacred-hero relative">
@@ -296,13 +331,22 @@ export default function TemplesPage() {
           {/* Stats */}
           <div className="mt-6 flex flex-wrap gap-6">
             <div className="flex items-center gap-2">
-              <span className="text-2xl font-bold text-primary">{totalTemples}</span>
+              <span className="text-2xl font-bold text-primary">{baseTotalTemples || totalTemples}</span>
               <span className="text-sm text-sandstone-400">Temples</span>
             </div>
             <div className="flex items-center gap-2">
               <span className="text-2xl font-bold text-primary">{totalCategories}</span>
               <span className="text-sm text-sandstone-400">Sacred Categories</span>
             </div>
+            <p className="mt-2 text-sm font-medium text-sandstone-300" aria-live="polite">
+              {typedSearchQuery
+                ? isSearching
+                  ? `Searching temples for "${typedSearchQuery}"...`
+                  : totalTemples > 0
+                    ? `Showing ${resultStart}-${resultEnd} of ${totalTemples} temples for "${typedSearchQuery}"`
+                    : `No temples found for "${typedSearchQuery}"`
+                : 'Search by temple name, place, deity or sacred category.'}
+            </p>
           </div>
 
           {/* Hero Search */}
@@ -314,14 +358,13 @@ export default function TemplesPage() {
               <input
                 type="text"
                 value={searchQuery}
-                onChange={(e) => { setSearchQuery(e.target.value); setShowDropdown(true) }}
-                onFocus={() => { if (searchQuery.trim()) setShowDropdown(true) }}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search by name, city, state, deity, sacred category..."
                 className="flex-1 bg-transparent border-none outline-none text-body text-white px-3 py-3 placeholder:text-sandstone-500"
               />
               {searchQuery && (
                 <button
-                  onClick={() => { setSearchQuery(''); setShowDropdown(false) }}
+                  onClick={() => setSearchQuery('')}
                   className="p-1.5 rounded-full text-sandstone-400 hover:text-white transition-colors"
                   aria-label="Clear search"
                 >
@@ -331,54 +374,6 @@ export default function TemplesPage() {
                 </button>
               )}
             </div>
-
-            {/* Search Results Dropdown */}
-            {showDropdown && searchQuery.trim() && (
-              <div className="absolute z-50 mt-3 w-full bg-white rounded-2xl shadow-xl max-h-96 overflow-y-auto border border-gray-100">
-                {filteredTemples.length > 0 ? (
-                  <div className="py-2">
-                    <div className="px-5 py-2 text-overline text-primary-600 uppercase tracking-wider">
-                      Temples ({filteredTemples.length})
-                    </div>
-                    {filteredTemples.slice(0, 8).map((temple) => {
-                      const slug = temple.slug || generateSlug(temple.title)
-                      return (
-                        <button
-                          key={temple._id}
-                          onClick={() => { setShowDropdown(false); setSearchQuery(''); router.push(`/temples/${slug}`) }}
-                          className="w-full text-left px-5 py-3 hover:bg-primary-50/50 transition-all duration-200 flex items-center gap-3 group"
-                        >
-                          <SarvdevImage
-                            image={getTempleCardImage(temple)}
-                            alt=""
-                            className="w-11 h-11 rounded-xl flex-shrink-0 shadow-sm"
-                            imgClassName="object-cover"
-                          />
-                          <div className="min-w-0 flex-1">
-                            <div className="text-body-sm font-medium text-ink truncate group-hover:text-primary-700 transition-colors">{temple.title}</div>
-                            <div className="text-caption text-ink-muted truncate">
-                              {[temple.city || temple.location, temple.state, temple.deity].filter(Boolean).join(' · ')}
-                            </div>
-                          </div>
-                          <svg className="w-4 h-4 text-ink-faint group-hover:text-primary-500 transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-                          </svg>
-                        </button>
-                      )
-                    })}
-                    {filteredTemples.length > 8 && (
-                      <div className="px-5 py-2.5 text-caption text-ink-muted border-t border-surface-border">
-                        +{filteredTemples.length - 8} more results below
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="p-6 text-center text-ink-muted text-body-sm">
-                    No temples found for &ldquo;{searchQuery}&rdquo;
-                  </div>
-                )}
-              </div>
-            )}
           </div>
 
           {/* Quick Action Buttons */}
@@ -418,6 +413,8 @@ export default function TemplesPage() {
       </div>
 
       {/* ═══════════════════════════ 4. SACRED CATEGORIES ═══════════════════════════ */}
+      {!hasActiveFilters && (
+        <>
       <section id="sacred-categories" className="section-sm bg-gray-50">
         <div className="page-container">
           <h2 className="section-title">Sacred Categories</h2>
@@ -658,6 +655,9 @@ export default function TemplesPage() {
       </section>
 
       {/* ═══════════════════════════ 7. ADVANCED FILTERS + TEMPLE LISTING ═══════════════════════════ */}
+        </>
+      )}
+
       <main className="page-container py-12" ref={templeGridRef}>
 
         {/* Advanced Filters Toggle */}
@@ -675,6 +675,15 @@ export default function TemplesPage() {
           {showAdvancedFilters && (
             <div className="mt-4 bg-gray-50 rounded-2xl border border-gray-100 p-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {/* Sort */}
+                <div>
+                  <label className="text-xs font-semibold text-ink-muted uppercase tracking-wide mb-1.5 block">Sort By</label>
+                  <select value={sortOrder} onChange={(e) => { setSortOrder(e.target.value); setCurrentPage(1) }} className="w-full text-sm border border-gray-200 rounded-xl px-3 py-2.5 bg-white text-ink focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none">
+                    <option value="newest">Newest First</option>
+                    <option value="oldest">Oldest First</option>
+                    <option value="alphabetical">A – Z</option>
+                  </select>
+                </div>
                 {/* Sacred Category */}
                 <div>
                   <label className="text-xs font-semibold text-ink-muted uppercase tracking-wide mb-1.5 block">Sacred Category</label>
@@ -699,7 +708,7 @@ export default function TemplesPage() {
                     className="w-full text-sm border border-gray-200 rounded-xl px-3 py-2.5 bg-white text-ink focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none"
                   >
                     <option value="">All States</option>
-                    {uniqueStates.map(s => (
+                    {allStates.map(s => (
                       <option key={s} value={s}>{s}</option>
                     ))}
                   </select>
@@ -714,7 +723,7 @@ export default function TemplesPage() {
                     className="w-full text-sm border border-gray-200 rounded-xl px-3 py-2.5 bg-white text-ink focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none"
                   >
                     <option value="">All Deities</option>
-                    {uniqueDeities.map(d => (
+                    {allDeities.map(d => (
                       <option key={d} value={d}>{d}</option>
                     ))}
                   </select>
@@ -736,7 +745,7 @@ export default function TemplesPage() {
               {/* Clear all filters */}
               {(selectedCategory !== 'all' || filterState || filterDeity || filterVerified || filterHasImage) && (
                 <button
-                  onClick={() => { setSelectedCategory('all'); setFilterState(''); setFilterDeity(''); setFilterVerified(false); setFilterHasImage(false); setActiveChip('all') }}
+                  onClick={() => { setSelectedCategory('all'); setFilterState(''); setFilterDeity(''); setFilterVerified(false); setFilterHasImage(false); setActiveChip('all'); setSortOrder('newest') }}
                   className="mt-4 text-sm font-medium text-primary hover:text-primary-700 transition-colors"
                 >
                   Clear all filters
@@ -747,16 +756,21 @@ export default function TemplesPage() {
         </div>
 
         {/* Active filter indicator */}
-        {(selectedCategory !== 'all' || activeChip !== 'all' || filterState || filterDeity || filterVerified || filterHasImage) && (
+        {hasActiveFilters && (
           <div className="mb-6 flex items-center justify-between gap-4 p-3 rounded-xl bg-primary-50/50 border border-primary/10">
             <p className="text-sm text-ink">
-              Showing <span className="font-bold text-primary-600">{filteredTemples.length}</span> of <span className="font-bold text-primary-600">{totalTemples}</span> temple{totalTemples !== 1 ? 's' : ''}
+              {isSearching ? (
+                <>Searching for <span className="font-semibold">{typedSearchQuery || activeChip || selectedCategory || filterState || filterDeity || 'selected filters'}</span>...</>
+              ) : (
+                <>Showing <span className="font-bold text-primary-600">{filteredTemples.length}</span> of <span className="font-bold text-primary-600">{totalTemples}</span> temple{totalTemples !== 1 ? 's' : ''}</>
+              )}
+              {typedSearchQuery && <> for <span className="font-semibold">&ldquo;{typedSearchQuery}&rdquo;</span></>}
               {selectedCategory !== 'all' && <> in <span className="font-semibold">{selectedCategory}</span></>}
               {activeChip !== 'all' && <> matching <span className="font-semibold">{activeChip}</span></>}
               {filterState && <> in <span className="font-semibold">{filterState}</span></>}
             </p>
             <button
-              onClick={() => { setSelectedCategory('all'); setActiveChip('all'); setFilterState(''); setFilterDeity(''); setFilterVerified(false); setFilterHasImage(false); setSearchQuery('') }}
+              onClick={() => { setSelectedCategory('all'); setActiveChip('all'); setFilterState(''); setFilterDeity(''); setFilterVerified(false); setFilterHasImage(false); setSearchQuery(''); setSortOrder('newest') }}
               className="text-sm font-medium text-primary hover:text-primary-700 shrink-0"
             >
               Clear all
@@ -765,13 +779,35 @@ export default function TemplesPage() {
         )}
 
         {/* ═══════════════════════════ 8. TEMPLE LISTING CARDS ═══════════════════════════ */}
+        <div className="mb-5">
+          <p className="text-xs font-black uppercase tracking-[0.16em] text-primary-600">
+            {hasActiveFilters ? 'Search Results' : 'Temple Directory'}
+          </p>
+          <h2 className="mt-1 text-2xl font-bold text-ink">
+            {hasActiveFilters
+              ? typedSearchQuery
+                ? totalTemples > 0
+                  ? `Showing ${resultStart}-${resultEnd} of ${totalTemples} temples for "${typedSearchQuery}"`
+                  : `No temples found for "${typedSearchQuery}"`
+                : `Showing ${resultStart}-${resultEnd} of ${totalTemples} temples`
+              : 'All Temples'}
+          </h2>
+          {isSearching && <p className="mt-1 text-sm text-ink-muted">Updating results...</p>}
+        </div>
+        {totalTemples > 0 && (
+          <p className="text-xs text-ink-muted mb-4">
+            Showing <span className="font-semibold text-ink">{resultStart}&ndash;{Math.min(currentPage * ITEMS_PER_PAGE, totalTemples)}</span> of <span className="font-semibold text-ink">{totalTemples.toLocaleString()}</span> temples
+          </p>
+        )}
         <section>
           {filteredTemples.length === 0 ? (
             /* ═══════════════════════════ 9. EMPTY STATE ═══════════════════════════ */
             <div className="text-center py-20">
               <div className="text-5xl mb-4">🕉️</div>
-              <h3 className="text-xl font-semibold text-ink mb-2">No temples found</h3>
-              <p className="text-sm text-ink-muted mb-6">Try another search or category</p>
+              <h3 className="text-xl font-semibold text-ink mb-2">
+                {typedSearchQuery ? `No temples found for "${typedSearchQuery}"` : 'No temples found'}
+              </h3>
+              <p className="text-sm text-ink-muted mb-6">Try another search, city, deity or category</p>
               <Link
                 href="/list-temple"
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-primary text-white text-sm font-semibold hover:bg-primary-600 transition-colors no-underline"
@@ -837,7 +873,7 @@ export default function TemplesPage() {
                 <div className="mt-12 flex flex-col items-center gap-4">
                   <div className="flex items-center gap-1 bg-white border border-gray-100 rounded-2xl px-2 py-1.5 shadow-sm">
                     <button
-                      onClick={() => { setCurrentPage(p => Math.max(1, p - 1)); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
+                      onClick={() => { setCurrentPage(p => Math.max(1, p - 1)); scrollToResults() }}
                       disabled={currentPage === 1}
                       className="px-3 py-2 rounded-xl text-sm font-medium disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gray-50 text-ink transition-colors"
                     >
@@ -851,7 +887,7 @@ export default function TemplesPage() {
                         return (
                           <button
                             key={page}
-                            onClick={() => { setCurrentPage(page); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
+                            onClick={() => { setCurrentPage(page); scrollToResults() }}
                             className={`w-10 h-10 rounded-xl text-sm font-semibold transition-all duration-200 ${
                               page === currentPage
                                 ? 'bg-primary text-white shadow-sm'
@@ -869,7 +905,7 @@ export default function TemplesPage() {
                     })}
 
                     <button
-                      onClick={() => { setCurrentPage(p => Math.min(totalPages, p + 1)); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
+                      onClick={() => { setCurrentPage(p => Math.min(totalPages, p + 1)); scrollToResults() }}
                       disabled={!hasMore && currentPage >= totalPages}
                       className="px-3 py-2 rounded-xl text-sm font-medium disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gray-50 text-ink transition-colors"
                     >

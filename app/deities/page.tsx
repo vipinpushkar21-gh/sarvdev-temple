@@ -1576,15 +1576,6 @@ function normalizeSearchText(value?: string | null) {
     .trim()
 }
 
-function expandSearchTerms(raw: string) {
-  const term = normalizeSearchText(raw)
-  if (!term) return []
-  const related = Object.entries(SEARCH_ALIASES)
-    .filter(([key, aliases]) => key.includes(term) || term.includes(key) || aliases.some((alias) => alias.includes(term) || term.includes(alias)))
-    .flatMap(([key, aliases]) => [key, ...aliases])
-  return Array.from(new Set([term, ...related.map(normalizeSearchText)]))
-}
-
 function getDeitySearchText(deity: any, category: DeityCategory) {
   const base = [
     deity.name,
@@ -1603,13 +1594,6 @@ function getDeitySearchText(deity: any, category: DeityCategory) {
     .filter(([key, aliases]) => normalizedBase.includes(key) || aliases.some((alias) => normalizedBase.includes(alias)))
     .flatMap(([key, aliases]) => [key, ...aliases])
   return normalizeSearchText([base, ...aliasHits].join(' '))
-}
-
-function deityMatchesSearch(deity: any, category: DeityCategory, search: string) {
-  const terms = expandSearchTerms(search)
-  if (terms.length === 0) return true
-  const text = getDeitySearchText(deity, category)
-  return terms.some((term) => text.includes(term))
 }
 
 function deityMatchesExplore(deity: any, category: DeityCategory, filter: string) {
@@ -1686,7 +1670,6 @@ export default function DeitiesPage() {
   const [expandedDeity, setExpandedDeity] = useState<string | null>(null)
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set())
   const [activeExploreFilter, setActiveExploreFilter] = useState<(typeof EXPLORE_FILTERS)[number]['id']>('all')
-  const [search, setSearch] = useState('')
   const [showBackToTop, setShowBackToTop] = useState(false)
   const [canScrollLeft, setCanScrollLeft] = useState(false)
   const [canScrollRight, setCanScrollRight] = useState(true)
@@ -1763,10 +1746,10 @@ export default function DeitiesPage() {
     return publicCategories.map(cat => ({
       ...cat,
       deities: cat.deities.filter((d: any) =>
-        deityMatchesSearch(d, cat, search) && deityMatchesExplore(d, cat, activeExploreFilter)
+        deityMatchesExplore(d, cat, activeExploreFilter)
       ),
     })).filter(cat => cat.deities.length > 0)
-  }, [search, dbDeities, activeExploreFilter])
+  }, [dbDeities, activeExploreFilter])
 
   useEffect(() => {
     const onScroll = () => setShowBackToTop(window.scrollY > 720)
@@ -1817,7 +1800,6 @@ export default function DeitiesPage() {
     }
 
     if (!document.getElementById(`cat-${categoryId}`)) {
-      setSearch('')
       setActiveExploreFilter('all')
       window.setTimeout(scrollToSection, 80)
       return
@@ -1896,29 +1878,12 @@ export default function DeitiesPage() {
             </div>
 
             <p className="mt-3 text-sm font-semibold text-amber-100/80">
-              {search ? `${visibleDeityCount} matching deity profiles` : 'Category order and deity sequence are preserved as Sarvdev reference order.'}
+              Category order and deity sequence are preserved as Sarvdev reference order.
             </p>
 
-            {/* Search */}
+            {/* Explore Filters */}
             <div className="mt-8 max-w-2xl">
-              <div className="relative">
-                <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-amber-100/70" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-                <input
-                  type="text"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search Shiva, Mahadev, Ganpati, Vinayak, Hindi names..."
-                  className="w-full rounded-2xl border border-white/15 bg-white/92 py-4 pl-12 pr-12 text-base font-semibold text-stone-900 shadow-2xl outline-none backdrop-blur placeholder:text-stone-500 focus:border-amber-300 focus:ring-4 focus:ring-amber-200/30"
-                />
-                {search && (
-                  <button onClick={() => setSearch('')} className="absolute right-4 top-1/2 -translate-y-1/2 text-stone-500 hover:text-stone-900">
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-                  </button>
-                )}
-              </div>
-              <div className="mt-4">
+              <div className="mt-0">
                 <p className="mb-2 text-xs font-black uppercase tracking-[0.18em] text-amber-100/80">Explore By</p>
                 <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
                   {EXPLORE_FILTERS.map((filter) => (
@@ -2255,15 +2220,15 @@ export default function DeitiesPage() {
       <main id="deity-content" className="page-container section-sm min-h-screen scroll-mt-20">
         {filteredCategories.length === 0 ? (
           <div className="text-center py-20">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-surface-sunken flex items-center justify-center text-2xl">🔍</div>
-            <p className="text-body text-ink-muted">No deities found for &ldquo;{search}&rdquo;</p>
-            <button onClick={() => setSearch('')} className="btn btn-outline btn-sm mt-4">Clear Search</button>
+            <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-surface-sunken flex items-center justify-center text-2xl">🕉️</div>
+            <p className="text-body text-ink-muted">No deities found for this filter.</p>
+            <button onClick={() => setActiveExploreFilter('all')} className="btn btn-outline btn-sm mt-4">Show All</button>
           </div>
         ) : (
           <div className="space-y-16">
             {filteredCategories
               .map((category, catIdx) => {
-                const isExpanded = expandedCategories.has(category.id) || search.trim().length > 0 || activeExploreFilter !== 'all'
+                const isExpanded = expandedCategories.has(category.id) || activeExploreFilter !== 'all'
                 const shouldCollapse = category.deities.length > COLLAPSE_PREVIEW_COUNT
                 const visibleDeities = shouldCollapse && !isExpanded ? category.deities.slice(0, COLLAPSE_PREVIEW_COUNT) : category.deities
                 const theme = CATEGORY_THEMES[catIdx % CATEGORY_THEMES.length]

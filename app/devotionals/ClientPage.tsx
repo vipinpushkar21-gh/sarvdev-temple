@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import Link from 'next/link'
 import { CalendarClock, Headphones, Library, Moon, Shield, Sparkles, SunMedium } from 'lucide-react'
@@ -20,6 +20,8 @@ import {
 
 type SortKey = 'featured' | 'newest' | 'az'
 
+const DEVOTIONAL_PAGE_LIMIT = 48
+
 const DEITY_EMOJI: Record<string, string> = {
   shiva: '🕉️', mahadev: '🕉️', shiv: '🕉️', bholenath: '🕉️',
   hanuman: '🙏', bajrangbali: '🙏',
@@ -34,6 +36,50 @@ const DEITY_EMOJI: Record<string, string> = {
   kali: '⚡',
   parvati: '🌙', gauri: '🌙',
   sai: '✨',
+}
+
+const SEARCH_SYNONYMS: Record<string, string[]> = {
+  ram:      ['ram', 'rama', 'ramachandra', 'raama'],
+  rama:     ['ram', 'rama', 'ramachandra', 'raama'],
+  'राम':    ['ram', 'rama', 'राम', 'रामचंद्र'],
+  hanuman:  ['hanuman', 'bajrangbali', 'maruti', 'anjaneya', 'pawanputra'],
+  'हनुमान': ['hanuman', 'bajrangbali', 'हनुमान', 'maruti'],
+  shiva:    ['shiva', 'shiv', 'mahadev', 'shankar', 'bholenath', 'neelkanth'],
+  shiv:     ['shiva', 'shiv', 'mahadev', 'shankar', 'bholenath'],
+  'शिव':    ['shiva', 'shiv', 'शिव', 'महादेव', 'mahadev'],
+  krishna:  ['krishna', 'kanha', 'gopal', 'govind', 'hari', 'murari', 'kanhaiya'],
+  'कृष्ण':   ['krishna', 'kanha', 'कृष्ण', 'gopal'],
+  aarti:    ['aarti', 'arti', 'आरती'],
+  'आरती':   ['aarti', 'arti', 'आरती'],
+  chalisa:  ['chalisa', 'chalisha', 'चालीसा'],
+  'चालीसा': ['chalisa', 'chalisha', 'चालीसा'],
+  mantra:   ['mantra', 'मंत्र', 'stotra', 'chant'],
+  'मंत्र':   ['mantra', 'मंत्र'],
+  stotra:   ['stotra', 'stotram', 'स्तोत्र'],
+  ganesh:   ['ganesh', 'ganesha', 'ganpati', 'vinayak', 'ganapati'],
+  durga:    ['durga', 'devi', 'mata', 'sheranwali', 'ambika'],
+  lakshmi:  ['lakshmi', 'laxmi', 'mahalakshmi', 'shri'],
+  vishnu:   ['vishnu', 'narayan', 'narayana', 'hari', 'venkateswara'],
+}
+
+function devotionalMatchesTerm(d: Devotional, term: string): boolean {
+  const synonyms = SEARCH_SYNONYMS[term] ?? [term]
+  const fields = [
+    d.title,
+    d.titleHi,
+    d.category,
+    d.categoryHi,
+    d.categorySlug,
+    d.deity,
+    d.deityHi,
+    d.deitySlug,
+    d.description,
+    d.language,
+    d.artist,
+    ...(Array.isArray(d.tags) ? d.tags : typeof d.tags === 'string' ? [d.tags] : []),
+    ...(Array.isArray((d as any).aliases) ? (d as any).aliases : []),
+  ].filter(Boolean).map((v) => (v as string).toLowerCase())
+  return synonyms.some((syn) => fields.some((f) => f.includes(syn.toLowerCase())))
 }
 
 const DEITY_BG = [
@@ -90,11 +136,16 @@ function SectionHeader({ title, subtitle, action, eyebrow }: {
 export default function ClientPage() {
   const [devotionals, setDevotionals] = useState<Devotional[]>([])
   const [loading, setLoading] = useState(true)
+  const [searchLoading, setSearchLoading] = useState(false)
   const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [activeCategory, setActiveCategory] = useState('all')
   const [activeDeity, setActiveDeity] = useState('all')
   const [sort, setSort] = useState<SortKey>('featured')
-  const [visibleCount, setVisibleCount] = useState(24)
+  const [page, setPage] = useState(1)
+  const [total, setTotal] = useState(0)
+  const [hasMore, setHasMore] = useState(false)
+  const resultsSummaryRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -105,27 +156,62 @@ export default function ClientPage() {
   }, [])
 
   useEffect(() => {
-    let cancelled = false
+    const timer = window.setTimeout(() => setDebouncedSearch(search.trim()), 300)
+    return () => window.clearTimeout(timer)
+  }, [search])
+
+  useEffect(() => {
+    setPage(1)
+  }, [debouncedSearch, activeCategory, activeDeity, sort])
+
+  useEffect(() => {
+    const controller = new AbortController()
 
     async function fetchDevotionals() {
+      setSearchLoading(true)
       try {
-        const res = await fetch('/api/devotionals?page=1&limit=60')
+        const params = new URLSearchParams({
+          page: String(page),
+          limit: String(DEVOTIONAL_PAGE_LIMIT),
+          sort,
+        })
+        if (debouncedSearch) params.set('search', debouncedSearch)
+        if (activeCategory !== 'all') params.set('category', activeCategory)
+        if (activeDeity !== 'all') params.set('deity', activeDeity)
+
+        const res = await fetch(`/api/devotionals?${params.toString()}`, {
+          cache: 'no-store',
+          signal: controller.signal,
+        })
         if (!res.ok) return
         const data = await res.json()
-        if (!cancelled) {
-          const items = Array.isArray(data) ? data : (data.items || data.data || [])
-          const approved = items.filter((item: Devotional) => item.status === 'approved' || !item.status)
-          setDevotionals(approved)
-        }
+        const items = Array.isArray(data) ? data : (data.items || data.data || [])
+        const approved = items.filter((item: Devotional) => item.status === 'approved' || !item.status)
+        setDevotionals((current) => {
+          if (page === 1) return approved
+          const seen = new Set(current.map((item) => item._id))
+          return [...current, ...approved.filter((item: Devotional) => !seen.has(item._id))]
+        })
+        setTotal(Number(data.total || approved.length || 0))
+        setHasMore(Boolean(data.hasMore))
+      } catch (error: any) {
+        if (error?.name !== 'AbortError') console.error('Failed to load devotionals:', error)
       } finally {
-        if (!cancelled) setLoading(false)
+        if (!controller.signal.aborted) {
+          setLoading(false)
+          setSearchLoading(false)
+        }
       }
     }
-    fetchDevotionals()
-    return () => { cancelled = true }
-  }, [])
 
-  useEffect(() => setVisibleCount(24), [search, activeCategory, activeDeity, sort])
+    fetchDevotionals()
+    return () => controller.abort()
+  }, [activeCategory, activeDeity, debouncedSearch, page, sort])
+
+  useEffect(() => {
+    if (!debouncedSearch) return
+    resultsSummaryRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+  }, [debouncedSearch])
 
   const categoriesWithCounts = useMemo(() => {
     return FULL_CATEGORIES
@@ -150,37 +236,16 @@ export default function ClientPage() {
   const deityChips = useMemo(() => deityGrid.slice(0, 12), [deityGrid])
 
   const categoryChips = useMemo(() => [
-    { id: 'all', label: 'All', meta: devotionals.length },
+    { id: 'all', label: 'All', meta: total || devotionals.length },
     ...categoriesWithCounts.filter((category) => category.count > 0).map((category) => ({
       id: category.id,
       label: category.label,
       meta: category.count,
     })),
-  ], [categoriesWithCounts, devotionals.length])
-
-  const filtered = useMemo(() => {
-    const term = search.trim().toLowerCase()
-    return devotionals.filter((devotional) => {
-      if (activeCategory !== 'all') {
-        if (activeCategory === 'Namavali') {
-          if (devotional.category !== 'Namavali' && devotional.category !== '108 Namavali') return false
-        } else if (devotional.category !== activeCategory) return false
-      }
-      if (activeDeity !== 'all' && devotional.deity !== activeDeity) return false
-      if (!term) return true
-      return [
-        devotional.title,
-        devotional.description,
-        devotional.category,
-        devotional.deity,
-        devotional.language,
-        devotional.artist,
-      ].filter(Boolean).some((value) => value!.toLowerCase().includes(term))
-    })
-  }, [activeCategory, activeDeity, devotionals, search])
+  ], [categoriesWithCounts, devotionals.length, total])
 
   const sorted = useMemo(() => {
-    const list = [...filtered]
+    const list = [...devotionals]
     if (sort === 'newest') {
       return list.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
     }
@@ -191,12 +256,12 @@ export default function ClientPage() {
       Number(Boolean(b.audio)) - Number(Boolean(a.audio)) ||
       new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
     )
-  }, [filtered, sort])
+  }, [devotionals, sort])
 
   const featured = useMemo(() => getFeaturedDevotionals(devotionals), [devotionals])
   const dailyGroups = useMemo(() => getDailyPracticeGroups(devotionals), [devotionals])
   const audioCount = devotionals.filter((item) => item.audio).length
-  const isFiltered = !!(search || activeCategory !== 'all' || activeDeity !== 'all')
+  const isFiltered = !!(debouncedSearch || activeCategory !== 'all' || activeDeity !== 'all')
   const showDiscovery = !isFiltered
 
   function clearFilters() {
@@ -204,6 +269,7 @@ export default function ClientPage() {
     setActiveCategory('all')
     setActiveDeity('all')
     setSort('featured')
+    setPage(1)
   }
 
   if (loading) {
@@ -227,13 +293,20 @@ export default function ClientPage() {
         subtitle="भजन, आरती, मंत्र, चालीसा और स्तोत्र — एक शांत, तेज devotional library."
         image={null}
         stats={[
-          { label: 'Sacred Texts', value: `${devotionals.length}+` },
+          { label: 'Sacred Texts', value: `${total || devotionals.length}+` },
           { label: 'Devotional Types', value: categoriesWithCounts.filter((c) => c.count > 0).length },
           { label: 'Deity Streams', value: `${deityGrid.length}+` },
           { label: 'With Audio', value: audioCount },
         ]}
       >
         <SearchBar value={search} onChange={setSearch} placeholder="Search aarti, mantra, chalisa, deity or lyrics..." size="lg" />
+        <p className="mt-2 px-1 text-sm font-semibold text-amber-100" aria-live="polite">
+          {searchLoading && debouncedSearch
+            ? `Searching for "${debouncedSearch}"...`
+            : debouncedSearch
+              ? `${total} devotionals found for "${debouncedSearch}"`
+              : 'Search the complete devotional library, not just the first page.'}
+        </p>
         <div className="mt-3 flex flex-wrap gap-2 px-1">
           {HERO_CTA_CHIPS.map((chip) => (
             <Link
@@ -256,6 +329,39 @@ export default function ClientPage() {
         </div>
 
         <div className="page-container space-y-16 py-12">
+          <div
+            ref={resultsSummaryRef}
+            className="rounded-2xl border border-amber-200 bg-white px-5 py-4 shadow-sm"
+            aria-live="polite"
+          >
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-orange-700">
+                  Search Results
+                </p>
+                <h2 className="mt-1 text-xl font-black text-stone-950">
+                  {searchLoading && debouncedSearch
+                    ? `Searching for "${debouncedSearch}"...`
+                    : debouncedSearch
+                      ? total > 0
+                        ? `${total} devotionals found for "${debouncedSearch}"`
+                        : `No devotionals found for "${debouncedSearch}"`
+                      : `${total || devotionals.length} devotionals available`}
+                </h2>
+                {(activeCategory !== 'all' || activeDeity !== 'all') && (
+                  <p className="mt-1 text-sm text-stone-500">
+                    Filters: {activeCategory !== 'all' ? activeCategory : 'All categories'}
+                    {activeDeity !== 'all' ? ` · ${activeDeity}` : ''}
+                  </p>
+                )}
+              </div>
+              {isFiltered && (
+                <button type="button" onClick={clearFilters} className="btn btn-outline bg-white">
+                  Clear filters
+                </button>
+              )}
+            </div>
+          </div>
 
           {/* ── Featured Today Slider ── */}
           {showDiscovery && featured.length > 0 && (
@@ -437,7 +543,9 @@ export default function ClientPage() {
           <section>
             <SectionHeader
               title="All Devotionals"
-              subtitle={`${sorted.length} result${sorted.length === 1 ? '' : 's'} across chanting, lyrics and audio.`}
+              subtitle={debouncedSearch
+                ? `${total} devotional${total === 1 ? '' : 's'} found for "${debouncedSearch}".`
+                : `${total || sorted.length} result${(total || sorted.length) === 1 ? '' : 's'} across chanting, lyrics and audio.`}
               action={
                 <div className="flex flex-wrap gap-2">
                   <select
@@ -461,38 +569,41 @@ export default function ClientPage() {
             {sorted.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-amber-300 bg-white p-10 text-center">
                 <Library className="mx-auto h-10 w-10 text-stone-400" />
-                <h3 className="mt-3 text-xl font-black text-stone-900">No devotionals found</h3>
+                <h3 className="mt-3 text-xl font-black text-stone-900">
+                  {debouncedSearch ? `No devotionals found for "${debouncedSearch}"` : 'No devotionals found'}
+                </h3>
                 <p className="mt-2 text-stone-600">Try another category, deity or search term.</p>
                 <button type="button" onClick={clearFilters} className="btn btn-primary mt-5">Reset filters</button>
               </div>
             ) : (
               <>
                 <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-                  {sorted.slice(0, visibleCount).map((devotional) => (
+                  {sorted.map((devotional) => (
                     <DevotionalCardPremium key={devotional._id} devotional={devotional} />
                   ))}
                 </div>
 
-                {sorted.length > visibleCount && (
+                {hasMore && (
                   <div className="mt-10 space-y-4">
                     <div className="h-1.5 overflow-hidden rounded-full bg-amber-100">
                       <div
                         className="h-full rounded-full bg-gradient-to-r from-amber-400 to-orange-500 transition-all duration-500"
-                        style={{ width: `${Math.min(Math.round((visibleCount / sorted.length) * 100), 100)}%` }}
+                        style={{ width: `${Math.min(Math.round((sorted.length / Math.max(total, sorted.length)) * 100), 100)}%` }}
                       />
                     </div>
                     <div className="flex flex-col items-center gap-3">
                       <p className="text-sm text-stone-500">
-                        Showing {Math.min(visibleCount, sorted.length)} of {sorted.length} devotionals
+                        Showing {sorted.length} of {total || sorted.length} devotionals
                       </p>
                       <button
                         type="button"
-                        onClick={() => setVisibleCount((count) => count + 24)}
+                        onClick={() => setPage((current) => current + 1)}
+                        disabled={searchLoading}
                         className="btn btn-outline bg-white"
                       >
-                        Show Next 24
+                        {searchLoading ? 'Loading...' : 'Show Next 48'}
                         <span className="ml-2 text-xs text-stone-400">
-                          {sorted.length - visibleCount} more chants &amp; texts
+                          {Math.max((total || sorted.length) - sorted.length, 0)} more chants &amp; texts
                         </span>
                       </button>
                     </div>

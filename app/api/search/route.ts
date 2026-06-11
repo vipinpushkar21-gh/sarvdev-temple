@@ -45,13 +45,18 @@ import {
   normalizeQuery,
   type SearchResult,
 } from '@/lib/search'
-import { expandQuery, buildExpandedRegex, rankByRelevance } from '@/lib/transliteration'
+import { expandQuery, buildExpandedRegex } from '@/lib/transliteration'
 import { applyRateLimit } from '@/lib/rate-limit'
 import { ACTIVE_PROVIDER_NAME } from '@/lib/search-providers'
 
 const DEFAULT_LIMIT = 6
 const MAX_LIMIT = 20
 const HARD_CAP = 20   // never return more than this per type even with high limit
+const GEO_QUERY_HINTS = new Set([
+  'pushkar', 'ajmer', 'jaipur', 'rajasthan',
+  'delhi', 'mumbai', 'varanasi', 'kashi', 'ayodhya',
+  'पुष्कर', 'अजमेर', 'जयपुर', 'राजस्थान',
+])
 
 /**
  * Text search with automatic fallback to regex when no text index exists.
@@ -92,6 +97,71 @@ async function textWithFallback<T>(
   }
 }
 
+function normalizeSearchValue(value: unknown) {
+  return String(value || '')
+    .toLowerCase()
+    .trim()
+    .replace(/[-_]+/g, ' ')
+    .replace(/\s+/g, ' ')
+}
+
+function docValues(doc: Record<string, any>, field: string): string[] {
+  const value = doc[field]
+  if (Array.isArray(value)) return value.map(normalizeSearchValue).filter(Boolean)
+  return [normalizeSearchValue(value)].filter(Boolean)
+}
+
+function isLikelyLocationQuery(q: string) {
+  const normalized = normalizeSearchValue(q)
+  return GEO_QUERY_HINTS.has(normalized)
+}
+
+function buildRegexCondition(fields: string[], regex: RegExp) {
+  return { $or: fields.map((field) => ({ [field]: regex })) }
+}
+
+function scoreByRelevance(doc: Record<string, any>, q: string, fields: Array<[string, number]>, aliasTerms: string[] = []) {
+  const query = normalizeSearchValue(q)
+  if (!query) return 0
+
+  let best = 0
+  for (const [field, weight] of fields) {
+    for (const value of docValues(doc, field)) {
+      if (value === query) best = Math.max(best, weight + 1000)
+      else if (value.startsWith(query)) best = Math.max(best, weight + 700)
+      else if (value.includes(query)) best = Math.max(best, weight + 400)
+    }
+  }
+
+  const aliases = aliasTerms
+    .map(normalizeSearchValue)
+    .filter((term) => term && term !== query)
+  if (aliases.length > 0) {
+    for (const [field, weight] of fields) {
+      for (const value of docValues(doc, field)) {
+        if (aliases.some((alias) => value === alias || value.startsWith(alias) || value.includes(alias))) {
+          best = Math.max(best, weight + 120)
+        }
+      }
+    }
+  }
+
+  return best
+}
+
+function sortBySearchScore<T extends Record<string, any>>(
+  docs: T[],
+  q: string,
+  fields: Array<[string, number]>,
+  aliasTerms: string[] = []
+): T[] {
+  return [...docs].sort((a, b) => {
+    const scoreDiff = scoreByRelevance(b, q, fields, aliasTerms) - scoreByRelevance(a, q, fields, aliasTerms)
+    if (scoreDiff !== 0) return scoreDiff
+    return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+  })
+}
+
 export async function GET(req: NextRequest) {
   const url = new URL(req.url)
   const sp = url.searchParams
@@ -119,7 +189,8 @@ export async function GET(req: NextRequest) {
   const wants = (t: string) => wantAll || type === t
 
   const regex = buildRegex(q)
-  const expandedTerms = expandQuery(q)
+  const locationQuery = Boolean(state || city || isLikelyLocationQuery(q))
+  const expandedTerms = locationQuery ? [q] : expandQuery(q)
   const t0 = Date.now()
 
   try {
@@ -136,14 +207,27 @@ export async function GET(req: NextRequest) {
       if (city)  extraFilter.city = buildRegex(city)
       if (deity) extraFilter.$or  = [...(extraFilter.$or ?? []), { deity: buildRegex(deity) }, { deitySlug: deity.toLowerCase().replace(/\s+/g, '-') }]
 
-      const rawTemples: any[] = await textWithFallback(
-        Temple, q,
-        extraFilter,
-        proj(['title', 'titleHi', 'slug', 'image', 'imageCard', 'shortDescription', 'location', 'city', 'state', 'deity']),
-        ['title', 'titleHi', 'location', 'city', 'state', 'deity', 'speciality', 'titleNormalized'],
-        undefined, cap + skip, expandedTerms
+      const templeFields = ['title', 'titleHi', 'slug', 'deity', 'deityHi', 'city', 'district', 'state', 'sacredCategorySlugs', 'categories']
+      const templeSearch = buildRegexCondition(templeFields, regex)
+      const templeFilter = Object.keys(extraFilter).length > 0 ? { $and: [extraFilter, templeSearch] } : templeSearch
+      const rawTemples: any[] = await Temple.find(
+        templeFilter,
+        proj(['title', 'titleHi', 'slug', 'image', 'imageCard', 'shortDescription', 'location', 'city', 'district', 'state', 'deity', 'deityHi', 'categories', 'sacredCategorySlugs'])
       )
-      temples = rankByRelevance(rawTemples, q, ['title', 'titleHi', 'deity']).slice(skip, skip + cap).map(formatTempleResult)
+        .limit(Math.min(200, cap + skip + 80))
+        .lean()
+      temples = sortBySearchScore(rawTemples, q, [
+        ['title', 140],
+        ['slug', 135],
+        ['city', 130],
+        ['deity', 115],
+        ['deityHi', 115],
+        ['district', 100],
+        ['state', 95],
+        ['titleHi', 90],
+        ['sacredCategorySlugs', 70],
+        ['categories', 65],
+      ]).slice(skip, skip + cap).map(formatTempleResult)
     }
 
     // ── Deities ───────────────────────────────────────────────────────────────
@@ -155,17 +239,24 @@ export async function GET(req: NextRequest) {
       const rawDeities: any[] = await textWithFallback(
         Deity, q,
         deityFilter,
-        proj(['name', 'nameHi', 'slug', 'image', 'imageCard', 'description', 'categoryName', 'category']),
+        proj(['name', 'nameHi', 'slug', 'image', 'imageCard', 'description', 'categoryName', 'category', 'aliases']),
         ['name', 'nameHi', 'description', 'categoryName', 'category', 'aliases', 'slug'],
         undefined, cap + skip, expandedTerms
       )
-      deities = rankByRelevance(rawDeities, q, ['name', 'nameHi']).slice(skip, skip + cap).map(formatDeityResult)
+      deities = sortBySearchScore(rawDeities, q, [
+        ['name', 140],
+        ['slug', 120],
+        ['nameHi', 110],
+        ['categoryName', 60],
+        ['category', 55],
+        ['aliases', 50],
+      ], expandedTerms).slice(skip, skip + cap).map(formatDeityResult)
     }
 
     // ── Devotionals ───────────────────────────────────────────────────────────
     let devotionals: SearchResult[] = []
     if (wants('devotional')) {
-      const devFilter: Record<string, any> = {}
+      const devFilter: Record<string, any> = { status: { $ne: 'rejected' } }
       if (cat)   devFilter.categorySlug = cat
       if (deity) devFilter.$or = [{ deitySlug: deity }, { deity: buildRegex(deity) }]
       if (lang)  devFilter.language = buildRegex(lang)
@@ -173,11 +264,20 @@ export async function GET(req: NextRequest) {
       const rawDevs: any[] = await textWithFallback(
         Devotional, q,
         devFilter,
-        proj(['title', 'titleHi', 'slug', 'image', 'imageCard', 'category', 'deity']),
-        ['title', 'titleHi', 'category', 'deity', 'slug', 'categorySlug', 'tags'],
+        proj(['title', 'titleHi', 'slug', 'image', 'imageCard', 'category', 'categoryHi', 'categorySlug', 'deity', 'deityHi', 'deitySlug', 'tags', 'aliases']),
+        ['title', 'titleHi', 'slug', 'deity', 'deityHi', 'deitySlug', 'category', 'categoryHi', 'categorySlug', 'tags', 'aliases'],
         undefined, cap + skip, expandedTerms
       )
-      devotionals = rankByRelevance(rawDevs, q, ['title', 'titleHi', 'deity']).slice(skip, skip + cap).map(formatDevotionalResult)
+      devotionals = sortBySearchScore(rawDevs, q, [
+        ['title', 140],
+        ['slug', 130],
+        ['titleHi', 120],
+        ['deity', 100],
+        ['deitySlug', 95],
+        ['category', 80],
+        ['categorySlug', 75],
+        ['tags', 60],
+      ], expandedTerms).slice(skip, skip + cap).map(formatDevotionalResult)
     }
 
     // ── Blogs ─────────────────────────────────────────────────────────────────
@@ -193,7 +293,13 @@ export async function GET(req: NextRequest) {
         ['title', 'titleHi', 'excerpt', 'category', 'slug', 'tags'],
         undefined, cap + skip, expandedTerms
       )
-      blogs = rankByRelevance(rawBlogs, q, ['title', 'titleHi']).slice(skip, skip + cap).map(formatBlogResult)
+      blogs = sortBySearchScore(rawBlogs, q, [
+        ['title', 140],
+        ['slug', 120],
+        ['titleHi', 100],
+        ['category', 70],
+        ['tags', 60],
+      ], expandedTerms).slice(skip, skip + cap).map(formatBlogResult)
     }
 
     // ── Events ────────────────────────────────────────────────────────────────
@@ -207,11 +313,19 @@ export async function GET(req: NextRequest) {
       const rawEvents: any[] = await textWithFallback(
         Event, q,
         eventFilter,
-        proj(['title', 'titleHi', 'slug', 'image', 'imageCard', 'description', 'category', 'city', 'state']),
+        proj(['title', 'titleHi', 'slug', 'image', 'imageCard', 'description', 'category', 'city', 'state', 'deity']),
         ['title', 'titleHi', 'description', 'category', 'city', 'state', 'deity'],
         undefined, cap + skip, expandedTerms
       )
-      events = rankByRelevance(rawEvents, q, ['title', 'titleHi']).slice(skip, skip + cap).map(formatEventResult)
+      events = sortBySearchScore(rawEvents, q, [
+        ['title', 140],
+        ['slug', 120],
+        ['titleHi', 100],
+        ['city', 90],
+        ['state', 80],
+        ['category', 65],
+        ['deity', 60],
+      ], expandedTerms).slice(skip, skip + cap).map(formatEventResult)
     }
 
     // ── Darshan ───────────────────────────────────────────────────────────────
@@ -227,7 +341,13 @@ export async function GET(req: NextRequest) {
         ['title', 'temple', 'location', 'city', 'state'],
         undefined, cap + skip, expandedTerms
       )
-      darshan = rankByRelevance(rawDarshan, q, ['title', 'temple']).slice(skip, skip + cap).map(formatDarshanResult)
+      darshan = sortBySearchScore(rawDarshan, q, [
+        ['title', 140],
+        ['temple', 110],
+        ['city', 90],
+        ['state', 80],
+        ['location', 70],
+      ], expandedTerms).slice(skip, skip + cap).map(formatDarshanResult)
     }
 
     // ── Spiritual Icons ───────────────────────────────────────────────────────
@@ -240,11 +360,18 @@ export async function GET(req: NextRequest) {
       const rawIcons: any[] = await textWithFallback(
         SpiritualIcon, q,
         iconFilter,
-        proj(['name', 'nameHi', 'slug', 'image', 'imageCard', 'shortBio', 'category', 'city', 'location']),
+        proj(['name', 'nameHi', 'slug', 'image', 'imageCard', 'shortBio', 'category', 'city', 'location', 'state']),
         ['name', 'nameHi', 'shortBio', 'category', 'city', 'location', 'slug'],
         undefined, cap + skip, expandedTerms
       )
-      spiritualIcons = rankByRelevance(rawIcons, q, ['name', 'nameHi']).slice(skip, skip + cap).map(formatSpiritualIconResult)
+      spiritualIcons = sortBySearchScore(rawIcons, q, [
+        ['name', 140],
+        ['slug', 120],
+        ['nameHi', 100],
+        ['city', 80],
+        ['location', 70],
+        ['category', 60],
+      ], expandedTerms).slice(skip, skip + cap).map(formatSpiritualIconResult)
     }
 
     // ── Sacred Categories (static data — no DB) ───────────────────────────────

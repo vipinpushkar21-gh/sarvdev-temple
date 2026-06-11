@@ -12,6 +12,7 @@ import {
 } from '@/lib/devotional-categories'
 import { buildCursorFilter, paginateCursor, parseCursorLimit, DEVOTIONAL_CARD_PROJ } from '@/lib/cursor-pagination'
 import { applyRateLimit } from '@/lib/rate-limit'
+import { expandQuery } from '@/lib/transliteration'
 
 // -- In-memory cache (60s TTL) --
 let _cache: { data: any[]; ts: number } | null = null
@@ -28,6 +29,77 @@ function isAdmin(request: NextRequest) {
 
 function escapeRegex(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+function buildSearchRegex(value: string) {
+  const terms = Array.from(new Set([value, ...expandQuery(value)].map((term) => term.trim()).filter(Boolean)))
+  const pattern = terms.map(escapeRegex).join('|')
+  return new RegExp(pattern || escapeRegex(value), 'i')
+}
+
+function buildDevotionalSearchCondition(search: string) {
+  const regex = buildSearchRegex(search)
+  return {
+    $or: [
+      { title: regex },
+      { titleHi: regex },
+      { slug: regex },
+      { deity: regex },
+      { deityHi: regex },
+      { deitySlug: regex },
+      { category: regex },
+      { categoryHi: regex },
+      { categorySlug: regex },
+      { tags: regex },
+      { aliases: regex },
+    ],
+  }
+}
+
+function normalizeForScore(value: unknown) {
+  return String(value || '').toLowerCase().trim().replace(/[-_]+/g, ' ').replace(/\s+/g, ' ')
+}
+
+function valuesForScore(doc: Record<string, any>, field: string): string[] {
+  const value = doc[field]
+  if (Array.isArray(value)) return value.map(normalizeForScore).filter(Boolean)
+  return [normalizeForScore(value)].filter(Boolean)
+}
+
+function scoreDevotional(doc: Record<string, any>, query: string) {
+  const q = normalizeForScore(query)
+  if (!q) return 0
+  const weightedFields = [
+    ['title', 120],
+    ['titleHi', 120],
+    ['slug', 110],
+    ['deity', 95],
+    ['deityHi', 95],
+    ['deitySlug', 90],
+    ['category', 75],
+    ['categoryHi', 75],
+    ['categorySlug', 70],
+    ['tags', 55],
+    ['aliases', 50],
+  ] as const
+
+  let best = 0
+  for (const [field, weight] of weightedFields) {
+    for (const value of valuesForScore(doc, field)) {
+      if (value === q) best = Math.max(best, weight + 1000)
+      else if (value.startsWith(q)) best = Math.max(best, weight + 700)
+      else if (value.includes(q)) best = Math.max(best, weight + 400)
+    }
+  }
+  return best
+}
+
+function sortDevotionalSearchResults(items: any[], search: string) {
+  return [...items].sort((a, b) => {
+    const scoreDiff = scoreDevotional(b, search) - scoreDevotional(a, search)
+    if (scoreDiff !== 0) return scoreDiff
+    return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+  })
 }
 
 function removeDevotionalImageFields<T extends Record<string, any>>(input: T): T {
@@ -132,6 +204,7 @@ export async function GET(request: NextRequest) {
     // -- List mode --
     const pageParam    = searchParams.get('page')
     const limitParam   = searchParams.get('limit')
+    const adminRequest = isAdmin(request)
     const search       = searchParams.get('search') || searchParams.get('q') || ''
     const category     = searchParams.get('category') || ''
     const categorySlugParam = searchParams.get('categorySlug') || ''
@@ -168,10 +241,14 @@ export async function GET(request: NextRequest) {
       conditions.push({ deity: { $regex: new RegExp(escapeRegex(deity), 'i') } })
     }
 
-    if (status)   conditions.push({ status })
+    if (status) {
+      conditions.push({ status })
+    } else if (!adminRequest) {
+      conditions.push({ $or: [{ status: 'approved' }, { status: { $exists: false } }, { status: null }, { status: '' }] })
+    }
     if (language) conditions.push({ language })
     if (featuredParam === '1' || featuredParam === 'true') conditions.push({ featured: true })
-    if (search)   conditions.push({ $text: { $search: search } })
+    if (search)   conditions.push(buildDevotionalSearchCondition(search))
 
     const filter: Record<string, any> = conditions.length === 0
       ? {}
@@ -185,11 +262,10 @@ export async function GET(request: NextRequest) {
       oldest:        { createdAt: 1 },
       az:            { title: 1 },
       za:            { title: -1 },
+      featured:      { featured: -1, audio: -1, createdAt: -1 },
       'audio-first': { audio: -1, createdAt: -1 },
     }
-    const sort = search
-      ? { score: { $meta: 'textScore' }, createdAt: -1 }
-      : (sortOptions[sortParam] || { createdAt: -1 })
+    const sort = sortOptions[sortParam] || { createdAt: -1 }
 
     // -- Cursor-based pagination (scale mode) --
     if (searchParams.has('cursor')) {
@@ -210,14 +286,18 @@ export async function GET(request: NextRequest) {
       const limit = Math.min(100, Math.max(1, parseInt(limitParam || '20', 10)))
       const skip  = (page - 1) * limit
 
-      const [items, total] = await Promise.all([
+      const queryLimit = search ? Math.min(500, Math.max(limit, skip + limit * 4)) : limit
+      const [rawItems, total] = await Promise.all([
         Devotional.find(filter, { lyrics: 0, content: 0, __v: 0, updatedAt: 0 })
-          .sort(sort)
-          .skip(skip)
-          .limit(limit)
+          .sort(search ? { createdAt: -1 } : sort)
+          .skip(search ? 0 : skip)
+          .limit(queryLimit)
           .lean(),
         Devotional.countDocuments(filter),
       ])
+      const items = search
+        ? sortDevotionalSearchResults(rawItems, search).slice(skip, skip + limit)
+        : rawItems
 
       const trimmed = items.map((d: any) => removeDevotionalImageFields({
         ...d,
@@ -242,10 +322,13 @@ export async function GET(request: NextRequest) {
     }
 
     const legacyLimit = Math.min(100, Math.max(1, parseInt(limitParam || '50', 10) || 50))
-    const devotionals = await Devotional.find(
+    const rawDevotionals = await Devotional.find(
       hasFilters ? filter : {},
       { lyrics: 0, content: 0, __v: 0, updatedAt: 0, descriptionHi: 0 }
-    ).sort(sort).limit(legacyLimit).lean()
+    ).sort(search ? { createdAt: -1 } : sort).limit(search ? Math.min(500, legacyLimit * 4) : legacyLimit).lean()
+    const devotionals = search
+      ? sortDevotionalSearchResults(rawDevotionals, search).slice(0, legacyLimit)
+      : rawDevotionals
 
     if (!devotionals || devotionals.length === 0) {
       try {
