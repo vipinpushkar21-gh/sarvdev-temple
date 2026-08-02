@@ -18,7 +18,7 @@ export const CategoryGrid: React.FC<CategoryGridProps> = ({ categories }) => (
   <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7">
     {categories.filter((cat) => cat.count && cat.count > 0).map((cat) => {
       const slug = cat.id.toLowerCase().replace(/\s+/g, '-')
-      const href = cat.id === 'all' ? '/devotionals' : `/devotionals/category/${slug}`
+      const href = `/devotionals/category/${slug}`
       return (
         <Link
           key={cat.id}
@@ -37,7 +37,7 @@ export const CategoryGrid: React.FC<CategoryGridProps> = ({ categories }) => (
             )}
           </div>
           <div>
-            <span className="block text-sm font-black text-stone-900 group-hover:text-orange-800 transition-colors">
+            <span className="block text-sm font-black text-stone-900 transition-colors group-hover:text-orange-800">
               {cat.label}
             </span>
             {cat.hindi && (

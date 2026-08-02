@@ -14,6 +14,9 @@ import { buildCursorFilter, paginateCursor, parseCursorLimit, DEVOTIONAL_CARD_PR
 import { applyRateLimit } from '@/lib/rate-limit'
 import { expandQuery } from '@/lib/transliteration'
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 // -- In-memory cache (60s TTL) --
 let _cache: { data: any[]; ts: number } | null = null
 const CACHE_TTL = 60_000
@@ -100,6 +103,37 @@ function sortDevotionalSearchResults(items: any[], search: string) {
     if (scoreDiff !== 0) return scoreDiff
     return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
   })
+}
+
+function countsFromAggregation(rows: { _id: unknown; count: number }[]) {
+  const counts: Record<string, number> = {}
+  for (const row of rows) {
+    const key = String(row._id || '').trim()
+    if (key) counts[key] = Number(row.count || 0)
+  }
+  return counts
+}
+
+async function getAdminDevotionalFacets() {
+  const [categoryRows, statusRows, languageRows, deityRows, totalAll, withAudio, withLyrics] = await Promise.all([
+    Devotional.aggregate([{ $group: { _id: '$category', count: { $sum: 1 } } }]),
+    Devotional.aggregate([{ $group: { _id: '$status', count: { $sum: 1 } } }]),
+    Devotional.aggregate([{ $group: { _id: '$language', count: { $sum: 1 } } }]),
+    Devotional.aggregate([{ $group: { _id: '$deity', count: { $sum: 1 } } }]),
+    Devotional.countDocuments({}),
+    Devotional.countDocuments({ $or: [{ audio: { $exists: true, $ne: '' } }, { audioUrl: { $exists: true, $ne: '' } }] }),
+    Devotional.countDocuments({ lyrics: { $exists: true, $ne: '' } }),
+  ])
+
+  return {
+    totalAll,
+    withAudio,
+    withLyrics,
+    categories: countsFromAggregation(categoryRows),
+    statuses: countsFromAggregation(statusRows),
+    languages: countsFromAggregation(languageRows),
+    deities: countsFromAggregation(deityRows),
+  }
 }
 
 function removeDevotionalImageFields<T extends Record<string, any>>(input: T): T {
@@ -214,6 +248,7 @@ export async function GET(request: NextRequest) {
     const language     = searchParams.get('language') || ''
     const featuredParam = searchParams.get('featured') || ''
     const sortParam    = searchParams.get('sort') || 'newest'
+    const includeFacets = searchParams.get('includeFacets') === '1' || searchParams.get('facets') === '1'
 
     await connectDB()
 
@@ -228,7 +263,11 @@ export async function GET(request: NextRequest) {
       if (categorySlugParam === 'namavali') catOr.push({ category: '108 Namavali' })
       conditions.push(catOr.length === 1 ? catOr[0] : { $or: catOr })
     } else if (category) {
-      conditions.push({ category })
+      const catSlug = categoryNameToSlug(category)
+      const catOr: any[] = [{ category }]
+      if (catSlug) catOr.push({ categorySlug: catSlug })
+      if (category.toLowerCase() === 'namavali') catOr.push({ category: '108 Namavali' })
+      conditions.push({ $or: catOr })
     }
 
     // Deity filter — prefer canonical deitySlug, fall back to deity name regex
@@ -287,13 +326,14 @@ export async function GET(request: NextRequest) {
       const skip  = (page - 1) * limit
 
       const queryLimit = search ? Math.min(500, Math.max(limit, skip + limit * 4)) : limit
-      const [rawItems, total] = await Promise.all([
-        Devotional.find(filter, { lyrics: 0, content: 0, __v: 0, updatedAt: 0 })
+      const [rawItems, total, facets] = await Promise.all([
+        Devotional.find(filter, { lyrics: 0, content: 0, __v: 0, updatedAt: 0, descriptionHi: 0 })
           .sort(search ? { createdAt: -1 } : sort)
           .skip(search ? 0 : skip)
           .limit(queryLimit)
           .lean(),
         Devotional.countDocuments(filter),
+        includeFacets && adminRequest ? getAdminDevotionalFacets() : Promise.resolve(undefined),
       ])
       const items = search
         ? sortDevotionalSearchResults(rawItems, search).slice(skip, skip + limit)
@@ -312,7 +352,8 @@ export async function GET(request: NextRequest) {
         pages: Math.ceil(total / limit),
         limit,
         hasMore: page * limit < total,
-      }, { headers: { 'Cache-Control': DEVOTIONALS_CACHE_CC } })
+        ...(facets ? { facets } : {}),
+      }, { headers: { 'Cache-Control': adminRequest ? 'private, no-store' : DEVOTIONALS_CACHE_CC } })
     }
 
     // -- Legacy array mode (backward-compatible, capped) --

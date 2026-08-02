@@ -30,6 +30,7 @@ export default function CategoryPage() {
   const [allDevotionals, setAllDevotionals] = useState<Devotional[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedDeity, setSelectedDeity] = useState('all')
+  const [selectedSubcategory, setSelectedSubcategory] = useState('all')
   const [sort, setSort] = useState<SortKey>('popular')
   const [search, setSearch] = useState('')
   const [visibleCount, setVisibleCount] = useState(24)
@@ -41,7 +42,7 @@ export default function CategoryPage() {
         const params = new URLSearchParams({ page: '1', limit: '60' })
         params.set('categorySlug', categorySlug)
         if (categoryInfo?.id) params.set('category', categoryInfo.id)
-        const res = await fetch(`/api/devotionals?${params.toString()}`)
+        const res = await fetch(`/api/devotionals?${params.toString()}`, { cache: 'no-store' })
         if (!res.ok) return
         const data = await res.json()
         if (!cancelled) {
@@ -76,16 +77,41 @@ export default function CategoryPage() {
     ...deityCounts.map(([deity, count]) => ({ id: deity, label: deity, meta: count })),
   ], [categoryDevotionals.length, deityCounts])
 
+  const subcategoryCounts = useMemo(() => {
+    if (categoryInfo?.id !== 'Aarti') return []
+    const counts = new Map<string, number>()
+    categoryDevotionals.forEach((devotional) => {
+      if (!devotional.subcategory) return
+      counts.set(devotional.subcategory, (counts.get(devotional.subcategory) || 0) + 1)
+    })
+    return Array.from(counts.entries()).sort((a, b) => b[1] - a[1])
+  }, [categoryDevotionals, categoryInfo?.id])
+
+  const subcategoryChips = useMemo(() => {
+    if (categoryInfo?.id !== 'Aarti') return []
+    const aartiCategory = FULL_CATEGORIES.find((cat) => cat.id === 'Aarti')
+    if (!aartiCategory?.subcategories) return []
+    return [
+      { id: 'all', label: 'सब (All)', meta: categoryDevotionals.length },
+      ...aartiCategory.subcategories.map((sub) => ({
+        id: sub.id,
+        label: sub.label,
+        meta: subcategoryCounts.find(([id]) => id === sub.id)?.[1] || 0,
+      })),
+    ]
+  }, [categoryDevotionals.length, subcategoryCounts, categoryInfo?.id])
+
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase()
     return categoryDevotionals.filter((devotional) => {
       if (selectedDeity !== 'all' && devotional.deity !== selectedDeity) return false
+      if (categoryInfo?.id === 'Aarti' && selectedSubcategory !== 'all' && devotional.subcategory !== selectedSubcategory) return false
       if (!term) return true
       return [devotional.title, devotional.description, devotional.deity, devotional.language, devotional.artist]
         .filter(Boolean)
         .some((value) => value!.toLowerCase().includes(term))
     })
-  }, [categoryDevotionals, search, selectedDeity])
+  }, [categoryDevotionals, search, selectedDeity, selectedSubcategory, categoryInfo?.id])
 
   const sorted = useMemo(() => {
     const list = [...filtered]
@@ -99,7 +125,7 @@ export default function CategoryPage() {
     )
   }, [filtered, sort])
 
-  useEffect(() => setVisibleCount(24), [categorySlug, search, selectedDeity, sort])
+  useEffect(() => setVisibleCount(24), [categorySlug, search, selectedDeity, selectedSubcategory, sort])
 
   const popular = useMemo(() => sorted.slice(0, 6), [sorted])
   const relatedCategories = useMemo(() => {
@@ -232,6 +258,10 @@ export default function CategoryPage() {
 
             {deityChips.length > 1 && (
               <DevotionalFilterChips chips={deityChips} activeId={selectedDeity} onChange={setSelectedDeity} ariaLabel={`Filter ${label} by deity`} />
+            )}
+
+            {subcategoryChips.length > 0 && (
+              <DevotionalFilterChips chips={subcategoryChips} activeId={selectedSubcategory} onChange={setSelectedSubcategory} ariaLabel={`Filter ${label} by subcategory`} />
             )}
           </section>
 

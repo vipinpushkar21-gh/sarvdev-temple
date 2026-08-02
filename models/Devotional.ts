@@ -11,6 +11,7 @@ const DevotionalSchema = new mongoose.Schema({
   category:        { type: String, default: 'Other' },
   categorySlug:    { type: String, index: true },
   categoryHi:      String,
+  subcategory:     String,
 
   // Deity (canonical)
   deity:           String,

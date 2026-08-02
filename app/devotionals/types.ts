@@ -10,6 +10,7 @@
   category?: string
   categorySlug?: string
   categoryHi?: string
+  subcategory?: string
 
   // Deity
   deity?: string

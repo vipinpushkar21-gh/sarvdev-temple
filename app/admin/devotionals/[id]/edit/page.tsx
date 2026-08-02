@@ -35,6 +35,7 @@ export default function EditDevotionalPage() {
     description: '',
     descriptionHi: '',
     category: '',
+    subcategory: '',
     language: '',
     deity: '',
     audio: '',
@@ -63,6 +64,7 @@ export default function EditDevotionalPage() {
               description: found.description || '',
               descriptionHi: found.descriptionHi || '',
               category: found.category || '',
+              subcategory: found.subcategory || '',
               language: found.language || '',
               deity: found.deity || '',
               audio: found.audioUrl || found.audio || '',
@@ -143,6 +145,7 @@ export default function EditDevotionalPage() {
               description: found.description || '',
               descriptionHi: found.descriptionHi || '',
               category: found.category || '',
+              subcategory: found.subcategory || '',
               language: found.language || '',
               deity: found.deity || '',
               audio: found.audioUrl || found.audio || '',
@@ -261,6 +264,18 @@ export default function EditDevotionalPage() {
               </select>
             </div>
           </div>
+
+          {formData.category === 'Aarti' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1">Aarti Subcategory</label>
+              <select name="subcategory" value={formData.subcategory} onChange={handleChange} className="admin-input w-full">
+                <option value="">— Select Subcategory —</option>
+                {FULL_CATEGORIES.find((cat) => cat.id === 'Aarti')?.subcategories?.map((sub) => (
+                  <option key={sub.id} value={sub.id}>{sub.label}</option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>

@@ -24,6 +24,7 @@ export default function NewDevotionalPage() {
     description: '',
     descriptionHi: '',
     category: 'Bhajan',
+    subcategory: '',
     language: 'Hindi',
     deity: '',
     audio: '',
@@ -116,6 +117,18 @@ export default function NewDevotionalPage() {
               <input type="text" name="language" value={formData.language} onChange={handleChange} className="admin-input w-full" placeholder="Hindi, Sanskrit, etc." />
             </div>
           </div>
+
+          {formData.category === 'Aarti' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1">Aarti Subcategory</label>
+              <select name="subcategory" value={formData.subcategory} onChange={handleChange} className="admin-input w-full">
+                <option value="">— Select Subcategory —</option>
+                {FULL_CATEGORIES.find((cat) => cat.id === 'Aarti')?.subcategories?.map((sub) => (
+                  <option key={sub.id} value={sub.id}>{sub.label}</option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>

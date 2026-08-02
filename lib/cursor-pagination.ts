@@ -153,6 +153,7 @@ export const DEITY_CARD_PROJ = {
 export const DEVOTIONAL_CARD_PROJ = {
   title: 1, titleHi: 1, slug: 1,
   category: 1, categorySlug: 1,
+  subcategory: 1,
   deity: 1, deitySlug: 1,
   imageCard: 1, image: 1,
   language: 1, featured: 1, status: 1,

@@ -6,12 +6,37 @@
   icon?: string
   emoji?: string
   description?: string
+  subcategories?: SubcategoryDef[]
+}
+
+export type SubcategoryDef = {
+  id: string
+  label: string
+  hindi: string
 }
 
 // Unified category config drawn from lib/devotional-categories.ts.
 // slug is the URL-safe version; id/label is the canonical display name.
 export const FULL_CATEGORIES: CategoryDef[] = [
-  { id: 'Aarti',      label: 'Aarti',      slug: 'aarti',      hindi: 'आरती',       emoji: '🪔', description: 'Daily puja and evening lamp offerings for major deities.' },
+  { 
+    id: 'Aarti',      
+    label: 'Aarti',      
+    slug: 'aarti',      
+    hindi: 'आरती',       
+    emoji: '🪔', 
+    description: 'Daily puja and evening lamp offerings for major deities.',
+    subcategories: [
+      { id: 'shiv-parivar', label: 'शिव परिवार', hindi: 'शिव परिवार' },
+      { id: 'vishnu-avtar', label: 'विष्णु एवं अवतार', hindi: 'विष्णु एवं अवतार' },
+      { id: 'durga-shakti', label: 'दुर्गा व शक्ति', hindi: 'दुर्गा व शक्ति' },
+      { id: 'lakshmi-devi', label: 'लक्ष्मी व अन्य देवियाँ', hindi: 'लक्ष्मी व अन्य देवियाँ' },
+      { id: 'navgrah', label: 'नवग्रह', hindi: 'नवग्रह' },
+      { id: 'pavitra-nadiyan', label: 'पवित्र नदियाँ', hindi: 'पवित्र नदियाँ' },
+      { id: 'granth-ekadashi', label: 'ग्रंथ व एकादशी', hindi: 'ग्रंथ व एकादशी' },
+      { id: 'vrat-tyohar', label: 'व्रत-त्योहार', hindi: 'व्रत-त्योहार' },
+      { id: 'dham-sant', label: 'धाम व संत', hindi: 'धाम व संत' },
+    ]
+  },
   { id: 'Bhajan',     label: 'Bhajan',     slug: 'bhajan',     hindi: 'भजन',        emoji: '🎵', description: 'Melodic devotional songs for listening, satsang and kirtan.' },
   { id: 'Chalisa',    label: 'Chalisa',    slug: 'chalisa',    hindi: 'चालीसा',     emoji: '📖', description: 'Forty-verse devotional paths with readable lyrics and audio support.' },
   { id: 'Mantra',     label: 'Mantra',     slug: 'mantra',     hindi: 'मंत्र',      emoji: '📿', description: 'Sacred chants for japa, meditation, focus and protection.' },

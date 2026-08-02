@@ -145,20 +145,41 @@ export default function ClientPage() {
   const [page, setPage] = useState(1)
   const [total, setTotal] = useState(0)
   const [hasMore, setHasMore] = useState(false)
+  const [categoryCounts, setCategoryCounts] = useState<Record<string, number>>({})
   const resultsSummaryRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const query = params.get('search') || params.get('q') || ''
     const deity = params.get('deity') || ''
+    const catSlug = params.get('category') || ''
     if (query) setSearch(query)
     if (deity) setActiveDeity(deity)
+    if (catSlug) {
+      const cat = FULL_CATEGORIES.find(c => c.slug === catSlug || c.id.toLowerCase().replace(/\s+/g, '-') === catSlug)
+      if (cat) setActiveCategory(cat.id)
+    }
+    fetch('/api/devotionals/category-counts', { cache: 'no-store' })
+      .then(r => r.json())
+      .then(setCategoryCounts)
+      .catch(console.error)
   }, [])
 
   useEffect(() => {
     const timer = window.setTimeout(() => setDebouncedSearch(search.trim()), 300)
     return () => window.clearTimeout(timer)
   }, [search])
+
+  useEffect(() => {
+    const url = new URL(window.location.href)
+    if (activeCategory === 'all') {
+      url.searchParams.delete('category')
+    } else {
+      const cat = FULL_CATEGORIES.find(c => c.id === activeCategory)
+      url.searchParams.set('category', cat?.slug ?? activeCategory.toLowerCase().replace(/\s+/g, '-'))
+    }
+    window.history.replaceState({}, '', url.toString())
+  }, [activeCategory])
 
   useEffect(() => {
     setPage(1)
@@ -214,16 +235,21 @@ export default function ClientPage() {
   }, [debouncedSearch])
 
   const categoriesWithCounts = useMemo(() => {
+    const hasLive = Object.keys(categoryCounts).length > 0
     return FULL_CATEGORIES
       .filter((category) => !EXCLUDED_CATEGORY_IDS.has(category.id))
       .map((category) => ({
         ...category,
-        count: devotionals.filter((devotional) => {
-          if (category.id === 'Namavali') return devotional.category === 'Namavali' || devotional.category === '108 Namavali'
-          return devotional.category === category.id
-        }).length,
+        count: hasLive
+          ? (category.id === 'Namavali'
+              ? (categoryCounts['Namavali'] || 0) + (categoryCounts['108 Namavali'] || 0)
+              : (categoryCounts[category.id] || 0))
+          : devotionals.filter((devotional) => {
+              if (category.id === 'Namavali') return devotional.category === 'Namavali' || devotional.category === '108 Namavali'
+              return devotional.category === category.id
+            }).length,
       }))
-  }, [devotionals])
+  }, [devotionals, categoryCounts])
 
   const deityGrid = useMemo(() => {
     const counts = new Map<string, number>()
@@ -263,6 +289,11 @@ export default function ClientPage() {
   const audioCount = devotionals.filter((item) => item.audio).length
   const isFiltered = !!(debouncedSearch || activeCategory !== 'all' || activeDeity !== 'all')
   const showDiscovery = !isFiltered
+
+  function handleCategoryClick(id: string) {
+    setActiveCategory(id === activeCategory ? 'all' : id)
+    setPage(1)
+  }
 
   function clearFilters() {
     setSearch('')
@@ -329,6 +360,19 @@ export default function ClientPage() {
         </div>
 
         <div className="page-container space-y-16 py-12">
+
+          {/* ── Browse Devotional Categories ── */}
+          {!debouncedSearch && (
+            <section>
+              <SectionHeader
+                eyebrow="भक्ति श्रेणियाँ"
+                title="Browse Devotional Categories"
+                subtitle="Click a category to explore its dedicated page with subcategory filters."
+              />
+              <CategoryGrid categories={categoriesWithCounts} />
+            </section>
+          )}
+
           <div
             ref={resultsSummaryRef}
             className="rounded-2xl border border-amber-200 bg-white px-5 py-4 shadow-sm"
@@ -372,18 +416,6 @@ export default function ClientPage() {
                 subtitle="Top mantras, chalisas, aartis and stotras from the Sarvdev devotional library."
               />
               <FeaturedDevotionalSlider items={featured} />
-            </section>
-          )}
-
-          {/* ── Browse by Devotional Type ── */}
-          {showDiscovery && (
-            <section>
-              <SectionHeader
-                eyebrow="Devotional Types"
-                title="Browse by Type"
-                subtitle="Choose the kind of practice you need — chanting, reading, listening, or contemplation."
-              />
-              <CategoryGrid categories={categoriesWithCounts} />
             </section>
           )}
 
