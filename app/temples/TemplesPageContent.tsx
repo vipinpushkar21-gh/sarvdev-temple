@@ -22,7 +22,6 @@ type Temple = {
   description?: string
   image?: string
   timings?: string
-  contact?: string
   deity?: string
   state?: string
   country?: string

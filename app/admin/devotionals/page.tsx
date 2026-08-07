@@ -5,6 +5,7 @@ import Link from 'next/link'
 import SarvdevImage from '../../../components/SarvdevImage'
 import { getDevotionalCardImage } from '../../../lib/devotional-image'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
+import { DEVOTIONAL_CATEGORIES } from '@/lib/devotional-categories'
 
 type Devotional = {
   _id: string
@@ -41,8 +42,24 @@ type CleanupReport = {
   error?: string
 }
 
+type AdminDevotionalFacets = {
+  totalAll: number
+  withAudio?: number
+  withLyrics?: number
+  categories: Record<string, number>
+  statuses: Record<string, number>
+  languages: Record<string, number>
+  deities: Record<string, number>
+}
+
 type SortKey = 'title' | 'category' | 'deity' | 'language' | 'artist' | 'createdAt'
 type SortDir = 'asc' | 'desc'
+
+function normalizeAdminCategoryName(value?: string) {
+  const category = String(value || '').trim()
+  if (category.toLowerCase() === '108 namavali') return 'Namavali'
+  return category
+}
 
 export default function AdminDevotionalsPage() {
   const [devotionals, setDevotionals] = useState<Devotional[]>([])
@@ -57,10 +74,12 @@ export default function AdminDevotionalsPage() {
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(50)
   const [total, setTotal] = useState(0)
+  const [facets, setFacets] = useState<AdminDevotionalFacets | null>(null)
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [previewId, setPreviewId] = useState<string | null>(null)
   const [cleanupLoading, setCleanupLoading] = useState(false)
   const [cleanupReport, setCleanupReport] = useState<CleanupReport | null>(null)
+  const [exportLoading, setExportLoading] = useState(false)
 
   const debouncedSearch = useDebouncedValue(search)
 
@@ -69,7 +88,7 @@ export default function AdminDevotionalsPage() {
 
   async function fetchDevotionals() {
     try {
-      const params = new URLSearchParams({ page: String(page), limit: String(pageSize) })
+      const params = new URLSearchParams({ page: String(page), limit: String(pageSize), includeFacets: '1' })
       if (debouncedSearch) params.set('search', debouncedSearch)
       if (categoryFilter) params.set('category', categoryFilter)
       if (statusFilter) params.set('status', statusFilter)
@@ -81,6 +100,7 @@ export default function AdminDevotionalsPage() {
         const items = Array.isArray(data) ? data : (data.items || data.data || [])
         setDevotionals(Array.isArray(items) ? items : [])
         setTotal(Number(data.total || items.length || 0))
+        setFacets(data.facets || null)
       }
     } catch (error) { console.error('Failed to fetch devotionals:', error) }
     finally { setLoading(false) }
@@ -129,24 +149,56 @@ export default function AdminDevotionalsPage() {
   }
 
   // Derived data
-  const categories = useMemo(() => Array.from(new Set(devotionals.map(d => d.category).filter(Boolean))).sort() as string[], [devotionals])
-  const languages = useMemo(() => Array.from(new Set(devotionals.map(d => d.language).filter(Boolean))).sort() as string[], [devotionals])
-  const deities = useMemo(() => Array.from(new Set(devotionals.map(d => d.deity).filter(Boolean))).sort() as string[], [devotionals])
+  const categories = useMemo(() => {
+    const configured = DEVOTIONAL_CATEGORIES.map((category) => category.id)
+    const fromFacets = Object.keys(facets?.categories || {}).map(normalizeAdminCategoryName)
+    const fromPage = (devotionals.map(d => normalizeAdminCategoryName(d.category)).filter(Boolean) as string[])
+    return Array.from(new Set([...configured, ...fromFacets, ...fromPage])).filter(Boolean)
+  }, [devotionals, facets])
+  const languages = useMemo(() => {
+    const fromFacets = Object.keys(facets?.languages || {})
+    const fromPage = devotionals.map(d => d.language).filter(Boolean) as string[]
+    return Array.from(new Set([...fromFacets, ...fromPage])).filter(Boolean).sort()
+  }, [devotionals, facets])
+  const deities = useMemo(() => {
+    const fromFacets = Object.keys(facets?.deities || {})
+    const fromPage = devotionals.map(d => d.deity).filter(Boolean) as string[]
+    return Array.from(new Set([...fromFacets, ...fromPage])).filter(Boolean).sort()
+  }, [devotionals, facets])
   const catCounts = useMemo(() => {
+    if (facets?.categories) {
+      const normalized: Record<string, number> = {}
+      for (const [name, count] of Object.entries(facets.categories)) {
+        const key = normalizeAdminCategoryName(name)
+        if (key) normalized[key] = (normalized[key] || 0) + count
+      }
+      return normalized
+    }
     const m: Record<string, number> = {}
-    devotionals.forEach(d => { if (d.category) m[d.category] = (m[d.category] || 0) + 1 })
+    devotionals.forEach(d => {
+      const key = normalizeAdminCategoryName(d.category)
+      if (key) m[key] = (m[key] || 0) + 1
+    })
     return m
-  }, [devotionals])
+  }, [devotionals, facets])
 
   // Stats
   const stats = useMemo(() => {
+    if (facets) {
+      const approved = (facets.statuses.approved || 0) + (facets.statuses[''] || 0)
+      const pending = facets.statuses.pending || 0
+      const rejected = facets.statuses.rejected || 0
+      const withAudio = facets.withAudio || 0
+      const withLyrics = facets.withLyrics || 0
+      return { total: facets.totalAll || total, approved, pending, rejected, withAudio, withLyrics }
+    }
     const approved = devotionals.filter(d => d.status === 'approved' || !d.status).length
     const pending = devotionals.filter(d => d.status === 'pending').length
     const rejected = devotionals.filter(d => d.status === 'rejected').length
     const withAudio = devotionals.filter(d => d.audio).length
     const withLyrics = devotionals.filter(d => d.lyrics).length
     return { total: devotionals.length, approved, pending, rejected, withAudio, withLyrics }
-  }, [devotionals])
+  }, [devotionals, facets, total])
 
   // Sort the current server-returned page. Search and filters are applied by the API.
   const filtered = useMemo(() => {
@@ -189,16 +241,38 @@ export default function AdminDevotionalsPage() {
   const reject = async (id: string) => { const res = await fetch('/api/devotionals', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, status: 'rejected' }) }); if (res.ok) setDevotionals(d => d.map(x => x._id === id ? { ...x, status: 'rejected' } : x)) }
   const remove = async (id: string) => { if (!confirm('Delete this devotional?')) return; const res = await fetch('/api/devotionals', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) }); if (res.ok) setDevotionals(d => d.filter(x => x._id !== id)) }
 
-  // Export CSV
-  const exportCSV = () => {
-    const headers = ['Title', 'Category', 'Deity', 'Language', 'Artist', 'Duration', 'Audio', 'Status']
-    const rows = filtered.map(d => [d.title, d.category, d.deity, d.language, d.artist, d.duration, d.audio ? 'Yes' : 'No', d.status || 'approved'])
-    const csv = [headers.join(','), ...rows.map(r => r.map(v => `"${(v || '').replace(/"/g, '""')}"`).join(','))].join('\n')
-    const blob = new Blob([csv], { type: 'text/csv' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url; a.download = `devotionals-export-${new Date().toISOString().slice(0, 10)}.csv`; a.click()
-    URL.revokeObjectURL(url)
+  // Export all matching records from the server, not just the current page.
+  const exportCSV = async () => {
+    setExportLoading(true)
+    try {
+      const params = new URLSearchParams()
+      if (debouncedSearch) params.set('search', debouncedSearch)
+      if (categoryFilter) params.set('category', categoryFilter)
+      if (statusFilter) params.set('status', statusFilter)
+      if (languageFilter) params.set('language', languageFilter)
+      if (deityFilter) params.set('deity', deityFilter)
+      const res = await fetch(`/api/admin/devotionals/export?${params.toString()}`, {
+        credentials: 'include',
+        cache: 'no-store',
+      })
+      if (!res.ok) {
+        alert('Failed to export devotionals')
+        return
+      }
+      const blob = await res.blob()
+      const disposition = res.headers.get('content-disposition') || ''
+      const match = disposition.match(/filename="([^"]+)"/)
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = match?.[1] || `devotionals-export-${new Date().toISOString().slice(0, 10)}.csv`
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch {
+      alert('Failed to export devotionals')
+    } finally {
+      setExportLoading(false)
+    }
   }
 
   // Preview modal item
@@ -224,10 +298,14 @@ export default function AdminDevotionalsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="admin-page-title">Devotionals</h1>
-          <p className="admin-section-subtitle">{stats.total} total · {filtered.length} shown</p>
+          <p className="admin-section-subtitle">
+            Showing {filtered.length} of {total} matching records · {stats.total} total in admin
+          </p>
         </div>
         <div className="flex gap-2">
-          <button onClick={exportCSV} className="admin-btn admin-btn-ghost px-4 py-2 text-sm">Export CSV</button>
+          <button onClick={exportCSV} disabled={exportLoading} className="admin-btn admin-btn-ghost px-4 py-2 text-sm disabled:opacity-60">
+            {exportLoading ? 'Exporting...' : 'Export CSV'}
+          </button>
           <Link href="/admin/devotionals/data-integrity" className="admin-btn admin-btn-ghost px-4 py-2 text-sm border-orange-200 text-orange-700 hover:bg-orange-50">Data Integrity</Link>
           <Link href="/admin/devotionals/new" className="admin-btn admin-btn-primary px-4 py-2 text-sm">+ New Devotional</Link>
         </div>
@@ -376,6 +454,19 @@ export default function AdminDevotionalsPage() {
           <button onClick={() => setSelected(new Set())} className="admin-btn admin-btn-ghost">Clear</button>
         </div>
       )}
+
+      <div className="admin-card flex flex-col gap-3 px-5 py-3 md:flex-row md:items-center md:justify-between">
+        <div className="text-sm text-gray-600">
+          <span className="font-semibold text-gray-900">Admin records:</span>{' '}
+          Showing {(page - 1) * pageSize + (paginated.length ? 1 : 0)}-{Math.min(page * pageSize, total)} of {total}
+          {stats.total !== total && <> matching · {stats.total} total devotionals</>}
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="admin-btn admin-btn-ghost disabled:opacity-40 text-xs">Prev</button>
+          <span className="rounded-xl border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600">Page {page} / {totalPages}</span>
+          <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="admin-btn admin-btn-ghost disabled:opacity-40 text-xs">Next</button>
+        </div>
+      </div>
 
       {/* Table */}
       <div className="admin-table-wrap">

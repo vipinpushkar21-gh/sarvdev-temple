@@ -3,6 +3,10 @@ import { getCategoryByName, getCategoryBySlug } from './sacred-categories'
 export const TEMPLE_DATA_QUALITY_VALUES = ['A+', 'A', 'B', 'C'] as const
 export type TempleDataQuality = typeof TEMPLE_DATA_QUALITY_VALUES[number]
 
+export function stripBom(value: unknown): string {
+  return String(value || '').replace(/^\uFEFF/, '').replace(/\uFEFF/g, '')
+}
+
 export function slugifyTemple(value: unknown): string {
   return String(value || '')
     .toLowerCase()

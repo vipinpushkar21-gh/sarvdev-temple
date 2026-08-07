@@ -165,7 +165,7 @@ export default function Header() {
 
           {/* Desktop nav */}
           <nav className="hidden xl:flex items-center" aria-label="Main navigation">
-            <div className="flex items-center gap-px bg-white/[0.06] rounded-2xl px-1 py-0.5 border border-white/[0.08] max-w-[calc(100vw-320px)] overflow-x-auto scrollbar-none">
+            <div className="flex items-center gap-px bg-white/[0.06] rounded-2xl px-1 py-0.5 border border-white/[0.08] max-w-[calc(100vw-320px)]">
               {navItems.map((item) => {
                 const active = isActive(item.href)
                 const hasMega = !!(item as any).mega

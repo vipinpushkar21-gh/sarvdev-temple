@@ -50,6 +50,7 @@ const TempleSchema = new Schema({
 
   // ── Location ──
   streetAddress: { type: String },
+  streetAddressHi: { type: String },
   location: { type: String },
   locationHi: { type: String },
   mapsLink: { type: String },
@@ -61,6 +62,7 @@ const TempleSchema = new Schema({
   cityNormalized: { type: String, index: true },
   cityHi: { type: String },
   district: { type: String },
+  districtHi: { type: String },
   state: { type: String },
   stateNormalized: { type: String, index: true },
   stateHi: { type: String },
@@ -157,9 +159,10 @@ const TempleSchema = new Schema({
     default: []
   },
   festivalsHi: { type: String },
+  templeFestivals: { type: String },
+  templeFestivalsHi: { type: String },
 
   // ── Contact & Social ──
-  contact: { type: String },
   phone: { type: String },
   email: { type: String },
   website: { type: String },

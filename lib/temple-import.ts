@@ -10,56 +10,15 @@ import {
   normalizeTempleWrite,
   sacredCategoryName,
   slugifyTemple,
+  stripBom,
   uniqueStrings,
 } from './temple-normalization'
 import ActivityLog from '@/models/ActivityLog'
 import Temple from '@/models/Temple'
 import TempleImportSession from '@/models/TempleImportSession'
+import { emptyTempleMasterValues, TEMPLE_MASTER_CSV_COLUMNS, templeMasterPayload, validateTempleMasterValues } from './temple-master'
 
-export const TEMPLE_IMPORT_COLUMNS = [
-  'Title',
-  'TempleNameHi',
-  'UniqueKey',
-  'Slug',
-  'Location',
-  'City',
-  'District',
-  'State',
-  'Country',
-  'Deity',
-  'Type',
-  'SacredCategories',
-  'Tags',
-  'MetaTitle',
-  'MetaDescription',
-  'Keywords',
-  'Description',
-  'DescriptionHi',
-  'History',
-  'HistoryHi',
-  'Architecture',
-  'ArchitectureHi',
-  'ReligiousImportance',
-  'ReligiousImportanceHi',
-  'Festivals',
-  'FestivalsHi',
-  'BestTimeToVisit',
-  'BestTimeToVisitHi',
-  'NearbyTemples',
-  'FAQs',
-  'SourceUrls',
-  'PrimaryImage',
-  'GalleryImages',
-  'Latitude',
-  'Longitude',
-  'Timings',
-  'GoogleMapUrl',
-  'Speciality',
-  'SpecialityHi',
-  'DataQuality',
-  'Status',
-  'Verified',
-] as const
+export const TEMPLE_IMPORT_COLUMNS = TEMPLE_MASTER_CSV_COLUMNS
 
 const LEGACY_TEMPLE_IMPORT_SAMPLE_ROW = [
   'Sample Vishnu Temple',
@@ -143,7 +102,17 @@ const TEMPLE_IMPORT_TEMPLATE_SAMPLE_ROW = [
   'not-verified',
 ] as const
 
-export const TEMPLE_IMPORT_SAMPLE_ROW = TEMPLE_IMPORT_TEMPLATE_SAMPLE_ROW
+const MASTER_TEMPLATE_VALUES: Record<string, string> = {
+  TempleName: 'Sample Vishnu Temple', TempleNameHi: 'Sample Vishnu Temple Hindi', Slug: 'sample-vishnu-temple', UniqueKey: 'Sample Vishnu Temple|Sample District|Uttar Pradesh',
+  Deity: 'Vishnu', DeityHi: 'Vishnu Hindi', TempleType: 'Ancient Temple', Description: 'A concise English temple description with accurate visitor information.', DescriptionHi: 'Hindi description with the same meaning.',
+  EstablishedYear: '1200 CE', Speciality: 'Known for peaceful darshan.', SacredCategories: 'Vishnu Temples;Ancient Temples', StreetAddress: 'Main Road', StreetAddressHi: 'Main Road Hindi',
+  City: 'Sample City', CityHi: 'Sample City Hindi', District: 'Sample District', DistrictHi: 'Sample District Hindi', State: 'Uttar Pradesh', StateHi: 'Uttar Pradesh Hindi', Pincode: '221001', Country: 'India', GoogleMapsUrl: 'https://maps.google.com/?q=Sample+Vishnu+Temple', Timings: '6:00 AM - 12:00 PM; 4:00 PM - 9:00 PM',
+  Phone: '+91-0000000000', Website: 'https://example.com', PrimaryImage: 'https://res.cloudinary.com/demo/image/upload/sample.jpg', CardImage: 'https://res.cloudinary.com/demo/image/upload/sample-card.jpg', HeroImage: 'https://res.cloudinary.com/demo/image/upload/sample-hero.jpg',
+  NearestAirport: 'Nearest Airport', NearestRailwayStation: 'Nearest Railway Station', NearestBusStand: 'Nearest Bus Stand', Parking: 'Available', LocalTransport: 'Auto and taxi available',
+  TempleFestivals: 'Ekadashi;Janmashtami', TempleFestivalsHi: 'Ekadashi Hindi;Janmashtami Hindi', Tags: 'vishnu, temple, darshan', DataQuality: 'B', MetaTitle: 'Sample Vishnu Temple | Sarvdev', MetaDescription: 'Learn about Sample Vishnu Temple.', Keywords: 'vishnu, temple, darshan', OGImage: 'https://res.cloudinary.com/demo/image/upload/sample-og.jpg', Status: 'pending',
+}
+
+export const TEMPLE_IMPORT_SAMPLE_ROW = TEMPLE_IMPORT_COLUMNS.map((column) => MASTER_TEMPLATE_VALUES[column] || '')
 
 type ImportMode = 'dry-run' | 'execute'
 
@@ -214,6 +183,7 @@ const HEADER_MAP: Record<string, string> = {
   tags: 'tags',
   type: 'templeType',
   templetype: 'templeType',
+  establishedyear: 'establishedYear',
   description: 'description',
   descriptionhi: 'descriptionHi',
   history: 'history',
@@ -224,8 +194,10 @@ const HEADER_MAP: Record<string, string> = {
   religiousimportancehi: 'religiousImportanceHi',
   sacredimportance: 'religiousImportance',
   sacredimportancehi: 'religiousImportanceHi',
-  festivals: 'festivalsText',
-  festivalshi: 'festivalsHi',
+  festivals: 'templeFestivals',
+  festivalshi: 'templeFestivalsHi',
+  templefestivals: 'templeFestivals',
+  templefestivalshi: 'templeFestivalsHi',
   besttimetovisit: 'bestTimeToVisit',
   besttimetovisithi: 'bestTimeToVisitHi',
   bestseason: 'bestTimeToVisit',
@@ -242,11 +214,15 @@ const HEADER_MAP: Record<string, string> = {
   specialityhi: 'specialityHi',
   specialtyhi: 'specialityHi',
   streetaddress: 'streetAddress',
+  streetaddresshi: 'streetAddressHi',
   address: 'streetAddress',
   location: 'streetAddress',
   city: 'city',
+  cityhi: 'cityHi',
   district: 'district',
+  districthi: 'districtHi',
   state: 'state',
+  statehi: 'stateHi',
   country: 'country',
   pincode: 'pincode',
   pin: 'pincode',
@@ -261,8 +237,6 @@ const HEADER_MAP: Record<string, string> = {
   timings: 'timings',
   timing: 'timings',
   phone: 'phone',
-  contact: 'phone',
-  email: 'email',
   website: 'website',
   sacredcategories: 'sacredCategories',
   sacredcategory: 'sacredCategories',
@@ -272,14 +246,22 @@ const HEADER_MAP: Record<string, string> = {
   primaryimage: 'primaryImage',
   primaryimageurl: 'primaryImage',
   imagecard: 'imageCard',
+  cardimage: 'imageCard',
   imagehero: 'imageHero',
+  heroimageurl: 'imageHero',
   heroimage: 'imageHero',
+  nearestairport: 'nearestAirport',
+  nearestrailwaystation: 'nearestRailwayStation',
+  nearestbusstand: 'nearestBusStand',
+  parking: 'parking',
+  localtransport: 'localTransport',
   galleryimages: 'galleryImages',
   images: 'galleryImages',
   metatitle: 'metaTitle',
   metadescription: 'metaDescription',
   metakeywords: 'metaKeywords',
   keywords: 'keywords',
+  ogimage: 'ogImage',
   status: 'status',
   verified: 'verified',
 }
@@ -295,7 +277,7 @@ function csvEscape(value: unknown) {
 export function buildTempleImportTemplateCsv() {
   return [
     TEMPLE_IMPORT_COLUMNS.join(','),
-    TEMPLE_IMPORT_TEMPLATE_SAMPLE_ROW.map(csvEscape).join(','),
+    TEMPLE_IMPORT_SAMPLE_ROW.map(csvEscape).join(','),
   ].join('\n')
 }
 
@@ -346,6 +328,8 @@ function parseFestivalText(festivalsText: unknown, festivalsHiText: unknown) {
 }
 
 function parseCsvText(text: string) {
+  // Strip BOM if present
+  text = text.replace(/^\uFEFF/, '')
   const rows: string[][] = []
   let row: string[] = []
   let field = ''
@@ -391,16 +375,19 @@ function parseCsvText(text: string) {
 async function* parseCsvRowsFromFile(file: ImportFile): AsyncGenerator<string[]> {
   if (typeof file.stream !== 'function') {
     const text = typeof file.text === 'function' ? await file.text() : ''
-    for (const row of parseCsvText(text)) yield row
+    // Strip BOM before parsing
+    const textWithoutBom = text.replace(/^\uFEFF/, '')
+    for (const row of parseCsvText(textWithoutBom)) yield row
     return
   }
 
   const reader = file.stream().getReader()
-  const decoder = new TextDecoder()
+  const decoder = new TextDecoder('utf-8')
   let row: string[] = []
   let field = ''
   let inQuotes = false
   let lastWasCr = false
+  let bomStripped = false
 
   while (true) {
     const { value, done } = await reader.read()
@@ -408,6 +395,12 @@ async function* parseCsvRowsFromFile(file: ImportFile): AsyncGenerator<string[]>
     for (let index = 0; index < chunk.length; index += 1) {
       const char = chunk[index]
       const next = chunk[index + 1]
+
+      // Strip BOM from first character of first chunk
+      if (!bomStripped && char === '\uFEFF') {
+        bomStripped = true
+        continue
+      }
 
       if (lastWasCr) {
         lastWasCr = false
@@ -531,6 +524,45 @@ function hasValue(value: unknown) {
 function normalizeInputRow(row: Record<string, string>, rowNumber: number): { row?: ImportRow; errors: string[]; warnings: string[] } {
   const errors: string[] = []
   const warnings: string[] = []
+  const standardStatus = normalizeStatus(row.status)
+  if (standardStatus === null) errors.push('Status must be approved, pending, or rejected')
+  const master = {
+    ...emptyTempleMasterValues(),
+    title: stripBom(String(row.templeName || '').trim()),
+    titleHi: stripBom(String(row.templeNameHi || '').trim()),
+    slug: String(row.slug || '').trim(),
+    uniqueKey: String(row.uniqueKey || '').trim(),
+    deity: stripBom(String(row.deity || '').trim()),
+    deityHi: stripBom(String(row.deityHi || '').trim()),
+    templeType: String(row.templeType || '').trim(),
+    description: stripBom(String(row.description || '').trim()),
+    descriptionHi: stripBom(String(row.descriptionHi || '').trim()),
+    establishedYear: String(row.establishedYear || '').trim(),
+    speciality: stripBom(String(row.speciality || '').trim()),
+    sacredCategories: normalizeCategories(row.sacredCategories || row.categories, warnings),
+    streetAddress: stripBom(String(row.streetAddress || '').trim()),
+    streetAddressHi: stripBom(String(row.streetAddressHi || '').trim()),
+    city: stripBom(String(row.city || '').trim()), cityHi: stripBom(String(row.cityHi || '').trim()),
+    district: stripBom(String(row.district || '').trim()), districtHi: stripBom(String(row.districtHi || '').trim()),
+    state: stripBom(String(row.state || '').trim()), stateHi: stripBom(String(row.stateHi || '').trim()),
+    pincode: String(row.pincode || '').trim(), country: String(row.country || '').trim() || 'India',
+    mapsLink: String(row.googleMapsUrl || row.googleMapUrl || row.mapsLink || '').trim(), timings: String(row.timings || '').trim(),
+    phone: String(row.phone || '').trim(), website: String(row.website || '').trim(),
+    primaryImage: String(row.primaryImage || row.image || '').trim(), imageCard: String(row.imageCard || '').trim(), imageHero: String(row.imageHero || '').trim(),
+    nearestAirport: String(row.nearestAirport || '').trim(), nearestRailwayStation: String(row.nearestRailwayStation || '').trim(), nearestBusStand: String(row.nearestBusStand || '').trim(),
+    parkingAvailable: String(row.parking || '').trim(), localTransport: String(row.localTransport || '').trim(),
+    templeFestivals: String(row.templeFestivals || '').trim(), templeFestivalsHi: String(row.templeFestivalsHi || '').trim(),
+    tags: String(row.tags || '').trim(), dataQuality: String(row.dataQuality || '').trim() || 'B', metaTitle: String(row.metaTitle || '').trim(),
+    metaDescription: String(row.metaDescription || '').trim(), metaKeywords: String(row.keywords || row.metaKeywords || '').trim(), ogImage: String(row.ogImage || '').trim(),
+    status: (standardStatus || 'pending') as 'pending' | 'approved' | 'rejected',
+  }
+  const masterErrors = validateTempleMasterValues(master)
+  Object.entries(masterErrors).forEach(([field, message]) => errors.push(`${field}: ${message}`))
+  if (errors.length > 0) return { errors, warnings }
+  const { masterTempleForm: _masterTempleForm, ...masterPayload } = templeMasterPayload(master, 'admin-create')
+  return { row: { rowNumber, payload: normalizeTempleWrite(masterPayload), warnings }, errors, warnings }
+
+  /* Legacy parser retained below only for backward source compatibility. */
   const title = String(row.templeName || '').trim()
   if (!title) errors.push('templeName is required')
 
@@ -578,56 +610,55 @@ function normalizeInputRow(row: Record<string, string>, rowNumber: number): { ro
 
   const slugBase = row.slug || [title, row.city, row.state].filter(Boolean).join(' ')
   const payload: Record<string, any> = {
-    title,
-    titleHi: row.templeNameHi?.trim(),
+    title: stripBom(title),
+    titleHi: stripBom(row.templeNameHi?.trim()),
     uniqueKey,
     uniqueKeyNormalized: normalizeTempleUniqueKeyForCompare(uniqueKey),
     dataQuality,
     slug: slugifyTemple(slugBase),
-    deity: row.deity?.trim(),
-    deityHi: row.deityHi?.trim(),
+    deity: stripBom(row.deity?.trim()),
+    deityHi: stripBom(row.deityHi?.trim()),
     templeType: row.templeType?.trim(),
     tags,
     keywords,
-    description: row.description?.trim(),
-    descriptionHi: row.descriptionHi?.trim(),
-    history: row.history?.trim(),
-    historyHi: row.historyHi?.trim(),
-    architecture: row.architecture?.trim(),
-    architectureHi: row.architectureHi?.trim(),
-    architectureHighlights: row.architecture?.trim(),
-    religiousImportance: row.religiousImportance?.trim(),
-    religiousImportanceHi: row.religiousImportanceHi?.trim(),
-    sacredImportance: row.religiousImportance?.trim(),
-    sacredImportanceHi: row.religiousImportanceHi?.trim(),
+    description: stripBom(row.description?.trim()),
+    descriptionHi: stripBom(row.descriptionHi?.trim()),
+    history: stripBom(row.history?.trim()),
+    historyHi: stripBom(row.historyHi?.trim()),
+    architecture: stripBom(row.architecture?.trim()),
+    architectureHi: stripBom(row.architectureHi?.trim()),
+    architectureHighlights: stripBom(row.architecture?.trim()),
+    religiousImportance: stripBom(row.religiousImportance?.trim()),
+    religiousImportanceHi: stripBom(row.religiousImportanceHi?.trim()),
+    sacredImportance: stripBom(row.religiousImportance?.trim()),
+    sacredImportanceHi: stripBom(row.religiousImportanceHi?.trim()),
     festivals,
-    festivalsHi: row.festivalsHi?.trim(),
-    bestTimeToVisit: row.bestTimeToVisit?.trim(),
-    bestTimeToVisitHi: row.bestTimeToVisitHi?.trim(),
-    bestSeason: row.bestTimeToVisit?.trim(),
+    festivalsHi: stripBom(row.festivalsHi?.trim()),
+    bestTimeToVisit: stripBom(row.bestTimeToVisit?.trim()),
+    bestTimeToVisitHi: stripBom(row.bestTimeToVisitHi?.trim()),
+    bestSeason: stripBom(row.bestTimeToVisit?.trim()),
     nearbyTemples,
     nearbySacredPlaces: nearbyTemples,
     faqs,
     sourceUrls,
-    speciality: row.speciality?.trim(),
-    specialityHi: row.specialityHi?.trim(),
-    streetAddress: row.streetAddress?.trim(),
-    location: row.streetAddress?.trim(),
-    city: row.city?.trim(),
-    district: row.district?.trim(),
-    state: row.state?.trim(),
-    country: row.country?.trim() || 'India',
+    speciality: stripBom(row.speciality?.trim()),
+    specialityHi: stripBom(row.specialityHi?.trim()),
+    streetAddress: stripBom(row.streetAddress?.trim()),
+    location: stripBom(row.streetAddress?.trim()),
+    city: stripBom(row.city?.trim()),
+    district: stripBom(row.district?.trim()),
+    state: stripBom(row.state?.trim()),
+    country: stripBom(row.country?.trim()) || 'India',
     pincode: row.pincode?.trim(),
     latitude,
     longitude,
     googleMapUrl,
     googleMapsUrl: googleMapUrl,
     mapsLink: googleMapUrl,
-    timings: row.timings?.trim(),
-    phone: row.phone?.trim(),
-    contact: row.phone?.trim(),
-    email: row.email?.trim(),
-    website: row.website?.trim(),
+    timings: stripBom(row.timings?.trim()),
+    phone: stripBom(row.phone?.trim()),
+    email: stripBom(row.email?.trim()),
+    website: stripBom(row.website?.trim()),
     sacredCategories,
     categories: uniqueStrings([...sacredCategories, ...categories]),
     primaryImage,
@@ -636,9 +667,9 @@ function normalizeInputRow(row: Record<string, string>, rowNumber: number): { ro
     imageHero: row.imageHero?.trim(),
     galleryImages,
     images: galleryImages,
-    metaTitle: row.metaTitle?.trim(),
-    metaDescription: row.metaDescription?.trim(),
-    metaKeywords: String(rawKeywords || '').trim(),
+    metaTitle: stripBom(row.metaTitle?.trim()),
+    metaDescription: stripBom(row.metaDescription?.trim()),
+    metaKeywords: stripBom(String(rawKeywords || '').trim()),
     status: status || 'pending',
     verified: verified || 'not-verified',
   }

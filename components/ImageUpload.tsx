@@ -9,6 +9,7 @@ type Props = {
   onChange: (url: string) => void
   folder?: string
   label?: string
+  language?: 'en' | 'hi'
   guidance?: 'card' | 'hero' | 'gallery' | 'general' | 'devotionalCard' | 'devotionalHero' | 'darshanCard' | 'darshanHero' | 'blogCard' | 'blogHero' | 'blogOg'
 }
 
@@ -100,7 +101,13 @@ async function inspectImage(file: File, guidance: Props['guidance'] = 'general')
   }
 }
 
-function helperText(guidance: Props['guidance'] = 'general') {
+function helperText(guidance: Props['guidance'] = 'general', language: Props['language'] = 'en') {
+  if (language === 'hi') {
+    if (guidance === 'card') return 'लिस्टिंग, कार्ड और मोबाइल प्रीव्यू में उपयोग होता है। अनुशंसित 3000x3000। विषय को केंद्र में, छोटे आकार में और सुरक्षित मार्जिन के साथ रखें।'
+    if (guidance === 'hero') return 'सिनेमाई हीरो बैनर और स्लाइडर में उपयोग होता है। अनुशंसित 3360x1440। पैनोरमिक रचना रखें और कोई पवित्र तत्व किनारों से न छुए।'
+    if (guidance === 'gallery') return 'वैकल्पिक गैलरी चित्र। कम से कम 2400px चौड़ा रखें और मुख्य पवित्र तत्वों को किनारों से दूर रखें।'
+    return 'सुरक्षित फ्रेम शीर्ष-केंद्र पैनोरमिक क्रॉप का उपयोग करता है।'
+  }
   if (guidance === 'card') return 'Used in listings, cards and mobile previews. Recommended 3000x3000. Keep subject centered, avoid close-up, keep safe margins.'
   if (guidance === 'hero') return 'Used in cinematic hero banners and sliders. Recommended 3360x1440. Use panoramic composition, huge atmosphere, no edge touching.'
   if (guidance === 'devotionalCard') return 'Used in devotional cards. Recommended 1600x900; AI target 2000x1125. Keep the deity or symbol centered with no text near edges.'
@@ -114,7 +121,11 @@ function helperText(guidance: Props['guidance'] = 'general') {
   return 'Safe frame uses top-center panoramic crop.'
 }
 
-export default function ImageUpload({ value, onChange, folder = 'sarvdev', label = 'Image', guidance = 'general' }: Props) {
+export default function ImageUpload({ value, onChange, folder = 'sarvdev', label = 'Image', language = 'en', guidance = 'general' }: Props) {
+  const hi = language === 'hi'
+  const t = hi
+    ? { onlyImage: 'केवल चित्र फ़ाइलें स्वीकार हैं', tooLarge: 'चित्र 15MB से छोटा होना चाहिए', previewError: 'नेटवर्क त्रुटि, फिर से प्रयास करें', uploadFailed: 'अपलोड विफल हुआ', url: 'Cloudinary चित्र URL या नीचे अपलोड करें', choose: 'चित्र चुनें', upload: 'अपलोड करें', uploading: 'अपलोड हो रहा है...', remove: 'हटाएँ', preview: 'पूर्वावलोकन', heroPreview: 'हीरो क्रॉप पूर्वावलोकन' }
+    : { onlyImage: 'Only image files are allowed', tooLarge: 'Image must be smaller than 15MB', previewError: 'Network error, try again', uploadFailed: 'Upload failed', url: 'Cloudinary image URL or upload below', choose: 'Choose Image', upload: 'Upload & Use', uploading: 'Uploading...', remove: 'Remove', preview: 'Preview', heroPreview: 'Hero crop preview' }
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState('')
   const [pending, setPending] = useState<PendingImage | null>(null)
@@ -131,8 +142,8 @@ export default function ImageUpload({ value, onChange, folder = 'sarvdev', label
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    if (!file.type.startsWith('image/')) { setError('Only image files are allowed'); return }
-    if (file.size > 15 * 1024 * 1024) { setError('Image must be smaller than 15MB'); return }
+    if (!file.type.startsWith('image/')) { setError(t.onlyImage); return }
+    if (file.size > 15 * 1024 * 1024) { setError(t.tooLarge); return }
 
     setError('')
     setServerWarnings([])
@@ -157,10 +168,10 @@ export default function ImageUpload({ value, onChange, folder = 'sarvdev', label
         setServerWarnings(Array.isArray(data.warnings) ? data.warnings : [])
         setPending(null)
       } else {
-        setError(data.error || 'Upload failed')
+        setError(data.error || t.uploadFailed)
       }
     } catch {
-      setError('Network error, try again')
+      setError(t.previewError)
     } finally {
       setUploading(false)
     }
@@ -181,7 +192,7 @@ export default function ImageUpload({ value, onChange, folder = 'sarvdev', label
             type="text"
             value={value || ''}
             onChange={e => { onChange(e.target.value); setOptimizedPreview('') }}
-            placeholder="Cloudinary image URL or upload below"
+            placeholder={t.url}
             className="admin-input w-full text-sm"
           />
 
@@ -213,7 +224,7 @@ export default function ImageUpload({ value, onChange, folder = 'sarvdev', label
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
               </svg>
-              Choose Image
+              {t.choose}
             </button>
 
             {pending && (
@@ -223,13 +234,13 @@ export default function ImageUpload({ value, onChange, folder = 'sarvdev', label
                 disabled={uploading}
                 className="admin-btn admin-btn-primary px-4 py-2 text-xs disabled:opacity-60"
               >
-                {uploading ? 'Uploading...' : 'Upload & Use'}
+                {uploading ? t.uploading : t.upload}
               </button>
             )}
 
             {value && (
               <button type="button" onClick={() => { onChange(''); setOptimizedPreview('') }} className="text-xs text-red-500 hover:text-red-700">
-                Remove
+                {t.remove}
               </button>
             )}
           </div>
@@ -239,17 +250,17 @@ export default function ImageUpload({ value, onChange, folder = 'sarvdev', label
         <div className="space-y-2">
           <div className="relative aspect-[4/3] rounded-xl overflow-hidden border border-gray-200 bg-gray-50">
             {previewImage ? (
-              <SarvdevImage image={previewImage} alt="Preview" className="absolute inset-0" imgClassName="object-cover" renderMode="auto" />
+              <SarvdevImage image={previewImage} alt={t.preview} className="absolute inset-0" imgClassName="object-cover" renderMode="auto" />
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-xs text-gray-400">Preview</div>
+              <div className="w-full h-full flex items-center justify-center text-xs text-gray-400">{t.preview}</div>
             )}
           </div>
           {heroPreview && (
             <div className="relative aspect-[21/9] rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
-              <img src={heroPreview} alt="Hero crop preview" className="absolute inset-0 h-full w-full object-contain object-center p-2" />
+              <img src={heroPreview} alt={t.heroPreview} className="absolute inset-0 h-full w-full object-contain object-center p-2" />
             </div>
           )}
-          <p className="text-[11px] text-gray-400">{helperText(guidance)}</p>
+          <p className="text-[11px] text-gray-400">{helperText(guidance, language)}</p>
         </div>
       </div>
 
@@ -257,6 +268,7 @@ export default function ImageUpload({ value, onChange, folder = 'sarvdev', label
         <SafeCropPreview
           src={safePreviewSrc}
           guidance={guidance}
+          language={language}
           width={pending?.width}
           height={pending?.height}
         />
@@ -273,12 +285,13 @@ export default function ImageUpload({ value, onChange, folder = 'sarvdev', label
   )
 }
 
-function SafeCropPreview({ src, guidance, width, height }: { src: string; guidance: Props['guidance']; width?: number; height?: number }) {
+function SafeCropPreview({ src, guidance, language = 'en', width, height }: { src: string; guidance: Props['guidance']; language?: Props['language']; width?: number; height?: number }) {
+  const hi = language === 'hi'
   const ratio = width && height ? width / height : null
   const frames = [
-    { label: 'Desktop', ratio: '21 / 9', note: 'wide hero' },
-    { label: 'Tablet', ratio: '16 / 9', note: 'standard hero' },
-    { label: 'Mobile', ratio: '4 / 5', note: 'portrait hero' },
+    { label: hi ? 'डेस्कटॉप' : 'Desktop', ratio: '21 / 9', note: hi ? 'चौड़ा हीरो' : 'wide hero' },
+    { label: hi ? 'टैबलेट' : 'Tablet', ratio: '16 / 9', note: hi ? 'मानक हीरो' : 'standard hero' },
+    { label: hi ? 'मोबाइल' : 'Mobile', ratio: '4 / 5', note: hi ? 'पोर्ट्रेट हीरो' : 'portrait hero' },
   ]
   const heroLike = guidance === 'hero' || guidance === 'devotionalHero' || guidance === 'darshanHero' || guidance === 'blogHero' || guidance === 'blogOg'
   const warnings = [
@@ -293,8 +306,8 @@ function SafeCropPreview({ src, guidance, width, height }: { src: string; guidan
     <div className="rounded-xl border border-amber-200 bg-amber-50/55 p-3">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <div>
-          <p className="text-xs font-bold uppercase tracking-wide text-amber-900">Safe crop preview</p>
-          <p className="text-[11px] text-amber-800">Desktop, tablet and mobile frames use contain preview plus safe-zone guides.</p>
+          <p className="text-xs font-bold uppercase tracking-wide text-amber-900">{hi ? 'सुरक्षित क्रॉप पूर्वावलोकन' : 'Safe crop preview'}</p>
+          <p className="text-[11px] text-amber-800">{hi ? 'डेस्कटॉप, टैबलेट और मोबाइल फ्रेम सुरक्षित क्षेत्र के संकेतों के साथ पूरा चित्र दिखाते हैं।' : 'Desktop, tablet and mobile frames use contain preview plus safe-zone guides.'}</p>
         </div>
         {warnings.length > 0 && (
           <div className="flex max-w-full flex-wrap gap-1.5">
@@ -313,7 +326,7 @@ function SafeCropPreview({ src, guidance, width, height }: { src: string; guidan
               <div className="pointer-events-none absolute inset-x-[18%] inset-y-[18%] rounded border border-white/35" />
               <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[18%] border-t border-red-300/90 bg-red-500/20" />
               <div className="pointer-events-none absolute inset-x-[12%] bottom-[18%] h-[14%] rounded-b-md border-b-2 border-emerald-200/80" />
-              <span className="pointer-events-none absolute bottom-1 left-2 rounded bg-black/45 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-red-100">bottom crop danger</span>
+              <span className="pointer-events-none absolute bottom-1 left-2 rounded bg-black/45 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-red-100">{hi ? 'निचला क्रॉप खतरा' : 'bottom crop danger'}</span>
             </div>
             <div className="mt-1 flex items-center justify-between gap-2">
               <span className="text-[11px] font-semibold text-amber-900">{frame.label}</span>

@@ -3,7 +3,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import AdminPagination from '@/components/admin/AdminPagination'
+import TempleLiveLink from '@/components/admin/TempleLiveLink'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
+import { TEMPLE_MASTER_CSV_COLUMNS } from '@/lib/temple-master'
+import { useTranslation } from '@/lib/translation'
 
 type TempleRow = {
   _id: string
@@ -101,6 +104,7 @@ type TempleIntegrityResult = {
 }
 
 export default function AdminTemplesPage() {
+  const { language } = useTranslation()
   const [rows, setRows] = useState<TempleRow[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -361,65 +365,30 @@ export default function AdminTemplesPage() {
       if (englishHiCount > 0) {
         alert(`${englishHiCount} rows have English letters in TempleNameHi. TempleNameHi should be Hindi/Devanagari or blank.`)
       }
-      const header = [
-        'Title', 'TempleNameHi', 'UniqueKey', 'Slug', 'Location', 'City', 'District', 'State', 'Country',
-        'Deity', 'Type', 'SacredCategories', 'Tags', 'MetaTitle', 'MetaDescription', 'Keywords',
-        'Description', 'DescriptionHi', 'History', 'HistoryHi', 'Architecture', 'ArchitectureHi',
-        'ReligiousImportance', 'ReligiousImportanceHi', 'Festivals', 'FestivalsHi',
-        'BestTimeToVisit', 'BestTimeToVisitHi', 'NearbyTemples', 'FAQs', 'SourceUrls',
-        'PrimaryImage', 'GalleryImages', 'Latitude', 'Longitude', 'Timings', 'GoogleMapUrl',
-        'Speciality', 'SpecialityHi', 'DataQuality', 'Status', 'Verified',
-      ]
+      const header = [...TEMPLE_MASTER_CSV_COLUMNS]
       const csvRows = [
         header.join(','),
-        ...allRows.map(r =>
-          [
-            r.title || '',
-            r.titleHi || '',
-            r.uniqueKey || '',
-            r.slug || '',
-            r.streetAddress || r.location || '',
-            r.city || '',
-            r.district || '',
-            r.state || '',
-            r.country || '',
-            r.deity || '',
-            r.templeType || r.type || '',
-            (r.sacredCategories || []).join(';'),
-            csvList(r.tags),
-            r.metaTitle || '',
-            r.metaDescription || '',
-            csvList(r.keywords && r.keywords.length > 0 ? r.keywords : r.metaKeywords),
-            r.description || '',
-            r.descriptionHi || '',
-            r.history || '',
-            r.historyHi || '',
-            r.architecture || '',
-            r.architectureHi || '',
-            r.religiousImportance || r.sacredImportance || '',
-            r.religiousImportanceHi || r.sacredImportanceHi || '',
-            csvFestivals(r.festivals),
-            r.festivalsHi || csvFestivals(r.festivals, true),
-            r.bestTimeToVisit || r.bestSeason || '',
-            r.bestTimeToVisitHi || '',
-            csvList(r.nearbyTemples && r.nearbyTemples.length > 0 ? r.nearbyTemples : r.nearbySacredPlaces),
-            csvFaqs(r.faqs),
-            csvList(r.sourceUrls),
-            r.primaryImage || r.image || '',
-            csvList(r.galleryImages && r.galleryImages.length > 0 ? r.galleryImages : r.imageGallery),
-            r.latitude ?? '',
-            r.longitude ?? '',
-            r.timings || '',
-            r.googleMapsUrl || r.googleMapUrl || r.mapsLink || '',
-            r.speciality || '',
-            r.specialityHi || '',
-            r.dataQuality || 'B',
-            r.status || 'approved',
-            r.verified || 'not-verified',
-          ]
-            .map(csvEscape)
-            .join(',')
-        ),
+        ...allRows.map(r => {
+          const record = r as Record<string, any>
+          const fields: Record<string, unknown> = {
+            TempleName: record.title || '', TempleNameHi: record.titleHi || '', Slug: record.slug || '', UniqueKey: record.uniqueKey || '',
+            Deity: record.deity || '', DeityHi: record.deityHi || '', TempleType: record.templeType || record.type || '',
+            Description: record.description || '', DescriptionHi: record.descriptionHi || '', EstablishedYear: record.establishedYear || '', Speciality: record.speciality || '',
+            SacredCategories: csvList(record.sacredCategories?.length ? record.sacredCategories : record.categories, '; '),
+            StreetAddress: record.streetAddress || record.location || '', StreetAddressHi: record.streetAddressHi || record.locationHi || '',
+            City: record.city || '', CityHi: record.cityHi || '', District: record.district || '', DistrictHi: record.districtHi || '',
+            State: record.state || '', StateHi: record.stateHi || '', Pincode: record.pincode || '', Country: record.country || '',
+            GoogleMapsUrl: record.googleMapsUrl || record.googleMapUrl || record.mapsLink || '', Timings: record.timings || csvList(record.timingSlots, '; '),
+            Phone: record.phone || '', Website: record.website || '',
+            PrimaryImage: record.primaryImage || record.image || '', CardImage: record.imageCard || '', HeroImage: record.imageHero || record.heroImage || '',
+            NearestAirport: record.nearestAirport || '', NearestRailwayStation: record.nearestRailwayStation || '', NearestBusStand: record.nearestBusStand || '',
+            Parking: record.parkingAvailable || '', LocalTransport: record.localTransport || '',
+            TempleFestivals: record.templeFestivals || csvFestivals(record.festivals), TempleFestivalsHi: record.templeFestivalsHi || record.festivalsHi || csvFestivals(record.festivals, true),
+            Tags: csvList(record.tags), DataQuality: record.dataQuality || 'B', MetaTitle: record.metaTitle || '', MetaDescription: record.metaDescription || '',
+            Keywords: csvList(record.keywords?.length ? record.keywords : record.metaKeywords), OGImage: record.ogImage || '', Status: record.status || 'pending',
+          }
+          return header.map(column => csvEscape(fields[column] || '')).join(',')
+        }),
       ]
       const BOM = '\uFEFF'
       const blob = new Blob([BOM + csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' })
@@ -701,6 +670,14 @@ export default function AdminTemplesPage() {
                   </td>
                   <td>
                     <div className="flex gap-1.5">
+                      <TempleLiveLink
+                        slug={r.slug}
+                        status={r.status}
+                        templeTitle={r.title}
+                        templeTitleHi={r.titleHi}
+                        language={language}
+                        className="admin-btn admin-btn-ghost text-xs"
+                      />
                       <Link href={`/admin/temples/edit/${r._id}`} className="admin-btn admin-btn-ghost">Edit</Link>
                       <button onClick={() => approve(r._id)} className="admin-btn admin-btn-success">Approve</button>
                       <button onClick={() => reject(r._id)} className="admin-btn admin-btn-danger">Reject</button>

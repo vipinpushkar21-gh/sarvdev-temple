@@ -52,7 +52,7 @@ export async function generateMetadata(
     await connectDB()
     const temple = await Temple.findOne(
       templeSlugQuery(slug),
-      'title titleHi description metaTitle metaDescription canonicalUrl image imageCard imageHero heroImage ogImage city state deity templeType templeTypes tags keywords metaKeywords categories sacredCategories'
+      'title titleHi slug description descriptionHi metaTitle metaDescription image primaryImage imageCard imageHero heroImage ogImage city state deity templeType templeTypes tags keywords metaKeywords categories sacredCategories'
     ).lean() as any
 
     if (!temple) {
@@ -64,13 +64,15 @@ export async function generateMetadata(
 
     const locationParts = [temple.city, temple.state].filter(Boolean)
     const location = locationParts.join(', ')
-    const title = cleanText(temple.metaTitle, 80) || `${temple.title} - Sarvdev`
+    const title = cleanText(temple.metaTitle, 80) || `${temple.title || temple.titleHi} - Sarvdev`
     const description = cleanText(temple.metaDescription)
       || (temple.description
         ? cleanText(temple.description)
-        : `Explore ${temple.title}${location ? ` in ${location}` : ''}${temple.deity ? `, dedicated to ${temple.deity}` : ''}. Find timings, history and more on Sarvdev.`)
+        : temple.descriptionHi
+          ? cleanText(temple.descriptionHi)
+          : `Explore ${temple.title || temple.titleHi}${location ? ` in ${location}` : ''}${temple.deity ? `, dedicated to ${temple.deity}` : ''}. Find timings, location and more on Sarvdev.`)
     const image = getOGImage(temple).src
-    const url = cleanText(temple.canonicalUrl, 240) || `${BASE}/temples/${slug}`
+    const url = `${BASE}/temples/${temple.slug || slug}`
     const keywords = uniqueStrings([
       ...asStringArray(temple.metaKeywords),
       ...asStringArray(temple.keywords),
@@ -100,7 +102,7 @@ export async function generateMetadata(
         url,
         type: 'website',
         siteName: 'Sarvdev',
-        images: [{ url: image, width: 1200, height: 630, alt: temple.title }],
+        images: [{ url: image, width: 1200, height: 630, alt: temple.title || temple.titleHi }],
       },
       twitter: {
         card: 'summary_large_image',
@@ -127,10 +129,10 @@ export default async function TempleSlugLayout({
     await connectDB()
     const temple = await Temple.findOne(
       templeSlugQuery(slug),
-      'title description image imageCard imageHero heroImage ogImage city district state country deity templeType templeTypes categories sacredCategories latitude longitude timings phone website'
+      'title slug description streetAddress city district state country pincode image primaryImage imageCard imageHero heroImage ogImage deity templeType templeTypes categories sacredCategories timings phone website'
     ).lean() as any
     if (temple) {
-      const pageUrl = `${BASE}/temples/${slug}`
+      const pageUrl = `${BASE}/temples/${temple.slug || slug}`
       const heroImage = getTempleHeroImage(temple).src
       const breadcrumbItems = [
         { name: 'Home', item: BASE },
@@ -160,20 +162,16 @@ export default async function TempleSlugLayout({
       if (temple.description) {
         placeSchema.description = cleanText(temple.description, 300)
       }
-      const addressParts = [temple.city, temple.state, temple.country].filter(Boolean)
+      const addressParts = [temple.streetAddress, temple.city, temple.district, temple.state, temple.pincode, temple.country].filter(Boolean)
       if (addressParts.length) {
         placeSchema.address = {
           '@type': 'PostalAddress',
+          ...(temple.streetAddress && { streetAddress: temple.streetAddress }),
           ...(temple.city && { addressLocality: temple.city }),
+          ...(temple.district && { addressSubregion: temple.district }),
           ...(temple.state && { addressRegion: temple.state }),
+          ...(temple.pincode && { postalCode: temple.pincode }),
           addressCountry: temple.country || 'IN',
-        }
-      }
-      if (typeof temple.latitude === 'number' && Number.isFinite(temple.latitude) && typeof temple.longitude === 'number' && Number.isFinite(temple.longitude)) {
-        placeSchema.geo = {
-          '@type': 'GeoCoordinates',
-          latitude: temple.latitude,
-          longitude: temple.longitude,
         }
       }
       if (temple.timings) {

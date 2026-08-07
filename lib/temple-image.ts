@@ -21,6 +21,7 @@ type ImageInput =
   | undefined
   | {
       image?: string | null
+      primaryImage?: string | null
       imageCard?: string | null
       imageHero?: string | null
       heroImage?: string | null
@@ -157,12 +158,12 @@ function resolveImageUrl(input: ImageInput, preferred: 'image' | 'imageCard' | '
     typeof input === 'string'
       ? [input]
       : preferred === 'ogImage'
-        ? [input?.ogImage, input?.imageHero, input?.heroImage, input?.imageCard, input?.image]
+        ? [input?.ogImage, input?.imageHero, input?.heroImage, input?.primaryImage, input?.imageCard, input?.image]
         : preferred === 'imageHero' || preferred === 'heroImage'
-          ? [input?.imageHero, input?.heroImage, input?.imageCard, input?.image]
+          ? [input?.imageHero, input?.heroImage, input?.primaryImage, input?.imageCard, input?.image]
           : preferred === 'imageCard'
-            ? [input?.imageCard, input?.image]
-            : [input?.image]
+            ? [input?.imageCard, input?.primaryImage, input?.image]
+            : [input?.primaryImage, input?.image]
 
   for (const candidate of candidates) {
     const safeUrl = sanitizeImageUrl(candidate?.trim(), '')

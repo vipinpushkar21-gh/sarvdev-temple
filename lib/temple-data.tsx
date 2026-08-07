@@ -16,7 +16,6 @@ export interface TempleData {
   state?: string
   deity?: string
   timings?: string
-  contact?: string
   type?: string
   status?: string
   categories?: string[]

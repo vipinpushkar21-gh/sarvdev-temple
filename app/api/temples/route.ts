@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { connectDB } from '@/lib/db';
 import Temple from '@/models/Temple';
 import Event from '@/models/Event';
@@ -16,6 +17,7 @@ import {
 } from '@/lib/temple-normalization';
 import { buildCursorFilter, paginateCursor, parseCursorLimit, TEMPLE_CARD_PROJ } from '@/lib/cursor-pagination';
 import { applyRateLimit } from '@/lib/rate-limit';
+import { templeMasterValuesFromRecord, validateTempleMasterValues } from '@/lib/temple-master';
 
 function isAdmin(req: NextRequest): boolean {
   const token = req.cookies.get(AUTH_COOKIE_NAME)?.value;
@@ -32,8 +34,8 @@ const SUPPORTED_TEMPLE_FIELDS = [
   'primaryImage','image','imageCard','imageHero','imageGallery','heroImage','images','galleryImages','festivalGallery','architectureGallery',
   'deityGallery','videos','droneShots','ambienceAudio',
   // Location
-  'streetAddress','location','locationHi','mapsLink','googleMapUrl','googleMapsUrl','latitude','longitude',
-  'city','cityNormalized','cityHi','district','state','stateNormalized','stateHi','country','pincode','pincodeHi',
+  'streetAddress','streetAddressHi','location','locationHi','mapsLink','googleMapUrl','googleMapsUrl','latitude','longitude',
+  'city','cityNormalized','cityHi','district','districtHi','state','stateNormalized','stateHi','country','pincode','pincodeHi',
   // Deity & Spiritual
   'deity','deityHi','deitySlug','mainDeity','secondaryDeities','deityForms','sampradaya','sect','spiritualTradition',
   'sacredImportance','sacredImportanceHi','religiousImportance','religiousImportanceHi','mythology','mythologyHi',
@@ -53,9 +55,9 @@ const SUPPORTED_TEMPLE_FIELDS = [
   'nearestAirport','nearestRailwayStation','nearestBusStand','parkingAvailable',
   'wheelchairAccess','accommodationInfo','localTransport',
   // Festivals
-  'festivals','festivalsHi',
+  'festivals','festivalsHi','templeFestivals','templeFestivalsHi',
   // Contact
-  'contact','phone','email','website','facebook','instagram',
+  'phone','email','website','facebook','instagram',
   // SEO
   'metaTitle','metaDescription','metaKeywords','keywords','faqs','sourceUrls','ogImage','canonicalUrl',
   // Admin/Moderation
@@ -425,6 +427,26 @@ function parsePagination(searchParams: URLSearchParams) {
   return { page, limit, skip: (page - 1) * limit };
 }
 
+function revalidateTemplePublicPaths(...records: Array<Record<string, any> | null | undefined>) {
+  const slugs = new Set<string>();
+  const states = new Set<string>();
+  const categories = new Set<string>();
+  for (const record of records) {
+    if (!record) continue;
+    if (record.slug) slugs.add(String(record.slug));
+    if (record.state) states.add(slugifyTemple(String(record.state)));
+    const categorySlugs = Array.isArray(record.sacredCategorySlugs) ? record.sacredCategorySlugs : [];
+    for (const categorySlug of categorySlugs) {
+      if (categorySlug) categories.add(String(categorySlug));
+    }
+  }
+  revalidatePath('/temples');
+  revalidatePath('/sitemap.xml');
+  for (const slug of slugs) revalidatePath(`/temples/${slug}`);
+  for (const state of states) revalidatePath(`/temples/state/${state}`);
+  for (const category of categories) revalidatePath(`/temples/pilgrimage/${category}`);
+}
+
 export async function GET(req: NextRequest) {
   const _t0 = performance.now();
   try {
@@ -536,6 +558,12 @@ export async function POST(req: NextRequest) {
   try {
     await connectDB();
     const rawData = await req.json();
+    if (rawData.masterTempleForm) {
+      const errors = validateTempleMasterValues(templeMasterValuesFromRecord(rawData));
+      if (Object.keys(errors).length > 0) {
+        return NextResponse.json({ error: 'Temple form validation failed', errors }, { status: 400 });
+      }
+    }
     const normalizedPayload = normalizeTemplePayload(pickSupportedTempleFields(rawData));
     if (!isAdmin(req) && !hasOwn(normalizedPayload, 'dataQuality')) {
       normalizedPayload.dataQuality = 'C';
@@ -573,6 +601,8 @@ export async function POST(req: NextRequest) {
       await Promise.allSettled(eventPromises);
     }
 
+    revalidateTemplePublicPaths(temple.toObject());
+
     return NextResponse.json({
       ...temple.toObject(),
       ...(unknownCategories.length > 0 ? { warnings: { unknownCategories } } : {}),
@@ -594,6 +624,13 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: 'Missing temple id' }, { status: 400 });
     }
 
+    if (rawUpdate.masterTempleForm) {
+      const errors = validateTempleMasterValues(templeMasterValuesFromRecord(rawUpdate));
+      if (Object.keys(errors).length > 0) {
+        return NextResponse.json({ error: 'Temple form validation failed', errors }, { status: 400 });
+      }
+    }
+
     const existing = await Temple.findById(id).lean();
     if (!existing) {
       return NextResponse.json({ error: 'Temple not found' }, { status: 404 });
@@ -604,6 +641,7 @@ export async function PUT(req: NextRequest) {
       existing as Record<string, any>
     );
     const temple = await Temple.findByIdAndUpdate(id, { $set: update }, { new: true });
+    revalidateTemplePublicPaths(existing as Record<string, any>, temple?.toObject?.() || temple);
     return NextResponse.json(temple);
   } catch (error) {
     console.error('Update temple error:', error);
@@ -622,6 +660,7 @@ export async function DELETE(req: NextRequest) {
     if (!temple) {
       return NextResponse.json({ error: 'Temple not found' }, { status: 404 });
     }
+    revalidateTemplePublicPaths(temple.toObject());
     return NextResponse.json({ success: true });
   } catch (error) {
     return NextResponse.json({ error: 'Failed to delete temple' }, { status: 500 });
