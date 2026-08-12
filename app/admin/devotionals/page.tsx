@@ -42,6 +42,28 @@ type CleanupReport = {
   error?: string
 }
 
+type ImportRowResult = {
+  row: number
+  title: string
+  action: 'create' | 'update' | 'skip'
+  matchedBy?: 'id' | 'slug' | 'title'
+  id?: string
+  changedFields?: string[]
+  reason?: string
+}
+
+type ImportReport = {
+  ok: boolean
+  mode: 'dry-run' | 'execute'
+  category: string
+  totalRows: number
+  created: number
+  updated: number
+  skipped: number
+  errors: string[]
+  rows: ImportRowResult[]
+}
+
 type AdminDevotionalFacets = {
   totalAll: number
   withAudio?: number
@@ -80,6 +102,12 @@ export default function AdminDevotionalsPage() {
   const [cleanupLoading, setCleanupLoading] = useState(false)
   const [cleanupReport, setCleanupReport] = useState<CleanupReport | null>(null)
   const [exportLoading, setExportLoading] = useState(false)
+  const [importOpen, setImportOpen] = useState(false)
+  const [importCategory, setImportCategory] = useState('')
+  const [importFile, setImportFile] = useState<File | null>(null)
+  const [importLoading, setImportLoading] = useState(false)
+  const [importReport, setImportReport] = useState<ImportReport | null>(null)
+  const [importError, setImportError] = useState('')
 
   const debouncedSearch = useDebouncedValue(search)
 
@@ -275,6 +303,47 @@ export default function AdminDevotionalsPage() {
     }
   }
 
+  const openImport = () => {
+    setImportCategory(categoryFilter)
+    setImportFile(null)
+    setImportReport(null)
+    setImportError('')
+    setImportOpen(true)
+  }
+
+  const downloadImportTemplate = () => {
+    const params = new URLSearchParams()
+    if (importCategory) params.set('category', importCategory)
+    window.open(`/api/admin/devotionals/import?${params.toString()}`, '_blank')
+  }
+
+  // Same category-scoped contract as the export: pick a category, then upload its rows.
+  const runImport = async (mode: 'dry-run' | 'execute') => {
+    if (!importCategory) { setImportError('Select a category first'); return }
+    if (!importFile) { setImportError('Choose a CSV file first'); return }
+    setImportLoading(true)
+    setImportError('')
+    try {
+      const body = new FormData()
+      body.set('category', importCategory)
+      body.set('mode', mode)
+      body.set('file', importFile)
+      const res = await fetch('/api/admin/devotionals/import', { method: 'POST', credentials: 'include', body })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok || !data?.ok) {
+        setImportReport(null)
+        setImportError(data?.error || (data?.errors || []).join(', ') || 'Import failed')
+        return
+      }
+      setImportReport(data)
+      if (mode === 'execute') await fetchDevotionals()
+    } catch {
+      setImportError('Network error while importing')
+    } finally {
+      setImportLoading(false)
+    }
+  }
+
   // Preview modal item
   const previewItem = previewId ? devotionals.find(d => d._id === previewId) : null
 
@@ -306,6 +375,7 @@ export default function AdminDevotionalsPage() {
           <button onClick={exportCSV} disabled={exportLoading} className="admin-btn admin-btn-ghost px-4 py-2 text-sm disabled:opacity-60">
             {exportLoading ? 'Exporting...' : 'Export CSV'}
           </button>
+          <button onClick={openImport} className="admin-btn admin-btn-ghost px-4 py-2 text-sm">Import CSV</button>
           <Link href="/admin/devotionals/data-integrity" className="admin-btn admin-btn-ghost px-4 py-2 text-sm border-orange-200 text-orange-700 hover:bg-orange-50">Data Integrity</Link>
           <Link href="/admin/devotionals/new" className="admin-btn admin-btn-primary px-4 py-2 text-sm">+ New Devotional</Link>
         </div>
@@ -566,6 +636,96 @@ export default function AdminDevotionalsPage() {
           </div>
         )}
       </div>
+
+      {/* Import Modal */}
+      {importOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setImportOpen(false)}>
+          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="p-6 space-y-4">
+              <div className="flex items-start justify-between">
+                <div>
+                  <h2 className="text-lg font-bold text-gray-900">Import Devotionals</h2>
+                  <p className="admin-section-subtitle mt-1">Pick a category and upload a CSV. Rows are matched by ID, then Slug, then Title.</p>
+                </div>
+                <button onClick={() => setImportOpen(false)} className="p-1.5 rounded-xl hover:bg-gray-100 text-gray-400 transition-colors">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-600 mb-1">Category *</label>
+                <select value={importCategory} onChange={e => { setImportCategory(e.target.value); setImportReport(null) }} className="admin-input w-full">
+                  <option value="">Select a category</option>
+                  {categories.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-600 mb-1">CSV file *</label>
+                <input
+                  type="file"
+                  accept=".csv,text/csv"
+                  onChange={e => { setImportFile(e.target.files?.[0] || null); setImportReport(null) }}
+                  className="admin-input w-full text-sm"
+                />
+                <button type="button" onClick={downloadImportTemplate} className="mt-2 text-xs text-orange-600 hover:text-orange-700 font-semibold">
+                  Download blank template
+                </button>
+              </div>
+
+              {importError && (
+                <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{importError}</div>
+              )}
+
+              {importReport && (
+                <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-4 text-sm text-stone-800">
+                  <div className="grid gap-3 sm:grid-cols-5">
+                    <div><span className="block text-xs font-bold uppercase text-stone-500">Mode</span>{importReport.mode === 'dry-run' ? 'Preview' : 'Imported'}</div>
+                    <div><span className="block text-xs font-bold uppercase text-stone-500">Rows</span>{importReport.totalRows}</div>
+                    <div><span className="block text-xs font-bold uppercase text-stone-500">New</span>{importReport.created}</div>
+                    <div><span className="block text-xs font-bold uppercase text-stone-500">Updated</span>{importReport.updated}</div>
+                    <div><span className="block text-xs font-bold uppercase text-stone-500">Skipped</span>{importReport.skipped}</div>
+                  </div>
+                  {importReport.rows.length > 0 && (
+                    <div className="mt-3 max-h-56 overflow-y-auto space-y-1.5">
+                      {importReport.rows.map(row => (
+                        <div key={row.row} className="rounded-xl bg-white/80 px-3 py-2">
+                          <div className="flex items-center gap-2">
+                            <span className={`${row.action === 'create' ? 'admin-badge-green' : row.action === 'update' ? 'admin-badge-blue' : 'admin-badge-yellow'} text-[10px]`}>{row.action}</span>
+                            <span className="truncate font-semibold">Row {row.row}: {row.title || '(no title)'}</span>
+                          </div>
+                          {(row.reason || row.changedFields?.length) && (
+                            <span className="text-xs text-stone-500">{row.reason || `Changes: ${row.changedFields?.join(', ')}`}</span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => runImport('dry-run')}
+                  disabled={importLoading}
+                  className="admin-btn admin-btn-ghost px-4 py-2 text-sm disabled:opacity-60"
+                >
+                  {importLoading ? 'Working...' : 'Preview changes'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => runImport('execute')}
+                  disabled={importLoading || !importReport?.ok || importReport.mode === 'execute'}
+                  className="admin-btn admin-btn-primary px-4 py-2 text-sm disabled:opacity-60"
+                >
+                  Import {importReport && importReport.mode === 'dry-run' ? `${importReport.created + importReport.updated} row(s)` : ''}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Preview Modal */}
       {previewItem && (

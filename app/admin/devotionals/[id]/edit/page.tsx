@@ -5,16 +5,6 @@ import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { FULL_CATEGORIES } from '@/app/devotionals/components/categories'
 
-function createSlug(title: string): string {
-  const englishMatch = title.match(/\(([^)]+)\)/)
-  let text = englishMatch ? englishMatch[1] : title
-  let slug = text.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').trim()
-  if (!slug || slug === '-') {
-    slug = title.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').trim()
-  }
-  return slug || 'devotional'
-}
-
 export default function EditDevotionalPage() {
   const params = useParams()
   const id = params.id as string
@@ -208,7 +198,7 @@ export default function EditDevotionalPage() {
         </div>
         <div className="flex items-center gap-2">
           {formData.title && (
-            <a href={`/devotionals/${formData.slug || createSlug(formData.title)}`} target="_blank" rel="noopener noreferrer"
+            <a href={`/devotionals/${formData.slug || id}`} target="_blank" rel="noopener noreferrer"
               className="admin-btn admin-btn-ghost px-4 py-2 text-sm flex items-center gap-1.5 text-green-700 border-green-200 hover:bg-green-50">
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" /></svg>
               View Live

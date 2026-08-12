@@ -16,7 +16,8 @@ export function createDevotionalSlug(title: string): string {
   return slugify(text) || slugify(title) || 'devotional'
 }
 
-export function getDevotionalHref(devotional: Pick<Devotional, 'title' | '_id'>) {
+export function getDevotionalHref(devotional: Pick<Devotional, 'title' | '_id' | 'slug'>) {
+  if (devotional.slug) return `/devotionals/${devotional.slug}`
   const slug = createDevotionalSlug(devotional.title || '')
   return `/devotionals/${slug === 'devotional' ? devotional._id : slug}`
 }

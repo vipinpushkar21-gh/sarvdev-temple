@@ -13,13 +13,16 @@ const BASE = 'https://sarvdev.com'
 
 const PROJ = 'title description category categorySlug deity language audio audioUrl metaTitle metaDescription metaKeywords imageCard image'
 
-/** Efficient lookup: O(1) for ObjectId, minimal-stub scan for title slugs. */
+/** Efficient lookup: O(1) for ObjectId and stored slug, minimal-stub scan for legacy title slugs. */
 async function findDevotional(id: string): Promise<any | null> {
   await connectDB()
   if (mongoose.Types.ObjectId.isValid(id)) {
     const doc = await Devotional.findOne({ _id: id, status: 'approved' }, PROJ).lean()
     if (doc) return doc
   }
+  const bySlug = await Devotional.findOne({ slug: id, status: 'approved' }, PROJ).lean()
+  if (bySlug) return bySlug
+
   const stubs = await Devotional.find({ status: 'approved' }, '_id title').lean() as any[]
   const match = stubs.find((s: any) => createDevotionalSlug(s.title ?? '') === id)
   if (!match) return null
