@@ -4,6 +4,7 @@ import { sanitizeImageUrl } from './imageGuard'
 
 export type SpiritualIconRecord = {
   _id?: string
+  isStaticFallback?: boolean
   id?: string
   name: string
   nameHi?: string
@@ -93,6 +94,7 @@ export function normalizeSpiritualIcon(input: any): SpiritualIconRecord {
 
   return {
     _id: input._id ? String(input._id) : undefined,
+    isStaticFallback: Boolean(input.isStaticFallback),
     id: input.id ? String(input.id) : undefined,
     name,
     nameHi: input.nameHi || '',

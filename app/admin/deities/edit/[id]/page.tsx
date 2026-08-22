@@ -10,10 +10,15 @@ import { compactText } from "../../../../../lib/text-formatting"
 type FormState = {
   name: string
   nameHi: string
+  slug: string
+  staticSlug: string
+  order: string
   description: string
   descriptionHi: string
   mantra: string
   attributes: string
+  aliases: string
+  slugAliases: string
   categories: string[]
   imageUrl: string
   imageCard: string
@@ -24,6 +29,7 @@ type FormState = {
   metaKeywords: string
   ogImage: string
   status: string
+  source: string
 }
 
 const i = "admin-input w-full"
@@ -46,10 +52,15 @@ export default function AdminEditDeityPage({ params }: { params: Promise<{ id: s
   const [form, setForm] = useState<FormState>({
     name: "",
     nameHi: "",
+    slug: "",
+    staticSlug: "",
+    order: "0",
     description: "",
     descriptionHi: "",
     mantra: "",
     attributes: "",
+    aliases: "",
+    slugAliases: "",
     categories: [],
     imageUrl: "",
     imageCard: "",
@@ -59,7 +70,8 @@ export default function AdminEditDeityPage({ params }: { params: Promise<{ id: s
     metaDescription: "",
     metaKeywords: "",
     ogImage: "",
-    status: "pending"
+    status: "pending",
+    source: "manual"
   })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -96,10 +108,15 @@ export default function AdminEditDeityPage({ params }: { params: Promise<{ id: s
           setForm({
             name: deity.name || "",
             nameHi: deity.nameHi || "",
+            slug: deity.slug || "",
+            staticSlug: deity.staticSlug || "",
+            order: String(deity.order ?? 0),
             description: deity.description || "",
             descriptionHi: deity.descriptionHi || "",
             mantra: deity.mantra || "",
             attributes: Array.isArray(deity.attributes) ? deity.attributes.join(', ') : "",
+            aliases: Array.isArray(deity.aliases) ? deity.aliases.join(', ') : "",
+            slugAliases: Array.isArray(deity.slugAliases) ? deity.slugAliases.join(', ') : "",
             categories: selectedCategories,
             imageUrl: deity.image || "",
             imageCard: deity.imageCard || "",
@@ -109,7 +126,8 @@ export default function AdminEditDeityPage({ params }: { params: Promise<{ id: s
             metaDescription: deity.metaDescription || "",
             metaKeywords: deity.metaKeywords || "",
             ogImage: deity.ogImage || "",
-            status: ['pending', 'approved', 'rejected'].includes(deity.status) ? deity.status : "approved"
+            status: ['pending', 'approved', 'rejected'].includes(deity.status) ? deity.status : "approved",
+            source: deity.source || "manual"
           })
         }
       } catch (err) {
@@ -167,9 +185,14 @@ export default function AdminEditDeityPage({ params }: { params: Promise<{ id: s
         id,
         name: form.name,
         nameHi: form.nameHi,
+        slug: form.slug,
+        staticSlug: form.staticSlug,
+        order: Number(form.order) || 0,
         description: form.description,
         descriptionHi: form.descriptionHi,
         mantra: form.mantra,
+        aliases: form.aliases.split(',').map(value => value.trim()).filter(Boolean),
+        slugAliases: form.slugAliases.split(',').map(value => value.trim()).filter(Boolean),
         categories: form.categories,
         metaTitle: form.metaTitle,
         metaDescription: form.metaDescription,
@@ -181,6 +204,7 @@ export default function AdminEditDeityPage({ params }: { params: Promise<{ id: s
         image: form.imageUrl,
         imageCard: form.imageCard,
         imageHero: form.imageHero,
+        allowSlugChange: true,
       }
 
       const res = await fetch('/api/deities', {
@@ -275,6 +299,16 @@ export default function AdminEditDeityPage({ params }: { params: Promise<{ id: s
             </div>
 
             <div>
+              <label className={l}>Public Slug</label>
+              <input type="text" className={i} value={form.slug} onChange={(e) => handleChange('slug', e.target.value)} />
+            </div>
+
+            <div>
+              <label className={l}>Static Slug</label>
+              <input type="text" className={i} value={form.staticSlug} onChange={(e) => handleChange('staticSlug', e.target.value)} />
+            </div>
+
+            <div>
               <label className={l}>Categories (Multiple Select)</label>
               <select
                 multiple
@@ -304,6 +338,11 @@ export default function AdminEditDeityPage({ params }: { params: Promise<{ id: s
                 <option value="approved">Approved</option>
                 <option value="rejected">Rejected</option>
               </select>
+            </div>
+
+            <div>
+              <label className={l}>Display Order</label>
+              <input type="number" className={i} value={form.order} onChange={(e) => handleChange('order', e.target.value)} />
             </div>
           </div>
         </div>
@@ -364,6 +403,16 @@ export default function AdminEditDeityPage({ params }: { params: Promise<{ id: s
                 onChange={(e) => handleChange('attributes', e.target.value)}
                 placeholder="e.g., Destroyer, Trishul, Third Eye, Mount Kailash"
               />
+            </div>
+
+            <div>
+              <label className={l}>Aliases (comma-separated)</label>
+              <input type="text" className={i} value={form.aliases} onChange={(e) => handleChange('aliases', e.target.value)} placeholder="e.g., Mahadev, Bholenath" />
+            </div>
+
+            <div>
+              <label className={l}>Slug Aliases (comma-separated)</label>
+              <input type="text" className={i} value={form.slugAliases} onChange={(e) => handleChange('slugAliases', e.target.value)} placeholder="e.g., mahadev, bholenath" />
             </div>
           </div>
         </div>

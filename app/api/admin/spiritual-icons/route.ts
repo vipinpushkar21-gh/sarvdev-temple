@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { AUTH_COOKIE_NAME, verifyToken } from '@/lib/auth'
 import { connectDB } from '@/lib/db'
-import { normalizeSpiritualIcon } from '@/lib/spiritual-icons'
+import { filterSpiritualIcons, getStaticSpiritualIconsForSeed, normalizeSpiritualIcon } from '@/lib/spiritual-icons'
 import ActivityLog from '@/models/ActivityLog'
 import SpiritualIcon from '@/models/SpiritualIcon'
 
@@ -76,19 +76,37 @@ export async function GET(req: NextRequest) {
       const page = Math.max(1, parseInt(pageParam, 10) || 1)
       const limit = Math.min(100, Math.max(1, parseInt(limitParam || '25', 10)))
       const skip = (page - 1) * limit
-      const [items, total] = await Promise.all([
+      let [items, total] = await Promise.all([
         SpiritualIcon.find(filter, { __v: 0 }).sort({ featured: -1, priority: 1, name: 1 }).skip(skip).limit(limit).lean(),
         SpiritualIcon.countDocuments(filter),
       ])
+      if (total === 0) {
+        let staticRecords = filterSpiritualIcons(getStaticSpiritualIconsForSeed(), searchParams)
+        const status = searchParams.get('status')
+        if (status) staticRecords = staticRecords.filter((item) => item.status === status)
+        if (searchParams.get('verified') === 'true') staticRecords = staticRecords.filter((item) => item.verified)
+        if (searchParams.get('featured') === 'true') staticRecords = staticRecords.filter((item) => item.featured)
+        staticRecords = staticRecords.map((item) => ({ ...item, _id: `static-${item.slug}`, isStaticFallback: true }))
+        items = staticRecords.slice(skip, skip + limit) as any
+        total = staticRecords.length
+      }
       const normalized = items.map(normalizeSpiritualIcon)
       return NextResponse.json({ items: normalized, data: normalized, total, page, pages: Math.ceil(total / limit), limit, hasMore: page * limit < total })
     }
 
     const legacyLimit = Math.min(100, Math.max(1, parseInt(limitParam || '50', 10) || 50))
-    const items = await SpiritualIcon.find(filter, { __v: 0 })
+    let items = await SpiritualIcon.find(filter, { __v: 0 })
       .sort({ featured: -1, priority: 1, name: 1 })
       .limit(legacyLimit)
       .lean()
+    if (items.length === 0) {
+      let staticRecords = filterSpiritualIcons(getStaticSpiritualIconsForSeed(), searchParams)
+      const status = searchParams.get('status')
+      if (status) staticRecords = staticRecords.filter((item) => item.status === status)
+      if (searchParams.get('verified') === 'true') staticRecords = staticRecords.filter((item) => item.verified)
+      if (searchParams.get('featured') === 'true') staticRecords = staticRecords.filter((item) => item.featured)
+      items = staticRecords.map((item) => ({ ...item, _id: `static-${item.slug}`, isStaticFallback: true })) as any
+    }
     return NextResponse.json(items.map(normalizeSpiritualIcon))
   } catch (error) {
     return NextResponse.json({ error: 'Failed to fetch spiritual icons' }, { status: 500 })

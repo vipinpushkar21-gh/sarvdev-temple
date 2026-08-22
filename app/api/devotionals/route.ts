@@ -21,6 +21,7 @@ export const revalidate = 0
 let _cache: { data: any[]; ts: number } | null = null
 const CACHE_TTL = 60_000
 const DEVOTIONAL_IMAGE_FIELDS = ['image', 'imageCard', 'imageHero', 'ogImage', 'thumbnail', 'coverImage'] as const
+const DEVOTIONAL_PROTECTED_IMAGE_FIELDS = ['imageCard', 'imageHero', 'ogImage', 'thumbnail', 'coverImage'] as const
 const ALLOW_REMOTE_FALLBACK = process.env.NODE_ENV === 'production'
 
 function isAdmin(request: NextRequest) {
@@ -138,7 +139,7 @@ async function getAdminDevotionalFacets() {
 
 function removeDevotionalImageFields<T extends Record<string, any>>(input: T): T {
   const output = { ...input }
-  for (const field of DEVOTIONAL_IMAGE_FIELDS) {
+  for (const field of DEVOTIONAL_PROTECTED_IMAGE_FIELDS) {
     delete output[field]
   }
   return output
@@ -424,6 +425,10 @@ export async function POST(request: NextRequest) {
     await connectDB()
     const body = await request.json()
     const safe = removeDevotionalImageFields(body)
+    if (safe.category === 'Mantra') {
+      const { isValidMantraSubcategory, MANTRA_SUBCATEGORIES } = await import('@/lib/mantra-subcategories')
+      if (!isValidMantraSubcategory(safe.subcategory)) return NextResponse.json({ error: `Mantra Subcategory is required and must be one of: ${MANTRA_SUBCATEGORIES.join(' | ')}` }, { status: 400 })
+    }
 
     // Auto-generate slug from title if not provided
     if (!safe.slug && safe.title) {
@@ -458,6 +463,16 @@ export async function PUT(request: NextRequest) {
     const body = await request.json()
     const { id, ...updateData } = body
     const safe = removeDevotionalImageFields(updateData)
+    const existingCategoryRecord: any = Object.prototype.hasOwnProperty.call(safe, 'subcategory')
+      ? await Devotional.findById(id).select('category').lean()
+      : null
+    const categoryForValidation = safe.category || (
+      existingCategoryRecord?.category
+    )
+    if (categoryForValidation === 'Mantra') {
+      const { isValidMantraSubcategory, MANTRA_SUBCATEGORIES } = await import('@/lib/mantra-subcategories')
+      if (!isValidMantraSubcategory(safe.subcategory)) return NextResponse.json({ error: `Mantra Subcategory is required and must be one of: ${MANTRA_SUBCATEGORIES.join(' | ')}` }, { status: 400 })
+    }
 
     // Preserve existing slug — only update if explicitly provided and non-empty
     if (!safe.slug) delete safe.slug

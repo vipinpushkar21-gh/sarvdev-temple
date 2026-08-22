@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
+import ImageUpload from '@/components/ImageUpload'
 import { FULL_CATEGORIES } from '@/app/devotionals/components/categories'
 
 export default function EditDevotionalPage() {
@@ -37,6 +38,7 @@ export default function EditDevotionalPage() {
     metaTitle: '',
     metaDescription: '',
     metaKeywords: '',
+    image: '',
   })
 
   useEffect(() => {
@@ -66,6 +68,7 @@ export default function EditDevotionalPage() {
               metaTitle: found.metaTitle || '',
               metaDescription: found.metaDescription || '',
               metaKeywords: found.metaKeywords || '',
+              image: found.image || '',
             })
           } else {
             showToast('error', 'Devotional not found')
@@ -85,7 +88,7 @@ export default function EditDevotionalPage() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target
     const checked = (e.target as HTMLInputElement).checked
-    setFormData({ ...formData, [name]: type === 'checkbox' ? checked : value })
+    setFormData({ ...formData, [name]: type === 'checkbox' ? checked : value, ...(name === 'category' ? { subcategory: '' } : {}) })
   }
 
   const autoGenerateSEO = () => {
@@ -147,6 +150,7 @@ export default function EditDevotionalPage() {
               metaTitle: found.metaTitle || '',
               metaDescription: found.metaDescription || '',
               metaKeywords: found.metaKeywords || '',
+              image: found.image || '',
             })
           }
         }
@@ -255,12 +259,12 @@ export default function EditDevotionalPage() {
             </div>
           </div>
 
-          {formData.category === 'Aarti' && (
+          {(formData.category === 'Aarti' || formData.category === 'Mantra') && (
             <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1">Aarti Subcategory</label>
-              <select name="subcategory" value={formData.subcategory} onChange={handleChange} className="admin-input w-full">
+              <label className="block text-sm font-medium text-gray-600 mb-1">{formData.category} Subcategory</label>
+              <select name="subcategory" value={formData.subcategory} onChange={handleChange} required={formData.category === 'Mantra'} className="admin-input w-full">
                 <option value="">— Select Subcategory —</option>
-                {FULL_CATEGORIES.find((cat) => cat.id === 'Aarti')?.subcategories?.map((sub) => (
+                {FULL_CATEGORIES.find((cat) => cat.id === formData.category)?.subcategories?.map((sub) => (
                   <option key={sub.id} value={sub.id}>{sub.label}</option>
                 ))}
               </select>
@@ -300,6 +304,13 @@ export default function EditDevotionalPage() {
           <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-4 text-sm text-amber-900">
             Public devotional pages currently use one optimized fallback image for speed. Devotional-specific and deity images are ignored on the public devotional UI for now.
           </div>
+          <ImageUpload
+            value={formData.image}
+            onChange={(url) => setFormData({ ...formData, image: url })}
+            folder="devotionals"
+            label="Devotional Image"
+            guidance="devotionalCard"
+          />
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-1">Audio URL</label>
             <input type="url" name="audio" value={formData.audio} onChange={handleChange} className="admin-input w-full" placeholder="https://example.com/audio.mp3" />

@@ -5,6 +5,7 @@ import { AUTH_COOKIE_NAME, verifyToken } from '@/lib/auth'
 import { connectDB } from '@/lib/db'
 import { runDevotionalImport, type DevotionalImportMode } from '@/lib/devotional-import'
 import { getCategoryByName } from '@/lib/devotional-categories'
+import { MANTRA_SUBCATEGORIES } from '@/lib/mantra-subcategories'
 
 export const dynamic = 'force-dynamic'
 
@@ -25,15 +26,17 @@ export async function GET(request: NextRequest) {
   if (!isAdmin(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const category = new URL(request.url).searchParams.get('category') || ''
-  const sampleRow = TEMPLATE_HEADERS.map((header) => {
-    if (header === 'Category') return `"${category}"`
+  const templateSubcategories = category === 'Mantra' ? MANTRA_SUBCATEGORIES : [null]
+  const sampleRows = templateSubcategories.map((subcategory) => TEMPLATE_HEADERS.map((header) => {
+    if (header === 'Category') return `"${category.replace(/"/g, '""')}"`
+    if (header === 'Subcategory' && subcategory) return `"${subcategory.replace(/"/g, '""')}"`
     if (header === 'Status') return '"approved"'
     if (header === 'Featured') return '"false"'
     return '""'
-  }).join(',')
+  }).join(','))
 
   const filename = `devotionals-import-template${category ? `-${getCategoryByName(category)?.slug ?? category.toLowerCase()}` : ''}.csv`
-  return new NextResponse(`\uFEFF${TEMPLATE_HEADERS.join(',')}\n${sampleRow}`, {
+  return new NextResponse(`\uFEFF${TEMPLATE_HEADERS.join(',')}\n${sampleRows.join('\n')}`, {
     headers: {
       'Content-Type': 'text/csv; charset=utf-8',
       'Content-Disposition': `attachment; filename="${filename}"`,

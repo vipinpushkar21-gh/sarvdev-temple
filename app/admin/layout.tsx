@@ -285,6 +285,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <button type="button" onClick={() => setCommandOpen(true)} className="admin-topbar-pill hidden md:inline-flex">
               <Search className="h-4 w-4" />
               Search
+              <span className="admin-keycap">Ctrl K</span>
             </button>
             <Link href="/" target="_blank" className="admin-topbar-pill no-underline hover:no-underline">
               <Globe className="h-4 w-4" />

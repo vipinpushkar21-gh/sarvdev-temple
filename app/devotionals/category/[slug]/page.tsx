@@ -39,14 +39,25 @@ export default function CategoryPage() {
     let cancelled = false
     async function load() {
       try {
-        const params = new URLSearchParams({ page: '1', limit: '60' })
+        const params = new URLSearchParams({ page: '1', limit: '100' })
         params.set('categorySlug', categorySlug)
         if (categoryInfo?.id) params.set('category', categoryInfo.id)
         const res = await fetch(`/api/devotionals?${params.toString()}`, { cache: 'no-store' })
         if (!res.ok) return
         const data = await res.json()
+        const firstItems = Array.isArray(data) ? data : (data.items || data.data || [])
+        const totalPages = Array.isArray(data) ? 1 : Math.max(1, Number(data.pages || 1))
+        const remainingPages = await Promise.all(
+          Array.from({ length: totalPages - 1 }, (_, index) => {
+            const pageParams = new URLSearchParams(params)
+            pageParams.set('page', String(index + 2))
+            return fetch(`/api/devotionals?${pageParams.toString()}`, { cache: 'no-store' })
+              .then((pageRes) => pageRes.ok ? pageRes.json() : null)
+              .then((pageData) => Array.isArray(pageData) ? pageData : (pageData?.items || pageData?.data || []))
+          })
+        )
         if (!cancelled) {
-          const items = Array.isArray(data) ? data : (data.items || data.data || [])
+          const items = [firstItems, ...remainingPages].flat()
           const approved = items.filter((item: Devotional) => item.status === 'approved' || !item.status)
           setAllDevotionals(approved)
         }
@@ -78,7 +89,6 @@ export default function CategoryPage() {
   ], [categoryDevotionals.length, deityCounts])
 
   const subcategoryCounts = useMemo(() => {
-    if (categoryInfo?.id !== 'Aarti') return []
     const counts = new Map<string, number>()
     categoryDevotionals.forEach((devotional) => {
       if (!devotional.subcategory) return
@@ -88,12 +98,17 @@ export default function CategoryPage() {
   }, [categoryDevotionals, categoryInfo?.id])
 
   const subcategoryChips = useMemo(() => {
-    if (categoryInfo?.id !== 'Aarti') return []
-    const aartiCategory = FULL_CATEGORIES.find((cat) => cat.id === 'Aarti')
-    if (!aartiCategory?.subcategories) return []
+    const filterCategory = FULL_CATEGORIES.find((cat) => cat.id === categoryInfo?.id)
+    const configuredSubcategories = filterCategory?.subcategories || []
+    const configuredIds = new Set(configuredSubcategories.map((sub) => sub.id))
+    const discoveredSubcategories = subcategoryCounts
+      .filter(([id]) => !configuredIds.has(id))
+      .map(([id]) => ({ id, label: id, hindi: id }))
+    const subcategories = [...configuredSubcategories, ...discoveredSubcategories]
+    if (subcategories.length === 0) return []
     return [
       { id: 'all', label: 'सब (All)', meta: categoryDevotionals.length },
-      ...aartiCategory.subcategories.map((sub) => ({
+      ...subcategories.map((sub) => ({
         id: sub.id,
         label: sub.label,
         meta: subcategoryCounts.find(([id]) => id === sub.id)?.[1] || 0,
@@ -105,7 +120,7 @@ export default function CategoryPage() {
     const term = search.trim().toLowerCase()
     return categoryDevotionals.filter((devotional) => {
       if (selectedDeity !== 'all' && devotional.deity !== selectedDeity) return false
-      if (categoryInfo?.id === 'Aarti' && selectedSubcategory !== 'all' && devotional.subcategory !== selectedSubcategory) return false
+      if (selectedSubcategory !== 'all' && devotional.subcategory !== selectedSubcategory) return false
       if (!term) return true
       return [devotional.title, devotional.description, devotional.deity, devotional.language, devotional.artist]
         .filter(Boolean)
@@ -220,9 +235,9 @@ export default function CategoryPage() {
                 </p>
               </div>
               <div className="rounded-2xl bg-orange-50 p-5">
-                <p className="text-sm font-black text-stone-900">SEO focus</p>
+                <p className="text-sm font-black text-stone-900">इस category में</p>
                 <p className="mt-2 text-sm leading-6 text-stone-600">
-                  {label} lyrics, {label.toLowerCase()} audio, Hindi and Sanskrit devotional reading, and deity-wise discovery.
+                  {label} के पाठ, audio, Hindi और Sanskrit सामग्री के साथ देवी-देवता के अनुसार खोज।
                 </p>
               </div>
             </div>

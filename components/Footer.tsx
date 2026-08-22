@@ -69,7 +69,7 @@ export default function Footer() {
       setEmail('')
     } catch {
       setSubStatus('error')
-      setSubMsg('Something went wrong. Please try again.')
+      setSubMsg(t('common.newsletterError'))
     }
   }
 
@@ -95,7 +95,7 @@ export default function Footer() {
                   Sarvdev
                 </span>
                 <span className="text-[9px] font-cinzel text-temple-gold-light/60 tracking-[0.18em] uppercase -mt-0.5">
-                  Temple & Devotional Hub
+                  {t('common.templeDevotionalHub')}
                 </span>
               </div>
             </Link>
@@ -114,18 +114,18 @@ export default function Footer() {
             <div className="mt-6 flex items-center gap-3">
               <Link href="/list-temple" className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-caption font-bold bg-gradient-to-r from-primary to-primary-600 text-white shadow-md shadow-primary/20 hover:shadow-lg hover:brightness-110 transition-all duration-300 no-underline hover:no-underline">
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
-                Submit Temple
+                {t('common.submitTemple')}
               </Link>
               <Link href="/bookmarks" className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-caption font-semibold bg-white/[0.06] text-secondary-300 border border-white/[0.1] hover:bg-white/[0.1] hover:text-white transition-all duration-300 no-underline hover:no-underline">
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" /></svg>
-                Bookmarks
+                {t('common.bookmarks')}
               </Link>
             </div>
           </div>
 
           {/* Quick Links */}
           <nav aria-label="Quick links">
-            <h3 className="text-overline font-cinzel uppercase tracking-wider text-temple-gold-DEFAULT/70 mb-4">Explore</h3>
+            <h3 className="text-overline font-cinzel uppercase tracking-wider text-temple-gold-DEFAULT/70 mb-4">{t('common.explore')}</h3>
             <ul className="space-y-2.5">
               {quickLinks.map(link => (
                 <li key={link.href}>
@@ -137,7 +137,7 @@ export default function Footer() {
 
           {/* States */}
           <nav aria-label="Popular states">
-            <h3 className="text-overline font-cinzel uppercase tracking-wider text-temple-gold-DEFAULT/70 mb-4">Top States</h3>
+            <h3 className="text-overline font-cinzel uppercase tracking-wider text-temple-gold-DEFAULT/70 mb-4">{t('common.popularStates')}</h3>
             <ul className="space-y-2.5">
               {popularStates.map(link => (
                 <li key={link.href}>
@@ -149,7 +149,7 @@ export default function Footer() {
 
           {/* Deities */}
           <nav aria-label="Popular deities">
-            <h3 className="text-overline font-cinzel uppercase tracking-wider text-temple-gold-DEFAULT/70 mb-4">Deities</h3>
+            <h3 className="text-overline font-cinzel uppercase tracking-wider text-temple-gold-DEFAULT/70 mb-4">{t('nav.deities')}</h3>
             <ul className="space-y-2.5">
               {popularDeities.map(link => (
                 <li key={link.href}>
@@ -161,7 +161,7 @@ export default function Footer() {
 
           {/* Pilgrimages */}
           <nav aria-label="Pilgrimage circuits">
-            <h3 className="text-overline font-cinzel uppercase tracking-wider text-temple-gold-DEFAULT/70 mb-4">Pilgrimages</h3>
+            <h3 className="text-overline font-cinzel uppercase tracking-wider text-temple-gold-DEFAULT/70 mb-4">{t('common.pilgrimages')}</h3>
             <ul className="space-y-2.5">
               {pilgrimageLinks.map(link => (
                 <li key={link.href}>
@@ -187,9 +187,9 @@ export default function Footer() {
       <div className="border-t border-secondary-800/60 relative z-10">
         <div className="page-container py-8">
           <div className="max-w-2xl mx-auto text-center">
-            <h3 className="font-cinzel text-overline uppercase tracking-[0.18em] text-temple-gold-light/70 mb-2">Sacred Updates</h3>
-            <p className="text-lg font-serif font-bold text-white mb-1">Join our spiritual community</p>
-            <p className="text-body-sm text-secondary-400 mb-5">Get daily darshan, temple updates, and devotional content delivered to your inbox.</p>
+            <h3 className="font-cinzel text-overline uppercase tracking-[0.18em] text-temple-gold-light/70 mb-2">{t('common.newsletterTitle')}</h3>
+            <p className="text-lg font-serif font-bold text-white mb-1">{t('common.newsletterJoin')}</p>
+            <p className="text-body-sm text-secondary-400 mb-5">{t('common.newsletterDescription')}</p>
             {subStatus === 'success' ? (
               <p className="text-sm font-semibold text-emerald-400">{subMsg}</p>
             ) : (
@@ -208,7 +208,7 @@ export default function Footer() {
                   className="px-5 py-2.5 rounded-xl text-sm font-bold text-white flex-shrink-0 transition-all disabled:opacity-60"
                   style={{ background: 'linear-gradient(135deg, #FF9933, #E67E22)', boxShadow: '0 4px 14px rgba(255,153,51,0.3)' }}
                 >
-                  {subStatus === 'loading' ? 'Subscribing...' : 'Subscribe'}
+                  {subStatus === 'loading' ? t('common.subscribing') : t('common.subscribe')}
                 </button>
               </form>
             )}
@@ -245,9 +245,9 @@ export default function Footer() {
             &copy; {new Date().getFullYear()} Sarvdev. {t('footer.rights')}
           </p>
           <p className="text-caption text-secondary-500 flex items-center gap-1.5">
-            Built for the community, with
+            {t('common.builtForCommunity')}
             <span className="inline-block text-primary animate-pulse">&#9829;</span>
-            reverence &amp; devotion.
+            {t('common.reverenceDevotion')}
           </p>
         </div>
       </div>

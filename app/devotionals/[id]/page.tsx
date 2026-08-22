@@ -59,7 +59,10 @@ export default function DevotionalDetailPage() {
     return () => { cancelled = true }
   }, [slug])
 
-  const title = useMemo(() => renderBilingualTitle(devotional?.title || ''), [devotional?.title])
+  const title = useMemo(
+    () => renderBilingualTitle(devotional?.title || '', devotional?.titleHi, language),
+    [devotional?.title, devotional?.titleHi, language]
+  )
 
   async function sharePage() {
     const url = typeof window !== 'undefined' ? window.location.href : ''

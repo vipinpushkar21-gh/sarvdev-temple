@@ -184,11 +184,12 @@ export default function AdminDashboardPage() {
   ]
 
   return (
-    <div className="space-y-6 pb-8">
+    <div className="admin-dashboard space-y-6 pb-8">
       <AdminPageHeader
-        eyebrow="Command Center"
+        eyebrow="Admin Console"
         title="Dashboard"
         subtitle={pendingApprovals > 0 ? `${pendingApprovals} approval task${pendingApprovals === 1 ? '' : 's'} need review.` : 'All critical admin queues are clear.'}
+        status={pendingApprovals > 0 ? 'attention' : 'healthy'}
         actions={
           <>
             <button onClick={() => loadDashboard(true)} disabled={refreshing} className="admin-btn admin-btn-ghost px-4 py-2 text-sm disabled:opacity-50">

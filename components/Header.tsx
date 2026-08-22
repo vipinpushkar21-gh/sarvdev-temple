@@ -157,8 +157,8 @@ export default function Header() {
               <span className="text-[1.1rem] font-serif font-bold text-white tracking-tight group-hover:text-accent transition-colors duration-300">
                 Sarvdev
               </span>
-              <span className="text-[9px] font-cinzel text-temple-gold-light/70 tracking-[0.18em] uppercase leading-none -mt-0.5 hidden sm:block">
-                Temple & Devotional Hub
+                <span className="text-[9px] font-cinzel text-temple-gold-light/70 tracking-[0.18em] uppercase leading-none -mt-0.5 hidden sm:block">
+                {t('common.templeDevotionalHub')}
               </span>
             </div>
           </Link>
@@ -216,7 +216,7 @@ export default function Header() {
                         <div className="grid grid-cols-4 gap-0 p-4">
                           {megaMenuData[megaKey as keyof typeof megaMenuData].columns.map((col) => (
                             <div key={col.title}>
-                              <h4 className="text-[10px] font-bold uppercase tracking-wider text-ink-faint mb-2 px-2">{col.title}</h4>
+                              <h4 className="text-[10px] font-bold uppercase tracking-wider text-ink-faint mb-2 px-2">{t(col.title === 'By Region' ? 'common.byRegion' : col.title === 'By Deity' ? 'common.byDeity' : col.title === 'Pilgrimages' ? 'common.pilgrimages' : 'common.popularStates')}</h4>
                               <ul className="space-y-0.5">
                                 {col.links.map((link) => (
                                   <li key={link.href}>
@@ -234,9 +234,9 @@ export default function Header() {
                           ))}
                         </div>
                         <div className="px-4 py-2.5 bg-surface-sunken border-t border-surface-border flex items-center justify-between">
-                          <span className="text-[10px] text-ink-muted">Explore 1000+ temples across India</span>
+                          <span className="text-[10px] text-ink-muted">{t('common.exploreTemples')}</span>
                           <Link href="/temples" className="text-[10px] font-bold text-primary-600 no-underline hover:no-underline hover:text-primary-800" onClick={() => setMegaOpen(null)}>
-                            Browse All →
+                            {t('common.browseAll')} →
                           </Link>
                         </div>
                       </div>
@@ -278,7 +278,7 @@ export default function Header() {
                         onClick={() => setUserMenuOpen(false)}
                       >
                         <svg className="w-4 h-4 text-ink-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                        Admin Dashboard
+                        {t('common.adminDashboard')}
                       </Link>
                     )}
                     <button
@@ -286,7 +286,7 @@ export default function Header() {
                       className="w-full flex items-center gap-2.5 text-left px-4 py-3 text-body-sm text-semantic-error hover:bg-red-50 transition-colors"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" /></svg>
-                      Logout
+                      {t('common.logout')}
                     </button>
                   </div>
                 </div>
@@ -348,7 +348,7 @@ export default function Header() {
               <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent shadow-md">
                 <span className="text-white font-serif font-bold text-sm">S</span>
               </span>
-              <span className="text-h4 font-serif font-bold text-secondary-800">Menu</span>
+              <span className="text-h4 font-serif font-bold text-secondary-800">{t('common.menu')}</span>
             </div>
             <button
               onClick={() => setOpen(false)}

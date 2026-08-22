@@ -4,6 +4,7 @@ import { Clock, Headphones, Languages, Music2, Sparkles } from 'lucide-react'
 import BookmarkButton from '../../../components/BookmarkButton'
 import SarvdevImage from '../../../components/SarvdevImage'
 import { getDevotionalCardImage } from '../../../lib/devotional-image'
+import { useTranslation } from '../../../lib/translation'
 import type { Devotional } from '../types'
 import { renderBilingualTitle } from '../utils/bilingual'
 import { getDevotionalHref } from './devotional-utils'
@@ -16,7 +17,8 @@ type Props = {
 }
 
 export default function DevotionalCardPremium({ devotional, featured, compact, highlight }: Props) {
-  const title = renderBilingualTitle(devotional.title || '')
+  const { language } = useTranslation()
+  const title = renderBilingualTitle(devotional.title || '', devotional.titleHi, language)
   const image = getDevotionalCardImage(devotional)
   const href = getDevotionalHref(devotional)
 

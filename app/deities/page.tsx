@@ -6,6 +6,7 @@ import Link from 'next/link'
 import SarvdevImage from '../../components/SarvdevImage'
 import { getDeityCardImage, getDeityHeroImage } from '../../lib/temple-image'
 import { resolveCategoryForDeity } from '../../lib/deity-categories'
+import { useTranslation } from '../../lib/translation'
 
 /* ─── Deity Data ─── */
 
@@ -1666,6 +1667,7 @@ function normalizeDbDeityForPublic(deity: any, category: DeityCategory) {
 /* ─── Page Component ─── */
 
 export default function DeitiesPage() {
+  const { t, language } = useTranslation()
   const [activeCategory, setActiveCategory] = useState<string | null>(null)
   const [expandedDeity, setExpandedDeity] = useState<string | null>(null)
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set())
@@ -1860,31 +1862,31 @@ export default function DeitiesPage() {
         <div className="page-container relative z-10 flex min-h-[620px] items-end py-14 md:py-20">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
             <span className="inline-flex items-center gap-2 rounded-full border border-amber-200/25 bg-amber-300/15 px-3 py-1.5 text-xs font-black uppercase tracking-[0.18em] text-amber-100 backdrop-blur">
-              Sacred Encyclopedia
+              {t('common.sacredEncyclopedia')}
             </span>
             <h1 className="mt-5 text-[clamp(3.2rem,8vw,7rem)] font-serif text-white leading-[0.92] tracking-normal drop-shadow-2xl">
-              देवी-देवता <span className="text-primary-300">Deities</span>
+              {language === 'hi' ? 'देवी-देवता' : t('common.deitiesTitle')} <span className="text-primary-300">{language === 'hi' ? 'देवी-देवता' : t('common.deities')}</span>
             </h1>
             <p className="mt-5 text-lg md:text-xl leading-8 text-white/82 max-w-3xl">
-              Hindu dharma mein 33 Koti (33 prakar/types) devi-devta maane jate hain — Explore the divine pantheon of Hindu deities organized by their sacred categories.
+              {language === 'hi' ? 'हिन्दू धर्म में ३३ कोटि (३३ प्रकार) देवी-देवता माने जाते हैं — पवित्र श्रेणियों में व्यवस्थित देवी-देवताओं के दिव्य संसार को जानें।' : t('common.deitiesDescription')}
             </p>
             <p className="mt-2 text-body-sm text-amber-50/75 max-w-3xl font-devanagari leading-7">
-              हिन्दू धर्म में ३३ कोटि (३३ प्रकार) देवी-देवता माने जाते हैं — सभी प्रमुख और पूज्य देवी-देवताओं की विस्तृत सूची
+              {t('common.deitiesHindiDescription')}
             </p>
             {/* Stats */}
             <div className="mt-7 flex flex-wrap items-center gap-3">
-              <span className="stat-pill">🕉️ {totalDeities} Deities</span>
-              <span className="stat-pill">📂 {DEITY_CATEGORIES.length} Categories</span>
+              <span className="stat-pill">🕉️ {totalDeities} {t('common.deities')}</span>
+              <span className="stat-pill">📂 {DEITY_CATEGORIES.length} {t('common.categories')}</span>
             </div>
 
             <p className="mt-3 text-sm font-semibold text-amber-100/80">
-              Category order and deity sequence are preserved as Sarvdev reference order.
+              {t('common.categoryOrder')}
             </p>
 
             {/* Explore Filters */}
             <div className="mt-8 max-w-2xl">
               <div className="mt-0">
-                <p className="mb-2 text-xs font-black uppercase tracking-[0.18em] text-amber-100/80">Explore By</p>
+                <p className="mb-2 text-xs font-black uppercase tracking-[0.18em] text-amber-100/80">{t('common.exploreBy')}</p>
                 <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
                   {EXPLORE_FILTERS.map((filter) => (
                     <button
@@ -2253,16 +2255,16 @@ export default function DeitiesPage() {
                         <span className="flex h-16 w-16 items-center justify-center rounded-2xl border border-amber-200/35 bg-white/12 text-4xl shadow-2xl backdrop-blur">{category.emoji}</span>
                         <div className="h-px flex-1 bg-gradient-to-r from-amber-200/65 to-transparent" />
                       </div>
-                      <p className="font-devanagari text-2xl font-black text-amber-100 md:text-3xl">{category.titleHi}</p>
+                      <p className="font-devanagari text-2xl font-black text-amber-100 md:text-3xl">{language === 'hi' ? category.titleHi : category.title}</p>
                       <h2 className="mt-1 text-[clamp(2.2rem,5vw,4.8rem)] font-serif leading-none tracking-normal text-white drop-shadow">
-                        {category.title}
+                        {language === 'hi' ? category.titleHi : category.title}
                       </h2>
-                      <p className="mt-4 max-w-3xl text-base leading-7 text-white/82 md:text-lg">{category.subtitle}</p>
-                      <p className="mt-2 max-w-3xl font-devanagari text-sm leading-7 text-amber-50/76">{category.subtitleHi}</p>
+                      <p className="mt-4 max-w-3xl text-base leading-7 text-white/82 md:text-lg">{language === 'hi' ? category.subtitleHi : category.subtitle}</p>
+                      <p className="mt-2 max-w-3xl font-devanagari text-sm leading-7 text-amber-50/76">{language === 'hi' ? category.subtitle : category.subtitleHi}</p>
                     </div>
                     <div className="rounded-2xl border border-white/14 bg-white/12 p-4 text-white shadow-xl backdrop-blur">
                       <div className="text-3xl font-black">{category.deities.length}</div>
-                      <div className="mt-1 text-xs font-bold uppercase tracking-[0.18em] text-amber-100">Sacred Forms</div>
+                      <div className="mt-1 text-xs font-bold uppercase tracking-[0.18em] text-amber-100">{t('common.sacredForms')}</div>
                     </div>
                   </div>
 
@@ -2303,7 +2305,7 @@ export default function DeitiesPage() {
                               <div className="absolute inset-0 bg-gradient-to-t from-stone-950/42 via-transparent to-amber-200/10" />
                               {major && (
                                 <span className="absolute left-3 top-3 rounded-full border border-amber-200/45 bg-amber-300/90 px-3 py-1 text-xs font-black uppercase tracking-wide text-stone-950 shadow-lg">
-                                  Spotlight
+                                  {t('common.spotlight')}
                                 </span>
                               )}
                             </div>
@@ -2313,9 +2315,9 @@ export default function DeitiesPage() {
                             <div className="flex items-start justify-between gap-2 mb-3">
                               <div>
                                 <h3 className={`${major ? 'text-3xl' : 'text-2xl'} font-serif leading-tight text-stone-950 transition group-hover:text-orange-800`}>
-                                  {deity.nameHi}
+                                  {language === 'hi' ? deity.nameHi : deity.name}
                                 </h3>
-                                <p className="mt-1 text-sm font-black uppercase tracking-wide text-orange-700">{deity.name}</p>
+                                <p className="mt-1 text-sm font-black uppercase tracking-wide text-orange-700">{language === 'hi' ? deity.name : deity.nameHi}</p>
                               </div>
                               <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-orange-50 text-orange-700 transition group-hover:bg-orange-600 group-hover:text-white">→</span>
                             </div>
@@ -2323,7 +2325,7 @@ export default function DeitiesPage() {
                             {/* Attributes */}
                             {attributePills.length > 0 && (
                               <div className="flex flex-wrap gap-1.5 mb-3">
-                                <span className="rounded-full border border-orange-100 bg-orange-50 px-2.5 py-1 text-[11px] font-bold text-orange-800">{category.title}</span>
+                                <span className="rounded-full border border-orange-100 bg-orange-50 px-2.5 py-1 text-[11px] font-bold text-orange-800">{language === 'hi' ? category.titleHi : category.title}</span>
                                 {attributePills.map((attr: string, i: number) => (
                                   <span key={`${attr}-${i}`} className="rounded-full border border-stone-200 bg-stone-50 px-2.5 py-1 text-[11px] font-semibold text-stone-700">
                                     {attr}
@@ -2334,7 +2336,7 @@ export default function DeitiesPage() {
 
                             {/* Short Description */}
                             <p className={`${major ? 'line-clamp-4' : 'line-clamp-3'} text-sm leading-7 text-stone-600`}>
-                              {deity.descriptionHi || deity.description}
+                              {language === 'hi' ? (deity.descriptionHi || deity.description) : (deity.description || deity.descriptionHi)}
                             </p>
                             {relationshipLinks.length > 0 && (
                               <div className="mt-4 flex flex-wrap gap-2">
@@ -2361,7 +2363,7 @@ export default function DeitiesPage() {
                         onClick={() => toggleCategoryExpanded(category.id)}
                         className="rounded-full border border-amber-200/35 bg-white/14 px-5 py-3 text-sm font-black text-white shadow-xl backdrop-blur transition hover:bg-white/22"
                       >
-                        {isExpanded ? 'Collapse' : `Show All ${category.deities.length} ${category.title}`}
+                        {isExpanded ? t('common.collapse') : `${t('common.showAllItems')} ${category.deities.length} ${language === 'hi' ? category.titleHi : category.title}`}
                       </button>
                     </div>
                   )}

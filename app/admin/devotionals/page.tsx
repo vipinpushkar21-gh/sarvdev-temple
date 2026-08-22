@@ -6,12 +6,15 @@ import SarvdevImage from '../../../components/SarvdevImage'
 import { getDevotionalCardImage } from '../../../lib/devotional-image'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { DEVOTIONAL_CATEGORIES } from '@/lib/devotional-categories'
+import { FULL_CATEGORIES } from '@/app/devotionals/components/categories'
 
 type Devotional = {
   _id: string
+  slug?: string
   title: string
   description?: string
   category?: string
+  subcategory?: string
   language?: string
   deity?: string
   audio?: string
@@ -81,6 +84,14 @@ function normalizeAdminCategoryName(value?: string) {
   const category = String(value || '').trim()
   if (category.toLowerCase() === '108 namavali') return 'Namavali'
   return category
+}
+
+const SUBCATEGORY_LABELS = new Map(
+  FULL_CATEGORIES.flatMap(category => (category.subcategories || []).map(subcategory => [subcategory.id, subcategory.label] as const))
+)
+
+function getSubcategoryLabel(value?: string) {
+  return value ? SUBCATEGORY_LABELS.get(value) || value : '-'
 }
 
 export default function AdminDevotionalsPage() {
@@ -548,6 +559,7 @@ export default function AdminDevotionalsPage() {
                 <th className="cursor-pointer group select-none" onClick={() => handleSort('title')}>Title<SortIcon col="title" /></th>
                 <th>Public Image</th>
                 <th className="cursor-pointer group select-none" onClick={() => handleSort('category')}>Category<SortIcon col="category" /></th>
+                <th>Subcategory</th>
                 <th className="cursor-pointer group select-none" onClick={() => handleSort('deity')}>Deity<SortIcon col="deity" /></th>
                 <th className="cursor-pointer group select-none" onClick={() => handleSort('language')}>Language<SortIcon col="language" /></th>
                 <th className="cursor-pointer group select-none" onClick={() => handleSort('artist')}>Artist<SortIcon col="artist" /></th>
@@ -582,6 +594,7 @@ export default function AdminDevotionalsPage() {
                     </div>
                   </td>
                   <td><span className="admin-badge-purple text-[10px]">{d.category || '-'}</span></td>
+                  <td><span className="admin-badge-orange text-[10px]">{getSubcategoryLabel(d.subcategory)}</span></td>
                   <td className="text-gray-500 text-xs">{d.deity || '-'}</td>
                   <td className="text-gray-500 text-xs">{d.language || '-'}</td>
                   <td className="text-gray-500 text-xs truncate max-w-[100px]">{d.artist || '-'}</td>
@@ -599,7 +612,7 @@ export default function AdminDevotionalsPage() {
                   </td>
                   <td>
                     <div className="flex gap-1">
-                      <button onClick={() => setPreviewId(d._id)} className="admin-btn admin-btn-ghost text-[10px]" title="Preview">View</button>
+                      <Link href={`/devotionals/${encodeURIComponent(d.slug || d._id)}`} target="_blank" rel="noopener noreferrer" className="admin-btn admin-btn-ghost text-[10px]" title="View live devotional">View</Link>
                       <Link href={`/admin/devotionals/${d._id}/edit`} className="admin-btn admin-btn-ghost text-[10px]" title="Edit">Edit</Link>
                       <button onClick={() => approve(d._id)} className="admin-btn admin-btn-success text-[10px]">✓</button>
                       <button onClick={() => reject(d._id)} className="admin-btn admin-btn-danger text-[10px]">✗</button>
@@ -609,7 +622,7 @@ export default function AdminDevotionalsPage() {
                 </tr>
               ))}
               {paginated.length === 0 && (
-                <tr><td colSpan={10} className="px-5 py-10 text-center text-gray-400">No devotionals found.</td></tr>
+                <tr><td colSpan={11} className="px-5 py-10 text-center text-gray-400">No devotionals found.</td></tr>
               )}
             </tbody>
           </table>
@@ -737,6 +750,7 @@ export default function AdminDevotionalsPage() {
                   <h2 className="text-lg font-bold text-gray-900">{previewItem.title}</h2>
                   <div className="flex flex-wrap gap-2 mt-2">
                     {previewItem.category && <span className="admin-badge-orange">{previewItem.category}</span>}
+                    {previewItem.subcategory && <span className="admin-badge-purple">{getSubcategoryLabel(previewItem.subcategory)}</span>}
                     {previewItem.deity && <span className="admin-badge-blue">{previewItem.deity}</span>}
                     {previewItem.language && <span className="admin-badge-purple">{previewItem.language}</span>}
                   </div>

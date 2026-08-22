@@ -38,6 +38,12 @@ export default function AdminDeitiesPage() {
   const [total, setTotal] = useState(0)
   const [hasMore, setHasMore] = useState(false)
   const [seedResult, setSeedResult] = useState<any>(null)
+  const [exportLoading, setExportLoading] = useState(false)
+  const [importOpen, setImportOpen] = useState(false)
+  const [importFile, setImportFile] = useState<File | null>(null)
+  const [importLoading, setImportLoading] = useState(false)
+  const [importReport, setImportReport] = useState<any>(null)
+  const [importError, setImportError] = useState('')
 
   const debouncedSearch = useDebouncedValue(searchTerm)
 
@@ -168,9 +174,59 @@ export default function AdminDeitiesPage() {
     }
   }
 
+  async function exportCSV() {
+    setExportLoading(true)
+    try {
+      const response = await fetch('/api/admin/deities/export', { credentials: 'include', cache: 'no-store' })
+      if (!response.ok) throw new Error('Export failed')
+      const blob = await response.blob()
+      const disposition = response.headers.get('content-disposition') || ''
+      const filename = disposition.match(/filename="([^"]+)"/)?.[1] || `deities-export-${new Date().toISOString().slice(0, 10)}.csv`
+      const url = URL.createObjectURL(blob)
+      const anchor = document.createElement('a')
+      anchor.href = url
+      anchor.download = filename
+      anchor.click()
+      URL.revokeObjectURL(url)
+    } catch { alert('Failed to export deities') }
+    finally { setExportLoading(false) }
+  }
+
+  function openImport() {
+    setImportFile(null)
+    setImportReport(null)
+    setImportError('')
+    setImportOpen(true)
+  }
+
+  function downloadImportTemplate() {
+    window.open('/api/admin/deities/import', '_blank')
+  }
+
+  async function runImport(mode: 'dry-run' | 'execute') {
+    if (!importFile) { setImportError('Choose a CSV file first'); return }
+    setImportLoading(true)
+    setImportError('')
+    try {
+      const body = new FormData()
+      body.set('mode', mode)
+      body.set('file', importFile)
+      const response = await fetch('/api/admin/deities/import', { method: 'POST', credentials: 'include', body })
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok || !data?.ok) {
+        setImportReport(null)
+        setImportError(data?.error || (data?.errors || []).join(', ') || 'Import failed')
+        return
+      }
+      setImportReport(data)
+      if (mode === 'execute') await fetchDeities()
+    } catch { setImportError('Network error while importing') }
+    finally { setImportLoading(false) }
+  }
+
   const filteredDeities = deities
   const categoryOptions = useMemo(() => DEITY_CATEGORIES.map((category: any) => category.title).filter(Boolean), [])
-  const dbCount = deities.filter((deity) => !deity.isStaticFallback).length
+  const dbCount = statusFilter === 'not-seeded' ? 0 : total
   const imageReadyCount = deities.filter((deity) => deity.imageCard || deity.imageHero || deity.image).length
 
   if (loading) {
@@ -191,6 +247,12 @@ export default function AdminDeitiesPage() {
           <p className="text-body text-ink-muted mt-1">Manage deity profiles</p>
         </div>
         <div className="flex items-center gap-3">
+          <button onClick={exportCSV} disabled={exportLoading} className="px-5 py-2.5 rounded-lg font-medium border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:opacity-50">
+            {exportLoading ? 'Exporting...' : 'Export CSV'}
+          </button>
+          <button onClick={openImport} className="px-5 py-2.5 rounded-lg font-medium border border-gray-200 text-gray-700 hover:bg-gray-50">
+            Import CSV
+          </button>
           <button
             onClick={handleSeedDeities}
             disabled={loading}
@@ -214,9 +276,9 @@ export default function AdminDeitiesPage() {
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <AdminStat label="Total profiles" value={deities.length} />
+        <AdminStat label="Total profiles" value={total} />
         <AdminStat label="DB records" value={dbCount} />
-        <AdminStat label="Image ready" value={imageReadyCount} />
+        <AdminStat label="Image ready (page)" value={imageReadyCount} />
         <AdminStat label="Categories" value={categoryOptions.length} />
       </div>
 
@@ -373,6 +435,36 @@ export default function AdminDeitiesPage() {
         onPageChange={setPage}
         onLimitChange={(nextLimit) => { setPageSize(nextLimit); setPage(1) }}
       />
+
+      {importOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setImportOpen(false)}>
+          <div className="w-full max-w-2xl rounded-2xl bg-white p-6 shadow-2xl" onClick={(event) => event.stopPropagation()}>
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">Import Deities</h2>
+                <p className="mt-1 text-sm text-gray-500">Use the exported CSV format. Existing records match by ID, slug, or name.</p>
+              </div>
+              <button onClick={() => setImportOpen(false)} className="text-xl text-gray-400 hover:text-gray-700" aria-label="Close">×</button>
+            </div>
+            <div className="mt-5 space-y-4">
+              <input type="file" accept=".csv,text/csv" className="admin-input w-full" onChange={(event) => { setImportFile(event.target.files?.[0] || null); setImportReport(null) }} />
+              <button type="button" onClick={downloadImportTemplate} className="text-sm font-semibold text-primary-700 hover:text-primary-900">Download blank template</button>
+              {importError && <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{importError}</p>}
+              {importReport && (
+                <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-gray-800">
+                  <p className="font-bold">{importReport.mode === 'dry-run' ? 'Dry run complete' : 'Import complete'}</p>
+                  <p className="mt-1">Created: {importReport.created} · Updated: {importReport.updated} · Errors: {importReport.errors?.length || 0}</p>
+                  {importReport.errors?.length > 0 && <pre className="mt-2 max-h-32 overflow-auto whitespace-pre-wrap text-xs text-red-700">{importReport.errors.join('\n')}</pre>}
+                </div>
+              )}
+              <div className="flex gap-2">
+                <button onClick={() => runImport('dry-run')} disabled={importLoading} className="admin-btn admin-btn-ghost disabled:opacity-50">{importLoading ? 'Working...' : 'Preview changes'}</button>
+                <button onClick={() => runImport('execute')} disabled={importLoading || !importReport?.ok || importReport.mode !== 'dry-run'} className="admin-btn admin-btn-primary disabled:opacity-50">Import changes</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="mt-6 text-center">
         <Link href="/admin" className="text-primary-600 hover:text-primary-700 font-medium">

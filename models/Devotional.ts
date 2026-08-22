@@ -1,5 +1,6 @@
 ﻿// models/Devotional.ts
 import mongoose from 'mongoose';
+import { isValidMantraSubcategory } from '../lib/mantra-subcategories';
 
 const DevotionalSchema = new mongoose.Schema({
   // Core identity
@@ -11,7 +12,20 @@ const DevotionalSchema = new mongoose.Schema({
   category:        { type: String, default: 'Other' },
   categorySlug:    { type: String, index: true },
   categoryHi:      String,
-  subcategory:     String,
+  subcategory:     {
+    type: String,
+    validate: {
+      validator(this: { category?: string }, value?: string) {
+        // Other categories retain their existing independent subcategory systems.
+        return this.category !== 'Mantra' || !value || isValidMantraSubcategory(value);
+      },
+      message: 'Invalid Mantra subcategory: "{VALUE}"',
+    },
+  },
+
+  // Set by the migration when a legacy Mantra cannot be mapped with confidence.
+  subcategoryReviewRequired: { type: Boolean, default: false },
+  subcategoryReviewReason: String,
 
   // Deity (canonical)
   deity:           String,

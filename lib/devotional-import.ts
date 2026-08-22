@@ -4,6 +4,7 @@
 import mongoose from 'mongoose'
 import Devotional from '@/models/Devotional'
 import { categoryNameToSlug, categorySlugToName, getCategoryByName } from '@/lib/devotional-categories'
+import { MANTRA_SUBCATEGORIES, isValidMantraSubcategory } from '@/lib/mantra-subcategories'
 
 export type DevotionalImportMode = 'dry-run' | 'execute'
 
@@ -219,6 +220,25 @@ export async function runDevotionalImport(options: {
 
   const dataRows = table.slice(1)
   result.totalRows = dataRows.length
+
+  // Validate the complete Mantra file before any write, preventing partial imports.
+  if (category === 'Mantra') {
+    const subcategoryIndex = headers.indexOf('subcategory')
+    if (subcategoryIndex === -1) {
+      result.errors.push('Mantra CSV is missing the required "Subcategory" column.')
+      return result
+    }
+    dataRows.forEach((cells, index) => {
+      const value = String(cells[subcategoryIndex] ?? '').trim()
+      const rowNumber = index + 2
+      if (!value) {
+        result.errors.push(`Row ${rowNumber}: Mantra Subcategory is required.`)
+      } else if (!isValidMantraSubcategory(value)) {
+        result.errors.push(`Row ${rowNumber}: Invalid Mantra Subcategory "${value}". Allowed values: ${MANTRA_SUBCATEGORIES.join(' | ')}`)
+      }
+    })
+    if (result.errors.length > 0) return result
+  }
 
   for (let i = 0; i < dataRows.length; i++) {
     const rowNumber = i + 2 // 1-based, and the header occupies row 1

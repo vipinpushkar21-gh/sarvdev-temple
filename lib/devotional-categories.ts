@@ -16,6 +16,7 @@ export const DEVOTIONAL_CATEGORIES: DevotionalCategory[] = [
   { id: 'Chalisa',    slug: 'chalisa',    nameHi: 'चालीसा',     icon: '📖', description: 'Forty-verse devotional paths with readable lyrics and audio support.' },
   { id: 'Mantra',     slug: 'mantra',     nameHi: 'मंत्र',      icon: '📿', description: 'Sacred chants for japa, meditation, focus and protection.' },
   { id: 'Stotra',     slug: 'stotra',     nameHi: 'स्तोत्र',    icon: '🕉️', description: 'Classical hymns and suktams for recitation and contemplation.' },
+  { id: 'Sukt',       slug: 'sukt',       nameHi: 'सूक्त',      icon: '📜', description: 'Vedic hymns and sacred suktas for recitation and contemplation.' },
   { id: 'Stuti',      slug: 'stuti',      nameHi: 'स्तुति',     icon: '🙏', description: 'Short praise hymns for daily remembrance.' },
   { id: 'Shloka',     slug: 'shloka',     nameHi: 'श्लोक',      icon: '📜', description: 'Concise Sanskrit verses with chanting-friendly presentation.' },
   { id: 'Ek Shloki',  slug: 'ek-shloki',  nameHi: 'एक श्लोकी',  icon: '✨', description: 'Single-verse devotional summaries for quick daily recitation.' },
@@ -41,6 +42,7 @@ export function getCategoryBySlug(slug: string): DevotionalCategory | undefined 
 export function getCategoryByName(name: string): DevotionalCategory | undefined {
   const key = (name || '').toLowerCase()
   if (key === '108 namavali' || key === '108namavali') return _byName.get('namavali')
+  if (key === 'sukt' || key === 'sukta' || key === 'suktam' || key === 'सूक्त' || key === 'सूक्तम्') return _byName.get('sukt')
   return _byName.get(key)
 }
 

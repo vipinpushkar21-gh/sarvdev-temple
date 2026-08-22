@@ -390,20 +390,20 @@ export async function PUT(req: NextRequest) {
     applyCanonicalCategoryFields(safeUpdate, existingDeity.toObject ? existingDeity.toObject() : existingDeity);
 
     for (const field of STRING_FIELDS) {
-      if (isNonEmptyString(update[field])) {
-        safeUpdate[field] = String(update[field]).trim();
+      if (Object.prototype.hasOwnProperty.call(update, field)) {
+        safeUpdate[field] = typeof update[field] === 'string' ? String(update[field]).trim() : '';
       }
     }
 
     for (const field of ARRAY_FIELDS) {
-      if (Array.isArray(update[field]) && update[field].length > 0) {
+      if (Array.isArray(update[field])) {
         safeUpdate[field] = update[field].map((item: unknown) => String(item || '').trim()).filter(Boolean);
       }
     }
 
     for (const field of MEDIA_FIELDS) {
-      if (isNonEmptyString(update[field])) {
-        safeUpdate[field] = String(update[field]).trim();
+      if (Object.prototype.hasOwnProperty.call(update, field)) {
+        safeUpdate[field] = typeof update[field] === 'string' ? String(update[field]).trim() : '';
       }
     }
 
@@ -422,8 +422,13 @@ export async function PUT(req: NextRequest) {
       safeUpdate.slugAliases = Array.from(new Set([...(existingDeity.slugAliases || []), existingDeity.slug].filter(Boolean)));
     }
 
-    if (!existingDeity.staticSlug && isNonEmptyString(update.staticSlug)) {
+    if (Object.prototype.hasOwnProperty.call(update, 'staticSlug')) {
       safeUpdate.staticSlug = String(update.staticSlug).trim();
+    }
+
+    if (Object.prototype.hasOwnProperty.call(update, 'order')) {
+      const order = Number(update.order);
+      if (Number.isFinite(order)) safeUpdate.order = order;
     }
 
     safeUpdate.source = 'manual';

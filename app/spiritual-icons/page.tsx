@@ -7,10 +7,12 @@ import SarvdevImage from '../../components/SarvdevImage'
 import { SPIRITUAL_ICON_CATEGORIES } from '../../data/spiritual-icon-categories'
 import { filterSpiritualIcons, getStaticSpiritualIconsForSeed, type SpiritualIconRecord } from '../../lib/spiritual-icons'
 import { getTempleCardImage, getTempleHeroImage } from '../../lib/temple-image'
+import { useTranslation } from '../../lib/translation'
 
 const HERO_IMAGE = 'https://res.cloudinary.com/dc2qg7bwr/image/upload/image_2_xljqwa'
 
 export default function SpiritualIconsPage() {
+  const { t, language } = useTranslation()
   const [icons, setIcons] = useState<SpiritualIconRecord[]>(() => getStaticSpiritualIconsForSeed())
   const [loading, setLoading] = useState(true)
   const [activeCategory, setActiveCategory] = useState('all')
@@ -91,18 +93,18 @@ export default function SpiritualIconsPage() {
           <div className="max-w-5xl">
             <span className="inline-flex items-center gap-2 rounded-full border border-amber-200/25 bg-amber-300/15 px-3 py-1.5 text-xs font-black uppercase tracking-[0.18em] text-amber-100 backdrop-blur">
               <Sparkles className="h-3.5 w-3.5" />
-              Spiritual Lineages
+              {t('common.spiritualLineages')}
             </span>
             <h1 className="mt-5 text-[clamp(3rem,8vw,6.6rem)] font-black leading-[0.92] tracking-normal text-white drop-shadow-2xl">
-              Spiritual Icons
+              {t('common.spiritualIconsTitle')}
             </h1>
             <p className="mt-5 max-w-3xl text-xl leading-8 text-stone-100">
-              Discover revered Katha Vachaks, Bhajan Gayaks, Pandits, gurus, scholars, kirtan mandalis, and dharma pracharaks preserving Sanatan traditions.
+              {t('common.spiritualIconsDescription')}
             </p>
             <div className="mt-8 grid max-w-4xl gap-3 sm:grid-cols-3">
-              <HeroStat icon={<Users className="h-5 w-5" />} label="Profiles" value={icons.length} />
-              <HeroStat icon={<Filter className="h-5 w-5" />} label="Categories" value={SPIRITUAL_ICON_CATEGORIES.length} />
-              <HeroStat icon={<MapPin className="h-5 w-5" />} label="States" value={states.length} />
+              <HeroStat icon={<Users className="h-5 w-5" />} label={t('common.profiles')} value={icons.length} />
+              <HeroStat icon={<Filter className="h-5 w-5" />} label={t('common.categories')} value={SPIRITUAL_ICON_CATEGORIES.length} />
+              <HeroStat icon={<MapPin className="h-5 w-5" />} label={t('common.states')} value={states.length} />
             </div>
           </div>
         </div>
@@ -114,14 +116,14 @@ export default function SpiritualIconsPage() {
             <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_12rem_12rem]">
               <div className="relative">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
-                <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by name, speciality, state..." className="w-full rounded-xl border border-stone-200 bg-white py-3 pl-10 pr-4 text-sm font-semibold outline-none focus:border-orange-400" />
+                <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t('common.searchByName')} className="w-full rounded-xl border border-stone-200 bg-white py-3 pl-10 pr-4 text-sm font-semibold outline-none focus:border-orange-400" />
               </div>
               <select value={stateFilter} onChange={(e) => setStateFilter(e.target.value)} className="rounded-xl border border-stone-200 bg-white px-3 py-3 text-sm font-semibold">
-                <option value="">All States</option>
+                <option value="">{t('common.allStates')}</option>
                 {states.map((state) => <option key={state} value={state}>{state}</option>)}
               </select>
               <select value={languageFilter} onChange={(e) => setLanguageFilter(e.target.value)} className="rounded-xl border border-stone-200 bg-white px-3 py-3 text-sm font-semibold">
-                <option value="">All Languages</option>
+                <option value="">{t('common.allLanguages')}</option>
                 {languages.map((language) => <option key={language} value={language}>{language}</option>)}
               </select>
             </div>
@@ -129,12 +131,12 @@ export default function SpiritualIconsPage() {
         </section>
 
         <section className="page-container pt-10">
-          <SectionHeader eyebrow="All Categories" title="Explore spiritual service paths" description="Every category stays visible, even when records are still being added." />
+          <SectionHeader eyebrow={t('common.allCategories')} title={t('common.exploreServicePaths')} description={language === 'hi' ? 'हर श्रेणी दिखाई देती है, भले ही उसमें रिकॉर्ड जोड़े जा रहे हों।' : 'Every category stays visible, even when records are still being added.'} />
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
             <button type="button" onClick={() => setActiveCategory('all')} className={`rounded-2xl border p-5 text-left transition ${activeCategory === 'all' ? 'border-stone-900 bg-stone-950 text-white shadow-xl' : 'border-stone-200 bg-white hover:border-amber-300'}`}>
               <span className="text-2xl">✨</span>
-              <h3 className="mt-3 text-lg font-black">All Icons</h3>
-              <p className={`mt-1 text-sm ${activeCategory === 'all' ? 'text-stone-200' : 'text-stone-500'}`}>{icons.length} profiles</p>
+              <h3 className="mt-3 text-lg font-black">{t('common.allIcons')}</h3>
+              <p className={`mt-1 text-sm ${activeCategory === 'all' ? 'text-stone-200' : 'text-stone-500'}`}>{icons.length} {t('common.profiles')}</p>
             </button>
             {SPIRITUAL_ICON_CATEGORIES.map((category) => {
               const count = icons.filter((icon) => icon.categorySlug === category.slug).length
@@ -143,7 +145,7 @@ export default function SpiritualIconsPage() {
                 <button key={category.slug} type="button" onClick={() => setActiveCategory(category.slug)} className={`rounded-2xl border p-5 text-left transition ${active ? 'border-stone-900 bg-stone-950 text-white shadow-xl' : 'border-stone-200 bg-white hover:border-amber-300'}`}>
                   <span className="text-2xl">{category.icon}</span>
                   <h3 className="mt-3 text-lg font-black">{category.name}</h3>
-                  <p className={`mt-1 text-sm ${active ? 'text-stone-200' : 'text-stone-500'}`}>{count} profiles</p>
+                      <p className={`mt-1 text-sm ${active ? 'text-stone-200' : 'text-stone-500'}`}>{count} {t('common.profiles')}</p>
                 </button>
               )
             })}
@@ -151,20 +153,20 @@ export default function SpiritualIconsPage() {
         </section>
 
         <section className="page-container pt-14">
-          <SectionHeader eyebrow="Featured" title="Featured spiritual icons" description="Verified and highlighted voices from the spiritual community." />
+          <SectionHeader eyebrow={t('common.featured')} title={t('common.featuredIcons')} description={t('common.featuredIconsDescription')} />
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {featured.map((icon) => <IconCard key={icon.slug} icon={icon} featured />)}
           </div>
         </section>
 
         <section className="page-container pt-14">
-          <SectionHeader eyebrow="Directory" title="Search results" description={`${filtered.length} profile${filtered.length === 1 ? '' : 's'} matching current filters.`} />
+          <SectionHeader eyebrow={t('common.directory')} title={t('common.searchResults')} description={`${filtered.length} ${t('common.matchingProfiles')}`} />
           {filtered.length > 0 ? (
             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {filtered.map((icon) => <IconCard key={icon.slug} icon={icon} />)}
             </div>
           ) : (
-            <EmptyState title="No matching spiritual icons yet" description="Try clearing filters or explore category sections below." />
+            <EmptyState title={t('common.noMatchingIcons')} description={t('common.clearFiltersExplore')} />
           )}
         </section>
 
@@ -173,20 +175,20 @@ export default function SpiritualIconsPage() {
             const categoryIcons = icons.filter((icon) => icon.categorySlug === category.slug).slice(0, 6)
             return (
               <section key={category.slug}>
-                <SectionHeader eyebrow={category.nameHi} title={category.name} description={category.description} />
+                <SectionHeader eyebrow={category.nameHi} title={language === 'hi' ? category.nameHi : category.name} description={language === 'hi' ? category.descriptionHi : category.description} />
                 {categoryIcons.length > 0 ? (
                   <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
                     {categoryIcons.map((icon) => <IconCard key={icon.slug} icon={icon} />)}
                   </div>
                 ) : (
-                  <EmptyState title={`${category.name} profiles coming soon`} description="This category is ready in Sarvdev admin and will appear here when active records are added." />
+                  <EmptyState title={`${language === 'hi' ? category.nameHi : category.name} ${t('common.profilesComingSoon')}`} description={t('common.categoryReady')} />
                 )}
               </section>
             )
           })}
         </section>
 
-        {loading && <p className="page-container pt-6 text-sm text-stone-400">Refreshing spiritual icon records...</p>}
+        {loading && <p className="page-container pt-6 text-sm text-stone-400">{t('common.refreshingIcons')}</p>}
       </main>
     </>
   )
