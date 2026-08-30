@@ -82,8 +82,12 @@ type SortDir = 'asc' | 'desc'
 
 function normalizeAdminCategoryName(value?: string) {
   const category = String(value || '').trim()
-  if (category.toLowerCase() === '108 namavali') return 'Namavali'
+  if (['108 namavali', '108 namawali'].includes(category.toLowerCase())) return 'Namavali'
   return category
+}
+
+function getAdminCategoryLabel(value: string) {
+  return value === 'Namavali' ? '108 Namavali' : value
 }
 
 const SUBCATEGORY_LABELS = new Map(
@@ -485,7 +489,7 @@ export default function AdminDevotionalsPage() {
         </button>
         {categories.map(c => (
           <button key={c} onClick={() => setCategoryFilter(c)} className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${categoryFilter === c ? 'admin-badge-orange' : 'admin-btn admin-btn-ghost'}`}>
-            {c} ({catCounts[c] || 0})
+            {getAdminCategoryLabel(c)} ({catCounts[c] || 0})
           </button>
         ))}
       </div>
@@ -496,7 +500,7 @@ export default function AdminDevotionalsPage() {
           <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search title, deity, artist..." className="admin-input" />
           <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} className="admin-input">
             <option value="">All Categories</option>
-            {categories.map(c => <option key={c} value={c}>{c}</option>)}
+            {categories.map(c => <option key={c} value={c}>{getAdminCategoryLabel(c)}</option>)}
           </select>
           <select value={deityFilter} onChange={e => setDeityFilter(e.target.value)} className="admin-input">
             <option value="">All Deities</option>
@@ -593,7 +597,7 @@ export default function AdminDevotionalsPage() {
                       </div>
                     </div>
                   </td>
-                  <td><span className="admin-badge-purple text-[10px]">{d.category || '-'}</span></td>
+                  <td><span className="admin-badge-purple text-[10px]">{getAdminCategoryLabel(normalizeAdminCategoryName(d.category)) || '-'}</span></td>
                   <td><span className="admin-badge-orange text-[10px]">{getSubcategoryLabel(d.subcategory)}</span></td>
                   <td className="text-gray-500 text-xs">{d.deity || '-'}</td>
                   <td className="text-gray-500 text-xs">{d.language || '-'}</td>
@@ -669,7 +673,7 @@ export default function AdminDevotionalsPage() {
                 <label className="block text-sm font-medium text-gray-600 mb-1">Category *</label>
                 <select value={importCategory} onChange={e => { setImportCategory(e.target.value); setImportReport(null) }} className="admin-input w-full">
                   <option value="">Select a category</option>
-                  {categories.map(c => <option key={c} value={c}>{c}</option>)}
+                  {categories.map(c => <option key={c} value={c}>{getAdminCategoryLabel(c)}</option>)}
                 </select>
               </div>
 

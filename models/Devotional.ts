@@ -1,6 +1,7 @@
 ﻿// models/Devotional.ts
 import mongoose from 'mongoose';
 import { isValidMantraSubcategory } from '../lib/mantra-subcategories';
+import { isValidNamavaliSubcategory } from '../lib/namavali-subcategories';
 
 const DevotionalSchema = new mongoose.Schema({
   // Core identity
@@ -17,9 +18,11 @@ const DevotionalSchema = new mongoose.Schema({
     validate: {
       validator(this: { category?: string }, value?: string) {
         // Other categories retain their existing independent subcategory systems.
-        return this.category !== 'Mantra' || !value || isValidMantraSubcategory(value);
+        if (this.category === 'Mantra') return isValidMantraSubcategory(value);
+        if (this.category === 'Namavali' || this.category === '108 Namavali' || this.category === 'Sahasranamavali') return isValidNamavaliSubcategory(value);
+        return true;
       },
-      message: 'Invalid Mantra subcategory: "{VALUE}"',
+      message: 'Invalid devotional subcategory: "{VALUE}"',
     },
   },
 

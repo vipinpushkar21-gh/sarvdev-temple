@@ -16,6 +16,7 @@ export type SubcategoryDef = {
 }
 
 import { MANTRA_SUBCATEGORIES } from '@/lib/mantra-subcategories'
+import { NAMAVALI_SUBCATEGORIES } from '@/lib/namavali-subcategories'
 
 // Unified category config drawn from lib/devotional-categories.ts.
 // slug is the URL-safe version; id/label is the canonical display name.
@@ -55,7 +56,16 @@ export const FULL_CATEGORIES: CategoryDef[] = [
   { id: 'Ek Shloki',  label: 'Ek Shloki',  slug: 'ek-shloki',  hindi: 'एक श्लोकी',  emoji: '✨', description: 'Single-verse devotional summaries for quick daily recitation.' },
   { id: 'Ashtaka',    label: 'Ashtaka',    slug: 'ashtaka',    hindi: 'अष्टकम्',    emoji: '🌸', description: 'Eight-verse hymns for focused worship.' },
   { id: 'Path',       label: 'Path',       slug: 'path',       hindi: 'पाठ',        emoji: '📚', description: 'Long-form sacred readings and recitation content.' },
-  { id: 'Namavali',   label: 'Namavali',   slug: 'namavali',   hindi: 'नामावली',    emoji: '🌺', description: 'Sacred name collections for archana and japa.' },
+  {
+    id: 'Namavali', label: 'Namavali', slug: 'namavali', hindi: 'नामावली', emoji: '🌺',
+    description: 'Sacred name collections for archana and japa.',
+    subcategories: NAMAVALI_SUBCATEGORIES.map((value) => ({ id: value, label: value, hindi: value })),
+  },
+  {
+    id: 'Sahasranamavali', label: 'Sahasranamavali', slug: 'sahasranamavali', hindi: 'सहस्रनामावली', emoji: '🌼',
+    description: 'Sacred thousand-name collections for archana and japa.',
+    subcategories: NAMAVALI_SUBCATEGORIES.map((value) => ({ id: value, label: value, hindi: value })),
+  },
   { id: 'Kavacham',   label: 'Kavacham',   slug: 'kavacham',   hindi: 'कवचम्',      emoji: '🛡️', description: 'Protective hymns and kavach paths for spiritual strength.' },
   { id: 'Prarthana',  label: 'Prarthana',  slug: 'prarthana',  hindi: 'प्रार्थना',  emoji: '🌿', description: 'Prayer collections for simple daily devotion.' },
   { id: 'Vrat Katha', label: 'Vrat Katha', slug: 'vrat-katha', hindi: 'व्रत कथा',   emoji: '📖', description: 'Vrat stories and readings connected to sacred observances.' },

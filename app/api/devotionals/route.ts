@@ -429,6 +429,10 @@ export async function POST(request: NextRequest) {
       const { isValidMantraSubcategory, MANTRA_SUBCATEGORIES } = await import('@/lib/mantra-subcategories')
       if (!isValidMantraSubcategory(safe.subcategory)) return NextResponse.json({ error: `Mantra Subcategory is required and must be one of: ${MANTRA_SUBCATEGORIES.join(' | ')}` }, { status: 400 })
     }
+    if (safe.category === 'Namavali' || safe.category === '108 Namavali' || safe.category === 'Sahasranamavali') {
+      const { isValidNamavaliSubcategory, NAMAVALI_SUBCATEGORIES } = await import('@/lib/namavali-subcategories')
+      if (!isValidNamavaliSubcategory(safe.subcategory)) return NextResponse.json({ error: `Namavali Subcategory is required and must be one of: ${NAMAVALI_SUBCATEGORIES.join(' | ')}` }, { status: 400 })
+    }
 
     // Auto-generate slug from title if not provided
     if (!safe.slug && safe.title) {
@@ -472,6 +476,10 @@ export async function PUT(request: NextRequest) {
     if (categoryForValidation === 'Mantra') {
       const { isValidMantraSubcategory, MANTRA_SUBCATEGORIES } = await import('@/lib/mantra-subcategories')
       if (!isValidMantraSubcategory(safe.subcategory)) return NextResponse.json({ error: `Mantra Subcategory is required and must be one of: ${MANTRA_SUBCATEGORIES.join(' | ')}` }, { status: 400 })
+    }
+    if (categoryForValidation === 'Namavali' || categoryForValidation === '108 Namavali' || categoryForValidation === 'Sahasranamavali') {
+      const { isValidNamavaliSubcategory, NAMAVALI_SUBCATEGORIES } = await import('@/lib/namavali-subcategories')
+      if (!isValidNamavaliSubcategory(safe.subcategory)) return NextResponse.json({ error: `Namavali Subcategory is required and must be one of: ${NAMAVALI_SUBCATEGORIES.join(' | ')}` }, { status: 400 })
     }
 
     // Preserve existing slug — only update if explicitly provided and non-empty

@@ -120,12 +120,12 @@ export default function NewDevotionalPage() {
             </div>
           </div>
 
-          {(formData.category === 'Aarti' || formData.category === 'Mantra') && (
+          {(formData.category === 'Aarti' || formData.category === 'Mantra' || formData.category === 'Namavali' || formData.category === '108 Namavali' || formData.category === 'Sahasranamavali') && (
             <div>
               <label className="block text-sm font-medium text-gray-600 mb-1">{formData.category} Subcategory</label>
-              <select name="subcategory" value={formData.subcategory} onChange={handleChange} required={formData.category === 'Mantra'} className="admin-input w-full">
+              <select name="subcategory" value={formData.subcategory} onChange={handleChange} required={formData.category === 'Mantra' || formData.category === 'Namavali' || formData.category === '108 Namavali' || formData.category === 'Sahasranamavali'} className="admin-input w-full">
                 <option value="">— Select Subcategory —</option>
-                {FULL_CATEGORIES.find((cat) => cat.id === formData.category)?.subcategories?.map((sub) => (
+                {FULL_CATEGORIES.find((cat) => cat.id === formData.category || (formData.category === '108 Namavali' && cat.id === 'Namavali'))?.subcategories?.map((sub) => (
                   <option key={sub.id} value={sub.id}>{sub.label}</option>
                 ))}
               </select>

@@ -23,6 +23,7 @@ export const DEVOTIONAL_CATEGORIES: DevotionalCategory[] = [
   { id: 'Ashtaka',    slug: 'ashtaka',    nameHi: 'अष्टकम्',    icon: '🌸', description: 'Eight-verse hymns for focused worship.' },
   { id: 'Path',       slug: 'path',       nameHi: 'पाठ',        icon: '📚', description: 'Long-form sacred readings and recitation content.' },
   { id: 'Namavali',   slug: 'namavali',   nameHi: 'नामावली',    icon: '🌺', description: 'Sacred name collections for archana and japa.' },
+  { id: 'Sahasranamavali', slug: 'sahasranamavali', nameHi: 'सहस्रनामावली', icon: '🌼', description: 'Sacred thousand-name collections for archana and japa.' },
   { id: 'Kavacham',   slug: 'kavacham',   nameHi: 'कवचम्',      icon: '🛡️', description: 'Protective hymns and kavach paths for spiritual strength.' },
   { id: 'Prarthana',  slug: 'prarthana',  nameHi: 'प्रार्थना',  icon: '🌿', description: 'Prayer collections for simple daily devotion.' },
   { id: 'Vrat Katha', slug: 'vrat-katha', nameHi: 'व्रत कथा',   icon: '📖', description: 'Vrat stories and readings connected to sacred observances.' },
@@ -41,7 +42,7 @@ export function getCategoryBySlug(slug: string): DevotionalCategory | undefined 
 
 export function getCategoryByName(name: string): DevotionalCategory | undefined {
   const key = (name || '').toLowerCase()
-  if (key === '108 namavali' || key === '108namavali') return _byName.get('namavali')
+  if (['108 namavali', '108namavali', '108 namawali', '108namawali'].includes(key)) return _byName.get('namavali')
   if (key === 'sukt' || key === 'sukta' || key === 'suktam' || key === 'सूक्त' || key === 'सूक्तम्') return _byName.get('sukt')
   return _byName.get(key)
 }
