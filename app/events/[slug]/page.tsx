@@ -94,7 +94,7 @@ export default function EventDetailPage() {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <section className="relative min-h-[520px] overflow-hidden bg-gray-950 text-white">
-        <SarvdevImage image={getTempleHeroImage({ imageHero: event.imageHero, imageCard: event.imageCard, image: event.image })} alt={event.title} className="absolute inset-0" imgClassName="object-cover opacity-70" loading="eager" />
+        <SarvdevImage image={getTempleHeroImage({ heroMedia: event.heroMedia, primaryMedia: event.primaryMedia, cardMedia: event.cardMedia, imageHero: event.imageHero, imageCard: event.imageCard, image: event.image })} alt={event.title} className="absolute inset-0" imgClassName="object-cover opacity-70" loading="eager" />
         <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-950/60 to-gray-950/20" />
         <div className="page-container relative flex min-h-[520px] items-end pb-12">
           <div className="max-w-4xl">

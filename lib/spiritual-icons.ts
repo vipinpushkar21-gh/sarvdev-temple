@@ -1,6 +1,7 @@
 import { SPIRITUAL_ICON_CATEGORIES, getSpiritualIconCategory } from '@/data/spiritual-icon-categories'
 import { spiritualIcons as staticSpiritualIcons } from '@/data/spiritual-icons'
 import { sanitizeImageUrl } from './imageGuard'
+import { normalizeMediaAsset, type SarvdevMediaAsset } from './media-asset'
 
 export type SpiritualIconRecord = {
   _id?: string
@@ -18,8 +19,11 @@ export type SpiritualIconRecord = {
   fullBio?: string
   fullBioHi?: string
   image?: string
+  primaryMedia?: SarvdevMediaAsset | null
   imageCard?: string
+  cardMedia?: SarvdevMediaAsset | null
   imageHero?: string
+  heroMedia?: SarvdevMediaAsset | null
   galleryImages?: string[]
   location?: string
   city?: string
@@ -46,6 +50,7 @@ export type SpiritualIconRecord = {
   metaTitle?: string
   metaDescription?: string
   ogImage?: string
+  ogMedia?: SarvdevMediaAsset | null
   source?: string
 }
 
@@ -91,6 +96,7 @@ export function normalizeSpiritualIcon(input: any): SpiritualIconRecord {
   const imageHero = sanitizeImageUrl(input.imageHero || '')
   const image = sanitizeImageUrl(input.image || imageCard || '')
   const ogImage = sanitizeImageUrl(input.ogImage || imageHero || imageCard || image || '')
+  const mediaKind = categorySlug === 'kirtan-mandali' ? 'other' : 'portrait'
 
   return {
     _id: input._id ? String(input._id) : undefined,
@@ -108,8 +114,11 @@ export function normalizeSpiritualIcon(input: any): SpiritualIconRecord {
     fullBio: input.fullBio || input.description || '',
     fullBioHi: input.fullBioHi || '',
     image,
+    primaryMedia: normalizeMediaAsset(input.primaryMedia, mediaKind) ?? null,
     imageCard,
+    cardMedia: normalizeMediaAsset(input.cardMedia, mediaKind) ?? null,
     imageHero,
+    heroMedia: normalizeMediaAsset(input.heroMedia, mediaKind) ?? null,
     galleryImages: stringList(input.galleryImages).map((url) => sanitizeImageUrl(url)).filter(Boolean),
     location: input.location || input.state || '',
     city: input.city || '',
@@ -136,6 +145,7 @@ export function normalizeSpiritualIcon(input: any): SpiritualIconRecord {
     metaTitle: input.metaTitle || '',
     metaDescription: input.metaDescription || '',
     ogImage,
+    ogMedia: normalizeMediaAsset(input.ogMedia, mediaKind) ?? null,
     source: input.source || '',
   }
 }

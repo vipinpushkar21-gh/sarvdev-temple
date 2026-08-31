@@ -1,5 +1,6 @@
 // models/Event.ts
 import mongoose, { Schema, models } from 'mongoose';
+import { MediaAssetSchema } from './shared/MediaAssetSchema';
 
 const EVENT_STATUS_VALUES = ['draft', 'published', 'archived', 'pending', 'approved', 'rejected'];
 
@@ -51,6 +52,11 @@ const EventSchema = new Schema({
   relatedDevotionalSlugs: { type: [String], default: [] },
 
   image: { type: String },
+  primaryMedia: { type: MediaAssetSchema },
+  cardMedia: { type: MediaAssetSchema },
+  heroMedia: { type: MediaAssetSchema },
+  ogMedia: { type: MediaAssetSchema },
+  galleryMedia: { type: [MediaAssetSchema], default: [] },
   imageCard: { type: String },
   imageHero: { type: String },
   galleryImages: { type: [String], default: [] },

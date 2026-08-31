@@ -13,6 +13,7 @@ import {
 import { buildCursorFilter, paginateCursor, parseCursorLimit, DEVOTIONAL_CARD_PROJ } from '@/lib/cursor-pagination'
 import { applyRateLimit } from '@/lib/rate-limit'
 import { expandQuery } from '@/lib/transliteration'
+import { normalizeMediaAsset } from '@/lib/media-asset'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -425,6 +426,7 @@ export async function POST(request: NextRequest) {
     await connectDB()
     const body = await request.json()
     const safe = removeDevotionalImageFields(body)
+    if (Object.prototype.hasOwnProperty.call(safe, 'primaryMedia')) safe.primaryMedia = normalizeMediaAsset(safe.primaryMedia, 'devotional-artwork') ?? null
     if (safe.category === 'Mantra') {
       const { isValidMantraSubcategory, MANTRA_SUBCATEGORIES } = await import('@/lib/mantra-subcategories')
       if (!isValidMantraSubcategory(safe.subcategory)) return NextResponse.json({ error: `Mantra Subcategory is required and must be one of: ${MANTRA_SUBCATEGORIES.join(' | ')}` }, { status: 400 })
@@ -467,6 +469,11 @@ export async function PUT(request: NextRequest) {
     const body = await request.json()
     const { id, ...updateData } = body
     const safe = removeDevotionalImageFields(updateData)
+    if (Object.prototype.hasOwnProperty.call(safe, 'primaryMedia')) safe.primaryMedia = normalizeMediaAsset(safe.primaryMedia, 'devotional-artwork') ?? null
+    if (Object.prototype.hasOwnProperty.call(safe, 'lyrics')) {
+      safe.content = safe.lyrics
+      delete safe.lyrics
+    }
     const existingCategoryRecord: any = Object.prototype.hasOwnProperty.call(safe, 'subcategory')
       ? await Devotional.findById(id).select('category').lean()
       : null

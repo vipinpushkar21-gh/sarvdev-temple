@@ -32,6 +32,7 @@ const SUPPORTED_TEMPLE_FIELDS = [
   'shortDescription','shortDescriptionHi','description','descriptionHi',
   // Media
   'primaryImage','image','imageCard','imageHero','imageGallery','heroImage','images','galleryImages','festivalGallery','architectureGallery',
+  'primaryMedia','cardMedia','heroMedia','ogMedia','galleryMedia',
   'deityGallery','videos','droneShots','ambienceAudio',
   // Location
   'streetAddress','streetAddressHi','location','locationHi','mapsLink','googleMapUrl','googleMapsUrl','latitude','longitude',

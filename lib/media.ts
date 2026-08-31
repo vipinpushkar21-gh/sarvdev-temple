@@ -57,6 +57,9 @@ import {
   isCloudinaryImageUrl,
   type SarvdevImageSource,
 } from './temple-image'
+import { resolveMediaOriginal, type SarvdevMediaInput } from './media-asset'
+export type { SarvdevMediaAsset, SarvdevMediaInput, SarvdevMediaKind } from './media-asset'
+export { buildCloudinaryOriginalUrl, parseLegacyCloudinaryUrl } from './media-asset'
 
 // ── Content-type fallback registry ───────────────────────────────────────────
 // All currently point to the canonical Cloudinary fallback.
@@ -168,9 +171,9 @@ export function buildCloudinaryUrl(
  * Returns the URL if allowed (Cloudinary or local), otherwise empty string.
  * Strips blob: / data: URLs for production use.
  */
-export function normalizeImageUrl(url: string | undefined | null): string {
-  if (!url) return ''
-  const t = url.trim()
+export function normalizeImageUrl(url: SarvdevMediaInput): string {
+  const t = resolveMediaOriginal(url)
+  if (!t) return ''
   if (t.startsWith('blob:') || t.startsWith('data:')) return ''
   return isAllowedImageHost(t) ? t : ''
 }
@@ -209,13 +212,20 @@ export function getImageAlt(
 
 type AnyItem = Record<string, any>
 
+function mediaFields(item: AnyItem) {
+  return {
+    image: item.image, imageCard: item.imageCard, imageHero: item.imageHero,
+    primaryMedia: item.primaryMedia, cardMedia: item.cardMedia, heroMedia: item.heroMedia,
+  }
+}
+
 /**
  * Resolves the card image URL from a content item using canonical priority:
  *   imageCard → image → fallback
  */
 export function resolveCardUrl(item: AnyItem | null | undefined, contentType?: string): string {
   if (!item) return getFallbackImage(contentType)
-  const candidates = [item.imageCard, item.image]
+  const candidates = [item.cardMedia, item.imageCard, item.primaryMedia, item.image]
   for (const c of candidates) {
     const safe = normalizeImageUrl(c)
     if (safe) return safe
@@ -229,7 +239,8 @@ export function resolveCardUrl(item: AnyItem | null | undefined, contentType?: s
  */
 export function resolveHeroUrl(item: AnyItem | null | undefined, contentType?: string): string {
   if (!item) return getFallbackImage(contentType)
-  const candidates = [item.imageHero, item.heroImage, item.imageCard, item.image]
+  // Card fields remain only as the final legacy fallback, never the preferred hero source.
+  const candidates = [item.heroMedia, item.imageHero, item.heroImage, item.primaryMedia, item.primaryImage, item.image, item.cardMedia, item.imageCard]
   for (const c of candidates) {
     const safe = normalizeImageUrl(c)
     if (safe) return safe
@@ -243,7 +254,7 @@ export function resolveHeroUrl(item: AnyItem | null | undefined, contentType?: s
  */
 export function resolveOGUrl(item: AnyItem | null | undefined, contentType?: string): string {
   if (!item) return getFallbackImage(contentType)
-  const candidates = [item.ogImage, item.imageHero, item.heroImage, item.imageCard, item.image]
+  const candidates = [item.ogMedia, item.ogImage, item.heroMedia, item.imageHero, item.heroImage, item.primaryMedia, item.image, item.cardMedia, item.imageCard]
   for (const c of candidates) {
     const safe = normalizeImageUrl(c)
     if (safe) return safe
@@ -258,13 +269,14 @@ export function resolveOGUrl(item: AnyItem | null | undefined, contentType?: str
  */
 export function getGalleryImages(item: AnyItem | null | undefined): string[] {
   if (!item) return []
-  const rawArray =
+  const legacy =
     (Array.isArray(item.galleryImages) && item.galleryImages.length > 0 ? item.galleryImages :
      Array.isArray(item.images)        && item.images.length > 0        ? item.images :
      Array.isArray(item.imageGallery)  && item.imageGallery.length > 0  ? item.imageGallery :
      []) as unknown[]
-  return rawArray
-    .map((u) => normalizeImageUrl(String(u || '')))
+  const structured = Array.isArray(item.galleryMedia) ? item.galleryMedia : []
+  const length = Math.max(legacy.length, structured.length)
+  return Array.from({ length }, (_, index) => normalizeImageUrl(structured[index] || legacy[index] as SarvdevMediaInput))
     .filter(Boolean) as string[]
 }
 
@@ -277,7 +289,7 @@ export function getDevotionalCardImage(item?: AnyItem | string | null): SarvdevI
   // Devotionals share 16:9 blog card proportions
   return getBlogCardImage(
     typeof item === 'string' ? item :
-    item ? { image: item.image, imageCard: item.imageCard, imageHero: item.imageHero } :
+    item ? mediaFields(item) :
     FALLBACK_IMAGE
   )
 }
@@ -286,7 +298,7 @@ export function getDevotionalCardImage(item?: AnyItem | string | null): SarvdevI
 export function getDevotionalHeroImage(item?: AnyItem | string | null): SarvdevImageSource {
   return getBlogHeroImage(
     typeof item === 'string' ? item :
-    item ? { image: item.image, imageCard: item.imageCard, imageHero: item.imageHero } :
+    item ? mediaFields(item) :
     FALLBACK_IMAGE
   )
 }
@@ -295,7 +307,7 @@ export function getDevotionalHeroImage(item?: AnyItem | string | null): SarvdevI
 export function getEventCardImage(item?: AnyItem | string | null): SarvdevImageSource {
   return getBlogCardImage(
     typeof item === 'string' ? item :
-    item ? { image: item.image, imageCard: item.imageCard, imageHero: item.imageHero } :
+    item ? mediaFields(item) :
     FALLBACK_IMAGE
   )
 }
@@ -304,7 +316,7 @@ export function getEventCardImage(item?: AnyItem | string | null): SarvdevImageS
 export function getEventHeroImage(item?: AnyItem | string | null): SarvdevImageSource {
   return getBlogHeroImage(
     typeof item === 'string' ? item :
-    item ? { image: item.image, imageCard: item.imageCard, imageHero: item.imageHero } :
+    item ? mediaFields(item) :
     FALLBACK_IMAGE
   )
 }
@@ -317,6 +329,9 @@ export function getDarshanCardImage(item?: AnyItem | string | null): SarvdevImag
       image: item.image ?? item.thumbnail,
       imageCard: item.imageCard,
       imageHero: item.imageHero,
+      primaryMedia: item.primaryMedia,
+      cardMedia: item.cardMedia,
+      heroMedia: item.heroMedia,
     } :
     FALLBACK_IMAGE
   )
@@ -326,7 +341,7 @@ export function getDarshanCardImage(item?: AnyItem | string | null): SarvdevImag
 export function getSpiritualIconCardImage(item?: AnyItem | string | null): SarvdevImageSource {
   return getDeityCardImage(
     typeof item === 'string' ? item :
-    item ? { image: item.image, imageCard: item.imageCard, imageHero: item.imageHero } :
+    item ? mediaFields(item) :
     FALLBACK_IMAGE
   )
 }
@@ -335,7 +350,7 @@ export function getSpiritualIconCardImage(item?: AnyItem | string | null): Sarvd
 export function getSpiritualIconHeroImage(item?: AnyItem | string | null): SarvdevImageSource {
   return getDeityHeroImage(
     typeof item === 'string' ? item :
-    item ? { image: item.image, imageCard: item.imageCard, imageHero: item.imageHero } :
+    item ? mediaFields(item) :
     FALLBACK_IMAGE
   )
 }

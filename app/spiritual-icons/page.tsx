@@ -195,7 +195,7 @@ export default function SpiritualIconsPage() {
 }
 
 function IconCard({ icon, featured = false }: { icon: SpiritualIconRecord; featured?: boolean }) {
-  const image = getTempleCardImage({ imageCard: icon.imageCard || icon.image || '', image: icon.imageCard || icon.image || '' })
+  const image = getTempleCardImage({ cardMedia: icon.cardMedia, primaryMedia: icon.primaryMedia, imageCard: icon.imageCard || icon.image || '', image: icon.imageCard || icon.image || '' })
   return (
     <Link href={`/spiritual-icons/${icon.slug}`} className="group overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm no-underline transition duration-300 hover:-translate-y-1 hover:border-amber-300 hover:shadow-xl">
       <div className="relative aspect-[4/3] overflow-hidden bg-orange-50">

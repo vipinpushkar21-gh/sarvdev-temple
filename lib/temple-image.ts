@@ -7,6 +7,7 @@
  */
 
 import { FALLBACK_IMAGE, LOCAL_PLACEHOLDER, sanitizeImageUrl } from './imageGuard'
+import { isMediaAsset, resolveMediaOriginal, type SarvdevMediaAsset, type SarvdevMediaInput, type SarvdevMediaKind } from './media-asset'
 
 /** Local emergency fallback served from public/. */
 export const TEMPLE_PLACEHOLDER = LOCAL_PLACEHOLDER
@@ -16,16 +17,18 @@ const DEFAULT_SAFE_POSITION = 'top center'
 const DEITY_HERO_SAFE_POSITION = 'center 58%'
 
 type ImageInput =
-  | string
-  | null
-  | undefined
+  | SarvdevMediaInput
   | {
-      image?: string | null
-      primaryImage?: string | null
-      imageCard?: string | null
-      imageHero?: string | null
-      heroImage?: string | null
-      ogImage?: string | null
+      image?: SarvdevMediaInput
+      primaryImage?: SarvdevMediaInput
+      imageCard?: SarvdevMediaInput
+      imageHero?: SarvdevMediaInput
+      heroImage?: SarvdevMediaInput
+      ogImage?: SarvdevMediaInput
+      primaryMedia?: SarvdevMediaAsset | null
+      cardMedia?: SarvdevMediaAsset | null
+      heroMedia?: SarvdevMediaAsset | null
+      ogMedia?: SarvdevMediaAsset | null
     }
 
 type ImageRole = 'templeHero' | 'templeCard' | 'deityHero' | 'deityCard' | 'blogHero' | 'blogCard' | 'gallery' | 'galleryLightbox' | 'og'
@@ -55,6 +58,7 @@ export type SarvdevImageSource = {
   role: ImageRole
   isCloudinary: boolean
   renderMode: ImageRenderMode
+  kind?: SarvdevMediaKind
   sources?: {
     media: string
     srcSet: string
@@ -65,7 +69,7 @@ export type SarvdevImageSource = {
 const PRESETS: Record<ImageRole, ImagePreset> = {
   templeHero: {
     role: 'templeHero',
-    widths: [768, 1024, 1366, 1600, 1920, 2560],
+    widths: [960, 1280, 1600, 1920, 2560, 3200],
     aspectRatio: '21:9',
     sizes: '100vw',
     crop: 'limit',
@@ -75,7 +79,7 @@ const PRESETS: Record<ImageRole, ImagePreset> = {
   },
   templeCard: {
     role: 'templeCard',
-    widths: [360, 480, 640, 768, 960],
+    widths: [320, 480, 640, 960],
     aspectRatio: '4:3',
     sizes: '(max-width: 640px) 92vw, (max-width: 1024px) 45vw, 24vw',
     crop: 'fill',
@@ -85,27 +89,27 @@ const PRESETS: Record<ImageRole, ImagePreset> = {
   },
   deityHero: {
     role: 'deityHero',
-    widths: [640, 960, 1280, 1600, 1920],
+    widths: [960, 1280, 1600, 1920, 2560],
     aspectRatio: '16:9',
     sizes: '100vw',
     crop: 'limit',
     gravity: 'north',
     objectPosition: DEITY_HERO_SAFE_POSITION,
-    renderMode: 'auto',
+    renderMode: 'safe-contain',
   },
   deityCard: {
     role: 'deityCard',
-    widths: [360, 480, 640, 768, 960, 1200],
+    widths: [320, 480, 640, 960],
     aspectRatio: '1:1',
     sizes: '(max-width: 640px) 92vw, (max-width: 1024px) 45vw, 24vw',
     crop: 'limit',
     gravity: 'north',
     objectPosition: DEFAULT_SAFE_POSITION,
-    renderMode: 'auto',
+    renderMode: 'safe-contain',
   },
   blogHero: {
     role: 'blogHero',
-    widths: [768, 1024, 1366, 1600, 1920, 2400],
+    widths: [960, 1280, 1600, 1920, 2560],
     aspectRatio: '21:9',
     sizes: '100vw',
     crop: 'limit',
@@ -115,7 +119,7 @@ const PRESETS: Record<ImageRole, ImagePreset> = {
   },
   blogCard: {
     role: 'blogCard',
-    widths: [360, 480, 640, 768, 960, 1200],
+    widths: [320, 480, 640, 960],
     aspectRatio: '16:9',
     sizes: '(max-width: 640px) 92vw, (max-width: 1024px) 45vw, 30vw',
     crop: 'fill',
@@ -154,19 +158,21 @@ const PRESETS: Record<ImageRole, ImagePreset> = {
 }
 
 function resolveImageUrl(input: ImageInput, preferred: 'image' | 'imageCard' | 'imageHero' | 'heroImage' | 'ogImage' = 'image') {
+  const directMedia = isMediaAsset(input)
   const candidates =
-    typeof input === 'string'
+    typeof input === 'string' || !input || directMedia
       ? [input]
       : preferred === 'ogImage'
-        ? [input?.ogImage, input?.imageHero, input?.heroImage, input?.primaryImage, input?.imageCard, input?.image]
+        ? [input?.ogMedia, input?.ogImage, input?.heroMedia, input?.imageHero, input?.heroImage, input?.primaryMedia, input?.primaryImage, input?.image, input?.cardMedia, input?.imageCard]
         : preferred === 'imageHero' || preferred === 'heroImage'
-          ? [input?.imageHero, input?.heroImage, input?.primaryImage, input?.imageCard, input?.image]
+          // Derived thumbnails must never become a large hero source. Card fields are legacy-only fallbacks.
+          ? [input?.heroMedia, input?.imageHero, input?.heroImage, input?.primaryMedia, input?.primaryImage, input?.image, input?.cardMedia, input?.imageCard]
           : preferred === 'imageCard'
-            ? [input?.imageCard, input?.primaryImage, input?.image]
-            : [input?.primaryImage, input?.image]
+            ? [input?.cardMedia, input?.imageCard, input?.primaryMedia, input?.primaryImage, input?.image]
+            : [input?.primaryMedia, input?.primaryImage, input?.image]
 
   for (const candidate of candidates) {
-    const safeUrl = sanitizeImageUrl(candidate?.trim(), '')
+    const safeUrl = sanitizeImageUrl(resolveMediaOriginal(candidate as SarvdevMediaInput), '')
     if (safeUrl) return safeUrl
   }
 
@@ -219,18 +225,11 @@ function getDimensionsFromAspectRatio(width: number, aspectRatio?: string) {
 function buildTransform(preset: ImagePreset, width: number, aspectRatio = preset.aspectRatio) {
   const transformations = [
     'f_auto',
-    'q_auto:best',
-    'dpr_auto',
+    'q_auto',
     preset.crop === 'fill' ? 'c_fill' : 'c_limit',
     preset.crop === 'fill' && preset.gravity ? `g_${preset.gravity}` : '',
     aspectRatio && preset.crop === 'fill' ? `ar_${aspectRatio}` : '',
     `w_${width}`,
-    'fl_progressive',
-    'cs_srgb',
-    'e_auto_brightness',
-    'e_auto_contrast',
-    'e_auto_color',
-    'e_sharpen:45',
   ]
 
   return transformations.filter(Boolean)
@@ -250,8 +249,6 @@ function getBlurPlaceholder(url: string) {
     'q_auto:eco',
     'w_48',
     'e_blur:900',
-    'e_auto_brightness',
-    'e_auto_color',
   ])
 }
 
@@ -308,6 +305,7 @@ function buildImageSource(
     role: preset.role,
     isCloudinary,
     renderMode: preset.renderMode,
+    kind: typeof input === 'object' && input && 'kind' in input ? input.kind : undefined,
     sources: responsiveSources?.filter((sourceSet) => sourceSet.srcSet),
   }
 }

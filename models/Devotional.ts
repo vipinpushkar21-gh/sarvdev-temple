@@ -1,5 +1,6 @@
 ﻿// models/Devotional.ts
 import mongoose from 'mongoose';
+import { MediaAssetSchema } from './shared/MediaAssetSchema';
 import { isValidMantraSubcategory } from '../lib/mantra-subcategories';
 import { isValidNamavaliSubcategory } from '../lib/namavali-subcategories';
 
@@ -50,6 +51,11 @@ const DevotionalSchema = new mongoose.Schema({
 
   // Images (legacy)
   image:           String,
+  primaryMedia:    { type: MediaAssetSchema },
+  cardMedia:       { type: MediaAssetSchema },
+  heroMedia:       { type: MediaAssetSchema },
+  ogMedia:         { type: MediaAssetSchema },
+  galleryMedia:    { type: [MediaAssetSchema], default: [] },
   imageCard:       String,
   imageHero:       String,
   ogImage:         String,

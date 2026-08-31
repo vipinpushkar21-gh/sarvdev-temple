@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { eventCategories, hinduEvents } from '../../data/events'
 import { getTempleCardImage } from '../../lib/temple-image'
 import SarvdevImage from '../../components/SarvdevImage'
+import type { SarvdevMediaAsset } from '../../lib/media-asset'
 
 type EventItem = {
   _id?: string
@@ -30,6 +31,8 @@ type EventItem = {
   image?: string
   imageCard?: string
   imageHero?: string
+  cardMedia?: SarvdevMediaAsset
+  heroMedia?: SarvdevMediaAsset
   deityName?: string
   templeName?: string
   status?: string
@@ -133,7 +136,7 @@ export default function EventsPage() {
           {featured && (
             <section className="grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] overflow-hidden rounded-2xl border border-amber-100 bg-white shadow-sm">
               <div className="relative min-h-[280px]">
-                <SarvdevImage image={getTempleCardImage({ imageCard: featured.imageCard, image: featured.image })} alt={featured.title} className="absolute inset-0" imgClassName="object-cover" loading="eager" />
+                <SarvdevImage image={getTempleCardImage({ cardMedia: featured.cardMedia, imageCard: featured.imageCard, image: featured.image })} alt={featured.title} className="absolute inset-0" imgClassName="object-cover" loading="eager" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
                 <div className="absolute bottom-5 left-5 right-5">
                   <span className="rounded-full bg-amber-400 px-3 py-1 text-xs font-bold text-gray-950">Featured</span>
@@ -197,7 +200,7 @@ function EventCard({ event }: { event: EventItem }) {
   return (
     <article className="group overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
       <div className="relative h-48">
-        <SarvdevImage image={getTempleCardImage({ imageCard: event.imageCard, image: event.image })} alt={event.title} className="absolute inset-0" imgClassName="object-cover transition-transform duration-700 group-hover:scale-105" />
+        <SarvdevImage image={getTempleCardImage({ cardMedia: event.cardMedia, imageCard: event.imageCard, image: event.image })} alt={event.title} className="absolute inset-0" imgClassName="object-cover transition-transform duration-700 group-hover:scale-105" />
         <div className="absolute left-4 top-4 rounded-xl bg-white/95 px-3 py-2 text-center shadow-sm">
           <span className="block text-xl font-bold text-gray-900">{new Date(`${event.startDate || event.date}T12:00:00`).getDate()}</span>
           <span className="text-[10px] uppercase tracking-wide text-gray-500">{new Date(`${event.startDate || event.date}T12:00:00`).toLocaleDateString('en-IN', { month: 'short' })}</span>

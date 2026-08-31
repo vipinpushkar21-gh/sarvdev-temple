@@ -5,6 +5,7 @@ import { sanitizeImageUrl } from '@/lib/imageGuard'
 import ActivityLog from '@/models/ActivityLog'
 import Darshan from '@/models/Darshan'
 import { buildCursorFilter, paginateCursor, parseCursorLimit, DARSHAN_CARD_PROJ } from '@/lib/cursor-pagination'
+import { normalizeMediaAsset } from '@/lib/media-asset'
 
 type AdminPayload = NonNullable<ReturnType<typeof verifyToken>>
 
@@ -88,9 +89,12 @@ function normalizeDarshanInput(input: Record<string, unknown>) {
     youtubeId: extractYoutubeId(input.youtubeId, youtubeUrl, videoUrl, externalUrl),
     media: videoUrl,
     thumbnail,
+    primaryMedia: normalizeMediaAsset(input.primaryMedia, 'darshan') ?? null,
     image: imageCard || thumbnail,
     imageCard,
+    cardMedia: normalizeMediaAsset(input.cardMedia, 'darshan') ?? null,
     imageHero,
+    heroMedia: normalizeMediaAsset(input.heroMedia, 'darshan') ?? null,
     darshanType: ALL_DARSHAN_TYPES.has(darshanType) ? darshanType : isLive ? 'live' : 'recorded',
     type: ALL_DARSHAN_TYPES.has(darshanType) ? darshanType : isLive ? 'live' : 'recorded',
     isLive,
@@ -114,6 +118,7 @@ function normalizeDarshanInput(input: Record<string, unknown>) {
     metaTitle: cleanString(input.metaTitle, 80),
     metaDescription: cleanString(input.metaDescription, 180),
     ogImage,
+    ogMedia: normalizeMediaAsset(input.ogMedia, 'darshan') ?? null,
   }
 }
 

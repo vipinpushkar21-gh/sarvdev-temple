@@ -5,6 +5,7 @@ import { verifyToken, AUTH_COOKIE_NAME } from '@/lib/auth';
 import { resolveCategoryForDeity } from '@/lib/deity-categories';
 import { getCanonicalDeityCategory, normalizeDeityForRead } from '@/lib/deity-normalization';
 import { buildCursorFilter, paginateCursor, parseCursorLimit, DEITY_CARD_PROJ } from '@/lib/cursor-pagination';
+import { normalizeMediaAsset } from '@/lib/media-asset';
 
 // ── 60-second in-memory cache — deities list is read-heavy, rarely changes ──
 let _deityCache: { data: any[]; ts: number } | null = null
@@ -25,6 +26,7 @@ const STRING_FIELDS = [
 ] as const;
 const ARRAY_FIELDS = ['attributes', 'images', 'aliases', 'slugAliases'] as const;
 const MEDIA_FIELDS = ['image', 'imageCard', 'imageHero', 'ogImage'] as const;
+const STRUCTURED_MEDIA_FIELDS = ['primaryMedia', 'cardMedia', 'heroMedia', 'ogMedia'] as const;
 
 function getAdmin(req: NextRequest) {
   const token = req.cookies.get(AUTH_COOKIE_NAME)?.value;
@@ -305,6 +307,12 @@ export async function POST(req: NextRequest) {
     }
     data.updatedAt = new Date();
 
+    for (const field of STRUCTURED_MEDIA_FIELDS) {
+      if (Object.prototype.hasOwnProperty.call(data, field)) {
+        data[field] = normalizeMediaAsset(data[field], 'deity-artwork') ?? null;
+      }
+    }
+
     const deity = await Deity.create(data);
     _deityCache = null;
     return NextResponse.json(normalizeDeityForRead(deity.toObject ? deity.toObject() : deity), { status: 201 });
@@ -404,6 +412,12 @@ export async function PUT(req: NextRequest) {
     for (const field of MEDIA_FIELDS) {
       if (Object.prototype.hasOwnProperty.call(update, field)) {
         safeUpdate[field] = typeof update[field] === 'string' ? String(update[field]).trim() : '';
+      }
+    }
+
+    for (const field of STRUCTURED_MEDIA_FIELDS) {
+      if (Object.prototype.hasOwnProperty.call(update, field)) {
+        safeUpdate[field] = normalizeMediaAsset(update[field], 'deity-artwork') ?? null;
       }
     }
 

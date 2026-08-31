@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import ImageUpload from '../../../components/ImageUpload'
 import AdminPagination from '@/components/admin/AdminPagination'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
+import type { SarvdevMediaAsset } from '@/lib/media-asset'
 
 type EventRow = any
 type ImportResult = {
@@ -61,7 +62,9 @@ const emptyForm = {
   relatedDevotionalSlugs: '',
   image: '',
   imageCard: '',
+  cardMedia: null as SarvdevMediaAsset | null,
   imageHero: '',
+  heroMedia: null as SarvdevMediaAsset | null,
   galleryImages: '',
   videoUrl: '',
   status: 'draft',
@@ -336,8 +339,8 @@ export default function AdminEventsPage() {
           </Section>
 
           <Section title="Media">
-            <div className="md:col-span-2"><ImageUpload label="Event/Card Image" value={form.imageCard} onChange={(url) => setForm({ ...form, imageCard: url, image: form.image || url })} folder="sarvdev/events/cards" guidance="general" /></div>
-            <div className="md:col-span-2"><ImageUpload label="Hero Image" value={form.imageHero} onChange={(url) => setForm({ ...form, imageHero: url, image: form.image || url })} folder="sarvdev/events/heroes" guidance="hero" /></div>
+            <div className="md:col-span-2"><ImageUpload label="Event/Card Image" value={form.imageCard} media={form.cardMedia} onChange={(url) => setForm({ ...form, imageCard: url, image: form.image || url })} onMediaChange={(media) => setForm((current: any) => ({ ...current, cardMedia: media }))} folder="sarvdev/events" guidance="general" kind="other" /></div>
+            <div className="md:col-span-2"><ImageUpload label="Hero Image" value={form.imageHero} media={form.heroMedia} onChange={(url) => setForm({ ...form, imageHero: url, image: form.image || url })} onMediaChange={(media) => setForm((current: any) => ({ ...current, heroMedia: media }))} folder="sarvdev/events" guidance="hero" kind="other" /></div>
             <Textarea label="Gallery Images" value={form.galleryImages} onChange={(v) => setForm({ ...form, galleryImages: v })} />
             <Input label="Video URL" value={form.videoUrl} onChange={(v) => setForm({ ...form, videoUrl: v })} />
           </Section>

@@ -1,5 +1,6 @@
 // models/Darshan.ts
 import mongoose, { Schema, models } from 'mongoose';
+import { MediaAssetSchema } from './shared/MediaAssetSchema';
 
 const DarshanSchema = new Schema({
   title: { type: String, required: true },
@@ -17,6 +18,10 @@ const DarshanSchema = new Schema({
   media: { type: String },
   thumbnail: { type: String },
   image: { type: String },
+  primaryMedia: { type: MediaAssetSchema },
+  cardMedia: { type: MediaAssetSchema },
+  heroMedia: { type: MediaAssetSchema },
+  ogMedia: { type: MediaAssetSchema },
   imageCard: { type: String },
   imageHero: { type: String },
   time: { type: String },
@@ -49,4 +54,5 @@ const DarshanSchema = new Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
-export default models.Darshan || mongoose.model('Darshan', DarshanSchema);
+const DarshanModel: any = models.Darshan || mongoose.model('Darshan', DarshanSchema as any);
+export default DarshanModel;

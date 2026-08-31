@@ -37,9 +37,10 @@ export default function SarvdevImage({
   }, [image.src, image.srcSet, image.fallback])
 
   const requestedMode = renderMode || image.renderMode || 'auto'
+  const kindRequiresContain = image.kind === 'deity-artwork' || image.kind === 'devotional-artwork' || image.kind === 'icon'
   const prefersFocalSafe = requestedMode === 'focal-safe' || (requestedMode === 'auto' && image.role === 'deityHero')
   const effectiveMode: Exclude<ImageRenderMode, 'auto'> =
-    requestedMode === 'safe-contain' || autoContain
+    requestedMode === 'safe-contain' || kindRequiresContain || autoContain
       ? 'safe-contain'
       : requestedMode === 'cinematic-cover'
         ? 'cinematic-cover'

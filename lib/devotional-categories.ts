@@ -12,7 +12,6 @@ export type DevotionalCategory = {
 
 export const DEVOTIONAL_CATEGORIES: DevotionalCategory[] = [
   { id: 'Aarti',      slug: 'aarti',      nameHi: 'आरती',       icon: '🪔', description: 'Daily puja and evening lamp offerings for major deities.' },
-  { id: 'Bhajan',     slug: 'bhajan',     nameHi: 'भजन',        icon: '🎵', description: 'Melodic devotional songs for listening, satsang and kirtan.' },
   { id: 'Chalisa',    slug: 'chalisa',    nameHi: 'चालीसा',     icon: '📖', description: 'Forty-verse devotional paths with readable lyrics and audio support.' },
   { id: 'Mantra',     slug: 'mantra',     nameHi: 'मंत्र',      icon: '📿', description: 'Sacred chants for japa, meditation, focus and protection.' },
   { id: 'Stotra',     slug: 'stotra',     nameHi: 'स्तोत्र',    icon: '🕉️', description: 'Classical hymns and suktams for recitation and contemplation.' },
@@ -23,7 +22,6 @@ export const DEVOTIONAL_CATEGORIES: DevotionalCategory[] = [
   { id: 'Ashtaka',    slug: 'ashtaka',    nameHi: 'अष्टकम्',    icon: '🌸', description: 'Eight-verse hymns for focused worship.' },
   { id: 'Path',       slug: 'path',       nameHi: 'पाठ',        icon: '📚', description: 'Long-form sacred readings and recitation content.' },
   { id: 'Namavali',   slug: 'namavali',   nameHi: 'नामावली',    icon: '🌺', description: 'Sacred name collections for archana and japa.' },
-  { id: 'Sahasranamavali', slug: 'sahasranamavali', nameHi: 'सहस्रनामावली', icon: '🌼', description: 'Sacred thousand-name collections for archana and japa.' },
   { id: 'Kavacham',   slug: 'kavacham',   nameHi: 'कवचम्',      icon: '🛡️', description: 'Protective hymns and kavach paths for spiritual strength.' },
   { id: 'Prarthana',  slug: 'prarthana',  nameHi: 'प्रार्थना',  icon: '🌿', description: 'Prayer collections for simple daily devotion.' },
   { id: 'Vrat Katha', slug: 'vrat-katha', nameHi: 'व्रत कथा',   icon: '📖', description: 'Vrat stories and readings connected to sacred observances.' },

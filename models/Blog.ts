@@ -1,5 +1,7 @@
 // models/Blog.ts
 import mongoose, { Schema, Model, Document } from 'mongoose';
+import { MediaAssetSchema } from './shared/MediaAssetSchema';
+import type { SarvdevMediaAsset } from '../lib/media-asset';
 
 interface IBlog extends Document {
   title: string;
@@ -15,6 +17,10 @@ interface IBlog extends Document {
   date?: string;
   publishedAt?: Date;
   image?: string;
+  primaryMedia?: SarvdevMediaAsset;
+  cardMedia?: SarvdevMediaAsset;
+  heroMedia?: SarvdevMediaAsset;
+  ogMedia?: SarvdevMediaAsset;
   imageCard?: string;
   imageHero?: string;
   ogImage?: string;
@@ -49,6 +55,10 @@ const BlogSchema = new Schema<IBlog>({
   date: { type: String },
   publishedAt: { type: Date },
   image: { type: String },
+  primaryMedia: { type: MediaAssetSchema },
+  cardMedia: { type: MediaAssetSchema },
+  heroMedia: { type: MediaAssetSchema },
+  ogMedia: { type: MediaAssetSchema },
   imageCard: { type: String },
   imageHero: { type: String },
   author: { type: String },

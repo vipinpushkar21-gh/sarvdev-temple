@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import ImageUpload from '@/components/ImageUpload'
 import { FULL_CATEGORIES } from '@/app/devotionals/components/categories'
+import type { SarvdevMediaAsset } from '@/lib/media-asset'
 
 export default function EditDevotionalPage() {
   const params = useParams()
@@ -39,6 +40,7 @@ export default function EditDevotionalPage() {
     metaDescription: '',
     metaKeywords: '',
     image: '',
+    primaryMedia: null as SarvdevMediaAsset | null,
   })
 
   useEffect(() => {
@@ -60,7 +62,7 @@ export default function EditDevotionalPage() {
               language: found.language || '',
               deity: found.deity || '',
               audio: found.audioUrl || found.audio || '',
-              lyrics: found.content || found.lyrics || '',
+              lyrics: found.lyrics || found.content || '',
               duration: found.duration || '',
               artist: found.artist || '',
               featured: Boolean(found.featured),
@@ -69,6 +71,7 @@ export default function EditDevotionalPage() {
               metaDescription: found.metaDescription || '',
               metaKeywords: found.metaKeywords || '',
               image: found.image || '',
+              primaryMedia: found.primaryMedia || null,
             })
           } else {
             showToast('error', 'Devotional not found')
@@ -142,7 +145,7 @@ export default function EditDevotionalPage() {
               language: found.language || '',
               deity: found.deity || '',
               audio: found.audioUrl || found.audio || '',
-              lyrics: found.content || found.lyrics || '',
+              lyrics: found.lyrics || found.content || '',
               duration: found.duration || '',
               artist: found.artist || '',
               featured: Boolean(found.featured),
@@ -151,6 +154,7 @@ export default function EditDevotionalPage() {
               metaDescription: found.metaDescription || '',
               metaKeywords: found.metaKeywords || '',
               image: found.image || '',
+              primaryMedia: found.primaryMedia || null,
             })
           }
         }
@@ -307,9 +311,12 @@ export default function EditDevotionalPage() {
           <ImageUpload
             value={formData.image}
             onChange={(url) => setFormData({ ...formData, image: url })}
-            folder="devotionals"
+            media={formData.primaryMedia}
+            onMediaChange={(media) => setFormData((current) => ({ ...current, primaryMedia: media }))}
+            folder="sarvdev/devotionals"
             label="Devotional Image"
             guidance="devotionalCard"
+            kind="devotional-artwork"
           />
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-1">Audio URL</label>

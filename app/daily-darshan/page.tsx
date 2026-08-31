@@ -25,6 +25,7 @@ import {
 import BookmarkButton from '../../components/BookmarkButton'
 import SarvdevImage from '../../components/SarvdevImage'
 import { getTempleCardImage, getTempleHeroImage } from '../../lib/temple-image'
+import type { SarvdevMediaAsset } from '../../lib/media-asset'
 
 const HERO_IMAGE = 'https://res.cloudinary.com/dc2qg7bwr/image/upload/image_2_xljqwa'
 const PAGE_URL = 'https://sarvdev.com/daily-darshan'
@@ -51,6 +52,9 @@ type Darshan = {
   image?: string
   imageCard?: string
   imageHero?: string
+  primaryMedia?: SarvdevMediaAsset
+  cardMedia?: SarvdevMediaAsset
+  heroMedia?: SarvdevMediaAsset
   ogImage?: string
   isLive?: boolean
   temple?: string
@@ -997,6 +1001,8 @@ function getWatchUrl(item: Darshan) {
 
 function getDarshanCardImage(item: Darshan) {
   return getTempleCardImage({
+    cardMedia: item.cardMedia,
+    primaryMedia: item.primaryMedia,
     imageCard: item.imageCard || item.thumbnail || item.image || HERO_IMAGE,
     image: item.imageCard || item.thumbnail || item.image || HERO_IMAGE,
   })
@@ -1004,6 +1010,9 @@ function getDarshanCardImage(item: Darshan) {
 
 function getDarshanHeroImage(item: Darshan) {
   return getTempleHeroImage({
+    heroMedia: item.heroMedia,
+    primaryMedia: item.primaryMedia,
+    cardMedia: item.cardMedia,
     imageHero: item.imageHero || item.imageCard || item.thumbnail || item.image || HERO_IMAGE,
     imageCard: item.imageCard || item.thumbnail || item.image || HERO_IMAGE,
     image: item.imageHero || item.imageCard || item.thumbnail || item.image || HERO_IMAGE,

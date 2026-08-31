@@ -42,7 +42,6 @@ export const FULL_CATEGORIES: CategoryDef[] = [
       { id: 'dham-sant', label: 'धाम व संत', hindi: 'धाम व संत' },
     ]
   },
-  { id: 'Bhajan',     label: 'Bhajan',     slug: 'bhajan',     hindi: 'भजन',        emoji: '🎵', description: 'Melodic devotional songs for listening, satsang and kirtan.' },
   { id: 'Chalisa',    label: 'Chalisa',    slug: 'chalisa',    hindi: 'चालीसा',     emoji: '📖', description: 'Forty-verse devotional paths with readable lyrics and audio support.' },
   {
     id: 'Mantra', label: 'Mantra', slug: 'mantra', hindi: 'मंत्र', emoji: '📿',
@@ -59,11 +58,6 @@ export const FULL_CATEGORIES: CategoryDef[] = [
   {
     id: 'Namavali', label: 'Namavali', slug: 'namavali', hindi: 'नामावली', emoji: '🌺',
     description: 'Sacred name collections for archana and japa.',
-    subcategories: NAMAVALI_SUBCATEGORIES.map((value) => ({ id: value, label: value, hindi: value })),
-  },
-  {
-    id: 'Sahasranamavali', label: 'Sahasranamavali', slug: 'sahasranamavali', hindi: 'सहस्रनामावली', emoji: '🌼',
-    description: 'Sacred thousand-name collections for archana and japa.',
     subcategories: NAMAVALI_SUBCATEGORIES.map((value) => ({ id: value, label: value, hindi: value })),
   },
   { id: 'Kavacham',   label: 'Kavacham',   slug: 'kavacham',   hindi: 'कवचम्',      emoji: '🛡️', description: 'Protective hymns and kavach paths for spiritual strength.' },

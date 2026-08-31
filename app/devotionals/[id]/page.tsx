@@ -38,8 +38,8 @@ export default function DevotionalDetailPage() {
       try {
         // Use the /[id] route directly — supports both ObjectId and slug
         const [detailRes, relatedRes] = await Promise.all([
-          fetch(`/api/devotionals/${encodeURIComponent(slug)}`),
-          fetch('/api/devotionals?page=1&limit=24'),
+          fetch(`/api/devotionals/${encodeURIComponent(slug)}`, { cache: 'no-store' }),
+          fetch('/api/devotionals?page=1&limit=24', { cache: 'no-store' }),
         ])
         if (!cancelled && relatedRes.ok) {
           const payload = await relatedRes.json()

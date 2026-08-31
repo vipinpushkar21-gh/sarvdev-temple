@@ -1,4 +1,5 @@
 import mongoose, { Schema, models } from 'mongoose'
+import { MediaAssetSchema } from './shared/MediaAssetSchema'
 
 const SpiritualIconSchema = new Schema({
   name: { type: String, required: true },
@@ -13,6 +14,11 @@ const SpiritualIconSchema = new Schema({
   fullBio: { type: String },
   fullBioHi: { type: String },
   image: { type: String },
+  primaryMedia: { type: MediaAssetSchema },
+  cardMedia: { type: MediaAssetSchema },
+  heroMedia: { type: MediaAssetSchema },
+  ogMedia: { type: MediaAssetSchema },
+  galleryMedia: { type: [MediaAssetSchema], default: [] },
   imageCard: { type: String },
   imageHero: { type: String },
   galleryImages: [{ type: String }],
@@ -61,4 +67,5 @@ SpiritualIconSchema.pre('save', function (next) {
   next()
 })
 
-export default models.SpiritualIcon || mongoose.model('SpiritualIcon', SpiritualIconSchema)
+const SpiritualIconModel: mongoose.Model<any> = models.SpiritualIcon || mongoose.model<any>('SpiritualIcon', SpiritualIconSchema as any)
+export default SpiritualIconModel

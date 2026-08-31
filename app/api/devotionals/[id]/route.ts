@@ -31,7 +31,9 @@ export async function GET(
       return NextResponse.json({ error: 'Devotional not found' }, { status: 404 })
     }
 
-    return NextResponse.json(devotional)
+    return NextResponse.json(devotional, {
+      headers: { 'Cache-Control': 'private, no-store, max-age=0' },
+    })
   } catch (error) {
     console.error('Error fetching devotional:', error)
     return NextResponse.json({ error: 'Failed to fetch devotional' }, { status: 500 })

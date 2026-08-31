@@ -67,8 +67,8 @@ export default function SpiritualIconDetailPage() {
   }
 
   const category = getSpiritualIconCategory(icon.categorySlug)
-  const heroImage = getTempleHeroImage({ imageHero: icon.imageHero || icon.imageCard || icon.image || HERO_IMAGE, image: icon.imageHero || icon.imageCard || icon.image || HERO_IMAGE })
-  const cardImage = getTempleCardImage({ imageCard: icon.imageCard || icon.image || HERO_IMAGE, image: icon.imageCard || icon.image || HERO_IMAGE })
+  const heroImage = getTempleHeroImage({ heroMedia: icon.heroMedia, primaryMedia: icon.primaryMedia, cardMedia: icon.cardMedia, imageHero: icon.imageHero || icon.imageCard || icon.image || HERO_IMAGE, image: icon.imageHero || icon.imageCard || icon.image || HERO_IMAGE })
+  const cardImage = getTempleCardImage({ cardMedia: icon.cardMedia, primaryMedia: icon.primaryMedia, imageCard: icon.imageCard || icon.image || HERO_IMAGE, image: icon.imageCard || icon.image || HERO_IMAGE })
   const isGroup = icon.categorySlug === 'kirtan-mandali'
   const jsonLd = [
     {
@@ -246,7 +246,7 @@ function ContactLink({ href, icon, label }: { href: string; icon: ReactNode; lab
 }
 
 function RelatedCard({ icon }: { icon: SpiritualIconRecord }) {
-  const image = getTempleCardImage({ imageCard: icon.imageCard || icon.image || HERO_IMAGE, image: icon.imageCard || icon.image || HERO_IMAGE })
+  const image = getTempleCardImage({ cardMedia: icon.cardMedia, primaryMedia: icon.primaryMedia, imageCard: icon.imageCard || icon.image || HERO_IMAGE, image: icon.imageCard || icon.image || HERO_IMAGE })
   return (
     <Link href={`/spiritual-icons/${icon.slug}`} className="overflow-hidden rounded-2xl border border-stone-200 bg-white no-underline shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
       <div className="relative aspect-[4/3] bg-orange-50">

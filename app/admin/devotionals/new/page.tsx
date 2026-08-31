@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import ImageUpload from '@/components/ImageUpload'
 import { FULL_CATEGORIES } from '@/app/devotionals/components/categories'
+import type { SarvdevMediaAsset } from '@/lib/media-asset'
 
 function createSlug(title: string): string {
   const englishMatch = title.match(/\(([^)]+)\)/)
@@ -38,6 +39,7 @@ export default function NewDevotionalPage() {
     metaDescription: '',
     metaKeywords: '',
     image: '',
+    primaryMedia: null as SarvdevMediaAsset | null,
   })
 
   const slugPreview = useMemo(() => formData.slug || createSlug(formData.title), [formData.title, formData.slug])
@@ -172,9 +174,12 @@ export default function NewDevotionalPage() {
           <ImageUpload
             value={formData.image}
             onChange={(url) => setFormData({ ...formData, image: url })}
-            folder="devotionals"
+            media={formData.primaryMedia}
+            onMediaChange={(media) => setFormData((current) => ({ ...current, primaryMedia: media }))}
+            folder="sarvdev/devotionals"
             label="Devotional Image"
             guidance="devotionalCard"
+            kind="devotional-artwork"
           />
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-1">Audio URL</label>

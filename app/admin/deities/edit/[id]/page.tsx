@@ -6,6 +6,7 @@ import Link from "next/link"
 import ImageUpload from "../../../../../components/ImageUpload"
 import { getCategoryOptions, resolveCanonicalCategoryId } from "../../../../../lib/deity-categories"
 import { compactText } from "../../../../../lib/text-formatting"
+import type { SarvdevMediaAsset } from "../../../../../lib/media-asset"
 
 type FormState = {
   name: string
@@ -21,13 +22,17 @@ type FormState = {
   slugAliases: string
   categories: string[]
   imageUrl: string
+  primaryMedia: SarvdevMediaAsset | null
   imageCard: string
+  cardMedia: SarvdevMediaAsset | null
   imageHero: string
+  heroMedia: SarvdevMediaAsset | null
   images: string[]
   metaTitle: string
   metaDescription: string
   metaKeywords: string
   ogImage: string
+  ogMedia: SarvdevMediaAsset | null
   status: string
   source: string
 }
@@ -63,13 +68,17 @@ export default function AdminEditDeityPage({ params }: { params: Promise<{ id: s
     slugAliases: "",
     categories: [],
     imageUrl: "",
+    primaryMedia: null,
     imageCard: "",
+    cardMedia: null,
     imageHero: "",
+    heroMedia: null,
     images: [],
     metaTitle: "",
     metaDescription: "",
     metaKeywords: "",
     ogImage: "",
+    ogMedia: null,
     status: "pending",
     source: "manual"
   })
@@ -119,13 +128,17 @@ export default function AdminEditDeityPage({ params }: { params: Promise<{ id: s
             slugAliases: Array.isArray(deity.slugAliases) ? deity.slugAliases.join(', ') : "",
             categories: selectedCategories,
             imageUrl: deity.image || "",
+            primaryMedia: deity.primaryMedia || null,
             imageCard: deity.imageCard || "",
+            cardMedia: deity.cardMedia || null,
             imageHero: deity.imageHero || "",
+            heroMedia: deity.heroMedia || null,
             images: Array.isArray(deity.images) ? deity.images : [],
             metaTitle: deity.metaTitle || "",
             metaDescription: deity.metaDescription || "",
             metaKeywords: deity.metaKeywords || "",
             ogImage: deity.ogImage || "",
+            ogMedia: deity.ogMedia || null,
             status: ['pending', 'approved', 'rejected'].includes(deity.status) ? deity.status : "approved",
             source: deity.source || "manual"
           })
@@ -140,7 +153,7 @@ export default function AdminEditDeityPage({ params }: { params: Promise<{ id: s
     fetchDeity()
   }, [params])
 
-  const handleChange = (field: keyof FormState, value: string | string[]) => {
+  const handleChange = <K extends keyof FormState>(field: K, value: FormState[K]) => {
     setForm(prev => ({ ...prev, [field]: value }))
   }
 
@@ -198,12 +211,16 @@ export default function AdminEditDeityPage({ params }: { params: Promise<{ id: s
         metaDescription: form.metaDescription,
         metaKeywords: form.metaKeywords,
         ogImage: form.ogImage,
+        ogMedia: form.ogMedia,
         status: form.status,
         attributes: form.attributes.split(',').map(a => a.trim()).filter(a => a),
         images: form.images,
         image: form.imageUrl,
+        primaryMedia: form.primaryMedia,
         imageCard: form.imageCard,
+        cardMedia: form.cardMedia,
         imageHero: form.imageHero,
+        heroMedia: form.heroMedia,
         allowSlugChange: true,
       }
 
@@ -425,7 +442,10 @@ export default function AdminEditDeityPage({ params }: { params: Promise<{ id: s
             <ImageUpload
               label="Card Image"
               value={form.imageCard}
+              media={form.cardMedia}
               onChange={(url) => handleChange('imageCard', url)}
+              onMediaChange={(media) => handleChange('cardMedia', media)}
+              kind="deity-artwork"
               folder="sarvdev/deities/cards"
               guidance="card"
             />
@@ -433,7 +453,10 @@ export default function AdminEditDeityPage({ params }: { params: Promise<{ id: s
             <ImageUpload
               label="Hero Image"
               value={form.imageHero}
+              media={form.heroMedia}
               onChange={(url) => handleChange('imageHero', url)}
+              onMediaChange={(media) => handleChange('heroMedia', media)}
+              kind="deity-artwork"
               folder="sarvdev/deities/heroes"
               guidance="hero"
             />
@@ -441,7 +464,10 @@ export default function AdminEditDeityPage({ params }: { params: Promise<{ id: s
             <ImageUpload
               label="Legacy Main Image"
               value={form.imageUrl}
+              media={form.primaryMedia}
               onChange={(url) => handleChange('imageUrl', url)}
+              onMediaChange={(media) => handleChange('primaryMedia', media)}
+              kind="deity-artwork"
               folder="sarvdev/deities"
             />
 
@@ -508,7 +534,11 @@ export default function AdminEditDeityPage({ params }: { params: Promise<{ id: s
             <ImageUpload
               label="OG Image"
               value={form.ogImage}
+              media={form.ogMedia}
               onChange={(url) => handleChange('ogImage', url)}
+              onMediaChange={(media) => handleChange('ogMedia', media)}
+              folder="sarvdev/deities"
+              kind="deity-artwork"
             />
           </div>
         </div>

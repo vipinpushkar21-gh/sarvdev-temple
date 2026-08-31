@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import ImageUpload from '../../../components/ImageUpload'
+import type { SarvdevMediaAsset } from '../../../lib/media-asset'
 
 export type DarshanFormValues = {
   title: string
@@ -20,8 +21,11 @@ export type DarshanFormValues = {
   videoUrl: string
   youtubeUrl: string
   thumbnail: string
+  primaryMedia: SarvdevMediaAsset | null
   imageCard: string
+  cardMedia: SarvdevMediaAsset | null
   imageHero: string
+  heroMedia: SarvdevMediaAsset | null
   darshanType: 'live' | 'recorded' | 'upcoming'
   isLive: boolean
   isFeatured: boolean
@@ -40,6 +44,7 @@ export type DarshanFormValues = {
   metaTitle: string
   metaDescription: string
   ogImage: string
+  ogMedia: SarvdevMediaAsset | null
 }
 
 const DEFAULT_VALUES: DarshanFormValues = {
@@ -57,8 +62,11 @@ const DEFAULT_VALUES: DarshanFormValues = {
   videoUrl: '',
   youtubeUrl: '',
   thumbnail: '',
+  primaryMedia: null,
   imageCard: '',
+  cardMedia: null,
   imageHero: '',
+  heroMedia: null,
   darshanType: 'recorded',
   isLive: false,
   isFeatured: false,
@@ -77,6 +85,7 @@ const DEFAULT_VALUES: DarshanFormValues = {
   metaTitle: '',
   metaDescription: '',
   ogImage: '',
+  ogMedia: null,
 }
 
 const REPEAT_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
@@ -98,8 +107,11 @@ export function normalizeDarshanForForm(data: any): DarshanFormValues {
     videoUrl: data?.videoUrl || data?.video || data?.media || '',
     youtubeUrl: data?.youtubeUrl || '',
     thumbnail: data?.thumbnail || '',
+    primaryMedia: data?.primaryMedia || null,
     imageCard: data?.imageCard || data?.image || '',
+    cardMedia: data?.cardMedia || null,
     imageHero: data?.imageHero || '',
+    heroMedia: data?.heroMedia || null,
     darshanType: data?.darshanType || data?.type || (data?.isLive ? 'live' : 'recorded'),
     isLive: Boolean(data?.isLive),
     isFeatured: Boolean(data?.isFeatured ?? data?.featured),
@@ -118,6 +130,7 @@ export function normalizeDarshanForForm(data: any): DarshanFormValues {
     metaTitle: data?.metaTitle || '',
     metaDescription: data?.metaDescription || '',
     ogImage: data?.ogImage || '',
+    ogMedia: data?.ogMedia || null,
   }
 }
 
@@ -234,24 +247,33 @@ export default function DarshanForm({ mode, id, initialValues }: Props) {
           </div>
           <ImageUpload
             value={form.thumbnail}
+            media={form.primaryMedia}
             onChange={(url) => setField('thumbnail', url)}
+            onMediaChange={(media) => setField('primaryMedia', media)}
             folder="sarvdev/darshan/thumbnails"
             label="Thumbnail"
             guidance="darshanCard"
+            kind="darshan"
           />
           <ImageUpload
             value={form.imageCard}
+            media={form.cardMedia}
             onChange={(url) => setField('imageCard', url)}
+            onMediaChange={(media) => setField('cardMedia', media)}
             folder="sarvdev/darshan/cards"
             label="Card Image"
             guidance="darshanCard"
+            kind="darshan"
           />
           <ImageUpload
             value={form.imageHero}
+            media={form.heroMedia}
             onChange={(url) => setField('imageHero', url)}
+            onMediaChange={(media) => setField('heroMedia', media)}
             folder="sarvdev/darshan/heroes"
             label="Hero Image"
             guidance="darshanHero"
+            kind="darshan"
           />
           <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs leading-5 text-amber-800">
             Thumbnail/Card: recommended 1600 x 900, AI target 2000 x 1125. Hero: recommended 3360 x 1440 with cinematic safe framing and no crop-risk.
@@ -326,10 +348,13 @@ export default function DarshanForm({ mode, id, initialValues }: Props) {
           <TextArea label="Meta Description" value={form.metaDescription} maxLength={180} onChange={(value) => setField('metaDescription', value)} rows={3} />
           <ImageUpload
             value={form.ogImage}
+            media={form.ogMedia}
             onChange={(url) => setField('ogImage', url)}
+            onMediaChange={(media) => setField('ogMedia', media)}
             folder="sarvdev/darshan/og"
             label="OG Image"
             guidance="darshanCard"
+            kind="darshan"
           />
         </FormSection>
 
