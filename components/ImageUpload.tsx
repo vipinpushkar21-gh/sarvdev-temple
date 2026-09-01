@@ -175,7 +175,7 @@ export default function ImageUpload({ value, media, onChange, onMediaChange, fol
       const cloudinaryResponse = await fetch(`https://api.cloudinary.com/v1_1/${encodeURIComponent(signed.cloudName)}/image/upload`, { method: 'POST', body: fd })
       const data = await cloudinaryResponse.json()
       if (cloudinaryResponse.ok) {
-        const media: SarvdevMediaAsset = { url: data.secure_url, publicId: data.public_id, assetId: data.asset_id, version: data.version, width: data.width, height: data.height, format: data.format, bytes: data.bytes, folder: data.folder, kind }
+        const media: SarvdevMediaAsset = { url: data.secure_url, publicId: data.public_id, assetId: data.asset_id, version: data.version, width: data.width, height: data.height, format: data.format, bytes: data.bytes, folder, kind }
         onChange(media.url || '')
         onMediaChange?.(media)
         setOptimizedPreview(media.url || '')

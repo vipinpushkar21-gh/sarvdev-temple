@@ -210,7 +210,7 @@ export default function DeityDetailPage({ params }: Props) {
       />
       <AdminEditBar editHref={deity._id ? `/admin/deities/edit/${deity._id}` : undefined} />
 
-      <section className="relative min-h-[680px] overflow-hidden bg-stone-950 text-white">
+      <section className="relative min-h-[420px] overflow-hidden bg-stone-950 text-white sm:min-h-[680px]">
         <SarvdevImage
           image={heroImage}
           alt={deity.name}
@@ -222,7 +222,7 @@ export default function DeityDetailPage({ params }: Props) {
         <div className="absolute inset-0 bg-gradient-to-r from-stone-950/96 via-stone-950/70 to-stone-950/18" />
         <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-surface to-transparent" />
 
-        <div className="page-container relative z-10 flex min-h-[680px] flex-col justify-end pb-16 pt-24">
+        <div className="page-container relative z-10 flex min-h-[420px] flex-col justify-end pb-16 pt-24 sm:min-h-[680px]">
           <div className="max-w-5xl">
             <div className="mb-4 flex flex-wrap gap-2">
               {categoryTitle && <span className="deity-detail-badge">{categoryTitle}</span>}

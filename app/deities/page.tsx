@@ -2299,8 +2299,8 @@ export default function DeitiesPage() {
                                 image={getDeityCardImage(deity)}
                                 alt={deity.name}
                                 className="absolute inset-0"
-                                imgClassName="object-cover transition duration-700 group-hover:scale-[1.04]"
-                                renderMode="auto"
+                                imgClassName="transition duration-700"
+                                renderMode="safe-contain"
                               />
                               <div className="absolute inset-0 bg-gradient-to-t from-stone-950/42 via-transparent to-amber-200/10" />
                               {major && (

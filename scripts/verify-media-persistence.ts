@@ -43,10 +43,11 @@ for (const [name, Model, input] of cases) {
   assert.equal(plain.primaryImage || plain.imageCard || plain.image, url, `${name} lost its legacy URL`)
   assert.equal(structured.publicId, media.publicId, `${name} lost publicId`)
   assert.equal(structured.assetId, media.assetId, `${name} lost assetId`)
+  assert.equal(structured.folder, media.folder, `${name} lost folder`)
   for (const field of ['url', 'version', 'width', 'height', 'format', 'bytes', 'folder', 'kind'] as const) {
     assert.equal(structured[field], expected[field], `${name} lost ${field}`)
   }
-  console.log(`${name}: legacy URL + publicId + assetId preserved`)
+  console.log(`${name}: legacy URL + publicId + assetId + folder preserved`)
 }
 
 const structuredSource = getDeityCardImage({ imageCard: url, cardMedia: media })

@@ -479,7 +479,7 @@ export default function TemplesPage() {
               const cats = getTempleCategories(temple)
               return (
                 <article key={temple._id} className="bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-md transition-shadow duration-200 group flex flex-col">
-                  <div className="relative h-44 overflow-hidden">
+                  <div className="relative aspect-[4/3] overflow-hidden">
                     <SarvdevImage
                       image={getTempleCardImage(temple)}
                       alt={temple.title}

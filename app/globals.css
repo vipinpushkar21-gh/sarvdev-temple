@@ -546,9 +546,7 @@
     position: absolute;
     inset: 0;
     z-index: 0;
-    background: linear-gradient(110deg, transparent 0%, rgba(255,255,255,0.18) 42%, transparent 72%);
-    transform: translateX(-120%);
-    animation: sarvdevImageShimmer 1.6s ease-in-out infinite;
+    background: rgba(0, 0, 0, 0.06);
     pointer-events: none;
   }
   .sarvdev-image-frame > img,
@@ -612,11 +610,6 @@
     background-position: center 58%;
     background: linear-gradient(135deg, rgba(20,12,8,0.85), rgba(40,24,16,0.75));
   }
-  /* Disable shimmer animation for deity heroes */
-  .sarvdev-image-frame[data-image-role="deityHero"]::before {
-    animation: none !important;
-    background: none !important;
-  }
   /* Clean, static vignette for deity hero safe-contain mode */
   .sarvdev-render-safe-contain[data-image-role="deityHero"]::after {
     background:
@@ -640,10 +633,6 @@
     .sarvdev-panoramic-safe {
       aspect-ratio: 4 / 5;
     }
-  }
-  @keyframes sarvdevImageShimmer {
-    0% { transform: translateX(-120%); }
-    55%, 100% { transform: translateX(120%); }
   }
 
   .deity-hero-stat {
@@ -1676,7 +1665,7 @@
   }
   @media (max-width: 640px) {
     .temple-hero-2030 {
-      height: clamp(560px, 125vw, 760px);
+      height: clamp(360px, 100vw, 460px);
     }
   }
   /* Atmospheric layer: warm ambient orbs */

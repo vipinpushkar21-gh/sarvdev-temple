@@ -7,7 +7,7 @@ import { CalendarDays, CheckCircle2, ExternalLink, Globe2, Mail, MapPin, Phone, 
 import SarvdevImage from '../../../components/SarvdevImage'
 import { getSpiritualIconCategory } from '../../../data/spiritual-icon-categories'
 import { getStaticSpiritualIconsForSeed, type SpiritualIconRecord } from '../../../lib/spiritual-icons'
-import { getTempleCardImage, getTempleHeroImage } from '../../../lib/temple-image'
+import { getTempleCardImage, getTempleHeroImage, getSpiritualIconCardImage } from '../../../lib/temple-image'
 
 const HERO_IMAGE = 'https://res.cloudinary.com/dc2qg7bwr/image/upload/image_2_xljqwa'
 
@@ -96,32 +96,32 @@ export default function SpiritualIconDetailPage() {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
-      <section className="relative min-h-[560px] overflow-hidden bg-stone-950 text-white">
+      <section className="relative min-h-[clamp(400px,110vw,460px)] overflow-hidden bg-stone-950 text-white sm:min-h-[560px]">
         <SarvdevImage image={heroImage} alt={icon.name} className="absolute inset-0 opacity-55" imgClassName="object-cover" loading="eager" />
         <div className="absolute inset-0 bg-gradient-to-r from-stone-950/95 via-stone-950/72 to-stone-950/25" />
         <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-surface to-transparent" />
-        <div className="page-container relative z-10 flex min-h-[560px] flex-col justify-end pb-14 pt-24">
-          <nav className="mb-6 flex flex-wrap items-center gap-2 text-sm text-stone-300">
+        <div className="page-container relative z-10 flex min-h-[clamp(400px,110vw,460px)] flex-col justify-end pb-10 pt-16 sm:min-h-[560px] sm:pb-14 sm:pt-24">
+          <nav className="mb-4 flex flex-wrap items-center gap-2 text-sm text-stone-300 sm:mb-6">
             <Link href="/spiritual-icons" className="text-stone-200 hover:text-amber-200">Spiritual Icons</Link>
             <span>/</span>
             <span>{category?.name || icon.category}</span>
           </nav>
 
-          <div className="grid items-end gap-8 lg:grid-cols-[12rem_minmax(0,1fr)]">
-            <div className="relative h-44 w-44 overflow-hidden rounded-3xl border border-white/20 bg-white/10 shadow-2xl backdrop-blur">
+          <div className="grid grid-cols-[6.5rem_minmax(0,1fr)] items-end gap-4 sm:block lg:grid lg:grid-cols-[12rem_minmax(0,1fr)] lg:gap-8">
+            <div className="relative aspect-[3/4] w-[6.5rem] overflow-hidden rounded-2xl border border-white/20 bg-white/10 shadow-2xl backdrop-blur sm:mb-6 sm:h-36 sm:w-36 sm:aspect-auto lg:mb-0 lg:h-44 lg:w-44 lg:rounded-3xl">
               {icon.imageCard || icon.image ? (
-                <SarvdevImage image={cardImage} alt={icon.name} className="absolute inset-0" imgClassName="object-cover" loading="eager" />
+                <SarvdevImage image={cardImage} alt={icon.name} className="absolute inset-0" imgClassName="object-cover" loading="eager" renderMode="safe-contain" />
               ) : (
                 <div className="flex h-full w-full items-center justify-center text-6xl font-black text-amber-100">{icon.name.charAt(0)}</div>
               )}
             </div>
             <div>
-              <div className="mb-4 flex flex-wrap gap-2">
+              <div className="mb-2 flex flex-wrap gap-2 sm:mb-4">
                 {category && <Badge icon={<Sparkles className="h-3.5 w-3.5" />} label={category.name} />}
                 {icon.verified && <Badge icon={<CheckCircle2 className="h-3.5 w-3.5" />} label="Verified" />}
                 {icon.featured && <Badge icon={<Star className="h-3.5 w-3.5" />} label="Featured" />}
               </div>
-              <h1 className="text-[clamp(2.8rem,7vw,6rem)] font-black leading-[0.95] tracking-normal text-white drop-shadow-2xl">{icon.name}</h1>
+              <h1 className="text-[clamp(2.15rem,10vw,2.8rem)] font-black leading-[0.95] tracking-normal text-white drop-shadow-2xl sm:text-[clamp(2.8rem,7vw,6rem)]">{icon.name}</h1>
               {icon.nameHi && <p className="mt-3 text-2xl font-semibold text-amber-100">{icon.nameHi}</p>}
               {(icon.title || icon.titleHi) && <p className="mt-4 max-w-3xl text-lg leading-8 text-stone-100">{icon.title || icon.titleHi}</p>}
             </div>
@@ -246,10 +246,10 @@ function ContactLink({ href, icon, label }: { href: string; icon: ReactNode; lab
 }
 
 function RelatedCard({ icon }: { icon: SpiritualIconRecord }) {
-  const image = getTempleCardImage({ cardMedia: icon.cardMedia, primaryMedia: icon.primaryMedia, imageCard: icon.imageCard || icon.image || HERO_IMAGE, image: icon.imageCard || icon.image || HERO_IMAGE })
+  const image = getSpiritualIconCardImage({ cardMedia: icon.cardMedia, primaryMedia: icon.primaryMedia, imageCard: icon.imageCard || icon.image || HERO_IMAGE, image: icon.imageCard || icon.image || HERO_IMAGE })
   return (
     <Link href={`/spiritual-icons/${icon.slug}`} className="overflow-hidden rounded-2xl border border-stone-200 bg-white no-underline shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
-      <div className="relative aspect-[4/3] bg-orange-50">
+      <div className="relative aspect-[3/4] bg-orange-50">
         {icon.imageCard || icon.image ? <SarvdevImage image={image} alt={icon.name} className="absolute inset-0" imgClassName="object-cover" /> : <div className="flex h-full items-center justify-center text-4xl font-black text-orange-700">{icon.name.charAt(0)}</div>}
       </div>
       <div className="p-4">

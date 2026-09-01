@@ -344,7 +344,7 @@ export default function DailyDarshanPage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
       <section
-        className="relative min-h-[620px] overflow-hidden bg-stone-950 text-white"
+        className="relative min-h-[clamp(390px,105vw,430px)] overflow-hidden bg-stone-950 text-white sm:min-h-[620px]"
         style={{
           backgroundImage:
             'radial-gradient(circle at 18% 92%, rgba(251, 191, 36, 0.24), transparent 34%), linear-gradient(135deg, #120f0d 0%, #2a1511 45%, #111827 100%)',
@@ -354,43 +354,43 @@ export default function DailyDarshanPage() {
         <div className="absolute inset-0 bg-gradient-to-r from-stone-950/95 via-stone-950/70 to-stone-950/30" />
         <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-surface to-transparent" />
 
-        <div className="page-container relative z-10 flex min-h-[620px] flex-col justify-end pb-14 pt-24">
+        <div className="page-container relative z-10 flex min-h-[clamp(390px,105vw,430px)] flex-col justify-end pb-8 pt-16 sm:min-h-[620px] sm:pb-14 sm:pt-24">
           <div className="max-w-5xl">
-            <div className="mb-5 flex flex-wrap items-center gap-3">
+            <div className="mb-3 flex flex-wrap items-center gap-2 sm:mb-5 sm:gap-3">
               <span className="inline-flex items-center gap-2 rounded-full border border-amber-200/25 bg-amber-300/15 px-3 py-1.5 text-xs font-black uppercase tracking-[0.18em] text-amber-100 backdrop-blur">
                 <Sparkles className="h-3.5 w-3.5" />
                 Virtual Darshan
               </span>
               {allDarshan.length > 0 && (
-                <span className="inline-flex items-center gap-2 rounded-full border border-red-200/25 bg-red-500/20 px-3 py-1.5 text-xs font-black uppercase tracking-[0.18em] text-red-100 backdrop-blur">
+                <span className="hidden items-center gap-2 rounded-full border border-red-200/25 bg-red-500/20 px-3 py-1.5 text-xs font-black uppercase tracking-[0.18em] text-red-100 backdrop-blur sm:inline-flex">
                   <Radio className="h-3.5 w-3.5" />
                   {liveCount > 0 ? `${liveCount} Live Now` : 'Featured Darshan Ready'}
                 </span>
               )}
-              <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-bold text-stone-100 backdrop-blur">
+              <span className="hidden items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-bold text-stone-100 backdrop-blur sm:inline-flex">
                 <CalendarDays className="h-3.5 w-3.5" />
                 {today ? `${today.weekdayLabel}, ${today.dateLabel}` : 'Today'}
               </span>
             </div>
 
             <p className="text-lg font-semibold text-amber-100">आज का दिव्य दर्शन</p>
-            <h1 className="mt-2 text-[clamp(3rem,8vw,7rem)] font-black leading-[0.92] tracking-normal text-white drop-shadow-2xl">
+            <h1 className="mt-1 text-[clamp(2.6rem,12vw,3.2rem)] font-black leading-[0.92] tracking-normal text-white drop-shadow-2xl sm:mt-2 sm:text-[clamp(3rem,8vw,7rem)]">
               Daily Darshan
             </h1>
-            <p className="mt-5 max-w-2xl text-xl leading-8 text-stone-100">
+            <p className="mt-3 line-clamp-2 max-w-2xl text-base leading-6 text-stone-100 sm:mt-5 sm:block sm:text-xl sm:leading-8">
               Start your day with sacred darshan, live temple streams, mantras, aarti, and panchang in one calm daily ritual.
             </p>
 
-            <div className="mt-8 flex flex-wrap gap-3">
+            <div className="mt-4 flex flex-wrap gap-3 sm:mt-8">
               <Link href="#featured-darshan" className="btn btn-primary rounded-xl px-5 py-3 text-sm font-black no-underline hover:no-underline">
                 <Play className="h-4 w-4" />
                 Watch Featured Darshan
               </Link>
-              <Link href="/temples" className="btn rounded-xl border border-white/20 bg-white/10 px-5 py-3 text-sm font-black text-white backdrop-blur hover:bg-white/20">
+              <Link href="/temples" className="btn hidden rounded-xl border border-white/20 bg-white/10 px-5 py-3 text-sm font-black text-white backdrop-blur hover:bg-white/20 sm:inline-flex">
                 <Landmark className="h-4 w-4" />
                 Browse Temples
               </Link>
-              <Link href="/panchang" className="btn rounded-xl border border-white/20 bg-white/10 px-5 py-3 text-sm font-black text-white backdrop-blur hover:bg-white/20">
+              <Link href="/panchang" className="btn hidden rounded-xl border border-white/20 bg-white/10 px-5 py-3 text-sm font-black text-white backdrop-blur hover:bg-white/20 sm:inline-flex">
                 <CalendarDays className="h-4 w-4" />
                 Panchang Today
               </Link>

@@ -31,7 +31,7 @@ type ImageInput =
       ogMedia?: SarvdevMediaAsset | null
     }
 
-type ImageRole = 'templeHero' | 'templeCard' | 'deityHero' | 'deityCard' | 'blogHero' | 'blogCard' | 'gallery' | 'galleryLightbox' | 'og'
+type ImageRole = 'templeHero' | 'templeCard' | 'deityHero' | 'deityCard' | 'blogHero' | 'blogCard' | 'spiritualIconCard' | 'gallery' | 'galleryLightbox' | 'og'
 export type ImageRenderMode = 'auto' | 'safe-cover' | 'safe-contain' | 'cinematic-cover' | 'focal-safe'
 
 type ImagePreset = {
@@ -115,6 +115,17 @@ const PRESETS: Record<ImageRole, ImagePreset> = {
     crop: 'limit',
     gravity: 'north',
     objectPosition: 'center center',
+    renderMode: 'auto',
+  },
+  // Portrait card for personality profiles (Spiritual Icons). Face/head safe, consistent height.
+  spiritualIconCard: {
+    role: 'spiritualIconCard',
+    widths: [320, 480, 640, 960],
+    aspectRatio: '3:4',
+    sizes: '(max-width: 640px) 92vw, (max-width: 1024px) 45vw, 24vw',
+    crop: 'fill',
+    gravity: 'auto',
+    objectPosition: 'top center',
     renderMode: 'auto',
   },
   blogCard: {
@@ -332,6 +343,10 @@ export function getBlogHeroImage(input: ImageInput): SarvdevImageSource {
 
 export function getBlogCardImage(input: ImageInput): SarvdevImageSource {
   return buildImageSource(input, PRESETS.blogCard, 'imageCard')
+}
+
+export function getSpiritualIconCardImage(input: ImageInput): SarvdevImageSource {
+  return buildImageSource(input, PRESETS.spiritualIconCard, 'imageCard')
 }
 
 export function getGalleryImage(input: ImageInput, mode: 'thumb' | 'lightbox' = 'thumb'): SarvdevImageSource {

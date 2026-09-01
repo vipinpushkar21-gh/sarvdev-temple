@@ -220,21 +220,21 @@ export default function BlogPostPage() {
       <AdminEditBar editHref={`/admin/blogs/${post._id}/edit`} label="Edit Post" />
 
       <article>
-        <section className="relative min-h-[660px] overflow-hidden bg-stone-950 text-white">
+        <section className="relative min-h-[clamp(380px,100vw,420px)] overflow-hidden bg-stone-950 text-white sm:min-h-[660px]">
           <SarvdevImage image={heroImage} alt={post.title} className="absolute inset-0 opacity-70" imgClassName="object-cover" loading="eager" renderMode="auto" />
           <div className="absolute inset-0 bg-gradient-to-r from-stone-950 via-stone-950/72 to-stone-950/10" />
           <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-surface to-transparent" />
-          <div className="page-container relative z-10 flex min-h-[660px] flex-col justify-end pb-16 pt-24">
+          <div className="page-container relative z-10 flex min-h-[clamp(380px,100vw,420px)] flex-col justify-end pb-10 pt-16 sm:min-h-[660px] sm:pb-16 sm:pt-24">
             <div className="max-w-5xl">
               <div className="flex flex-wrap gap-2">
                 <Badge>{post.category || 'Editorial'}</Badge>
                 {post.featured && <Badge>Featured</Badge>}
                 <Badge>{readingTime} min read</Badge>
               </div>
-              <h1 className="mt-5 text-[clamp(2.75rem,7vw,6.5rem)] font-serif leading-[0.95] tracking-normal text-white drop-shadow-2xl">{post.title}</h1>
+              <h1 className="mt-3 text-[clamp(2.25rem,10vw,3rem)] font-serif leading-[0.95] tracking-normal text-white drop-shadow-2xl sm:mt-5 sm:text-[clamp(2.75rem,7vw,6.5rem)]">{post.title}</h1>
               {post.titleHi && <p className="mt-4 font-devanagari text-3xl font-bold text-amber-100 md:text-4xl">{post.titleHi}</p>}
-              <p className="mt-6 max-w-3xl text-lg leading-8 text-stone-100">{getBlogExcerpt(post)}</p>
-              <div className="mt-8 flex flex-wrap items-center gap-4">
+              <p className="mt-4 line-clamp-2 max-w-3xl text-base leading-6 text-stone-100 sm:mt-6 sm:block sm:text-lg sm:leading-8">{getBlogExcerpt(post)}</p>
+              <div className="mt-4 flex flex-wrap items-center gap-3 sm:mt-8 sm:gap-4">
                 <div className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 backdrop-blur">
                   <p className="text-xs uppercase tracking-wide text-stone-300">By {post.author || 'Sarvdev Editorial'}</p>
                   <p className="mt-1 text-sm font-bold text-white">{formatBlogDate(post) || 'Recently published'}</p>

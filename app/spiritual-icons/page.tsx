@@ -6,7 +6,7 @@ import { BookOpen, CheckCircle2, Filter, MapPin, Search, Sparkles, Star, Users }
 import SarvdevImage from '../../components/SarvdevImage'
 import { SPIRITUAL_ICON_CATEGORIES } from '../../data/spiritual-icon-categories'
 import { filterSpiritualIcons, getStaticSpiritualIconsForSeed, type SpiritualIconRecord } from '../../lib/spiritual-icons'
-import { getTempleCardImage, getTempleHeroImage } from '../../lib/temple-image'
+import { getTempleCardImage, getTempleHeroImage, getSpiritualIconCardImage } from '../../lib/temple-image'
 import { useTranslation } from '../../lib/translation'
 
 const HERO_IMAGE = 'https://res.cloudinary.com/dc2qg7bwr/image/upload/image_2_xljqwa'
@@ -84,12 +84,12 @@ export default function SpiritualIconsPage() {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
-      <section className="relative min-h-[560px] overflow-hidden bg-stone-950 text-white">
+      <section className="relative min-h-[380px] overflow-hidden bg-stone-950 text-white sm:min-h-[560px]">
         <SarvdevImage image={heroImage} alt="Spiritual Icons sacred background" className="absolute inset-0 opacity-45" imgClassName="object-cover" loading="eager" />
         <div className="absolute inset-0 bg-gradient-to-r from-stone-950/95 via-stone-950/70 to-stone-950/25" />
         <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-surface to-transparent" />
 
-        <div className="page-container relative z-10 flex min-h-[560px] flex-col justify-end pb-14 pt-24">
+        <div className="page-container relative z-10 flex min-h-[380px] flex-col justify-end pb-14 pt-24 sm:min-h-[560px]">
           <div className="max-w-5xl">
             <span className="inline-flex items-center gap-2 rounded-full border border-amber-200/25 bg-amber-300/15 px-3 py-1.5 text-xs font-black uppercase tracking-[0.18em] text-amber-100 backdrop-blur">
               <Sparkles className="h-3.5 w-3.5" />
@@ -195,10 +195,10 @@ export default function SpiritualIconsPage() {
 }
 
 function IconCard({ icon, featured = false }: { icon: SpiritualIconRecord; featured?: boolean }) {
-  const image = getTempleCardImage({ cardMedia: icon.cardMedia, primaryMedia: icon.primaryMedia, imageCard: icon.imageCard || icon.image || '', image: icon.imageCard || icon.image || '' })
+  const image = getSpiritualIconCardImage({ cardMedia: icon.cardMedia, primaryMedia: icon.primaryMedia, imageCard: icon.imageCard || icon.image || '', image: icon.imageCard || icon.image || '' })
   return (
     <Link href={`/spiritual-icons/${icon.slug}`} className="group overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm no-underline transition duration-300 hover:-translate-y-1 hover:border-amber-300 hover:shadow-xl">
-      <div className="relative aspect-[4/3] overflow-hidden bg-orange-50">
+      <div className="relative aspect-[3/4] overflow-hidden bg-orange-50">
         {icon.imageCard || icon.image ? (
           <SarvdevImage image={image} alt={icon.name} className="absolute inset-0" imgClassName="object-cover transition duration-700 group-hover:scale-105" />
         ) : (

@@ -151,13 +151,13 @@ export default function DevotionalDetailPage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(creativeWorkLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }} />
 
-      <section className="relative min-h-[560px] overflow-hidden bg-stone-950 text-white">
+      <section className="relative min-h-[clamp(380px,100vw,430px)] overflow-hidden bg-stone-950 text-white sm:min-h-[560px]">
         <SarvdevImage image={heroImage} alt={title.primary || devotional.title} className="absolute inset-0" imgClassName="object-cover" loading="eager" renderMode="auto" />
         <div className="absolute inset-0 bg-gradient-to-r from-stone-950/92 via-stone-950/62 to-stone-950/20" />
         <div className="absolute inset-x-0 bottom-0 h-36 bg-gradient-to-t from-surface to-transparent" />
 
-        <div className="page-container relative z-10 flex min-h-[560px] flex-col justify-end pb-12 pt-20">
-          <nav className="mb-6 flex flex-wrap items-center gap-2 text-sm text-stone-300">
+        <div className="page-container relative z-10 flex min-h-[clamp(380px,100vw,430px)] flex-col justify-end pb-8 pt-16 sm:min-h-[560px] sm:pb-12 sm:pt-20">
+          <nav className="mb-3 flex flex-wrap items-center gap-2 text-sm text-stone-300 sm:mb-6">
             <Link href="/devotionals" className="text-stone-200 hover:text-amber-200">Devotionals</Link>
             {devotional.category && (
               <>
@@ -168,19 +168,19 @@ export default function DevotionalDetailPage() {
           </nav>
 
           <div className="max-w-4xl">
-            <div className="mb-4 flex flex-wrap gap-2">
+            <div className="mb-3 flex flex-wrap gap-2 sm:mb-4">
               {devotional.category && <Badge icon={<Music2 className="h-3.5 w-3.5" />} label={devotional.category} />}
               {devotional.deity && <Badge icon={<Sparkles className="h-3.5 w-3.5" />} label={devotional.deity} />}
               {devotional.language && <Badge icon={<Languages className="h-3.5 w-3.5" />} label={devotional.language} />}
             </div>
 
-            <h1 className="text-[clamp(2.5rem,7vw,5.8rem)] font-black leading-[0.95] tracking-normal text-white drop-shadow-2xl">
+            <h1 className="text-[clamp(2.15rem,10vw,3rem)] font-black leading-[0.95] tracking-normal text-white drop-shadow-2xl sm:text-[clamp(2.5rem,7vw,5.8rem)]">
               {title.primary}
             </h1>
-            {title.secondary && <p className="mt-4 max-w-3xl text-2xl font-semibold leading-snug text-amber-100">{title.secondary}</p>}
-            {description && <p className="mt-5 max-w-3xl text-lg leading-8 text-stone-100">{description}</p>}
+            {title.secondary && <p className="mt-2 max-w-3xl text-xl font-semibold leading-snug text-amber-100 sm:mt-4 sm:text-2xl">{title.secondary}</p>}
+            {description && <p className="mt-3 line-clamp-2 max-w-3xl text-base leading-6 text-stone-100 sm:mt-5 sm:block sm:text-lg sm:leading-8">{description}</p>}
 
-            <div className="mt-7 flex flex-wrap gap-3">
+            <div className="mt-4 flex flex-wrap gap-3 sm:mt-7">
               <BookmarkButton item={{ id: devotional._id, type: 'devotional', title: title.primary, slug }} className="bg-white/90 shadow-lg backdrop-blur hover:bg-white" />
               <button type="button" onClick={sharePage} className="btn border border-white/15 bg-white/12 text-white backdrop-blur hover:bg-white/20">
                 <Share2 className="h-4 w-4" />

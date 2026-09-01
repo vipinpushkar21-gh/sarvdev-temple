@@ -53,6 +53,7 @@ import {
   getDeityCardImage,
   getBlogHeroImage,
   getBlogCardImage,
+  getSpiritualIconCardImage as _getSpiritualIconCardImage,
   getOGImage,
   isCloudinaryImageUrl,
   type SarvdevImageSource,
@@ -337,9 +338,9 @@ export function getDarshanCardImage(item?: AnyItem | string | null): SarvdevImag
   )
 }
 
-/** Returns a full SarvdevImageSource for a spiritual icon card (square). */
+/** Returns a full SarvdevImageSource for a spiritual icon card (portrait, face/head safe). */
 export function getSpiritualIconCardImage(item?: AnyItem | string | null): SarvdevImageSource {
-  return getDeityCardImage(
+  return _getSpiritualIconCardImage(
     typeof item === 'string' ? item :
     item ? mediaFields(item) :
     FALLBACK_IMAGE

@@ -93,14 +93,14 @@ export default function EventDetailPage() {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <section className="relative min-h-[520px] overflow-hidden bg-gray-950 text-white">
+      <section className="relative min-h-[clamp(360px,100vw,420px)] overflow-hidden bg-gray-950 text-white sm:min-h-[520px]">
         <SarvdevImage image={getTempleHeroImage({ heroMedia: event.heroMedia, primaryMedia: event.primaryMedia, cardMedia: event.cardMedia, imageHero: event.imageHero, imageCard: event.imageCard, image: event.image })} alt={event.title} className="absolute inset-0" imgClassName="object-cover opacity-70" loading="eager" />
-        <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-950/60 to-gray-950/20" />
-        <div className="page-container relative flex min-h-[520px] items-end pb-12">
+        <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-950/75 to-gray-950/35" />
+        <div className="page-container relative flex min-h-[clamp(360px,100vw,420px)] items-end pb-8 pt-16 sm:min-h-[520px] sm:pb-12 sm:pt-0">
           <div className="max-w-4xl">
-            <nav className="mb-5 flex items-center gap-2 text-body-sm text-white/70">
-              <Link href="/" className="text-white/70 no-underline hover:text-white">Home</Link><span>/</span>
-              <Link href="/events" className="text-white/70 no-underline hover:text-white">Events</Link><span>/</span>
+            <nav className="mb-3 flex items-center gap-2 text-body-sm text-white/85 sm:mb-5">
+              <Link href="/" className="text-white/85 no-underline hover:text-white">Home</Link><span>/</span>
+              <Link href="/events" className="text-white/85 no-underline hover:text-white">Events</Link><span>/</span>
               <span className="truncate">{event.title}</span>
             </nav>
             <div className="mb-4 flex flex-wrap gap-2">
@@ -108,9 +108,9 @@ export default function EventDetailPage() {
               <span className="rounded-full bg-white/15 px-3 py-1 text-xs font-semibold backdrop-blur-md">{countdown(event)}</span>
               {event.isOnline && <span className="rounded-full bg-green-400 px-3 py-1 text-xs font-bold text-green-950">Online</span>}
             </div>
-            <h1 className="text-display-lg font-serif leading-tight">{event.title}</h1>
+            <h1 className="text-[clamp(2.25rem,10vw,3rem)] font-serif leading-tight text-white drop-shadow-[0_3px_12px_rgba(0,0,0,0.9)] sm:text-display-lg">{event.title}</h1>
             {event.titleHi && <p className="mt-2 text-h2 font-devanagari text-amber-100">{event.titleHi}</p>}
-            <p className="mt-5 max-w-2xl text-body-lg text-white/78">{event.shortDescription || event.description}</p>
+            <p className="mt-3 line-clamp-3 max-w-2xl text-base leading-6 text-white/90 drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)] sm:mt-5 sm:block sm:text-body-lg">{event.shortDescription || event.description}</p>
           </div>
         </div>
       </section>
