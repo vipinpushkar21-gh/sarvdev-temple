@@ -51,7 +51,9 @@ export default function SarvdevImage({
   const isContainMode = effectiveMode === 'safe-contain'
   const containPadding = image.role === 'deityHero'
     ? 'clamp(16px, 3vw, 56px) clamp(12px, 2.4vw, 44px) clamp(28px, 5vw, 92px)'
-    : 'clamp(10px, 2.2vw, 32px)'
+    : (image.role === 'blogCard' || image.role === 'blogHero') && !autoContain
+      ? '0px'
+      : 'clamp(10px, 2.2vw, 32px)'
 
   const frameStyle = useMemo(
     () => ({

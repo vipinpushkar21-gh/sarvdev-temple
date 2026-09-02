@@ -62,10 +62,10 @@ export default function SpiritualChatbot() {
 
   return (
     <>
-      {/* Floating button */}
+      {/* Floating button — sits above the mobile bottom nav; desktop keeps its original corner spot */}
       <button
         onClick={() => setOpen(s => !s)}
-        className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95"
+        className="fixed z-50 bottom-24 right-4 xl:bottom-6 xl:right-6 w-14 h-14 rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95"
         style={{ background: 'linear-gradient(135deg, #FF9933, #D4AF37)' }}
         aria-label="Spiritual Chatbot"
         title="Guru — Adhyatmik Saathi"
@@ -84,7 +84,7 @@ export default function SpiritualChatbot() {
 
       {/* Chat panel */}
       <div
-        className={`fixed bottom-24 right-6 z-50 w-[min(90vw,380px)] flex flex-col rounded-3xl shadow-2xl overflow-hidden transition-all duration-400 origin-bottom-right ${
+        className={`fixed z-50 bottom-[168px] right-4 xl:bottom-24 xl:right-6 w-[min(90vw,380px)] flex flex-col rounded-3xl shadow-2xl overflow-hidden transition-all duration-400 origin-bottom-right ${
           open ? 'scale-100 opacity-100' : 'scale-90 opacity-0 pointer-events-none'
         }`}
         style={{ height: '520px', background: 'var(--color-surface-raised, #fff)', border: '1px solid rgba(255,153,51,0.2)' }}

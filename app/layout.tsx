@@ -1,4 +1,5 @@
 import './globals.css'
+import { fontVariables } from './fonts'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
 import Disclaimer from '../components/Disclaimer'
@@ -112,12 +113,11 @@ const jsonLd = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className={fontVariables} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: 'try{history.scrollRestoration="manual"}catch(e){}' }} />
         <link rel="dns-prefetch" href="https://res.cloudinary.com" />
         <link rel="preconnect" href="https://res.cloudinary.com" crossOrigin="anonymous" />
-        <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
       </head>
       <body className="min-h-screen flex flex-col" suppressHydrationWarning>
         <script
