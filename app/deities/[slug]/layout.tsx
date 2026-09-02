@@ -68,7 +68,7 @@ export default async function DeitySlugLayout({
     await connectDB()
     const deity = await Deity.findOne(
       { slug },
-      'name nameHi description aliases categoryName categorySlug image imageCard wikiUrl'
+      'name nameHi description aliases categoryName categorySlug image imageCard'
     ).lean() as any
     if (deity) schemas = buildDeitySchema(deity, slug)
   } catch { /* silent */ }

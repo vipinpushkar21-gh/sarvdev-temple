@@ -148,9 +148,11 @@ export default function TemplesPage() {
       .catch(console.error)
   }, [])
 
-  // Read ?category= param from URL and apply filter
+  // Read ?category= / ?search= params from URL and apply them
   useEffect(() => {
     const cat = searchParams.get('category')
+    const search = searchParams.get('search')
+    if (search) setSearchQuery(search)
     if (cat) {
       setSelectedCategory(cat)
       setTimeout(() => {

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react"
 import Link from "next/link"
-import { DEITY_CATEGORIES } from "@/app/deities/page"
+import { DEITY_CATEGORIES } from "@/lib/deity-static-catalogue"
 import SarvdevImage from "@/components/SarvdevImage"
 import { getDeityCardImage } from "@/lib/temple-image"
 import { getCategoryDisplayName } from "@/lib/deity-categories"

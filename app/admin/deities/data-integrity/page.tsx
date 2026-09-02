@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
-import { DEITY_CATEGORIES } from "@/app/deities/page"
+import { DEITY_CATEGORIES } from "@/lib/deity-static-catalogue"
 import { findBestDeityMatch, normalizeDeityIdentity } from "@/lib/deity-identity"
 
 export default function DeityDataIntegrityPage() {

@@ -255,7 +255,6 @@ export function buildDeitySchema(deity: any, slug: string): object[] {
   }
 
   if (aliases.length)        thingSchema.alternateName = aliases
-  if (deity.wikiUrl)         thingSchema.sameAs        = [deity.wikiUrl]
 
   const breadcrumb = buildBreadcrumbSchema([
     { name: 'Home',    item: BASE_URL },

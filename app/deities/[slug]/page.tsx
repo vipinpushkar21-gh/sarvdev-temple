@@ -1,183 +1,108 @@
-"use client"
-
-import { useEffect, useState, type ReactNode } from 'react'
 import Link from 'next/link'
-import Breadcrumbs from '../../../components/Breadcrumbs'
-import ShareButtons from '../../../components/ShareButtons'
-import { DetailPageSkeleton } from '../../../components/Skeleton'
-import AdminEditBar from '../../../components/AdminEditBar'
-import { DEITY_CATEGORIES } from '../page'
-import { getDeityCardImage, getDeityHeroImage, getGalleryImage } from '../../../lib/temple-image'
-import SarvdevImage from '../../../components/SarvdevImage'
-import { renderTextParagraphs } from '../../../components/TextParagraphs'
-import { getCanonicalDeityCategory } from '../../../lib/deity-normalization'
-import { compactText } from '../../../lib/text-formatting'
-import { useTranslation } from '../../../lib/translation'
+import { notFound } from 'next/navigation'
+import Breadcrumbs from '@/components/Breadcrumbs'
+import ShareButtons from '@/components/ShareButtons'
+import AdminEditBar from '@/components/AdminEditBar'
+import SarvdevImage from '@/components/SarvdevImage'
+import { renderTextParagraphs } from '@/components/TextParagraphs'
+import { connectDB } from '@/lib/db'
+import Deity from '@/models/Deity'
+import { normalizeDeityForRead } from '@/lib/deity-normalization'
+import { getDeityHeroImage, getGalleryImage } from '@/lib/temple-image'
+import { hasUsableDeityMedia, getDeityGalleryMedia } from '@/lib/deity-media'
+import { compactText } from '@/lib/text-formatting'
+import { findDevotionalsForDeity, type RelatedDevotional } from '@/lib/deity-relations'
+import type { SarvdevMediaAsset, SarvdevMediaInput } from '@/lib/media-asset'
+
+export const dynamic = 'force-dynamic'
 
 const BASE_URL = 'https://sarvdev.com'
 
-const STATIC_DEITIES: any[] = DEITY_CATEGORIES.flatMap((category: any) =>
-  category.deities.map((deity: any) => ({
-    ...deity,
-    category: category.title,
-  }))
-)
-
-type Props = {
-  params: Promise<{ slug: string }>
+type DeityRecord = {
+  _id: string
+  slug: string
+  name: string
+  nameHi?: string
+  description?: string
+  descriptionHi?: string
+  mantra?: string
+  attributes?: string[]
+  aliases?: string[]
+  slugAliases?: string[]
+  categoryName?: string
+  categoryNameHi?: string
+  categorySlug?: string
+  galleryMedia?: SarvdevMediaInput[]
+  primaryMedia?: SarvdevMediaAsset
+  cardMedia?: SarvdevMediaAsset
+  heroMedia?: SarvdevMediaAsset
 }
 
-function slugify(text: string) {
-  return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+async function loadDeity(slug: string): Promise<DeityRecord | null> {
+  await connectDB()
+  const row = await Deity.findOne({
+    status: { $ne: 'rejected' },
+    $or: [{ slug }, { staticSlug: slug }, { slugAliases: slug }],
+  }).lean()
+  if (!row) return null
+  return JSON.parse(JSON.stringify(normalizeDeityForRead(row))) as DeityRecord
 }
 
-function textMatchesDeity(value: unknown, deity: any) {
-  const haystack = String(value || '').toLowerCase()
-  if (!haystack) return false
-  const names = [deity?.name, deity?.nameHi, deity?.slug]
-    .filter(Boolean)
-    .flatMap((name: string) => [name, name.replace(/\([^)]*\)/g, ''), name.split(/[(/]/)[0]])
-    .map((name: string) => name.toLowerCase().trim())
-    .filter(Boolean)
-  return names.some((name: string) => haystack.includes(name))
-}
+export default async function DeityDetailPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params
 
-function isGaneshAlias(slug: string) {
-  return ['ganesh-ji', 'lord-ganesh', 'lord-ganesha', 'ganesh', 'ganesha'].includes(slug)
-}
-
-function getStaticFallbackBySlug(slug: string) {
-  const exact = STATIC_DEITIES.find((deity: any) => deity.slug === slug)
-  if (exact) return exact
-  if (isGaneshAlias(slug)) {
-    return STATIC_DEITIES.find((deity: any) => deity.slug === 'ganesh-ji') || null
+  let loaded: DeityRecord | null = null
+  let loadFailed = false
+  try {
+    loaded = await loadDeity(slug)
+  } catch {
+    loadFailed = true
   }
-  return null
-}
 
-function getCategoryForDeity(deity: any) {
-  const canonical = getCanonicalDeityCategory(deity)
-  return DEITY_CATEGORIES.find((cat: any) =>
-    cat.id === canonical.categorySlug ||
-    cat.title === canonical.categoryName ||
-    cat.title === deity.category ||
-    cat.deities.some((item: any) => item.slug === deity.slug || item.name === deity.name)
-  )
-}
-
-export default function DeityDetailPage({ params }: Props) {
-  const { language } = useTranslation()
-  const [deity, setDeity] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [relatedDevotionals, setRelatedDevotionals] = useState<any[]>([])
-  const [relatedTemples, setRelatedTemples] = useState<any[]>([])
-
-  useEffect(() => {
-    async function fetchDeity() {
-      try {
-        const { slug } = await params
-        let foundDeity: any = null
-
-        try {
-          const response = await fetch(`/api/deities?slug=${encodeURIComponent(slug)}&limit=1`, { cache: 'no-store' })
-          if (response.ok) {
-            const data = await response.json()
-            const rows = Array.isArray(data) ? data : (data.items || data.data || [])
-            foundDeity = Array.isArray(rows)
-              ? (rows.find((item: any) => item.slug === slug) || rows[0] || null)
-              : null
-          }
-        } catch {
-          // Static fallback keeps legacy slugs reachable if DB is unavailable.
-        }
-
-        if (foundDeity) {
-          setDeity(foundDeity)
-          return
-        }
-
-        const staticDeity = getStaticFallbackBySlug(slug)
-        if (!staticDeity) {
-          setError('Deity not found')
-          return
-        }
-        setDeity(staticDeity)
-      } catch {
-        setError('Failed to load deity')
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchDeity()
-  }, [params])
-
-  useEffect(() => {
-    if (!deity) return
-    let cancelled = false
-
-    async function loadRelated() {
-      try {
-        const [devotionalRes, templeRes] = await Promise.all([
-          fetch(`/api/devotionals?page=1&limit=12&deity=${encodeURIComponent(deity.name || deity.title || deity.slug || '')}`),
-          fetch(`/api/temples?limit=6&deity=${encodeURIComponent(deity.name || deity.title || deity.slug || '')}`),
-        ])
-        const devotionalPayload = devotionalRes.ok ? await devotionalRes.json() : []
-        const devotionals = Array.isArray(devotionalPayload) ? devotionalPayload : (devotionalPayload.data || devotionalPayload.items || [])
-        const templePayload = templeRes.ok ? await templeRes.json() : []
-        const temples = Array.isArray(templePayload) ? templePayload : (templePayload.data || templePayload.items || [])
-        if (cancelled) return
-
-        setRelatedDevotionals((Array.isArray(devotionals) ? devotionals : [])
-          .filter((item: any) => item.status === 'approved' || !item.status)
-          .filter((item: any) => textMatchesDeity([item.deity, item.title, item.description, item.category].filter(Boolean).join(' '), deity))
-          .slice(0, 6))
-
-        setRelatedTemples((Array.isArray(temples) ? temples : [])
-          .filter((item: any) => item.status === 'approved' || !item.status)
-          .filter((item: any) => textMatchesDeity([item.deity, item.title, item.description, item.speciality].filter(Boolean).join(' '), deity))
-          .slice(0, 6))
-      } catch {
-        if (!cancelled) {
-          setRelatedDevotionals([])
-          setRelatedTemples([])
-        }
-      }
-    }
-
-    loadRelated()
-    return () => { cancelled = true }
-  }, [deity])
-
-  if (loading) return <DetailPageSkeleton />
-
-  if (error || !deity) {
+  if (loadFailed) {
     return (
-      <div className="page-container section-sm min-h-screen">
-        <div className="text-center py-20">
-          <h1 className="text-h2 font-serif text-secondary-800 mb-4">Deity Not Found</h1>
-          <Link href="/deities" className="text-primary-600 hover:text-primary-700 font-medium">
-            Back to Deities
+      <main className="page-container py-section-sm">
+        <div className="border border-surface-border bg-surface-raised p-8 text-center">
+          <h1 className="font-display text-h2 text-secondary-800">This sacred profile is unavailable right now</h1>
+          <p className="mt-2 text-body-sm text-ink-muted">We could not reach the deity library. Please refresh in a moment.</p>
+          <Link href="/deities" className="mt-4 inline-flex text-body-sm font-semibold text-primary-700 no-underline hover:text-maroon">
+            Back to all deities
           </Link>
         </div>
-      </div>
+      </main>
     )
   }
 
-  const category = getCategoryForDeity(deity)
-  const canonicalCategory = getCanonicalDeityCategory(deity)
-  const categoryTitle = deity.categoryName || category?.title || canonicalCategory.categoryName || deity.category || 'Deity'
-  const categoryTitleHi = deity.categoryNameHi || category?.titleHi || canonicalCategory.categoryNameHi
-  const relatedForms = (category?.deities || []).filter((item: any) => item.slug !== deity.slug).slice(0, 6)
-  const heroImage = getDeityHeroImage(deity)
+  const deity = loaded
+  if (!deity) notFound()
+
+  let devotionals: RelatedDevotional[] = []
+  let relatedForms: { slug: string; name: string; nameHi?: string }[] = []
+  try {
+    const [devotionalRows, formRows] = await Promise.all([
+      findDevotionalsForDeity(deity, 8),
+      deity.categorySlug
+        ? Deity.find(
+            { status: { $ne: 'rejected' }, categorySlug: deity.categorySlug, slug: { $ne: deity.slug } },
+            'slug name nameHi',
+          ).sort({ order: 1, name: 1 }).limit(8).lean()
+        : Promise.resolve([]),
+    ])
+    devotionals = devotionalRows
+    relatedForms = JSON.parse(JSON.stringify(formRows)) as { slug: string; name: string; nameHi?: string }[]
+  } catch {
+    devotionals = []
+    relatedForms = []
+  }
+
+  const gallery = getDeityGalleryMedia(deity as Record<string, unknown>)
+  const illustrated = hasUsableDeityMedia(deity as Record<string, unknown>)
+  const about = deity.description || deity.descriptionHi || ''
+  const intro = compactText(about).slice(0, 240)
+  const attributes = (deity.attributes || []).filter(Boolean)
   const pageUrl = `${BASE_URL}/deities/${deity.slug}`
-  const wantsHindi = language === 'hi'
-  const aboutText = wantsHindi
-    ? (deity.descriptionHi || deity.description)
-    : (deity.description || deity.descriptionHi)
-  const aboutTextIsHindi = wantsHindi ? Boolean(deity.descriptionHi) : (!deity.description && Boolean(deity.descriptionHi))
-  const aboutTitle = wantsHindi ? (deity.nameHi || deity.name) : (deity.name || deity.nameHi)
+  const templeSearchHref = `/temples?search=${encodeURIComponent(deity.name)}`
+
   const breadcrumbLd = {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
@@ -187,189 +112,170 @@ export default function DeityDetailPage({ params }: Props) {
       { '@type': 'ListItem', position: 3, name: deity.name, item: pageUrl },
     ],
   }
-  const deityLd = {
-    '@context': 'https://schema.org',
-    '@type': 'Thing',
-    name: deity.name,
-    alternateName: deity.nameHi,
-    description: compactText(deity.description || deity.descriptionHi),
-    image: heroImage.src,
-    url: pageUrl,
-    category: categoryTitle,
-  }
 
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(deityLd) }} />
-      <Breadcrumbs
-        items={[
-          { label: 'Deities', href: '/deities' },
-          { label: deity.nameHi, href: `/deities/${deity.slug}` },
-        ]}
-      />
-      <AdminEditBar editHref={deity._id ? `/admin/deities/edit/${deity._id}` : undefined} />
 
-      <section className="relative min-h-[420px] overflow-hidden bg-stone-950 text-white sm:min-h-[680px]">
-        <SarvdevImage
-          image={heroImage}
-          alt={deity.name}
-          className="absolute inset-0 opacity-70"
-          imgClassName="object-cover"
-          loading="eager"
-          renderMode="auto"
-        />
-        <div className="absolute inset-0 bg-gradient-to-r from-stone-950/96 via-stone-950/70 to-stone-950/18" />
-        <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-surface to-transparent" />
+      <main className="page-container py-section-sm">
+        <Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Deities', href: '/deities' }, { label: deity.name }]} />
+        <AdminEditBar editHref={`/admin/deities?edit=${deity._id}`} label="Edit deity" />
 
-        <div className="page-container relative z-10 flex min-h-[420px] flex-col justify-end pb-16 pt-24 sm:min-h-[680px]">
-          <div className="max-w-5xl">
-            <div className="mb-4 flex flex-wrap gap-2">
-              {categoryTitle && <span className="deity-detail-badge">{categoryTitle}</span>}
-              {categoryTitleHi && <span className="deity-detail-badge">{categoryTitleHi}</span>}
-              <span className="deity-detail-badge">Sacred profile</span>
-            </div>
-            <h1 className="text-[clamp(2rem,5vw,4.5rem)] font-serif leading-tight tracking-normal text-white drop-shadow-2xl">{aboutTitle}</h1>
-            <div className="mt-6 flex flex-wrap items-center gap-3">
-              <ShareButtons title={`${deity.nameHi} - ${deity.name}`} url={typeof window !== 'undefined' ? window.location.href : ''} />
+        <header className="grid gap-8 border-b border-surface-border pb-9 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start">
+          <div>
+            {deity.categoryName && (
+              <Link
+                href={`/deities?category=${encodeURIComponent(deity.categorySlug || '')}`}
+                className="text-overline font-semibold uppercase tracking-[0.14em] text-primary no-underline hover:text-maroon"
+              >
+                {deity.categoryName}
+              </Link>
+            )}
+            <h1 className="mt-2 font-display text-display-sm leading-tight text-secondary-800">{deity.name}</h1>
+            {deity.nameHi && <p className="mt-1 font-devanagari text-h3 text-ink-muted">{deity.nameHi}</p>}
+            {intro && <p className="mt-4 max-w-2xl text-body text-ink-muted">{intro}</p>}
+            <div className="mt-6">
+              <ShareButtons title={deity.name} url={pageUrl} />
             </div>
           </div>
-        </div>
-      </section>
 
-      <main className="bg-surface pb-20">
-        <div className="page-container -mt-10 relative z-20">
-          <div className="grid gap-3 rounded-2xl border border-amber-200 bg-white p-4 shadow-xl sm:grid-cols-2 lg:grid-cols-4">
-            <DeityFact label="Category" value={categoryTitle} />
-            <DeityFact label="Forms nearby" value={`${relatedForms.length} related`} />
-            <DeityFact label="Devotionals" value={`${relatedDevotionals.length} linked`} />
-            <DeityFact label="Temples" value={`${relatedTemples.length} linked`} />
-          </div>
-        </div>
+          {illustrated && (
+            <div className="relative aspect-[4/5] overflow-hidden border border-surface-border bg-surface-sunken">
+              <SarvdevImage
+                image={getDeityHeroImage(deity)}
+                alt={deity.name}
+                className="absolute inset-0"
+                imgClassName="object-cover"
+                renderMode="auto"
+              />
+            </div>
+          )}
+        </header>
 
-        <div className="page-container pt-10 grid gap-8 lg:grid-cols-[minmax(0,1fr)_22rem]">
-          <div className="space-y-8">
+        <div className="grid gap-12 pt-10 lg:grid-cols-[minmax(0,1fr)_18rem] lg:gap-14">
+          <div className="space-y-12">
+            {about && (
+              <section>
+                <h2 className="font-display text-h2 text-secondary-800">About {deity.name}</h2>
+                <div className="mt-4 space-y-4 text-body leading-relaxed text-ink-muted">
+                  {renderTextParagraphs(about)}
+                </div>
+              </section>
+            )}
+
             {deity.mantra && (
-              <section className="deity-mantra-panel">
-                <p className="text-xs font-black uppercase tracking-[0.18em] text-orange-700">Mantra</p>
-                <p className="mt-4 text-center font-devanagari text-2xl font-bold leading-10 text-stone-950">{deity.mantra}</p>
+              <section>
+                <h2 className="font-display text-h2 text-secondary-800">Mantra</h2>
+                <blockquote className="mt-4 border-l-2 border-gold bg-surface-raised px-6 py-6">
+                  <p className="whitespace-pre-line font-devanagari text-h3 leading-loose text-secondary-800">
+                    {deity.mantra}
+                  </p>
+                </blockquote>
               </section>
             )}
 
-            <section className="deity-detail-panel">
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-orange-700">About</p>
-              <h2 className="mt-1 text-3xl font-serif text-stone-950">{aboutTitle}</h2>
-              <div className="mt-5 space-y-5">
-                {aboutText
-                  ? renderTextParagraphs(
-                    aboutText,
-                    aboutTextIsHindi
-                      ? 'font-devanagari text-lg leading-9 text-stone-800'
-                      : 'text-lg leading-9 text-stone-700'
-                  )
-                  : <p className="text-lg leading-9 text-stone-500">Description will appear here once it is added.</p>}
-              </div>
+            {attributes.length > 0 && (
+              <section>
+                <h2 className="font-display text-h2 text-secondary-800">Sacred attributes</h2>
+                <ul className="mt-4 grid gap-x-8 gap-y-2 sm:grid-cols-2">
+                  {attributes.map((attribute) => (
+                    <li key={attribute} className="border-b border-surface-border py-2 text-body-sm text-ink-muted">
+                      {attribute}
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+
+            {devotionals.length > 0 && (
+              <section>
+                <h2 className="font-display text-h2 text-secondary-800">Devotionals</h2>
+                <p className="mt-1 text-body-sm text-ink-muted">Bhajans, aartis and mantras recorded under this name.</p>
+                <ul className="mt-5 divide-y divide-surface-border border-y border-surface-border">
+                  {devotionals.map((devotional) => (
+                    <li key={devotional._id}>
+                      <Link
+                        href={`/devotionals/${devotional.slug || devotional._id}`}
+                        className="flex items-baseline justify-between gap-4 py-3.5 no-underline transition-colors hover:text-primary-700"
+                      >
+                        <span>
+                          <span className="block text-body text-secondary-800">{devotional.title}</span>
+                          {devotional.titleHi && (
+                            <span className="mt-0.5 block font-devanagari text-body-sm text-ink-muted">{devotional.titleHi}</span>
+                          )}
+                        </span>
+                        {devotional.category && (
+                          <span className="shrink-0 text-caption uppercase tracking-[0.12em] text-ink-muted">
+                            {devotional.category}
+                          </span>
+                        )}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+
+            <section>
+              <h2 className="font-display text-h2 text-secondary-800">Temples to explore</h2>
+              <p className="mt-2 max-w-2xl text-body-sm text-ink-muted">
+                Temple records name their presiding deity in their own words, so we do not claim an exact list here.
+                Search the directory for temples that mention {deity.name}.
+              </p>
+              <Link
+                href={templeSearchHref}
+                className="mt-4 inline-flex border border-primary px-5 py-2.5 text-body-sm font-semibold text-primary-700 no-underline transition hover:bg-primary hover:text-white"
+              >
+                Search temples for {deity.name}
+              </Link>
             </section>
 
-            {deity.attributes && deity.attributes.length > 0 && (
-              <section className="deity-detail-panel">
-                <p className="text-xs font-black uppercase tracking-[0.18em] text-orange-700">Attributes</p>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {deity.attributes.map((attr: string, index: number) => (
-                    <span key={index} className="rounded-full border border-orange-200 bg-orange-50 px-3 py-1.5 text-sm font-bold text-orange-800">{attr}</span>
+            {gallery.length > 0 && (
+              <section>
+                <h2 className="font-display text-h2 text-secondary-800">Gallery</h2>
+                <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  {gallery.map((media, index) => (
+                    <div key={index} className="relative aspect-square overflow-hidden border border-surface-border bg-surface-sunken">
+                      <SarvdevImage
+                        image={getGalleryImage(media as string)}
+                        alt={`${deity.name} — image ${index + 1}`}
+                        className="absolute inset-0"
+                        imgClassName="object-cover"
+                        renderMode="auto"
+                      />
+                    </div>
                   ))}
                 </div>
               </section>
             )}
-
-            <RelatedSection
-              title="Related devotionals"
-              empty="Related mantras, aarti and stotras will appear here as devotional content is mapped."
-              footer={
-                deity.slug && relatedDevotionals.length > 0 ? (
-                  <Link
-                    href={`/devotionals/deity/${deity.slug}`}
-                    className="text-sm font-semibold text-orange-700 no-underline hover:text-orange-900"
-                  >
-                    View all {deity.name} devotionals →
-                  </Link>
-                ) : undefined
-              }
-            >
-              {relatedDevotionals.map((item) => (
-                <RelatedTextCard key={item._id || item.title} href={`/devotionals/${item.slug || slugify(item.title || '')}`} title={item.title} subtitle={[item.category, item.language].filter(Boolean).join(' - ')} />
-              ))}
-            </RelatedSection>
-
-            <RelatedSection title="Related temples" empty="Related temple links will appear here as temple deity fields are mapped.">
-              {relatedTemples.map((item) => (
-                <RelatedTextCard key={item._id || item.title} href={`/temples/${item.slug || slugify(item.title || '')}`} title={item.title} subtitle={[item.city, item.state].filter(Boolean).join(', ')} />
-              ))}
-            </RelatedSection>
           </div>
 
-          <aside className="space-y-6 lg:sticky lg:top-24 lg:self-start">
-            <section className="deity-detail-panel">
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-orange-700">Related forms</p>
-              <div className="mt-4 grid gap-3">
-                {relatedForms.length > 0 ? relatedForms.map((item: any) => (
-                  <Link key={item.slug || item.name} href={`/deities/${item.slug}`} className="group flex items-center gap-3 rounded-xl border border-stone-200 bg-white p-3 no-underline transition hover:border-amber-300 hover:bg-orange-50">
-                    <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-orange-50">
-                      <SarvdevImage image={getDeityCardImage(item)} alt={item.name} className="absolute inset-0" imgClassName="object-cover" renderMode="auto" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="truncate font-black text-stone-950 group-hover:text-orange-700">{item.nameHi}</p>
-                      <p className="truncate text-xs font-semibold text-stone-500">{item.name}</p>
-                    </div>
-                  </Link>
-                )) : <p className="text-sm text-stone-500">Related forms will appear here.</p>}
-              </div>
-            </section>
-
-            {deity.images && deity.images.length > 0 && (
-              <section className="deity-detail-panel">
-                <p className="text-xs font-black uppercase tracking-[0.18em] text-orange-700">Gallery</p>
-                <div className="mt-4 grid grid-cols-2 gap-3">
-                  {deity.images.map((img: string, index: number) => (
-                    <div key={index} className="relative aspect-square overflow-hidden rounded-xl bg-orange-50">
-                      <SarvdevImage image={getGalleryImage(img)} alt={`${deity.name} ${index + 1}`} className="absolute inset-0" imgClassName="object-cover hover:scale-105 transition-transform duration-300" renderMode="auto" />
-                    </div>
+          <aside className="space-y-8 lg:sticky lg:top-24 lg:self-start">
+            {relatedForms.length > 0 && (
+              <section>
+                <h2 className="font-display text-h3 text-secondary-800">Explore related divine forms</h2>
+                <p className="mt-1 text-caption text-ink-muted">
+                  Other deities recorded under {deity.categoryName || 'this tradition'}.
+                </p>
+                <ul className="mt-4 divide-y divide-surface-border border-y border-surface-border">
+                  {relatedForms.map((form) => (
+                    <li key={form.slug}>
+                      <Link href={`/deities/${form.slug}`} className="block py-2.5 text-body-sm text-secondary-800 no-underline transition-colors hover:text-primary-700">
+                        {form.name}
+                        {form.nameHi && <span className="ml-2 font-devanagari text-ink-muted">{form.nameHi}</span>}
+                      </Link>
+                    </li>
                   ))}
-                </div>
+                </ul>
               </section>
             )}
+
+            <Link href="/deities" className="inline-flex text-body-sm font-semibold text-primary-700 no-underline hover:text-maroon">
+              ← All deities
+            </Link>
           </aside>
         </div>
       </main>
     </>
-  )
-}
-
-function DeityFact({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-xl bg-orange-50/70 p-4">
-      <span className="block text-xs font-black uppercase tracking-wide text-stone-500">{label}</span>
-      <span className="mt-1 block text-sm font-black text-stone-950">{value}</span>
-    </div>
-  )
-}
-
-function RelatedSection({ title, empty, children, footer }: { title: string; empty: string; children: ReactNode; footer?: ReactNode }) {
-  const hasChildren = Array.isArray(children) ? children.length > 0 : Boolean(children)
-  return (
-    <section className="deity-detail-panel">
-      <p className="text-xs font-black uppercase tracking-[0.18em] text-orange-700">{title}</p>
-      {hasChildren ? <div className="mt-4 grid gap-3 sm:grid-cols-2">{children}</div> : <p className="mt-4 text-sm text-stone-500">{empty}</p>}
-      {footer && <div className="mt-4">{footer}</div>}
-    </section>
-  )
-}
-
-function RelatedTextCard({ href, title, subtitle }: { href: string; title: string; subtitle?: string }) {
-  return (
-    <Link href={href} className="rounded-xl border border-stone-200 bg-white p-4 no-underline transition hover:border-amber-300 hover:bg-orange-50">
-      <p className="font-black text-stone-950">{title}</p>
-      {subtitle && <p className="mt-1 text-xs font-semibold text-stone-500">{subtitle}</p>}
-    </Link>
   )
 }
