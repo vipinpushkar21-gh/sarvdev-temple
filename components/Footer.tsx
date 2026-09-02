@@ -38,6 +38,47 @@ const pilgrimageLinks = [
 
 const quickLinks = FOOTER_QUICK_LINKS
 
+type FooterLink = { label: string; href: string }
+
+/** Link groups collapse on mobile to keep the footer clear of the fixed bottom nav. */
+function FooterLinkGroup({
+  id, title, links, openId, onToggle, children,
+}: {
+  id: string
+  title: string
+  links: FooterLink[]
+  openId: string | null
+  onToggle: (id: string | null) => void
+  children?: React.ReactNode
+}) {
+  const open = openId === id
+  return (
+    <nav aria-label={title} className="border-b border-secondary-800/60 py-2 sm:border-0 sm:py-0">
+      <button
+        type="button"
+        onClick={() => onToggle(open ? null : id)}
+        aria-expanded={open}
+        className="flex w-full items-center justify-between text-left text-overline font-cinzel uppercase tracking-wider text-temple-gold-DEFAULT/70 sm:mb-4 sm:pointer-events-none"
+      >
+        {title}
+        <svg className={`h-4 w-4 transition-transform duration-200 sm:hidden ${open ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" d="m6 9 6 6 6-6" />
+        </svg>
+      </button>
+      <div className={`${open ? 'block' : 'hidden'} pt-2 sm:block sm:pt-0`}>
+        <ul className="space-y-2 sm:space-y-2.5">
+          {links.map(link => (
+            <li key={link.href}>
+              <Link href={link.href} className="text-body-sm text-secondary-300 no-underline hover:text-white hover:no-underline transition-colors duration-200">{link.label}</Link>
+            </li>
+          ))}
+        </ul>
+        {children}
+      </div>
+    </nav>
+  )
+}
+
 const legalLinks = [
   { label: 'About Sarvdev', href: '/contact' },
   { label: 'Privacy Policy', href: '/privacy' },
@@ -50,6 +91,7 @@ const legalLinks = [
 export default function Footer() {
   const { t } = useTranslation()
   const [email, setEmail] = useState('')
+  const [openGroup, setOpenGroup] = useState<string | null>(null)
   const [subStatus, setSubStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [subMsg, setSubMsg] = useState('')
 
@@ -81,11 +123,11 @@ export default function Footer() {
       <div className="absolute bottom-0 left-0 w-80 h-80 bg-accent/[0.03] rounded-full blur-[80px] translate-y-1/2 -translate-x-1/3 pointer-events-none" />
 
       {/* Main footer content */}
-      <div className="page-container relative z-10 pt-10 pb-7 sm:pt-16 sm:pb-10 md:pt-20 md:pb-12">
-        <div className="grid grid-cols-2 gap-6 md:grid-cols-6 md:gap-6">
+      <div className="page-container relative z-10 pt-7 pb-4 sm:pt-16 sm:pb-10 md:pt-20 md:pb-12">
+        <div className="grid grid-cols-1 gap-x-6 gap-y-1 sm:grid-cols-2 sm:gap-y-6 md:grid-cols-6">
 
           {/* Brand column — spans 2 on desktop */}
-          <div className="col-span-2">
+          <div className="sm:col-span-2">
             <Link href="/" className="group inline-flex items-center gap-3 no-underline hover:no-underline">
               <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent shadow-lg shadow-primary/30 group-hover:shadow-xl group-hover:shadow-primary/50 transition-all duration-300 group-hover:scale-105">
                 <span className="text-secondary-900 font-serif font-bold text-xl leading-none">S</span>
@@ -99,11 +141,11 @@ export default function Footer() {
                 </span>
               </div>
             </Link>
-            <p className="mt-4 max-w-xs text-body-sm leading-relaxed text-secondary-300">
+            <p className="mt-3 line-clamp-2 max-w-xs text-body-sm leading-relaxed text-secondary-300 sm:mt-4 sm:line-clamp-none">
               India&apos;s most comprehensive sacred temple directory. Explore temples, listen to devotional music, track festivals, and deepen your spiritual journey.
             </p>
 
-            <blockquote className="mt-4 border-l-2 border-accent/50 py-1 pl-4 text-body-sm italic text-secondary-300 sm:mt-6">
+            <blockquote className="mt-4 hidden border-l-2 border-accent/50 py-1 pl-4 text-body-sm italic text-secondary-300 sm:mt-6 sm:block">
               <span className="font-devanagari text-accent-200 text-[15px]">&ldquo;सर्वे भवन्तु सुखिनः&rdquo;</span>
               <span className="text-caption not-italic text-secondary-400 mt-1 block">
                 May all beings be happy.
@@ -111,7 +153,7 @@ export default function Footer() {
             </blockquote>
 
             {/* Social / CTA */}
-            <div className="mt-4 flex items-center gap-3 sm:mt-6">
+            <div className="mt-3 flex items-center gap-3 sm:mt-6">
               <Link href="/list-temple" className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-caption font-bold bg-gradient-to-r from-primary to-primary-600 text-white shadow-md shadow-primary/20 hover:shadow-lg hover:brightness-110 transition-all duration-300 no-underline hover:no-underline">
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
                 {t('common.submitTemple')}
@@ -123,53 +165,17 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* Quick Links */}
-          <nav aria-label="Quick links">
-            <h3 className="text-overline font-cinzel uppercase tracking-wider text-temple-gold-DEFAULT/70 mb-4">{t('common.explore')}</h3>
-            <ul className="space-y-2.5">
-              {quickLinks.map(link => (
-                <li key={link.href}>
-                  <Link href={link.href} className="text-body-sm text-secondary-300 no-underline hover:text-white hover:no-underline transition-colors duration-200">{link.label}</Link>
-                </li>
-              ))}
-            </ul>
-          </nav>
-
-          {/* States */}
-          <nav aria-label="Popular states">
-            <h3 className="text-overline font-cinzel uppercase tracking-wider text-temple-gold-DEFAULT/70 mb-4">{t('common.popularStates')}</h3>
-            <ul className="space-y-2.5">
-              {popularStates.map(link => (
-                <li key={link.href}>
-                  <Link href={link.href} className="text-body-sm text-secondary-300 no-underline hover:text-white hover:no-underline transition-colors duration-200">{link.label}</Link>
-                </li>
-              ))}
-            </ul>
-          </nav>
-
-          {/* Deities */}
-          <nav aria-label="Popular deities">
-            <h3 className="text-overline font-cinzel uppercase tracking-wider text-temple-gold-DEFAULT/70 mb-4">{t('nav.deities')}</h3>
-            <ul className="space-y-2.5">
-              {popularDeities.map(link => (
-                <li key={link.href}>
-                  <Link href={link.href} className="text-body-sm text-secondary-300 no-underline hover:text-white hover:no-underline transition-colors duration-200">{link.label}</Link>
-                </li>
-              ))}
-            </ul>
-          </nav>
-
-          {/* Pilgrimages */}
-          <nav aria-label="Pilgrimage circuits">
-            <h3 className="text-overline font-cinzel uppercase tracking-wider text-temple-gold-DEFAULT/70 mb-4">{t('common.pilgrimages')}</h3>
-            <ul className="space-y-2.5">
-              {pilgrimageLinks.map(link => (
-                <li key={link.href}>
-                  <Link href={link.href} className="text-body-sm text-secondary-300 no-underline hover:text-white hover:no-underline transition-colors duration-200">{link.label}</Link>
-                </li>
-              ))}
-            </ul>
-            <div className="mt-6">
+          <FooterLinkGroup id="explore" title={t('common.explore')} links={quickLinks} openId={openGroup} onToggle={setOpenGroup} />
+          <FooterLinkGroup id="states" title={t('common.popularStates')} links={popularStates} openId={openGroup} onToggle={setOpenGroup} />
+          <FooterLinkGroup id="deities" title={t('nav.deities')} links={popularDeities} openId={openGroup} onToggle={setOpenGroup} />
+          <FooterLinkGroup
+            id="pilgrimages"
+            title={t('common.pilgrimages')}
+            links={pilgrimageLinks}
+            openId={openGroup}
+            onToggle={setOpenGroup}
+          >
+            <div className="mt-4 sm:mt-6">
               <h3 className="text-overline font-cinzel uppercase tracking-wider text-temple-gold-DEFAULT/70 mb-3">Legal</h3>
               <ul className="space-y-2">
                 {legalLinks.slice(0, 4).map(link => (
@@ -179,21 +185,21 @@ export default function Footer() {
                 ))}
               </ul>
             </div>
-          </nav>
+          </FooterLinkGroup>
         </div>
       </div>
 
       {/* Newsletter CTA */}
       <div className="border-t border-secondary-800/60 relative z-10">
-        <div className="page-container py-6 sm:py-8">
+        <div className="page-container py-5 sm:py-8">
           <div className="max-w-2xl mx-auto text-center">
-            <h3 className="font-cinzel text-overline uppercase tracking-[0.18em] text-temple-gold-light/70 mb-2">{t('common.newsletterTitle')}</h3>
+            <h3 className="hidden font-cinzel text-overline uppercase tracking-[0.18em] text-temple-gold-light/70 mb-2 sm:block">{t('common.newsletterTitle')}</h3>
             <p className="text-lg font-serif font-bold text-white mb-1">{t('common.newsletterJoin')}</p>
-            <p className="text-body-sm text-secondary-400 mb-5">{t('common.newsletterDescription')}</p>
+            <p className="hidden text-body-sm text-secondary-400 mb-5 sm:block">{t('common.newsletterDescription')}</p>
             {subStatus === 'success' ? (
               <p className="text-sm font-semibold text-emerald-400">{subMsg}</p>
             ) : (
-              <form onSubmit={handleSubscribe} className="flex gap-2 max-w-md mx-auto">
+              <form onSubmit={handleSubscribe} className="mt-3 flex gap-2 max-w-md mx-auto sm:mt-0">
                 <input
                   type="email"
                   value={email}
@@ -219,7 +225,7 @@ export default function Footer() {
 
       {/* SEO footer — internal link bar */}
       <div className="border-t border-secondary-800/80 relative z-10">
-        <div className="page-container py-4 sm:py-5">
+        <div className="page-container py-3 sm:py-5">
           <div className="flex flex-wrap gap-x-4 gap-y-1.5 justify-center">
             {[
               { label: 'Temples in Delhi', href: '/temples/city/delhi' },
@@ -240,11 +246,11 @@ export default function Footer() {
 
       {/* Bottom bar */}
       <div className="border-t border-secondary-800/50 relative z-10">
-        <div className="page-container flex flex-col items-center justify-between gap-3 py-4 sm:flex-row sm:py-5">
+        <div className="page-container flex flex-col items-center justify-between gap-1.5 py-3 sm:flex-row sm:gap-3 sm:py-5">
           <p className="text-caption text-secondary-400">
             &copy; {new Date().getFullYear()} Sarvdev. {t('footer.rights')}
           </p>
-          <p className="text-caption text-secondary-500 flex items-center gap-1.5">
+          <p className="hidden text-caption text-secondary-500 sm:flex items-center gap-1.5">
             {t('common.builtForCommunity')}
             <span className="inline-block text-primary animate-pulse">&#9829;</span>
             {t('common.reverenceDevotion')}
