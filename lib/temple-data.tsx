@@ -1,6 +1,7 @@
 "use client"
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { usePathname } from 'next/navigation'
 
 export interface TempleData {
   _id: string
@@ -50,11 +51,18 @@ const TempleDataContext = createContext<TempleDataContextType>({
 })
 
 export function TempleDataProvider({ children }: { children: ReactNode }) {
+  const pathname = usePathname()
   const [temples, setTemples] = useState<TempleData[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    // The homepage uses purpose-built server queries. Do not ship the directory
+    // dataset there merely to support sections that are not rendered.
+    if (pathname === '/') {
+      setLoading(false)
+      return
+    }
     let cancelled = false
     async function fetchTemples() {
       const MAX_RETRIES = 3
@@ -103,7 +111,7 @@ export function TempleDataProvider({ children }: { children: ReactNode }) {
     }
     fetchTemples().finally(() => { if (!cancelled) setLoading(false) })
     return () => { cancelled = true }
-  }, [])
+  }, [pathname])
 
   return (
     <TempleDataContext.Provider value={{ temples, loading, error }}>

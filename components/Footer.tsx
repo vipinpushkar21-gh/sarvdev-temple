@@ -74,15 +74,15 @@ export default function Footer() {
   }
 
   return (
-    <footer className="relative bg-secondary-900 text-secondary-100 overflow-hidden">
+    <footer className="relative overflow-hidden bg-secondary-900 pb-20 text-secondary-100 xl:pb-0">
       {/* Decorative elements */}
       <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-temple-gold-DEFAULT/50 to-transparent" />
       <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/[0.03] rounded-full blur-[100px] -translate-y-1/2 translate-x-1/3 pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-80 h-80 bg-accent/[0.03] rounded-full blur-[80px] translate-y-1/2 -translate-x-1/3 pointer-events-none" />
 
       {/* Main footer content */}
-      <div className="page-container pt-16 pb-10 md:pt-20 md:pb-12 relative z-10">
-        <div className="grid grid-cols-2 md:grid-cols-6 gap-8 md:gap-6">
+      <div className="page-container relative z-10 pt-10 pb-7 sm:pt-16 sm:pb-10 md:pt-20 md:pb-12">
+        <div className="grid grid-cols-2 gap-6 md:grid-cols-6 md:gap-6">
 
           {/* Brand column — spans 2 on desktop */}
           <div className="col-span-2">
@@ -99,11 +99,11 @@ export default function Footer() {
                 </span>
               </div>
             </Link>
-            <p className="mt-5 text-body-sm text-secondary-300 leading-relaxed max-w-xs">
+            <p className="mt-4 max-w-xs text-body-sm leading-relaxed text-secondary-300">
               India&apos;s most comprehensive sacred temple directory. Explore temples, listen to devotional music, track festivals, and deepen your spiritual journey.
             </p>
 
-            <blockquote className="mt-6 text-body-sm italic text-secondary-300 border-l-2 border-accent/50 pl-4 py-1">
+            <blockquote className="mt-4 border-l-2 border-accent/50 py-1 pl-4 text-body-sm italic text-secondary-300 sm:mt-6">
               <span className="font-devanagari text-accent-200 text-[15px]">&ldquo;सर्वे भवन्तु सुखिनः&rdquo;</span>
               <span className="text-caption not-italic text-secondary-400 mt-1 block">
                 May all beings be happy.
@@ -111,7 +111,7 @@ export default function Footer() {
             </blockquote>
 
             {/* Social / CTA */}
-            <div className="mt-6 flex items-center gap-3">
+            <div className="mt-4 flex items-center gap-3 sm:mt-6">
               <Link href="/list-temple" className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-caption font-bold bg-gradient-to-r from-primary to-primary-600 text-white shadow-md shadow-primary/20 hover:shadow-lg hover:brightness-110 transition-all duration-300 no-underline hover:no-underline">
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
                 {t('common.submitTemple')}
@@ -185,7 +185,7 @@ export default function Footer() {
 
       {/* Newsletter CTA */}
       <div className="border-t border-secondary-800/60 relative z-10">
-        <div className="page-container py-8">
+        <div className="page-container py-6 sm:py-8">
           <div className="max-w-2xl mx-auto text-center">
             <h3 className="font-cinzel text-overline uppercase tracking-[0.18em] text-temple-gold-light/70 mb-2">{t('common.newsletterTitle')}</h3>
             <p className="text-lg font-serif font-bold text-white mb-1">{t('common.newsletterJoin')}</p>
@@ -219,7 +219,7 @@ export default function Footer() {
 
       {/* SEO footer — internal link bar */}
       <div className="border-t border-secondary-800/80 relative z-10">
-        <div className="page-container py-5">
+        <div className="page-container py-4 sm:py-5">
           <div className="flex flex-wrap gap-x-4 gap-y-1.5 justify-center">
             {[
               { label: 'Temples in Delhi', href: '/temples/city/delhi' },
@@ -240,7 +240,7 @@ export default function Footer() {
 
       {/* Bottom bar */}
       <div className="border-t border-secondary-800/50 relative z-10">
-        <div className="page-container py-5 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="page-container flex flex-col items-center justify-between gap-3 py-4 sm:flex-row sm:py-5">
           <p className="text-caption text-secondary-400">
             &copy; {new Date().getFullYear()} Sarvdev. {t('footer.rights')}
           </p>
