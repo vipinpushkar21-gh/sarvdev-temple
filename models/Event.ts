@@ -91,6 +91,12 @@ const EventSchema = new Schema({
   updatedAt: { type: Date, default: Date.now },
 });
 
+EventSchema.index({ status: 1, startDate: 1, date: 1 });
+EventSchema.index({ status: 1, category: 1, startDate: 1 });
+EventSchema.index({ status: 1, templeSlug: 1, startDate: 1 });
+EventSchema.index({ status: 1, deitySlug: 1, startDate: 1 });
+EventSchema.index({ status: 1, state: 1, startDate: 1 });
+
 const existingEventModel = models.Event as mongoose.Model<any> | undefined
 const existingStatusEnum = (existingEventModel as any)?.schema?.path('status')?.options?.enum as string[] | undefined
 
