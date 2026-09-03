@@ -4,6 +4,7 @@ import { connectDB } from '@/lib/db'
 import Temple from '@/models/Temple'
 import { applyRateLimit } from '@/lib/rate-limit'
 import { normalizeTempleText, sacredCategorySlug, slugifyTemple } from '@/lib/temple-normalization'
+import { findNearbyTemples } from '@/lib/temple-nearby'
 
 const APPROVED = {
   $or: [
@@ -87,90 +88,6 @@ function finiteCoordinate(value: string | null) {
   return Number.isFinite(n) ? n : null
 }
 
-async function getNearbyTemples(params: {
-  lat: number
-  lng: number
-  excludeSlug: string
-  excludeId: string
-}) {
-  const latRad = (params.lat * Math.PI) / 180
-  const lngRad = (params.lng * Math.PI) / 180
-  const and: Record<string, any>[] = [
-    APPROVED,
-    {
-      latitude: { $type: 'number', $gte: -90, $lte: 90 },
-      longitude: { $type: 'number', $gte: -180, $lte: 180 },
-    },
-  ]
-
-  if (params.excludeSlug) and.push({ slug: { $ne: params.excludeSlug } })
-  if (mongoose.Types.ObjectId.isValid(params.excludeId)) {
-    and.push({ _id: { $ne: new mongoose.Types.ObjectId(params.excludeId) } })
-  }
-
-  const cosineExpression = {
-    $add: [
-      {
-        $multiply: [
-          { $sin: { $degreesToRadians: '$latitude' } },
-          Math.sin(latRad),
-        ],
-      },
-      {
-        $multiply: [
-          { $cos: { $degreesToRadians: '$latitude' } },
-          Math.cos(latRad),
-          { $cos: { $subtract: [{ $degreesToRadians: '$longitude' }, lngRad] } },
-        ],
-      },
-    ],
-  }
-
-  const distanceExpression = {
-    $multiply: [
-      6371,
-      {
-        $acos: {
-          $min: [1, { $max: [-1, cosineExpression] }],
-        },
-      },
-    ],
-  }
-
-  return Temple.aggregate([
-    { $match: { $and: and } },
-    { $addFields: { distanceKm: distanceExpression } },
-    { $match: { distanceKm: { $gt: 0.01, $lte: 50 } } },
-    { $sort: { distanceKm: 1 } },
-    { $limit: 6 },
-    {
-      $project: {
-        title: 1,
-        slug: 1,
-        image: 1,
-        imageCard: 1,
-        imageHero: 1,
-        heroImage: 1,
-        city: 1,
-        district: 1,
-        state: 1,
-        deity: 1,
-        distanceKm: { $round: ['$distanceKm', 1] },
-        distanceBucket: {
-          $switch: {
-            branches: [
-              { case: { $lte: ['$distanceKm', 10] }, then: 'within 10 km' },
-              { case: { $lte: ['$distanceKm', 25] }, then: 'within 25 km' },
-              { case: { $lte: ['$distanceKm', 50] }, then: 'within 50 km' },
-            ],
-            default: 'within 50 km',
-          },
-        },
-      },
-    },
-  ])
-}
-
 export async function GET(req: NextRequest) {
   const limited = applyRateLimit(req, 'temples')
   if (limited) return limited
@@ -225,7 +142,7 @@ export async function GET(req: NextRequest) {
             .lean()
         : Promise.resolve([]),
       includeNearby && lat !== null && lng !== null
-        ? getNearbyTemples({ lat, lng, excludeSlug, excludeId })
+        ? findNearbyTemples({ lat, lng, excludeSlug, excludeId })
         : Promise.resolve([]),
     ])
 
