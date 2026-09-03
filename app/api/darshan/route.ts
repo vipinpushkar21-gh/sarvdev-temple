@@ -13,6 +13,7 @@ type AdminPayload = NonNullable<ReturnType<typeof verifyToken>>
 const PUBLIC_ACTIVE_STATUSES = ['active', 'approved']
 const ALL_STATUSES = new Set(['active', 'inactive', 'draft', 'approved', 'pending', 'rejected'])
 const ALL_DARSHAN_TYPES = new Set(['live', 'recorded', 'upcoming'])
+const ALL_CONTENT_TYPES = new Set(['photo', 'video', 'live'])
 
 let publicCache: { data: any[]; ts: number } | null = null
 const CACHE_TTL = 60_000
@@ -47,6 +48,7 @@ function cleanStringArray(value: unknown) {
 
 function normalizeDarshanInput(input: Record<string, unknown>) {
   const darshanType = cleanString(input.darshanType || input.type, 20)
+  const contentType = cleanString(input.contentType, 20)
   const status = cleanString(input.status, 20)
   const title = cleanString(input.title, 180)
   const templeName = cleanString(input.templeName || input.temple, 180)
@@ -79,6 +81,7 @@ function normalizeDarshanInput(input: Record<string, unknown>) {
     youtubeUrl,
     youtubeId: extractYoutubeId(input.youtubeId) || extractYoutubeId(youtubeUrl) || extractYoutubeId(videoUrl) || extractYoutubeId(externalUrl),
     provider: getCanonicalProvider({ ...input, youtubeUrl, videoUrl }),
+    contentType: ALL_CONTENT_TYPES.has(contentType) ? contentType : darshanType === 'live' ? 'live' : videoUrl || youtubeUrl ? 'video' : 'photo',
     media: videoUrl,
     thumbnail,
     primaryMedia: normalizeMediaAsset(input.primaryMedia, 'darshan') ?? null,
@@ -87,6 +90,7 @@ function normalizeDarshanInput(input: Record<string, unknown>) {
     cardMedia: normalizeMediaAsset(input.cardMedia, 'darshan') ?? null,
     imageHero,
     heroMedia: normalizeMediaAsset(input.heroMedia, 'darshan') ?? null,
+    galleryMedia: Array.isArray(input.galleryMedia) ? input.galleryMedia.map((item) => normalizeMediaAsset(item, 'darshan')).filter(Boolean) : [],
     darshanType: ALL_DARSHAN_TYPES.has(darshanType) ? darshanType : isLive ? 'live' : 'recorded',
     type: ALL_DARSHAN_TYPES.has(darshanType) ? darshanType : isLive ? 'live' : 'recorded',
     isLive,
@@ -129,6 +133,7 @@ function buildAdminFilter(searchParams: URLSearchParams) {
   const filter: Record<string, any> = {}
   const status = searchParams.get('status')
   const darshanType = searchParams.get('darshanType') || searchParams.get('type')
+  const contentType = searchParams.get('contentType')
   const deity = searchParams.get('deity')
   const templeSlug = searchParams.get('templeSlug')
   const deitySlug = searchParams.get('deitySlug')
@@ -138,6 +143,7 @@ function buildAdminFilter(searchParams: URLSearchParams) {
 
   if (status) filter.status = status
   if (darshanType) filter.darshanType = darshanType
+  if (contentType && ALL_CONTENT_TYPES.has(contentType)) filter.contentType = contentType
   if (deity) filter.deity = new RegExp(deity, 'i')
   if (templeSlug) filter.templeSlug = normalizeDarshanRelationSlug(templeSlug)
   if (deitySlug) filter.deitySlug = normalizeDarshanRelationSlug(deitySlug)
@@ -164,11 +170,13 @@ function buildPublicFilter(searchParams: URLSearchParams) {
   const filter: Record<string, any> = getPublicFilter()
   const status = searchParams.get('status')
   const darshanType = searchParams.get('darshanType')
+  const contentType = searchParams.get('contentType')
   const templeSlug = searchParams.get('templeSlug')
   const deitySlug = searchParams.get('deitySlug')
   const state = searchParams.get('state')
   if (status && PUBLIC_ACTIVE_STATUSES.includes(status)) filter.status = status
   if (darshanType && ALL_DARSHAN_TYPES.has(darshanType)) filter.darshanType = darshanType
+  if (contentType && ALL_CONTENT_TYPES.has(contentType)) filter.contentType = contentType
   if (templeSlug) filter.templeSlug = normalizeDarshanRelationSlug(templeSlug)
   if (deitySlug) filter.deitySlug = normalizeDarshanRelationSlug(deitySlug)
   if (state) filter.state = new RegExp(state.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i')

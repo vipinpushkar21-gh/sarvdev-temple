@@ -22,12 +22,14 @@ export type DarshanFormValues = {
   videoUrl: string
   youtubeUrl: string
   provider: 'youtube' | 'direct' | 'other'
+  contentType: 'photo' | 'video' | 'live'
   thumbnail: string
   primaryMedia: SarvdevMediaAsset | null
   imageCard: string
   cardMedia: SarvdevMediaAsset | null
   imageHero: string
   heroMedia: SarvdevMediaAsset | null
+  galleryMedia: SarvdevMediaAsset[]
   darshanType: 'live' | 'recorded' | 'upcoming'
   isLive: boolean
   isFeatured: boolean
@@ -66,12 +68,14 @@ const DEFAULT_VALUES: DarshanFormValues = {
   videoUrl: '',
   youtubeUrl: '',
   provider: 'youtube',
+  contentType: 'photo',
   thumbnail: '',
   primaryMedia: null,
   imageCard: '',
   cardMedia: null,
   imageHero: '',
   heroMedia: null,
+  galleryMedia: [],
   darshanType: 'recorded',
   isLive: false,
   isFeatured: false,
@@ -114,12 +118,14 @@ export function normalizeDarshanForForm(data: any): DarshanFormValues {
     videoUrl: data?.videoUrl || data?.video || data?.media || '',
     youtubeUrl: data?.youtubeUrl || '',
     provider: data?.provider || 'youtube',
+    contentType: data?.contentType || (data?.darshanType === 'live' ? 'live' : (data?.videoUrl || data?.youtubeUrl ? 'video' : 'photo')),
     thumbnail: data?.thumbnail || '',
     primaryMedia: data?.primaryMedia || null,
     imageCard: data?.imageCard || data?.image || '',
     cardMedia: data?.cardMedia || null,
     imageHero: data?.imageHero || '',
     heroMedia: data?.heroMedia || null,
+    galleryMedia: Array.isArray(data?.galleryMedia) ? data.galleryMedia : [],
     darshanType: data?.darshanType || data?.type || (data?.isLive ? 'live' : 'recorded'),
     isLive: Boolean(data?.isLive),
     isFeatured: Boolean(data?.isFeatured ?? data?.featured),
@@ -163,9 +169,7 @@ export default function DarshanForm({ mode, id, initialValues }: Props) {
     setForm((current) => ({ ...current, [key]: value }))
   }
 
-  function setDarshanType(value: DarshanFormValues['darshanType']) {
-    setForm((current) => ({ ...current, darshanType: value, isLive: value === 'live' }))
-  }
+  function setContentType(value: DarshanFormValues['contentType']) { setForm((current) => ({ ...current, contentType: value, darshanType: value === 'live' ? 'live' : 'recorded' })) }
 
   function toggleRepeatDay(day: string) {
     setForm((current) => ({
@@ -255,13 +259,19 @@ export default function DarshanForm({ mode, id, initialValues }: Props) {
           <TextArea label="Hindi Description" value={form.descriptionHi} onChange={(value) => setField('descriptionHi', value)} rows={4} />
         </FormSection>
 
-        <FormSection title="Stream & Media" subtitle="A stream URL does not verify a live broadcast; live state is always manual.">
-          <div className="grid gap-4 md:grid-cols-2">
+        <FormSection title="Darshan Content" subtitle="Photo Darshan is primary. A stream URL never verifies a live broadcast.">
+          <div><label className="mb-1 block text-sm font-medium text-gray-600">Content type</label><select value={form.contentType} onChange={(e) => setContentType(e.target.value as DarshanFormValues['contentType'])} className="admin-input w-full"><option value="photo">Photo Darshan</option><option value="video">Recorded Video</option><option value="live">Live Stream</option></select></div>
+          {form.contentType === 'photo' && <PhotoGallery gallery={form.galleryMedia} onChange={(galleryMedia) => setField('galleryMedia', galleryMedia)} />}
+          {form.contentType !== 'photo' && <div className="grid gap-4 md:grid-cols-2">
             <div><label className="mb-1 block text-sm font-medium text-gray-600">Provider</label><select value={form.provider} onChange={(e) => setField('provider', e.target.value as DarshanFormValues['provider'])} className="admin-input w-full"><option value="youtube">YouTube</option><option value="direct">Direct video</option><option value="other">Other external source</option></select></div>
-            <Field label="YouTube / Live URL" value={form.youtubeUrl} onChange={(value) => setField('youtubeUrl', value)} placeholder="https://www.youtube.com/watch?v=..." />
-            <Field label="Video URL" value={form.videoUrl} onChange={(value) => setField('videoUrl', value)} placeholder="Hosted video or YouTube URL" />
+            <Field label="YouTube URL" value={form.youtubeUrl} onChange={(value) => setField('youtubeUrl', value)} placeholder="https://www.youtube.com/watch?v=..." />
+            <Field label="Video URL" value={form.videoUrl} onChange={(value) => setField('videoUrl', value)} placeholder="Hosted video URL" />
             <Field label="External URL" value={form.externalUrl} onChange={(value) => setField('externalUrl', value)} placeholder="Official temple/live page URL" />
-          </div>
+          </div>}
+          <p className="text-xs text-gray-500">Card media resolves as card media, primary media, then the first gallery image, then legacy image fields.</p>
+        </FormSection>
+
+        <FormSection title="Media" subtitle="Managed media for the Darshan card and detail presentation.">
           <ImageUpload
             value={form.thumbnail}
             media={form.primaryMedia}
@@ -297,11 +307,11 @@ export default function DarshanForm({ mode, id, initialValues }: Props) {
           </p>
         </FormSection>
 
-        <FormSection title="Darshan Type & Display Control" subtitle="Control how this appears on the public Daily Darshan page.">
+        <FormSection title="Publishing & Display Control" subtitle="Control how this appears on the public Daily Darshan page.">
           <div className="grid gap-4 md:grid-cols-3">
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-600">Darshan Type</label>
-              <select value={form.darshanType} onChange={(e) => setDarshanType(e.target.value as DarshanFormValues['darshanType'])} className="admin-input w-full">
+              <select value={form.darshanType} onChange={(e) => setField('darshanType', e.target.value as DarshanFormValues['darshanType'])} className="admin-input w-full">
                 <option value="live">Live</option>
                 <option value="recorded">Recorded</option>
                 <option value="upcoming">Upcoming</option>
@@ -463,4 +473,9 @@ function Toggle({ label, checked, onChange }: { label: string; checked: boolean;
       {label}
     </label>
   )
+}
+
+function PhotoGallery({ gallery, onChange }: { gallery: SarvdevMediaAsset[]; onChange: (gallery: SarvdevMediaAsset[]) => void }) {
+  const update = (index: number, media: SarvdevMediaAsset | null) => onChange(gallery.map((item, itemIndex) => itemIndex === index ? media : item).filter(Boolean) as SarvdevMediaAsset[])
+  return <div className="space-y-4 rounded-xl border border-orange-100 bg-orange-50/40 p-4"><div><p className="text-sm font-semibold text-gray-700">Today&apos;s Darshan photos</p><p className="mt-1 text-xs text-gray-500">Upload one or more managed photos. No video or stream is required.</p></div>{gallery.map((media, index) => <div key={`${media.publicId || media.url || index}-${index}`}><ImageUpload value={media.url || ''} media={media} onChange={() => undefined} onMediaChange={(next) => update(index, next)} folder="sarvdev/darshan/gallery" label={`Photo ${index + 1}`} guidance="darshanCard" kind="darshan" /><button type="button" className="mt-2 text-xs font-semibold text-red-600" onClick={() => onChange(gallery.filter((_, itemIndex) => itemIndex !== index))}>Remove photo</button></div>)}<button type="button" className="admin-btn admin-btn-ghost px-3 py-2 text-xs" onClick={() => onChange([...gallery, {} as SarvdevMediaAsset])}>Add photo</button></div>
 }

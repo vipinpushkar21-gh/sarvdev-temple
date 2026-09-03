@@ -23,6 +23,7 @@ const DarshanSchema = new Schema({
   cardMedia: { type: MediaAssetSchema },
   heroMedia: { type: MediaAssetSchema },
   ogMedia: { type: MediaAssetSchema },
+  galleryMedia: { type: [MediaAssetSchema], default: [] },
   imageCard: { type: String },
   imageHero: { type: String },
   time: { type: String },
@@ -40,6 +41,7 @@ const DarshanSchema = new Schema({
   youtubeUrl: { type: String },
   youtubeId: { type: String },
   provider: { type: String, enum: ['youtube', 'direct', 'other'], default: 'other' },
+  contentType: { type: String, enum: ['photo', 'video', 'live'], default: 'photo' },
   isLive: { type: Boolean, default: false },
   darshanType: { type: String, enum: ['live', 'recorded', 'upcoming'], default: 'recorded' },
   streamStatus: { type: String, enum: ['unknown', 'online', 'offline', 'ended'], default: 'unknown' },
@@ -62,6 +64,7 @@ const DarshanSchema = new Schema({
 
 DarshanSchema.index({ status: 1, createdAt: -1 });
 DarshanSchema.index({ status: 1, darshanType: 1, createdAt: -1 });
+DarshanSchema.index({ status: 1, contentType: 1, createdAt: -1 });
 DarshanSchema.index({ status: 1, templeSlug: 1, createdAt: -1 });
 DarshanSchema.index({ status: 1, deitySlug: 1, createdAt: -1 });
 DarshanSchema.index({ status: 1, state: 1, createdAt: -1 });

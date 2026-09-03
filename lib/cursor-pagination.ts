@@ -186,9 +186,9 @@ export const DARSHAN_CARD_PROJ = {
   title: 1, titleHi: 1, slug: 1,
   temple: 1, templeName: 1,
   templeSlug: 1, deity: 1, deitySlug: 1, city: 1, state: 1,
-  imageCard: 1, image: 1, thumbnail: 1, cardMedia: 1, primaryMedia: 1,
+  imageCard: 1, image: 1, thumbnail: 1, cardMedia: 1, primaryMedia: 1, galleryMedia: { $slice: 1 },
   youtubeId: 1, youtubeUrl: 1, videoUrl: 1, externalUrl: 1, provider: 1,
-  darshanType: 1, isLive: 1, streamStatus: 1,
+  darshanType: 1, contentType: 1, isLive: 1, streamStatus: 1,
   isFeatured: 1, featured: 1, priority: 1,
   status: 1, createdAt: 1,
 } as const

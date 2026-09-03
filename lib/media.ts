@@ -330,7 +330,7 @@ export function getDarshanCardImage(item?: AnyItem | string | null): SarvdevImag
       image: item.image ?? item.thumbnail,
       imageCard: item.imageCard,
       imageHero: item.imageHero,
-      primaryMedia: item.primaryMedia,
+      primaryMedia: item.primaryMedia ?? item.galleryMedia?.[0],
       cardMedia: item.cardMedia,
       heroMedia: item.heroMedia,
     } :
