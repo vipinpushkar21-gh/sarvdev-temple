@@ -6,6 +6,7 @@ import ActivityLog from '@/models/ActivityLog'
 import Darshan from '@/models/Darshan'
 import { buildCursorFilter, paginateCursor, parseCursorLimit, DARSHAN_CARD_PROJ } from '@/lib/cursor-pagination'
 import { normalizeMediaAsset } from '@/lib/media-asset'
+import { extractYoutubeId, getCanonicalProvider, normalizeDarshanRelationSlug, normalizeDarshanSlug } from '@/lib/darshan-stream'
 
 type AdminPayload = NonNullable<ReturnType<typeof verifyToken>>
 
@@ -44,17 +45,6 @@ function cleanStringArray(value: unknown) {
   return []
 }
 
-function extractYoutubeId(...values: unknown[]) {
-  for (const value of values) {
-    const text = cleanString(value, 500)
-    if (!text) continue
-    if (/^[A-Za-z0-9_-]{6,}$/.test(text) && !text.includes('/')) return text
-    const match = text.match(/(?:youtube\.com\/(?:embed\/|watch\?v=|live\/)|youtu\.be\/)([A-Za-z0-9_-]{6,})/)
-    if (match?.[1]) return match[1]
-  }
-  return ''
-}
-
 function normalizeDarshanInput(input: Record<string, unknown>) {
   const darshanType = cleanString(input.darshanType || input.type, 20)
   const status = cleanString(input.status, 20)
@@ -67,11 +57,12 @@ function normalizeDarshanInput(input: Record<string, unknown>) {
   const imageCard = sanitizeImageUrl(cleanString(input.imageCard || input.image || thumbnail, 500))
   const imageHero = sanitizeImageUrl(cleanString(input.imageHero, 500))
   const ogImage = sanitizeImageUrl(cleanString(input.ogImage || imageHero || imageCard || thumbnail, 500))
-  const isLive = cleanBool(input.isLive) || darshanType === 'live'
+  const isLive = cleanBool(input.isLive)
   const isFeatured = cleanBool(input.isFeatured ?? input.featured)
 
   return {
     title,
+    slug: normalizeDarshanSlug(input.slug || title),
     titleHi: cleanString(input.titleHi, 180),
     temple: templeName,
     templeName,
@@ -86,7 +77,8 @@ function normalizeDarshanInput(input: Record<string, unknown>) {
     videoUrl,
     video: videoUrl,
     youtubeUrl,
-    youtubeId: extractYoutubeId(input.youtubeId, youtubeUrl, videoUrl, externalUrl),
+    youtubeId: extractYoutubeId(input.youtubeId) || extractYoutubeId(youtubeUrl) || extractYoutubeId(videoUrl) || extractYoutubeId(externalUrl),
+    provider: getCanonicalProvider({ ...input, youtubeUrl, videoUrl }),
     media: videoUrl,
     thumbnail,
     primaryMedia: normalizeMediaAsset(input.primaryMedia, 'darshan') ?? null,
@@ -108,11 +100,12 @@ function normalizeDarshanInput(input: Record<string, unknown>) {
     time: cleanString(input.startTime || input.time, 80),
     endTime: cleanString(input.endTime, 40),
     repeatDays: cleanStringArray(input.repeatDays),
+    scheduleRule: cleanString(input.scheduleRule, 20) === 'recurring' ? 'recurring' : 'one-time',
     timezone: cleanString(input.timezone, 80) || 'Asia/Kolkata',
     schedule: cleanString(input.schedule, 180),
     festivalTag: cleanString(input.festivalTag, 120),
-    templeSlug: cleanString(input.templeSlug, 160),
-    deitySlug: cleanString(input.deitySlug, 160),
+    templeSlug: normalizeDarshanRelationSlug(input.templeSlug),
+    deitySlug: normalizeDarshanRelationSlug(input.deitySlug),
     relatedDevotionalSlug: cleanString(input.relatedDevotionalSlug, 160),
     externalUrl,
     metaTitle: cleanString(input.metaTitle, 80),
@@ -137,6 +130,8 @@ function buildAdminFilter(searchParams: URLSearchParams) {
   const status = searchParams.get('status')
   const darshanType = searchParams.get('darshanType') || searchParams.get('type')
   const deity = searchParams.get('deity')
+  const templeSlug = searchParams.get('templeSlug')
+  const deitySlug = searchParams.get('deitySlug')
   const state = searchParams.get('state')
   const featured = searchParams.get('featured')
   const q = searchParams.get('q')?.trim()
@@ -144,6 +139,8 @@ function buildAdminFilter(searchParams: URLSearchParams) {
   if (status) filter.status = status
   if (darshanType) filter.darshanType = darshanType
   if (deity) filter.deity = new RegExp(deity, 'i')
+  if (templeSlug) filter.templeSlug = normalizeDarshanRelationSlug(templeSlug)
+  if (deitySlug) filter.deitySlug = normalizeDarshanRelationSlug(deitySlug)
   if (state) filter.state = new RegExp(state, 'i')
   if (featured === 'true') filter.isFeatured = true
   if (q) {
@@ -163,6 +160,22 @@ function buildAdminFilter(searchParams: URLSearchParams) {
   return filter
 }
 
+function buildPublicFilter(searchParams: URLSearchParams) {
+  const filter: Record<string, any> = getPublicFilter()
+  const status = searchParams.get('status')
+  const darshanType = searchParams.get('darshanType')
+  const templeSlug = searchParams.get('templeSlug')
+  const deitySlug = searchParams.get('deitySlug')
+  const state = searchParams.get('state')
+  if (status && PUBLIC_ACTIVE_STATUSES.includes(status)) filter.status = status
+  if (darshanType && ALL_DARSHAN_TYPES.has(darshanType)) filter.darshanType = darshanType
+  if (templeSlug) filter.templeSlug = normalizeDarshanRelationSlug(templeSlug)
+  if (deitySlug) filter.deitySlug = normalizeDarshanRelationSlug(deitySlug)
+  if (state) filter.state = new RegExp(state.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i')
+  if (searchParams.get('featured') === 'true') filter.isFeatured = true
+  return filter
+}
+
 async function logDarshanAction(action: string, darshan: any, admin: AdminPayload, details?: Record<string, unknown>) {
   try {
     await ActivityLog.create({
@@ -179,6 +192,14 @@ async function logDarshanAction(action: string, darshan: any, admin: AdminPayloa
   }
 }
 
+async function makeUniqueSlug(base: string, exceptId?: string) {
+  const root = normalizeDarshanSlug(base) || `darshan-${Date.now()}`
+  let slug = root
+  let suffix = 2
+  while (await Darshan.exists({ slug, ...(exceptId ? { _id: { $ne: exceptId } } : {}) })) slug = `${root}-${suffix++}`
+  return slug
+}
+
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url)
@@ -192,7 +213,7 @@ export async function GET(req: NextRequest) {
     const pageParam = searchParams.get('page')
     const limitParam = searchParams.get('limit')
     const idParam = searchParams.get('id')
-    const filter = adminMode ? buildAdminFilter(searchParams) : getPublicFilter()
+    const filter = adminMode ? buildAdminFilter(searchParams) : buildPublicFilter(searchParams)
     const sort = { isLive: -1, isFeatured: -1, featured: -1, priority: 1, createdAt: -1 } as const
 
     await connectDB()
@@ -220,7 +241,7 @@ export async function GET(req: NextRequest) {
       const limit = Math.min(100, Math.max(1, parseInt(limitParam || '20', 10)))
       const skip = (page - 1) * limit
       const [items, total] = await Promise.all([
-        Darshan.find(filter, { __v: 0 }).sort(sort).skip(skip).limit(limit).lean(),
+        Darshan.find(filter, adminMode ? { __v: 0 } : DARSHAN_CARD_PROJ).sort(sort).skip(skip).limit(limit).lean(),
         Darshan.countDocuments(filter),
       ])
 
@@ -232,7 +253,7 @@ export async function GET(req: NextRequest) {
     }
 
     const legacyLimit = Math.min(100, Math.max(1, parseInt(limitParam || (adminMode ? '50' : '30'), 10) || 30))
-    const darshan = await Darshan.find(filter, { __v: 0 }).sort(sort).limit(legacyLimit).lean()
+    const darshan = await Darshan.find(filter, adminMode ? { __v: 0 } : DARSHAN_CARD_PROJ).sort(sort).limit(legacyLimit).lean()
     if (!adminMode) publicCache = { data: darshan, ts: Date.now() }
     return NextResponse.json(darshan, { headers: { 'Cache-Control': adminMode ? 'no-store' : 'public, s-maxage=60, stale-while-revalidate=120' } })
   } catch (error) {
@@ -250,6 +271,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     const data = normalizeDarshanInput(body || {})
     if (!data.title) return NextResponse.json({ error: 'Title is required' }, { status: 400 })
+    data.slug = await makeUniqueSlug(data.slug || data.title)
 
     const darshan = await Darshan.create(data)
     publicCache = null
@@ -274,6 +296,7 @@ export async function PUT(req: NextRequest) {
     if (!current) return NextResponse.json({ error: 'Darshan not found' }, { status: 404 })
 
     const update = normalizeDarshanInput({ ...current, ...body })
+    update.slug = await makeUniqueSlug(update.slug || update.title, id)
     const darshan = await Darshan.findByIdAndUpdate(id, update, { new: true })
     publicCache = null
 

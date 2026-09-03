@@ -9,6 +9,7 @@ import type { SarvdevMediaAsset } from '../../../lib/media-asset'
 export type DarshanFormValues = {
   title: string
   titleHi: string
+  slug: string
   templeName: string
   templeNameHi: string
   deity: string
@@ -20,6 +21,7 @@ export type DarshanFormValues = {
   descriptionHi: string
   videoUrl: string
   youtubeUrl: string
+  provider: 'youtube' | 'direct' | 'other'
   thumbnail: string
   primaryMedia: SarvdevMediaAsset | null
   imageCard: string
@@ -36,6 +38,7 @@ export type DarshanFormValues = {
   endTime: string
   repeatDays: string[]
   timezone: string
+  scheduleRule: 'one-time' | 'recurring'
   festivalTag: string
   templeSlug: string
   deitySlug: string
@@ -50,6 +53,7 @@ export type DarshanFormValues = {
 const DEFAULT_VALUES: DarshanFormValues = {
   title: '',
   titleHi: '',
+  slug: '',
   templeName: '',
   templeNameHi: '',
   deity: '',
@@ -61,6 +65,7 @@ const DEFAULT_VALUES: DarshanFormValues = {
   descriptionHi: '',
   videoUrl: '',
   youtubeUrl: '',
+  provider: 'youtube',
   thumbnail: '',
   primaryMedia: null,
   imageCard: '',
@@ -77,6 +82,7 @@ const DEFAULT_VALUES: DarshanFormValues = {
   endTime: '',
   repeatDays: [],
   timezone: 'Asia/Kolkata',
+  scheduleRule: 'one-time',
   festivalTag: '',
   templeSlug: '',
   deitySlug: '',
@@ -95,6 +101,7 @@ export function normalizeDarshanForForm(data: any): DarshanFormValues {
     ...DEFAULT_VALUES,
     title: data?.title || '',
     titleHi: data?.titleHi || '',
+    slug: data?.slug || '',
     templeName: data?.templeName || data?.temple || '',
     templeNameHi: data?.templeNameHi || '',
     deity: data?.deity || '',
@@ -106,6 +113,7 @@ export function normalizeDarshanForForm(data: any): DarshanFormValues {
     descriptionHi: data?.descriptionHi || '',
     videoUrl: data?.videoUrl || data?.video || data?.media || '',
     youtubeUrl: data?.youtubeUrl || '',
+    provider: data?.provider || 'youtube',
     thumbnail: data?.thumbnail || '',
     primaryMedia: data?.primaryMedia || null,
     imageCard: data?.imageCard || data?.image || '',
@@ -122,6 +130,7 @@ export function normalizeDarshanForForm(data: any): DarshanFormValues {
     endTime: data?.endTime || '',
     repeatDays: Array.isArray(data?.repeatDays) ? data.repeatDays : [],
     timezone: data?.timezone || 'Asia/Kolkata',
+    scheduleRule: data?.scheduleRule === 'recurring' ? 'recurring' : 'one-time',
     festivalTag: data?.festivalTag || '',
     templeSlug: data?.templeSlug || '',
     deitySlug: data?.deitySlug || '',
@@ -224,10 +233,16 @@ export default function DarshanForm({ mode, id, initialValues }: Props) {
       )}
 
       <form onSubmit={onSubmit} className="space-y-6">
-        <FormSection title="Basic Information" subtitle="Titles, temple, deity, place, and descriptions.">
+        <FormSection title="Identity" subtitle="Stable titles and canonical URL identity.">
           <div className="grid gap-4 md:grid-cols-2">
             <Field label="Title" required value={form.title} onChange={(value) => setField('title', value)} placeholder="e.g. Kashi Vishwanath Morning Darshan" />
             <Field label="Hindi Title" value={form.titleHi} onChange={(value) => setField('titleHi', value)} placeholder="Hindi title" />
+            <Field label="Slug (generated from title when blank)" value={form.slug} onChange={(value) => setField('slug', value)} placeholder="kashi-vishwanath-morning-darshan" />
+          </div>
+        </FormSection>
+
+        <FormSection title="Temple, Deity & Location" subtitle="Link known records by canonical slug; leave a relationship blank when it is not known.">
+          <div className="grid gap-4 md:grid-cols-2">
             <Field label="Temple Name" value={form.templeName} onChange={(value) => setField('templeName', value)} placeholder="e.g. Kashi Vishwanath Temple" />
             <Field label="Hindi Temple Name" value={form.templeNameHi} onChange={(value) => setField('templeNameHi', value)} placeholder="Hindi temple name" />
             <Field label="Deity" value={form.deity} onChange={(value) => setField('deity', value)} placeholder="Shiva, Vishnu, Krishna..." />
@@ -240,10 +255,12 @@ export default function DarshanForm({ mode, id, initialValues }: Props) {
           <TextArea label="Hindi Description" value={form.descriptionHi} onChange={(value) => setField('descriptionHi', value)} rows={4} />
         </FormSection>
 
-        <FormSection title="Media" subtitle="YouTube/live URL, video URL, thumbnails, card image, and hero image.">
+        <FormSection title="Stream & Media" subtitle="A stream URL does not verify a live broadcast; live state is always manual.">
           <div className="grid gap-4 md:grid-cols-2">
+            <div><label className="mb-1 block text-sm font-medium text-gray-600">Provider</label><select value={form.provider} onChange={(e) => setField('provider', e.target.value as DarshanFormValues['provider'])} className="admin-input w-full"><option value="youtube">YouTube</option><option value="direct">Direct video</option><option value="other">Other external source</option></select></div>
             <Field label="YouTube / Live URL" value={form.youtubeUrl} onChange={(value) => setField('youtubeUrl', value)} placeholder="https://www.youtube.com/watch?v=..." />
             <Field label="Video URL" value={form.videoUrl} onChange={(value) => setField('videoUrl', value)} placeholder="Hosted video or YouTube URL" />
+            <Field label="External URL" value={form.externalUrl} onChange={(value) => setField('externalUrl', value)} placeholder="Official temple/live page URL" />
           </div>
           <ImageUpload
             value={form.thumbnail}
@@ -304,7 +321,7 @@ export default function DarshanForm({ mode, id, initialValues }: Props) {
             <Field label="Priority / Order" type="number" value={form.priority} onChange={(value) => setField('priority', value)} placeholder="1 shows first" />
           </div>
           <div className="flex flex-wrap gap-4">
-            <Toggle label="Live now" checked={form.isLive} onChange={(checked) => setForm((current) => ({ ...current, isLive: checked, darshanType: checked ? 'live' : current.darshanType }))} />
+            <Toggle label="Manual live state" checked={form.isLive} onChange={(checked) => setField('isLive', checked)} />
             <Toggle label="Featured" checked={form.isFeatured} onChange={(checked) => setField('isFeatured', checked)} />
           </div>
         </FormSection>
@@ -315,6 +332,7 @@ export default function DarshanForm({ mode, id, initialValues }: Props) {
             <Field label="Start Time" type="time" value={form.startTime} onChange={(value) => setField('startTime', value)} />
             <Field label="End Time" type="time" value={form.endTime} onChange={(value) => setField('endTime', value)} />
             <Field label="Timezone" value={form.timezone} onChange={(value) => setField('timezone', value)} placeholder="Asia/Kolkata" />
+            <div><label className="mb-1 block text-sm font-medium text-gray-600">Schedule type</label><select value={form.scheduleRule} onChange={(e) => setField('scheduleRule', e.target.value as DarshanFormValues['scheduleRule'])} className="admin-input w-full"><option value="one-time">One-time</option><option value="recurring">Recurring</option></select></div>
           </div>
           <div>
             <label className="mb-2 block text-sm font-medium text-gray-600">Repeat Days</label>
@@ -339,7 +357,6 @@ export default function DarshanForm({ mode, id, initialValues }: Props) {
             <Field label="Temple Slug" value={form.templeSlug} onChange={(value) => setField('templeSlug', value)} placeholder="kashi-vishwanath-temple-varanasi" />
             <Field label="Deity Slug" value={form.deitySlug} onChange={(value) => setField('deitySlug', value)} placeholder="shiva" />
             <Field label="Related Devotional Slug" value={form.relatedDevotionalSlug} onChange={(value) => setField('relatedDevotionalSlug', value)} placeholder="mahamrityunjaya-mantra" />
-            <Field label="External URL" value={form.externalUrl} onChange={(value) => setField('externalUrl', value)} placeholder="Official temple/live page URL" />
           </div>
         </FormSection>
 
