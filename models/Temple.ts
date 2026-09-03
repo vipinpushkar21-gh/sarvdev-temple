@@ -202,6 +202,7 @@ const TempleSchema = new Schema({
   verified: { type: String, enum: ['verified', 'not-verified'], default: 'not-verified' },
   submittedBy: { type: String },
   submitterEmail: { type: String },
+  source: { type: String, enum: ['admin', 'community', 'imported', 'legacy'], default: 'admin', index: true },
   moderationNotes: { type: String },
   reviewedAt: { type: Date },
   createdAt: { type: Date, default: Date.now },

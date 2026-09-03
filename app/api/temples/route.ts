@@ -16,8 +16,9 @@ import {
   slugifyTemple,
 } from '@/lib/temple-normalization';
 import { buildCursorFilter, paginateCursor, parseCursorLimit, TEMPLE_CARD_PROJ } from '@/lib/cursor-pagination';
-import { applyRateLimit } from '@/lib/rate-limit';
+import { applyRateLimit, checkRateLimit, getIP } from '@/lib/rate-limit';
 import { templeMasterValuesFromRecord, validateTempleMasterValues } from '@/lib/temple-master';
+import { normalizePublicTempleSubmission, validatePublicTempleSubmission } from '@/lib/public-temple-submission';
 
 function isAdmin(req: NextRequest): boolean {
   const token = req.cookies.get(AUTH_COOKIE_NAME)?.value;
@@ -322,6 +323,8 @@ function buildTempleFilter(searchParams: URLSearchParams, adminMode: boolean, sk
   if (adminMode && status) filter.status = status;
   const dataQuality = searchParams.get('dataQuality')?.trim();
   if (adminMode && dataQuality) filter.dataQuality = normalizeTempleDataQuality(dataQuality, 'B');
+  const source = searchParams.get('source')?.trim();
+  if (adminMode && source) filter.source = source;
 
   const search = (searchParams.get('search') || searchParams.get('q') || '').trim();
   if (search) {
@@ -463,6 +466,21 @@ export async function GET(req: NextRequest) {
       const limited = applyRateLimit(req, 'temples')
       if (limited) return limited
     }
+    const submissionCheck = searchParams.get('submissionCheck') === '1';
+    if (submissionCheck) {
+      const title = (searchParams.get('title') || '').trim();
+      const city = (searchParams.get('city') || '').trim();
+      const state = (searchParams.get('state') || '').trim();
+      if (!title || !city || !state || title.length > 200 || city.length > 120 || state.length > 120) {
+        return NextResponse.json({ error: 'Title, city and state are required for duplicate checking.' }, { status: 400 });
+      }
+      await connectDB();
+      const matches = await Temple.find({
+        titleNormalized: normalizeTempleText(title), cityNormalized: normalizeTempleText(city), stateNormalized: normalizeTempleText(state),
+        status: { $in: ['pending', 'approved'] },
+      }).select('title slug city state status').sort({ createdAt: -1 }).limit(5).lean();
+      return NextResponse.json({ matches }, { headers: { 'Cache-Control': 'no-store' } });
+    }
     const category = (
       searchParams.get('category') ||
       searchParams.get('sacredCategory') ||
@@ -557,8 +575,28 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    const admin = isAdmin(req);
+    if (!admin) {
+      const limited = checkRateLimit(`temple-submission:${getIP(req)}`, 8, 60_000);
+      if (!limited.ok) return NextResponse.json({ error: 'Too many submissions. Please try again later.' }, { status: 429 });
+      const contentLength = Number(req.headers.get('content-length') || 0);
+      if (Number.isFinite(contentLength) && contentLength > 100_000) return NextResponse.json({ error: 'Submission is too large.' }, { status: 413 });
+    }
     await connectDB();
     const rawData = await req.json();
+    if (!rawData || typeof rawData !== 'object' || Array.isArray(rawData)) return NextResponse.json({ error: 'Invalid submission.' }, { status: 400 });
+    if (!admin) {
+      const publicSubmission = normalizePublicTempleSubmission(rawData);
+      const errors = validatePublicTempleSubmission(publicSubmission);
+      if (Object.keys(errors).length > 0) return NextResponse.json({ error: 'Temple form validation failed', errors }, { status: 400 });
+      const data = normalizeTempleWrite({
+        ...publicSubmission,
+        categories: publicSubmission.sacredCategories,
+        status: 'pending', verified: 'not-verified', source: 'community', dataQuality: 'C',
+      });
+      const temple = await Temple.create(data);
+      return NextResponse.json(temple.toObject(), { status: 201 });
+    }
     if (rawData.masterTempleForm) {
       const errors = validateTempleMasterValues(templeMasterValuesFromRecord(rawData));
       if (Object.keys(errors).length > 0) {
@@ -566,15 +604,9 @@ export async function POST(req: NextRequest) {
       }
     }
     const normalizedPayload = normalizeTemplePayload(pickSupportedTempleFields(rawData));
-    if (!isAdmin(req) && !hasOwn(normalizedPayload, 'dataQuality')) {
-      normalizedPayload.dataQuality = 'C';
-    }
     const data = normalizeTempleWrite(normalizedPayload);
 
     // Public listing submissions remain allowed, but publishing is admin-only.
-    if (data.status === 'approved' && !isAdmin(req)) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
 
     // Validate categories — warn only, never fail import
     const rawCategoryValues = [
@@ -641,6 +673,7 @@ export async function PUT(req: NextRequest) {
       normalizeTemplePayload(pickSupportedTempleFields(rawUpdate)),
       existing as Record<string, any>
     );
+    if ((update.status === 'approved' || update.status === 'rejected') && update.status !== (existing as any).status) update.reviewedAt = new Date();
     const temple = await Temple.findByIdAndUpdate(id, { $set: update }, { new: true });
     revalidateTemplePublicPaths(existing as Record<string, any>, temple?.toObject?.() || temple);
     return NextResponse.json(temple);
