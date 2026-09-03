@@ -3,23 +3,22 @@
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useTranslation } from '@/lib/translation'
+import { getCalendarDateInTimeZone, type PanchangApiResponse } from '@/lib/panchang/providers/types'
 
 type Darshan = { title?: string; templeName?: string; temple?: string; deity?: string; isLive?: boolean; darshanType?: string; type?: string }
 type Event = { title?: string; titleHi?: string; slug?: string; startDate?: string; date?: string; festivalName?: string }
-type Panchang = { tithi?: string; nakshatra?: string; sun?: { sunrise?: string }; date?: string }
 
 export default function TodayAtSarvdev({ darshan, event }: { darshan?: Darshan | null; event?: Event | null }) {
   const { language } = useTranslation()
-  const [panchang, setPanchang] = useState<Panchang | null>(null)
-  const timeZone = useMemo(() => Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Kolkata', [])
+  const [panchang, setPanchang] = useState<PanchangApiResponse | null>(null)
+  const timeZone = useMemo(() => 'Asia/Kolkata', [])
 
   useEffect(() => {
-    const date = new Date().toISOString().slice(0, 10)
+    const date = getCalendarDateInTimeZone(timeZone)
     const params = new URLSearchParams({ date, lat: '28.6139', lon: '77.2090', tz: timeZone, lang: language, city: 'Delhi' })
     fetch(`/api/panchang?${params}`, { cache: 'no-store' })
-      .then((response) => response.ok ? response.json() : null)
-      .then(setPanchang)
-      .catch(() => setPanchang(null))
+      .then(async (response) => setPanchang(await response.json() as PanchangApiResponse))
+      .catch(() => setPanchang({ status: 'unavailable', message: 'Panchang calculations are temporarily unavailable.' }))
   }, [language, timeZone])
 
   const date = event?.startDate || event?.date
@@ -40,8 +39,8 @@ export default function TodayAtSarvdev({ darshan, event }: { darshan?: Darshan |
         <div className="grid divide-y divide-surface-border border-y border-surface-border md:grid-cols-3 md:divide-x md:divide-y-0">
           <Link href="/panchang" className="group px-0 py-5 no-underline hover:no-underline md:px-6 md:first:pl-0">
             <p className="text-overline font-semibold uppercase tracking-[0.12em] text-ink-muted">Today&apos;s Panchang</p>
-            <p className="mt-2 font-display text-h3 text-secondary-800">{panchang?.tithi || 'Daily Panchang'}</p>
-            <p className="mt-1 text-body-sm text-ink-muted">{panchang?.nakshatra ? `${panchang.nakshatra} · ` : ''}{panchang?.sun?.sunrise ? `Sunrise ${panchang.sun.sunrise}` : 'Tithi, nakshatra and sunrise'}</p>
+            <p className="mt-2 font-display text-h3 text-secondary-800">{panchang?.status === 'success' ? panchang.data.tithi || 'Daily Panchang' : 'Panchang unavailable'}</p>
+            <p className="mt-1 text-body-sm text-ink-muted">{panchang?.status === 'success' ? [panchang.data.nakshatra, panchang.data.sunrise && `Sunrise ${panchang.data.sunrise}`].filter(Boolean).join(' · ') || 'Verified calculations' : 'Calculations are temporarily unavailable'}</p>
             <span className="mt-4 inline-flex items-center gap-1 text-caption font-semibold text-primary-700 group-hover:text-maroon">View Panchang <Arrow /></span>
           </Link>
 

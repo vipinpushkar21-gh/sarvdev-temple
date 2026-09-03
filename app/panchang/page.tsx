@@ -4,20 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from '../../lib/translation'
 import PanchangCard from '../../components/PanchangCard'
 import { PANCHANG_CITIES, QUICK_PANCHANG_CITIES, type PanchangCity } from '../../lib/panchang-cities'
-
-type PanchangData = {
-  date: string
-  location: { city?: string; lat: number; lon: number; tz: string }
-  sun: { sunrise: string; sunset: string }
-  moon?: { moonrise?: string; moonset?: string }
-  tithi?: string
-  nakshatra?: string
-  yoga?: string
-  karana?: string
-  rahuKaal?: string
-  abhijitMuhurta?: string
-  source?: string
-}
+import { getCalendarDateInTimeZone, type PanchangApiResponse } from '../../lib/panchang/providers/types'
 
 const DELHI = PANCHANG_CITIES.find((city) => city.city === 'Delhi') || PANCHANG_CITIES[0]
 
@@ -35,9 +22,9 @@ export default function PanchangPage() {
   const { language } = useTranslation()
   const [city, setCity] = useState<PanchangCity>(DELHI)
   const [cityQuery, setCityQuery] = useState('')
-  const [date, setDate] = useState<string>(() => new Date().toISOString().slice(0, 10))
+  const [date, setDate] = useState<string>(() => getCalendarDateInTimeZone(DELHI.timezone))
   const [loading, setLoading] = useState(false)
-  const [data, setData] = useState<PanchangData | null>(null)
+  const [response, setResponse] = useState<PanchangApiResponse | null>(null)
 
   const filteredCities = useMemo(() => {
     const query = cityQuery.trim().toLowerCase()
@@ -65,11 +52,10 @@ export default function PanchangPage() {
         lang: language,
         city: selectedCity.city,
       })
-      const res = await fetch(`/api/panchang?${params.toString()}`, { cache: 'no-store' })
-      const json = await res.json()
-      setData(json)
-    } catch (e) {
-      console.error(e)
+      const result = await fetch(`/api/panchang?${params.toString()}`, { cache: 'no-store' })
+      setResponse(await result.json() as PanchangApiResponse)
+    } catch {
+      setResponse({ status: 'unavailable', message: 'Panchang calculations are temporarily unavailable.' })
     } finally {
       setLoading(false)
     }
@@ -101,8 +87,8 @@ export default function PanchangPage() {
             <p className="mt-2 text-h2 font-devanagari text-amber-100">आज का पंचांग</p>
             <p className="mt-5 max-w-2xl text-body-lg text-white/76">
               {language === 'hi'
-                ? 'तिथि, नक्षत्र, मुहूर्त और दैनिक साधना संकेतों के साथ आपका पवित्र दिन-मार्गदर्शक।'
-                : 'A sacred daily dashboard for tithi, nakshatra, muhurta, sunrise, moonrise and devotional guidance.'}
+                ? 'स्थान और तिथि के अनुसार सत्यापित पंचांग गणनाओं के लिए एक शांत संदर्भ।'
+                : 'A calm reference for verified Panchang calculations by date and location.'}
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <span className="rounded-full border border-white/15 bg-white/10 px-4 py-2 text-body-sm text-white/90 backdrop-blur-md">
@@ -185,12 +171,19 @@ export default function PanchangPage() {
 
             <p className="mt-4 text-caption text-ink-faint">
               {language === 'hi'
-                ? 'यह पेज अभी डेमो/फॉलबैक पंचांग डेटा दिखाता है। इसे अनुष्ठान के लिए अंतिम सत्य न मानें।'
-                : 'This page currently shows demo/fallback Panchang data. Do not treat it as authoritative for rituals.'}
+                ? 'गणना केवल सत्यापित प्रदाता उपलब्ध होने पर दिखाई जाती है।'
+                : 'Calculations are shown only when a verified provider is available.'}
             </p>
           </section>
 
-          {data && <PanchangCard data={data} language={language === 'hi' ? 'hi' : 'en'} />}
+          {response?.status === 'success' && <PanchangCard data={response.data} />}
+          {response && response.status !== 'success' && (
+            <section className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-gray-800 shadow-sm">
+              <p className="text-overline uppercase tracking-[0.16em] text-amber-800">Panchang</p>
+              <h2 className="mt-2 text-h3 font-serif">{language === 'hi' ? 'पंचांग गणना अस्थायी रूप से उपलब्ध नहीं है।' : 'Panchang calculations are temporarily unavailable.'}</h2>
+              <p className="mt-2 text-body-sm text-amber-900/80">{response.message}</p>
+            </section>
+          )}
         </div>
       </main>
     </>
