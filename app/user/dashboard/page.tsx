@@ -2,191 +2,55 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { useFavourites } from '@/lib/favourites'
 
-type UserData = {
-  _id: string; name: string; email: string; role: string; status: string
-  phone?: string; city?: string; state?: string; createdAt: string
-}
+type Account = { id: string; name: string; email: string; role: string; status: string; photo?: string; phone?: string; city?: string; state?: string }
+
+const roleLabel: Record<string, string> = { user: 'Devotee', temple: 'Temple manager', pandit: 'Pandit / Pujari', admin: 'Administrator' }
 
 export default function UserDashboardPage() {
-  const [user, setUser] = useState<UserData | null>(null)
-  const [bookmarks, setBookmarks] = useState<string[]>([])
-  const [journeyCount, setJourneyCount] = useState(0)
-  const [reviewCount, setReviewCount] = useState(0)
+  const router = useRouter()
+  const { bookmarks } = useFavourites()
+  const [user, setUser] = useState<Account | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [loggingOut, setLoggingOut] = useState(false)
 
   useEffect(() => {
     fetch('/api/auth/me')
-      .then(r => r.ok ? r.json() : null)
-      .then(data => {
-        if (data?.user) setUser(data.user)
-        setLoading(false)
+      .then(async (response) => ({ ok: response.ok, data: await response.json() }))
+      .then(({ ok, data }) => {
+        if (ok && data.user) setUser(data.user)
+        else setError(data.error || 'We could not load your account.')
       })
-      .catch(() => setLoading(false))
-
-    // Load bookmarks from localStorage
-    try {
-      const saved = JSON.parse(localStorage.getItem('sarvdev_bookmarks') || '[]')
-      if (Array.isArray(saved)) setBookmarks(saved)
-    } catch {}
-
-    // Load journey count
-    fetch('/api/journeys').then(r => r.ok ? r.json() : []).then(j => {
-      if (Array.isArray(j)) setJourneyCount(j.length)
-    }).catch(() => {})
+      .catch(() => setError('We could not load your account.'))
+      .finally(() => setLoading(false))
   }, [])
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 rounded-full border-4 border-orange-500 border-t-transparent" />
-      </div>
-    )
+  async function logout() {
+    setLoggingOut(true)
+    try { await fetch('/api/auth/logout', { method: 'POST' }) } finally { router.replace('/'); router.refresh() }
   }
 
-  if (!user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-center px-4">
-        <div>
-          <p className="text-lg font-semibold mb-2">Please login first</p>
-          <Link href="/login" className="text-orange-600 font-medium">Go to Login →</Link>
-        </div>
+  if (loading) return <main className="min-h-screen bg-surface flex items-center justify-center"><span className="h-6 w-6 animate-spin rounded-full border-2 border-primary-700 border-t-transparent" aria-label="Loading account" /></main>
+  if (!user) return <main className="min-h-screen bg-surface px-4 py-20 text-center"><p className="font-serif text-2xl text-ink">Your account is unavailable</p><p className="mt-2 text-sm text-ink-muted">{error || 'Please sign in again.'}</p><Link className="mt-5 inline-block text-sm font-medium text-primary-800 underline" href="/login">Go to sign in</Link></main>
+
+  const location = [user.city, user.state].filter(Boolean).join(', ')
+  const portalLink = user.role === 'temple' ? { href: '/temple-portal', label: 'Open temple portal' } : user.role === 'pandit' ? { href: '/pandit-portal', label: 'Open pandit portal' } : null
+
+  return <main className="min-h-screen bg-surface px-4 py-9 sm:px-6 sm:py-14">
+    <div className="mx-auto max-w-4xl">
+      <div className="flex items-start justify-between gap-4 border-b border-surface-border pb-6">
+        <div><p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary-700">Account</p><h1 className="mt-2 font-serif text-3xl text-ink">Your place in Sarvdev</h1><p className="mt-2 text-sm text-ink-muted">A quiet home for your Sarvdev account and saved discoveries.</p></div>
+        <button type="button" disabled={loggingOut} onClick={logout} className="shrink-0 text-sm text-ink-muted underline underline-offset-4 hover:text-ink disabled:opacity-60">{loggingOut ? 'Signing out…' : 'Sign out'}</button>
       </div>
-    )
-  }
-
-  const quickLinks = [
-    { href: '/temples', icon: '🛕', label: 'Browse Temples', desc: 'Find & bookmark temples' },
-    { href: '/devotionals', icon: '🎵', label: 'Devotionals', desc: 'Bhajans & Aarti' },
-    { href: '/panchang', icon: '📅', label: 'Panchang', desc: 'Tithi & Muhurat' },
-    { href: '/events', icon: '🎊', label: 'Festivals', desc: 'Upcoming festivals' },
-    { href: '/spiritual-icons', icon: '🕉️', label: 'Deities', desc: 'Learn about deities' },
-    { href: '/blog', icon: '📝', label: 'Blog', desc: 'Spiritual articles' },
-    { href: '/bookmarks', icon: '🔖', label: 'My Bookmarks', desc: `${bookmarks.length} saved` },
-    { href: '/daily-darshan', icon: '🌅', label: 'Daily Darshan', desc: 'Today\'s darshan' },
-    { href: '/list-temple', icon: '➕', label: 'Submit Temple', desc: 'Contribute to directory' },
-    { href: '/temples/pilgrimage', icon: '🚩', label: 'Pilgrimages', desc: `${journeyCount} journeys` },
-  ]
-
-  return (
-    <main className="min-h-screen py-10 px-4">
-      <div className="max-w-4xl mx-auto space-y-8">
-
-        {/* Header */}
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          <div>
-            <h1 className="text-2xl font-serif font-bold text-gray-900">🙏 My Dashboard</h1>
-            <p className="text-sm text-gray-500 mt-0.5">Welcome back, {user.name}!</p>
-          </div>
-          <Link href="/api/auth/logout" className="text-sm text-gray-500 hover:text-red-500 transition-colors">
-            Logout →
-          </Link>
-        </div>
-
-        {/* Profile card */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="card p-6 md:col-span-1">
-            <div className="flex flex-col items-center text-center">
-              <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl mb-3"
-                style={{ background: 'linear-gradient(135deg, #FFF3E0, #FFE0B2)' }}>
-                👤
-              </div>
-              <h2 className="font-bold text-gray-900 text-lg">{user.name}</h2>
-              <p className="text-sm text-gray-500">{user.email}</p>
-              {user.city && <p className="text-xs text-gray-400 mt-1">📍 {user.city}{user.state && `, ${user.state}`}</p>}
-              <span className="inline-block mt-2 text-[11px] font-semibold px-3 py-1 rounded-full bg-orange-100 text-orange-700">
-                {user.role === 'temple' ? '🛕 Temple Manager' : user.role === 'pandit' ? '🙏 Pandit' : 'श्रद्धालु / Devotee'}
-              </span>
-            </div>
-            <div className="mt-5 space-y-2 text-sm">
-              {[
-                { label: 'Member since', value: new Date(user.createdAt).toLocaleDateString('en-IN') },
-                { label: 'Phone', value: user.phone || 'Not set' },
-              ].map(item => (
-                <div key={item.label} className="flex justify-between py-1.5 border-b border-gray-100">
-                  <span className="text-gray-500">{item.label}</span>
-                  <span className="font-medium text-gray-800">{item.value}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Stats */}
-          <div className="md:col-span-2 grid grid-cols-2 gap-4">
-            {[
-              { icon: '🔖', label: 'Bookmarked Temples', value: bookmarks.length, href: '/bookmarks', color: '#FFF7ED', text: '#C2410C' },
-              { icon: '🛕', label: 'Browse All Temples', value: 'Explore', href: '/temples', color: '#EFF6FF', text: '#1D4ED8' },
-              { icon: '🎵', label: 'Devotionals', value: 'Listen', href: '/devotionals', color: '#F5F3FF', text: '#6D28D9' },
-              { icon: '📅', label: 'Today\'s Panchang', value: 'View', href: '/panchang', color: '#F0FDF4', text: '#15803D' },
-            ].map(item => (
-              <Link key={item.href} href={item.href}
-                className="card p-5 flex flex-col items-start gap-2 hover:-translate-y-0.5 transition-all duration-200">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl"
-                  style={{ background: item.color }}>
-                  {item.icon}
-                </div>
-                <p className="text-xs text-gray-500">{item.label}</p>
-                <p className="font-bold text-gray-900"
-                  style={{ color: typeof item.value === 'number' && item.value > 0 ? item.text : undefined }}>
-                  {item.value}
-                </p>
-              </Link>
-            ))}
-          </div>
-        </div>
-
-        {/* Bookmarks preview */}
-        {bookmarks.length > 0 && (
-          <div className="card p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-bold text-gray-900 flex items-center gap-2"><span>🔖</span> Saved Temples</h2>
-              <Link href="/bookmarks" className="text-xs text-orange-600 font-medium hover:text-orange-700">
-                View all →
-              </Link>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {bookmarks.slice(0, 8).map(id => (
-                <Link key={id} href={`/temples/${id}`}
-                  className="text-xs px-3 py-1.5 rounded-full bg-orange-50 text-orange-700 border border-orange-200 hover:bg-orange-100 transition-colors font-medium">
-                  🛕 Temple #{id.slice(-6)}
-                </Link>
-              ))}
-              {bookmarks.length > 8 && (
-                <span className="text-xs px-3 py-1.5 rounded-full bg-gray-100 text-gray-500">
-                  +{bookmarks.length - 8} more
-                </span>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Quick Links */}
-        <div className="card p-6">
-          <h2 className="font-bold text-gray-900 mb-4">Explore Sarvdev</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {quickLinks.map(link => (
-              <Link key={link.href} href={link.href}
-                className="flex flex-col items-center gap-2 p-4 rounded-xl border border-gray-200 hover:border-orange-300 hover:bg-orange-50/50 transition-all text-center">
-                <span className="text-2xl">{link.icon}</span>
-                <span className="text-xs font-bold text-gray-800">{link.label}</span>
-                <span className="text-[10px] text-gray-400">{link.desc}</span>
-              </Link>
-            ))}
-          </div>
-        </div>
-
-        {/* Are you a temple/pandit? */}
-        <div className="card p-5 border border-amber-200 bg-amber-50/40">
-          <h3 className="font-bold text-amber-900 text-sm mb-1">🛕 Are you a Temple Manager or Pandit?</h3>
-          <p className="text-xs text-amber-700 mb-3">Register a separate account to get access to the Temple Portal or Pandit Portal with dedicated management tools.</p>
-          <Link href="/login"
-            className="text-xs font-semibold px-4 py-2 rounded-lg text-white inline-block"
-            style={{ background: 'linear-gradient(135deg, #FF9933, #D4AF37)' }}>
-            Register as Temple / Pandit →
-          </Link>
-        </div>
-
+      <div className="mt-7 grid gap-5 md:grid-cols-[1.1fr_.9fr]">
+        <section className="border border-surface-border bg-white p-5 sm:p-6"><p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary-700">Account identity</p><div className="mt-4 flex items-start gap-4"><div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary-50 font-serif text-lg text-primary-800">{user.name.charAt(0).toUpperCase()}</div><div><h2 className="font-serif text-2xl text-ink">{user.name}</h2><p className="mt-1 text-sm text-ink-muted">{user.email}</p></div></div><dl className="mt-6 divide-y divide-surface-border border-y border-surface-border text-sm"><div className="flex justify-between gap-4 py-3"><dt className="text-ink-muted">Account role</dt><dd className="font-medium text-ink">{roleLabel[user.role] || user.role}</dd></div><div className="flex justify-between gap-4 py-3"><dt className="text-ink-muted">Status</dt><dd className="font-medium text-ink capitalize">{user.status}</dd></div>{location && <div className="flex justify-between gap-4 py-3"><dt className="text-ink-muted">Location</dt><dd className="text-right font-medium text-ink">{location}</dd></div>}{user.phone && <div className="flex justify-between gap-4 py-3"><dt className="text-ink-muted">Phone</dt><dd className="font-medium text-ink">{user.phone}</dd></div>}</dl></section>
+        <div className="space-y-5"><section className="border border-surface-border bg-white p-5 sm:p-6"><p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary-700">My Sacred Space</p><h2 className="mt-2 font-serif text-2xl text-ink">Saved discoveries</h2><p className="mt-2 text-sm leading-6 text-ink-muted">{bookmarks.length ? `${bookmarks.length} saved ${bookmarks.length === 1 ? 'item' : 'items'} on this browser and device.` : 'Save temples, deities, devotionals, Darshan and events as you explore.'}</p><Link href="/bookmarks" className="mt-5 inline-block text-sm font-medium text-primary-800 underline underline-offset-4">Open My Sacred Space</Link></section>
+        {portalLink && <section className="border border-surface-border bg-surface-sunken p-5 sm:p-6"><p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary-700">Your role</p><h2 className="mt-2 font-serif text-2xl text-ink">{roleLabel[user.role]}</h2><p className="mt-2 text-sm leading-6 text-ink-muted">Use your approved role access to continue your Sarvdev work.</p><Link href={portalLink.href} className="mt-5 inline-block text-sm font-medium text-primary-800 underline underline-offset-4">{portalLink.label}</Link></section>}</div>
       </div>
-    </main>
-  )
+      <section className="mt-5 border border-surface-border bg-white p-5 sm:p-6"><p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary-700">Continue exploring</p><div className="mt-4 flex flex-wrap gap-x-6 gap-y-3 text-sm"><Link href="/temples" className="text-ink underline underline-offset-4">Temples</Link><Link href="/deities" className="text-ink underline underline-offset-4">Deities</Link><Link href="/daily-darshan" className="text-ink underline underline-offset-4">Daily Darshan</Link><Link href="/devotionals" className="text-ink underline underline-offset-4">Devotionals</Link><Link href="/events" className="text-ink underline underline-offset-4">Festivals</Link><Link href="/panchang" className="text-ink underline underline-offset-4">Panchang</Link></div></section>
+    </div>
+  </main>
 }

@@ -13,13 +13,32 @@ export async function GET(req: NextRequest) {
 
   try {
     await connectDB()
-    const user = await User.findById(payload.id).select('-password').lean()
+    const user = await User.findById(payload.id)
+      .select('name email role status photo phone city state templeId templeName designation bio specialization experience languages services')
+      .lean()
     if (!user) return NextResponse.json({ user: null }, { status: 401 })
-    return NextResponse.json({ user })
-  } catch {
-    // Fallback to token payload if DB fails
     return NextResponse.json({
-      user: { id: payload.id, name: payload.name, email: payload.email, role: payload.role },
+      user: {
+        id: String(user._id),
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        status: user.status,
+        photo: user.photo,
+        phone: user.phone,
+        city: user.city,
+        state: user.state,
+        templeId: user.templeId ? String(user.templeId) : undefined,
+        templeName: user.templeName,
+        designation: user.designation,
+        bio: user.bio,
+        specialization: user.specialization,
+        experience: user.experience,
+        languages: user.languages,
+        services: user.services,
+      },
     })
+  } catch {
+    return NextResponse.json({ user: null, error: 'Account information is temporarily unavailable' }, { status: 503 })
   }
 }
