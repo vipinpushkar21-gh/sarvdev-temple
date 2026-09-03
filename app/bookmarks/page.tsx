@@ -4,8 +4,8 @@ import BookmarksClient from './BookmarksClient'
 const PAGE_URL = 'https://sarvdev.com/bookmarks'
 
 export const metadata: Metadata = {
-  title: 'My Sacred Collection',
-  description: 'Your saved Sarvdev temples, deities, devotionals, events, and blogs.',
+  title: 'My Sacred Space',
+  description: 'Your locally saved Sarvdev temples, deities, devotionals, Darshan, and events.',
   alternates: {
     canonical: '/bookmarks',
   },
@@ -14,8 +14,8 @@ export const metadata: Metadata = {
     follow: false,
   },
   openGraph: {
-    title: 'My Sacred Collection',
-    description: 'A private Sarvdev collection of saved sacred places and devotional content.',
+    title: 'My Sacred Space',
+    description: 'A local collection of saved Sarvdev content on this device.',
     url: PAGE_URL,
     type: 'website',
   },

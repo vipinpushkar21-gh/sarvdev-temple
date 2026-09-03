@@ -4,6 +4,7 @@ import { getDeityCardImage } from '@/lib/temple-image'
 import { hasUsableDeityMedia } from '@/lib/deity-media'
 import { compactText } from '@/lib/text-formatting'
 import type { SarvdevMediaAsset } from '@/lib/media-asset'
+import BookmarkButton from '@/components/BookmarkButton'
 
 export type DeityCardRecord = {
   _id?: string
@@ -53,6 +54,7 @@ export default function DeityCard({ deity }: { deity: DeityCardRecord }) {
       {attributes.length > 0 && (
         <p className="mt-3 text-caption text-ink-muted">{attributes.join(' · ')}</p>
       )}
+      {deity._id && <div className="mt-4"><BookmarkButton item={{ id: String(deity._id), type: 'deity', title: deity.name, slug: deity.slug, subtitle: deity.categoryName, image: illustrated ? getDeityCardImage(deity).src : undefined }} size="sm" /></div>}
     </article>
   )
 }

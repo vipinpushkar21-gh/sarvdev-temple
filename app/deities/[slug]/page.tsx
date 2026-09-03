@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import Breadcrumbs from '@/components/Breadcrumbs'
 import ShareButtons from '@/components/ShareButtons'
+import BookmarkButton from '@/components/BookmarkButton'
 import AdminEditBar from '@/components/AdminEditBar'
 import SarvdevImage from '@/components/SarvdevImage'
 import { renderTextParagraphs } from '@/components/TextParagraphs'
@@ -134,7 +135,8 @@ export default async function DeityDetailPage({ params }: { params: Promise<{ sl
             <h1 className="mt-2 font-display text-display-sm leading-tight text-secondary-800">{deity.name}</h1>
             {deity.nameHi && <p className="mt-1 font-devanagari text-h3 text-ink-muted">{deity.nameHi}</p>}
             {intro && <p className="mt-4 max-w-2xl text-body text-ink-muted">{intro}</p>}
-            <div className="mt-6">
+            <div className="mt-6 flex flex-wrap items-center gap-4">
+              <BookmarkButton item={{ id: String(deity._id), type: 'deity', title: deity.name, slug: deity.slug, subtitle: deity.categoryName, image: illustrated ? getDeityHeroImage(deity).src : undefined }} />
               <ShareButtons title={deity.name} url={pageUrl} />
             </div>
           </div>

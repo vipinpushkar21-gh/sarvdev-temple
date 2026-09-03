@@ -18,10 +18,11 @@ export type BookmarkItem = {
 
 type FavouritesContextType = {
   bookmarks: BookmarkItem[]
-  isBookmarked: (id: string) => boolean
+  isBookmarked: (item: Pick<BookmarkItem, 'id' | 'type'>) => boolean
   toggle: (item: Omit<BookmarkItem, 'addedAt'>) => void
-  remove: (id: string) => void
+  remove: (item: Pick<BookmarkItem, 'id' | 'type'>) => void
   clear: () => void
+  storageError: string | null
 }
 
 const FavouritesContext = createContext<FavouritesContextType | undefined>(undefined)
@@ -31,6 +32,10 @@ const VALID_TYPES = ['temple', 'deity', 'devotional', 'event', 'blog', 'darshan'
 
 function isValidBookmarkType(value: unknown): value is BookmarkItem['type'] {
   return typeof value === 'string' && (VALID_TYPES as readonly string[]).includes(value)
+}
+
+export function bookmarkIdentity(item: Pick<BookmarkItem, 'id' | 'type'>) {
+  return `${item.type}:${item.id}`
 }
 
 function normalizeBookmark(value: unknown, index: number): BookmarkItem | null {
@@ -87,12 +92,16 @@ function loadBookmarks(): BookmarkItem[] {
 function saveBookmarks(items: BookmarkItem[]) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(items))
-  } catch { /* quota exceeded — ignore */ }
+    return true
+  } catch {
+    return false
+  }
 }
 
 export function FavouritesProvider({ children }: { children: React.ReactNode }) {
   const [bookmarks, setBookmarks] = useState<BookmarkItem[]>([])
   const [mounted, setMounted] = useState(false)
+  const [storageError, setStorageError] = useState<string | null>(null)
 
   useEffect(() => {
     setBookmarks(loadBookmarks())
@@ -100,19 +109,22 @@ export function FavouritesProvider({ children }: { children: React.ReactNode }) 
   }, [])
 
   useEffect(() => {
-    if (mounted) saveBookmarks(bookmarks)
+    if (mounted) {
+      setStorageError(saveBookmarks(bookmarks) ? null : 'Your bookmarks could not be saved on this device.')
+    }
   }, [bookmarks, mounted])
 
   const isBookmarked = useCallback(
-    (id: string) => bookmarks.some((b) => b.id === id),
+    (item: Pick<BookmarkItem, 'id' | 'type'>) => bookmarks.some((bookmark) => bookmarkIdentity(bookmark) === bookmarkIdentity(item)),
     [bookmarks]
   )
 
   const toggle = useCallback(
     (item: Omit<BookmarkItem, 'addedAt'>) => {
       setBookmarks((prev) => {
-        const exists = prev.find((b) => b.id === item.id)
-        if (exists) return prev.filter((b) => b.id !== item.id)
+        const identity = bookmarkIdentity(item)
+        const exists = prev.find((bookmark) => bookmarkIdentity(bookmark) === identity)
+        if (exists) return prev.filter((bookmark) => bookmarkIdentity(bookmark) !== identity)
         return [{ ...item, addedAt: Date.now() }, ...prev]
       })
     },
@@ -120,14 +132,14 @@ export function FavouritesProvider({ children }: { children: React.ReactNode }) 
   )
 
   const remove = useCallback(
-    (id: string) => setBookmarks((prev) => prev.filter((b) => b.id !== id)),
+    (item: Pick<BookmarkItem, 'id' | 'type'>) => setBookmarks((prev) => prev.filter((bookmark) => bookmarkIdentity(bookmark) !== bookmarkIdentity(item))),
     []
   )
 
   const clear = useCallback(() => setBookmarks([]), [])
 
   return (
-    <FavouritesContext.Provider value={{ bookmarks, isBookmarked, toggle, remove, clear }}>
+    <FavouritesContext.Provider value={{ bookmarks, isBookmarked, toggle, remove, clear, storageError }}>
       {children}
     </FavouritesContext.Provider>
   )

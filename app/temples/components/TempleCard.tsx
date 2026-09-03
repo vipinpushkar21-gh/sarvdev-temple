@@ -4,6 +4,7 @@ import { getTempleCardImage } from '@/lib/temple-image'
 import { hasUsableTempleMedia } from '@/lib/temple-media'
 import { compactText } from '@/lib/text-formatting'
 import { templeHref, templePlace, type TempleCardRecord } from '@/lib/temple-discovery'
+import BookmarkButton from '@/components/BookmarkButton'
 
 export default function TempleCard({ temple }: { temple: TempleCardRecord }) {
   const illustrated = hasUsableTempleMedia(temple as unknown as Record<string, unknown>)
@@ -48,6 +49,9 @@ export default function TempleCard({ temple }: { temple: TempleCardRecord }) {
       <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-caption text-ink-muted">
         {category && <span>{category}</span>}
         {temple.timings && <span>{compactText(temple.timings).slice(0, 60)}</span>}
+      </div>
+      <div className="mt-4">
+        <BookmarkButton item={{ id: String(temple._id), type: 'temple', title: temple.title, slug: temple.slug || '', subtitle: temple.deity, location: place, image: illustrated ? getTempleCardImage(temple).src : undefined }} size="sm" />
       </div>
     </article>
   )
