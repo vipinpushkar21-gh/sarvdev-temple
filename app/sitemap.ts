@@ -162,7 +162,7 @@ async function devotionalsSitemap(): Promise<MetadataRoute.Sitemap> {
       '_id slug updatedAt createdAt'
     ).lean() as any[]
     return docs.map((d: any) => ({
-      url: `${BASE_URL}/devotionals/${d._id.toString()}`,
+      url: `${BASE_URL}/devotionals/${d.slug || d._id.toString()}`,
       lastModified: new Date(d.updatedAt ?? d.createdAt ?? new Date()),
       changeFrequency: 'monthly' as const,
       priority: 0.6,

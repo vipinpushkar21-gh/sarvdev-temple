@@ -141,6 +141,7 @@ module.exports = {
       },
       fontSize: {
         /* Display — Hero/landing headlines (4:3 ratio, 48-64px range) */
+        'display-sm':['2.5rem',  { lineHeight: '1.15', letterSpacing: '-0.02em', fontWeight: '700' }],   // 40px
         'display':   ['3rem',    { lineHeight: '1.15', letterSpacing: '-0.02em', fontWeight: '700' }],   // 48px
         'display-lg':['3.75rem', { lineHeight: '1.1',  letterSpacing: '-0.025em', fontWeight: '700' }],  // 60px
         'display-xl':['4.5rem',  { lineHeight: '1.05', letterSpacing: '-0.03em',  fontWeight: '700' }],  // 72px
