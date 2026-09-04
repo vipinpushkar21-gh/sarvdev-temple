@@ -142,13 +142,13 @@ export default async function DeityDetailPage({ params }: { params: Promise<{ sl
           </div>
 
           {illustrated && (
-            <div className="relative aspect-[4/5] overflow-hidden border border-surface-border bg-surface-sunken">
+            <div className="relative aspect-[4/5] max-h-[32rem] overflow-hidden border border-surface-border bg-surface-sunken">
               <SarvdevImage
                 image={getDeityHeroImage(deity)}
                 alt={deity.name}
                 className="absolute inset-0"
-                imgClassName="object-cover"
-                renderMode="auto"
+                imgClassName="object-contain"
+                renderMode="safe-contain"
               />
             </div>
           )}

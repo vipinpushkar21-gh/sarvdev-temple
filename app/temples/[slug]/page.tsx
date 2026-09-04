@@ -327,7 +327,7 @@ export default async function TempleDetailPage({ params }: { params: Promise<{ s
       <main className="page-container max-w-4xl py-section-sm">
         <div className="space-y-10">
           {illustrated && (
-            <div className="relative aspect-[16/9] overflow-hidden border border-surface-border bg-surface-sunken">
+            <div className="relative aspect-[16/9] overflow-hidden border border-surface-border bg-surface-sunken sm:aspect-[16/8]">
               <SarvdevImage
                 image={getTempleHeroImage(temple)}
                 alt={temple.title}
