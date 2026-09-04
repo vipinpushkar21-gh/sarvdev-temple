@@ -1,42 +1,18 @@
 import Link from 'next/link'
 import SmartSearch from '@/components/SmartSearch'
-import SarvdevImage from '@/components/SarvdevImage'
-import { getTempleHeroImage } from '@/lib/temple-image'
 
 type HeroTemple = {
   title?: string
   location?: string
   city?: string
   state?: string
-  image?: string
-  imageHero?: string
-  heroImage?: string
-  primaryMedia?: any
-  heroMedia?: any
 }
 
 export default function SacredArrival({ temple }: { temple?: HeroTemple | null }) {
   const location = [temple?.city, temple?.state].filter(Boolean).join(', ') || temple?.location
-  const hasMedia = Boolean(temple?.primaryMedia || temple?.heroMedia || temple?.imageHero || temple?.heroImage || temple?.image)
 
   return (
     <section className="relative isolate overflow-hidden border-b border-surface-border bg-dark-sacred text-white">
-      {hasMedia && <SarvdevImage
-        image={getTempleHeroImage(temple || {})}
-        alt={temple?.title ? `${temple.title}, a sacred temple on Sarvdev` : 'Sacred temple architecture'}
-        className="absolute inset-y-0 right-0 hidden w-[62%] sm:block"
-        imgClassName="object-cover"
-        loading="eager"
-        renderMode="auto"
-      />}
-      {hasMedia && <SarvdevImage
-        image={getTempleHeroImage(temple || {})}
-        alt=""
-        className="absolute right-0 top-0 h-[58%] w-[70%] sm:hidden"
-        imgClassName="object-cover"
-        loading="eager"
-        renderMode="auto"
-      />}
       <div className="absolute inset-0 bg-[linear-gradient(90deg,#171411_0%,#1c140f_46%,rgba(23,20,17,0.74)_62%,rgba(23,20,17,0.3)_100%)]" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_12%_12%,rgba(181,138,58,0.14),transparent_32%)]" />
       <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(23,20,17,0.1)_0%,#171411_100%)] sm:hidden" />
