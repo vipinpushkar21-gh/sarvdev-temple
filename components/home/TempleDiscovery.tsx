@@ -52,8 +52,9 @@ export default function TempleDiscovery({ temples }: { temples: Temple[] }) {
 
 function TempleFeature({ temple }: { temple: Temple }) {
   const meta = temple.speciality || temple.sacredCategories?.[0] || temple.categories?.[0]
+  const hasMedia = Boolean(temple.primaryMedia || temple.cardMedia || temple.heroMedia || temple.image || temple.imageCard || temple.imageHero)
   return <Link href={`/temples/${temple.slug}`} className="group relative min-h-[360px] overflow-hidden bg-secondary-900 no-underline hover:no-underline sm:min-h-[480px]">
-    <SarvdevImage image={getTempleCardImage(temple)} alt={temple.title} className="absolute inset-0" imgClassName="object-cover transition-transform duration-500 group-hover:scale-[1.02]" renderMode="auto" />
+    {hasMedia && <SarvdevImage image={getTempleCardImage(temple)} alt={temple.title} className="absolute inset-0" imgClassName="object-cover transition-transform duration-500 group-hover:scale-[1.02]" renderMode="auto" />}
     <div className="absolute inset-0 bg-gradient-to-t from-[#171411]/90 via-[#171411]/35 to-transparent" />
     <div className="absolute inset-x-0 bottom-0 p-5 sm:p-7">
       {temple.verified === 'verified' && <p className="text-overline font-semibold uppercase tracking-[0.13em] text-accent-200">Verified listing</p>}
@@ -66,8 +67,9 @@ function TempleFeature({ temple }: { temple: Temple }) {
 
 function TempleTile({ temple }: { temple: Temple }) {
   const meta = temple.speciality || temple.sacredCategories?.[0] || temple.categories?.[0]
+  const hasMedia = Boolean(temple.primaryMedia || temple.cardMedia || temple.heroMedia || temple.image || temple.imageCard || temple.imageHero)
   return <Link href={`/temples/${temple.slug}`} className="group min-w-0 border border-surface-border bg-surface-raised no-underline hover:border-primary-300 hover:no-underline">
-    <div className="relative aspect-[4/3] overflow-hidden bg-surface-sunken"><SarvdevImage image={getTempleCardImage(temple)} alt={temple.title} className="absolute inset-0" imgClassName="object-cover transition-transform duration-500 group-hover:scale-[1.02]" renderMode="auto" /></div>
+    {hasMedia && <div className="relative aspect-[4/3] overflow-hidden bg-surface-sunken"><SarvdevImage image={getTempleCardImage(temple)} alt={temple.title} className="absolute inset-0" imgClassName="object-cover transition-transform duration-500 group-hover:scale-[1.02]" renderMode="auto" /></div>}
     <div className="p-4"><h3 className="font-display text-h4 leading-tight text-secondary-800 group-hover:text-primary-700 line-clamp-2">{temple.title}</h3><TempleMeta temple={temple} className="mt-2 text-caption text-ink-muted" />{meta && <p className="mt-2 text-caption text-ink-muted line-clamp-1">{meta}</p>}</div>
   </Link>
 }

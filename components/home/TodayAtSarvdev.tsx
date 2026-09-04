@@ -27,7 +27,7 @@ export default function TodayAtSarvdev({ darshan, event }: { darshan?: Darshan |
 
   return (
     <section className="border-b border-surface-border bg-surface-raised" aria-label="Today at Sarvdev">
-      <div className="page-container py-7 sm:py-8">
+      <div className="page-container py-8 sm:py-10">
         <div className="mb-5 flex items-baseline justify-between gap-4">
           <div>
             <p className="text-overline font-semibold uppercase tracking-[0.14em] text-primary">Daily practice</p>

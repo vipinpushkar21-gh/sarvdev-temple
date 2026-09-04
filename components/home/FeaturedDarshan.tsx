@@ -39,6 +39,7 @@ export default function FeaturedDarshan({ darshan }: { darshan?: Darshan | null 
   // Unknown and vertical source artwork is never allowed to crop into a poster.
   // The shared image component still applies its existing focal-safe treatment to landscape media.
   const mediaRenderMode = !mediaRatio || mediaRatio < 1.18 ? 'safe-contain' : 'auto'
+  const hasMedia = Boolean(selectedMedia || darshan.image || darshan.imageCard || darshan.imageHero || darshan.thumbnail)
 
   return (
     <section className="relative overflow-hidden bg-dark-sacred py-section-sm text-white sm:py-section">
@@ -49,8 +50,8 @@ export default function FeaturedDarshan({ darshan }: { darshan?: Darshan | null 
           <h2 className="mt-2 font-display text-h1 text-white">Featured Darshan</h2>
         </div>
 
-        <article className="grid overflow-hidden border border-white/10 bg-white/[0.03] lg:h-[clamp(32.5rem,42vw,38.75rem)] lg:grid-cols-[minmax(0,3fr)_minmax(22rem,2fr)]">
-          <div className="relative h-[clamp(16.25rem,72vw,20rem)] overflow-hidden bg-[#2a1d13] lg:h-full">
+        <article className={`grid overflow-hidden border border-white/10 bg-white/[0.03] ${hasMedia ? 'lg:h-[clamp(32.5rem,42vw,38.75rem)] lg:grid-cols-[minmax(0,3fr)_minmax(22rem,2fr)]' : 'max-w-3xl'}`}>
+          {hasMedia && <div className="relative h-[clamp(16.25rem,72vw,20rem)] overflow-hidden bg-[#2a1d13] lg:h-full">
             <SarvdevImage
               image={getTempleHeroImage(darshan)}
               alt={darshan.title}
@@ -59,7 +60,7 @@ export default function FeaturedDarshan({ darshan }: { darshan?: Darshan | null 
             />
             <div className="absolute inset-0 bg-gradient-to-t from-[#171411]/42 via-transparent to-transparent lg:bg-gradient-to-r lg:from-transparent lg:via-transparent lg:to-[#171411]/20" />
             {isLive && <span className="absolute left-5 top-5 border border-red-200/25 bg-red-950/70 px-3 py-1.5 text-caption font-semibold uppercase tracking-[0.12em] text-red-100">Live now</span>}
-          </div>
+          </div>}
 
           <div className="flex min-w-0 flex-col justify-center p-6 sm:p-8 lg:p-9 xl:p-10">
             <p className="text-overline font-semibold uppercase tracking-[0.14em] text-accent-200">{isLive ? 'Live Darshan' : 'Daily Darshan'}</p>
