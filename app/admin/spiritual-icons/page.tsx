@@ -44,6 +44,7 @@ export default function AdminSpiritualIconsPage() {
   const [sortDir, setSortDir] = useState<SortDir>('asc')
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [previewId, setPreviewId] = useState<string | null>(null)
+  const [bulkLoading, setBulkLoading] = useState<string | null>(null)
 
   const debouncedSearch = useDebouncedValue(search)
 
@@ -110,15 +111,36 @@ export default function AdminSpiritualIconsPage() {
     else { setSortKey(key); setSortDir('asc') }
   }, [sortKey])
 
-  const bulkAction = async (action: 'active' | 'draft' | 'inactive') => {
+  const bulkAction = async (action: 'approve' | 'draft' | 'disable' | 'delete') => {
     if (!selected.size) return
-    if (!confirm(`${action === 'active' ? 'Activate' : action === 'draft' ? 'Move to draft' : 'Disable'} ${selected.size} spiritual icons?`)) return
-    for (const id of selected) {
-      const row = rows.find((item) => item._id === id)
-      if (row && !row.isStaticFallback) await updateIcon(row, { status: action })
+    const label = action === 'approve' ? 'Approve' : action === 'draft' ? 'Move to draft' : action === 'disable' ? 'Disable' : 'permanently delete'
+    const confirmation = action === 'delete'
+      ? `Permanently delete ${selected.size} selected spiritual icons? This cannot be undone.`
+      : `${label} ${selected.size} selected spiritual icons?`
+    if (!confirm(confirmation)) return
+
+    setBulkLoading(action)
+    setMessage(null)
+    try {
+      const res = await fetch('/api/admin/spiritual-icons/bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, ids: Array.from(selected) }),
+      })
+      const data = await res.json().catch(() => null)
+      if (!res.ok) {
+        setMessage({ type: 'error', text: data?.error || 'Bulk action failed.' })
+        return
+      }
+      setSelected(new Set())
+      const completed = action === 'delete' ? 'deleted' : action === 'approve' ? 'approved' : action === 'draft' ? 'moved to draft' : 'disabled'
+      setMessage({ type: 'success', text: `${data.affected || 0} spiritual icons ${completed}.` })
+      await load()
+    } catch {
+      setMessage({ type: 'error', text: 'Network error while applying the bulk action.' })
+    } finally {
+      setBulkLoading(null)
     }
-    setSelected(new Set())
-    await load()
   }
 
   const sortIndicator = (column: SortKey) => sortKey === column ? (sortDir === 'asc' ? ' ▲' : ' ▼') : ' ⇅'
@@ -277,10 +299,11 @@ export default function AdminSpiritualIconsPage() {
 
       {selected.size > 0 && <div className="admin-card flex flex-wrap items-center gap-3 px-5 py-3" style={{ background: '#FFF7ED', borderColor: 'rgba(234,88,12,0.15)' }}>
         <span className="admin-badge-orange">{selected.size} selected</span>
-        <button onClick={() => bulkAction('active')} className="admin-btn admin-btn-success">Activate All</button>
-        <button onClick={() => bulkAction('draft')} className="admin-btn admin-btn-ghost">Draft All</button>
-        <button onClick={() => bulkAction('inactive')} className="admin-btn admin-btn-danger">Disable All</button>
-        <button onClick={() => setSelected(new Set())} className="admin-btn admin-btn-ghost">Clear</button>
+        <button disabled={Boolean(bulkLoading)} onClick={() => bulkAction('approve')} className="admin-btn admin-btn-success disabled:opacity-50">Approve All</button>
+        <button disabled={Boolean(bulkLoading)} onClick={() => bulkAction('draft')} className="admin-btn admin-btn-ghost disabled:opacity-50">Draft All</button>
+        <button disabled={Boolean(bulkLoading)} onClick={() => bulkAction('disable')} className="admin-btn admin-btn-ghost disabled:opacity-50">Disable All</button>
+        <button disabled={Boolean(bulkLoading)} onClick={() => bulkAction('delete')} className="admin-btn admin-btn-danger disabled:opacity-50">Delete All</button>
+        <button disabled={Boolean(bulkLoading)} onClick={() => setSelected(new Set())} className="admin-btn admin-btn-ghost disabled:opacity-50">Clear</button>
       </div>}
 
       <div className="admin-card flex flex-col gap-3 px-5 py-3 md:flex-row md:items-center md:justify-between">
