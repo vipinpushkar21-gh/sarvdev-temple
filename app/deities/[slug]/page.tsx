@@ -122,7 +122,7 @@ export default async function DeityDetailPage({ params }: { params: Promise<{ sl
 
       <main className="page-container py-section-sm">
         <Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Deities', href: '/deities' }, { label: deity.name }]} />
-        <AdminEditBar editHref={`/admin/deities?edit=${deity._id}`} label="Edit deity" />
+        <AdminEditBar editHref={`/admin/deities/edit/${deity._id}`} label="Edit deity" />
 
         <header className="grid gap-8 border-b border-surface-border pb-9 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start">
           <div>

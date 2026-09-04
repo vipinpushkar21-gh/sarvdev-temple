@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic'
 
 const BASE_URL = 'https://sarvdev.com'
 const PAGE_SIZE = 24
-const CARD_FIELDS = 'slug name nameHi description descriptionHi attributes categoryName categorySlug primaryMedia cardMedia heroMedia order'
+const CARD_FIELDS = 'slug name nameHi description descriptionHi attributes categoryName categorySlug primaryMedia cardMedia heroMedia image imageCard imageHero order'
 
 type SearchParams = { q?: string; category?: string; page?: string }
 

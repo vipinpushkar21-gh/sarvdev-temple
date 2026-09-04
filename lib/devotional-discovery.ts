@@ -9,7 +9,7 @@ export const DEVOTIONAL_CARD_FIELDS =
   'title titleHi slug category categoryHi categorySlug subcategory deity deityHi deitySlug language description descriptionHi featured audio audioUrl duration primaryMedia cardMedia heroMedia createdAt'
 
 export const DEVOTIONAL_READER_FIELDS =
-  'title titleHi slug category categoryHi categorySlug subcategory deity deityHi deitySlug language description descriptionHi content contentHi lyrics audio audioUrl duration artist tags featured primaryMedia cardMedia heroMedia galleryMedia createdAt updatedAt'
+  'title titleHi slug category categoryHi categorySlug subcategory deity deityHi deitySlug language description descriptionHi content contentHi lyrics audio audioUrl duration artist tags featured primaryMedia cardMedia heroMedia galleryMedia image imageCard imageHero createdAt updatedAt'
 
 export type DevotionalCardRecord = {
   _id: string
@@ -47,6 +47,7 @@ export type DevotionalReaderRecord = DevotionalCardRecord & {
   metaKeywords?: string
   image?: string
   imageCard?: string
+  imageHero?: string
   ogMedia?: SarvdevMediaAsset | null
 }
 

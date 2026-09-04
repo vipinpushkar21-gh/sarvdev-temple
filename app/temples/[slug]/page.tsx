@@ -260,7 +260,7 @@ export default async function TempleDetailPage({ params }: { params: Promise<{ s
 
   return (
     <>
-      <AdminEditBar editHref={`/admin/temples/${temple._id}/edit`} label="Edit temple" />
+      <AdminEditBar editHref={`/admin/temples/edit/${temple._id}`} label="Edit temple" />
 
       <header className="border-b border-surface-border py-section-sm">
         <div className="page-container max-w-4xl">

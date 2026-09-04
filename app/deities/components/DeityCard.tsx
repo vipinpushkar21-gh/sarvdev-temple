@@ -18,6 +18,9 @@ export type DeityCardRecord = {
   primaryMedia?: SarvdevMediaAsset
   cardMedia?: SarvdevMediaAsset
   heroMedia?: SarvdevMediaAsset
+  image?: string
+  imageCard?: string
+  imageHero?: string
 }
 
 export default function DeityCard({ deity }: { deity: DeityCardRecord }) {
@@ -28,17 +31,9 @@ export default function DeityCard({ deity }: { deity: DeityCardRecord }) {
   return (
     <article className="flex h-full flex-col border-b border-surface-border pb-6">
       <Link href={`/deities/${deity.slug}`} className="group no-underline hover:no-underline">
-        {illustrated && (
-          <div className="relative mb-4 aspect-[4/3] overflow-hidden border border-surface-border bg-surface-sunken">
-            <SarvdevImage
-              image={getDeityCardImage(deity)}
-              alt={deity.name}
-              className="absolute inset-0"
-              imgClassName="object-cover transition-transform duration-500 group-hover:scale-[1.02]"
-              renderMode="auto"
-            />
-          </div>
-        )}
+        <div className="relative mb-4 aspect-[4/3] overflow-hidden border border-surface-border bg-surface-sunken">
+          <SarvdevImage image={getDeityCardImage(deity)} alt={deity.name} className="absolute inset-0" imgClassName="object-cover transition-transform duration-500 group-hover:scale-[1.02]" renderMode="auto" />
+        </div>
         <h3 className="font-display text-h3 leading-tight text-secondary-800 transition-colors group-hover:text-primary-700">
           {deity.name}
         </h3>

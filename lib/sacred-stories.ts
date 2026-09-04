@@ -2,6 +2,7 @@ import { connectDB } from '@/lib/db'
 import Blog from '@/models/Blog'
 import { resolveMediaOriginal } from '@/lib/media-asset'
 import { publicContentSlugFilter } from '@/lib/public-content'
+import { getContentPlaceholder } from '@/lib/imageGuard'
 
 export const STORY_PAGE_SIZE = 24
 export const PUBLIC_STORY_FILTER = { status: { $in: ['published', 'approved'] }, ...publicContentSlugFilter }
@@ -24,7 +25,10 @@ export async function getStoryListing({ query = '', category = '', page = 1 }: {
     Blog.find(filter, STORY_CARD_PROJECTION).sort({ featured: -1, publishedAt: -1, createdAt: -1 }).skip((safePage - 1) * STORY_PAGE_SIZE).limit(STORY_PAGE_SIZE).lean(),
     Blog.countDocuments(filter), Blog.distinct('category', PUBLIC_STORY_FILTER),
   ])
-  return { stories: stories as any[], total, categories: categories.filter(Boolean).sort(), page: safePage, pages: Math.max(1, Math.ceil(total / STORY_PAGE_SIZE)) }
+  const listingStories = (stories as any[]).map((story) =>
+    hasStoryMedia(story) ? story : { ...story, cardMedia: getContentPlaceholder('blog') }
+  )
+  return { stories: listingStories, total, categories: categories.filter(Boolean).sort(), page: safePage, pages: Math.max(1, Math.ceil(total / STORY_PAGE_SIZE)) }
 }
 
 export async function getPublishedStory(slug: string) { await connectDB(); return Blog.findOne({ ...PUBLIC_STORY_FILTER, slug }).lean() as Promise<any> }

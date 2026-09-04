@@ -8,7 +8,6 @@ import { SHAKTI_PEETH_CATEGORY } from '@/data/shakti-peethas'
 import { SACRED_CATEGORIES, getCategoryBySlug } from '@/lib/sacred-categories'
 import SarvdevImage from '@/components/SarvdevImage'
 import { getTempleCardImage } from '@/lib/temple-image'
-import { resolveMediaOriginal, type SarvdevMediaInput } from '@/lib/media-asset'
 
 const BASE = 'https://sarvdev.com'
 
@@ -26,17 +25,6 @@ function getCategoryQueryValues(cluster: PilgrimageCluster) {
   ].filter(Boolean) as string[]))
 }
 
-type TempleMediaFields = {
-  cardMedia?: SarvdevMediaInput
-  primaryMedia?: SarvdevMediaInput
-  imageCard?: SarvdevMediaInput
-  image?: SarvdevMediaInput
-}
-
-function hasTempleMedia(temple: TempleMediaFields) {
-  return [temple.cardMedia, temple.primaryMedia, temple.imageCard, temple.image]
-    .some((media) => Boolean(resolveMediaOriginal(media)))
-}
 
 type PilgrimageCluster = {
   slug: string
@@ -228,12 +216,12 @@ export default async function PilgrimageClusterPage({
             {temples.map((t: any) => (
               <Link key={t._id.toString()} href={`/temples/${t.slug || slugify(t.title)}`}
                 className="group border-t border-surface-border pt-4 no-underline">
-                {hasTempleMedia(t) && <div className="relative mb-4 h-44 overflow-hidden bg-surface-sunken">
+                <div className="relative mb-4 h-44 overflow-hidden bg-surface-sunken">
                   <SarvdevImage image={getTempleCardImage(t)} alt={`${t.title} — ${cluster.title}`} className="absolute inset-0" imgClassName="object-cover group-hover:scale-105 transition-transform duration-500" />
                   {t.deity && (
                     <span className="absolute bottom-2 left-2 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-white/90 text-ink backdrop-blur-sm">{t.deity}</span>
                   )}
-                </div>}
+                </div>
                 <div className="p-4">
                   <h3 className="text-body font-semibold text-ink group-hover:text-primary-700 transition-colors line-clamp-1">{t.title}</h3>
                   {t.titleHi && <p className="mt-1 font-devanagari text-body-sm text-ink-muted">{t.titleHi}</p>}

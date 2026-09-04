@@ -1,6 +1,8 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import AdminEditBar from '@/components/AdminEditBar'
 import BookmarkButton from '@/components/BookmarkButton'
+import SarvdevImage from '@/components/SarvdevImage'
 import ShareButtons from '@/components/ShareButtons'
 import {
   devotionalCategoryHref,
@@ -13,6 +15,8 @@ import {
   slugifyDevotionalText,
 } from '@/lib/devotional-discovery'
 import { splitTextParagraphs } from '@/lib/text-formatting'
+import { getDevotionalCardImage } from '@/lib/devotional-image'
+import { getDevotionalSupportingMedia } from '@/lib/devotional-media'
 import DevotionalListen from '../components/DevotionalListen'
 import SacredTextReader from '../components/SacredTextReader'
 
@@ -43,9 +47,12 @@ export default async function DevotionalReaderPage({ params }: { params: Promise
     devotional.subcategory,
     devotional.language,
   ].filter(Boolean) as string[]
+  const supportingMedia = getDevotionalSupportingMedia(devotional)
+  const supportingImage = getDevotionalCardImage(supportingMedia)
 
   return (
     <main className="pb-section-sm">
+      <AdminEditBar editHref={`/admin/devotionals/${devotional._id}/edit`} label="Edit Devotional" />
       <header className="border-b border-surface-border py-section-sm">
         <div className="page-container max-w-3xl">
           <nav aria-label="Breadcrumb" className="text-caption text-ink-muted">
@@ -93,6 +100,16 @@ export default async function DevotionalReaderPage({ params }: { params: Promise
       </header>
 
       <div className="page-container max-w-3xl">
+        <div className="mt-8 max-w-md overflow-hidden border border-surface-border bg-surface-sunken">
+          <SarvdevImage
+            image={supportingImage}
+            alt={supportingMedia ? `${devotional.title} artwork` : 'Devotional artwork placeholder'}
+            className="aspect-video"
+            imgClassName="object-contain"
+            renderMode="safe-contain"
+          />
+        </div>
+
         {(about.length > 0 || aboutHi.length > 0) && (
           <section className="border-t border-surface-border pt-8">
             <h2 className="font-display text-h2 text-secondary-800">About this devotional</h2>

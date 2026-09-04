@@ -15,17 +15,9 @@ export default function TempleCard({ temple }: { temple: TempleCardRecord }) {
   return (
     <article className="flex h-full flex-col border-b border-surface-border pb-6">
       <Link href={templeHref(temple)} className="group no-underline hover:no-underline">
-        {illustrated && (
-          <div className="relative mb-4 aspect-[4/3] overflow-hidden border border-surface-border bg-surface-sunken">
-            <SarvdevImage
-              image={getTempleCardImage(temple)}
-              alt={temple.title}
-              className="absolute inset-0"
-              imgClassName="object-cover transition-transform duration-500 group-hover:scale-[1.02]"
-              renderMode="auto"
-            />
-          </div>
-        )}
+        <div className="relative mb-4 aspect-[4/3] overflow-hidden border border-surface-border bg-surface-sunken">
+          <SarvdevImage image={getTempleCardImage(temple)} alt={temple.title} className="absolute inset-0" imgClassName="object-cover transition-transform duration-500 group-hover:scale-[1.02]" renderMode="auto" />
+        </div>
         {place && (
           <p className="text-caption uppercase tracking-[0.14em] text-primary">{place}</p>
         )}
