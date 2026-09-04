@@ -12,7 +12,7 @@ const navItems = MAIN_NAV_ITEMS
 
 // Curated primary nav for the desktop header — a focused subset of MAIN_NAV_ITEMS.
 // The mobile slide-in menu still lists every item so all sections stay reachable.
-const PRIMARY_NAV_IDS = ['temples', 'deities', 'devotionals', 'daily-darshan', 'panchang', 'events']
+const PRIMARY_NAV_IDS = ['temples', 'deities', 'devotionals', 'daily-darshan', 'spiritual-icons', 'panchang', 'events']
 const primaryNavItems = PRIMARY_NAV_IDS
   .map((id) => navItems.find((item) => item.id === id))
   .filter((item): item is NonNullable<typeof item> => Boolean(item))
