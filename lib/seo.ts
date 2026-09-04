@@ -6,7 +6,7 @@
 export const BASE_URL = 'https://sarvdev.com'
 export const SITE_NAME = 'Sarvdev'
 export const DEFAULT_OG_IMAGE = `${BASE_URL}/opengraph-image`
-export const DEFAULT_FALLBACK_IMAGE = 'https://res.cloudinary.com/dc2qg7bwr/image/upload/image_2_xljqwa'
+export const DEFAULT_FALLBACK_IMAGE = DEFAULT_OG_IMAGE
 
 // ── Text helpers ──────────────────────────────────────────────────────────────
 

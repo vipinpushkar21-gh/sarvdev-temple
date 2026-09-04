@@ -10,11 +10,12 @@ import BookmarkButton from '@/components/BookmarkButton'
 import ShareButtons from '@/components/ShareButtons'
 import { getDarshanCardImage } from '@/lib/media'
 import { getPlayableDarshanSource } from '@/lib/darshan-stream'
+import { publicContentSlugFilter } from '@/lib/public-content'
 
 export const dynamic = 'force-dynamic'
 const base = 'https://sarvdev.com'
 const detailProjection = 'title titleHi slug description descriptionHi temple templeName deity deityHi location city state darshanDate date contentType isLive streamStatus provider youtubeId youtubeUrl videoUrl externalUrl primaryMedia cardMedia heroMedia galleryMedia image imageCard imageHero thumbnail templeSlug deitySlug createdAt'
-async function getDarshan(slug: string) { await connectDB(); return Darshan.findOne({ slug, status: { $in: ['active', 'approved'] } }).select(detailProjection).lean() }
+async function getDarshan(slug: string) { await connectDB(); return Darshan.findOne({ ...publicContentSlugFilter, slug, status: { $in: ['active', 'approved'] } }).select(detailProjection).lean() }
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> { const { slug } = await params; const item: any = await getDarshan(slug).catch(() => null); if (!item) return { title: 'Darshan | Sarvdev' }; const image = getDarshanCardImage(item).src; return { title: `${item.title} | Daily Darshan | Sarvdev`, description: item.description || `Daily Darshan from ${item.templeName || item.temple || 'Sarvdev'}.`, alternates: { canonical: `${base}/daily-darshan/${item.slug}` }, openGraph: { title: item.title, description: item.description || undefined, images: image ? [image] : undefined }, twitter: { card: 'summary_large_image', title: item.title, images: image ? [image] : undefined } } }
 
 export default async function DarshanDetailPage({ params }: { params: Promise<{ slug: string }> }) {

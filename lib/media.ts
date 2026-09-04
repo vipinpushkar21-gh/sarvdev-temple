@@ -43,6 +43,7 @@ export {
 import {
   FALLBACK_IMAGE,
   CLOUDINARY_HOST,
+  getContentPlaceholder,
   isAllowedImageHost,
   sanitizeImageUrl,
 } from './imageGuard'
@@ -66,14 +67,14 @@ export { buildCloudinaryOriginalUrl, parseLegacyCloudinaryUrl } from './media-as
 // All currently point to the canonical Cloudinary fallback.
 // Individual fallbacks can be swapped per content type when dedicated assets exist.
 export const CONTENT_FALLBACKS: Record<string, string> = {
-  temple:       FALLBACK_IMAGE,
-  deity:        FALLBACK_IMAGE,
-  devotional:   FALLBACK_IMAGE,
-  blog:         FALLBACK_IMAGE,
-  event:        FALLBACK_IMAGE,
-  darshan:      FALLBACK_IMAGE,
-  spiritualIcon: FALLBACK_IMAGE,
-  generic:      FALLBACK_IMAGE,
+  temple:       getContentPlaceholder('temple'),
+  deity:        getContentPlaceholder('deity'),
+  devotional:   getContentPlaceholder('devotional'),
+  blog:         getContentPlaceholder('blog'),
+  event:        getContentPlaceholder('event'),
+  darshan:      getContentPlaceholder('darshan'),
+  spiritualIcon: getContentPlaceholder('spiritualIcon'),
+  generic:      getContentPlaceholder('generic'),
 }
 
 // ── Image upload size guidance ────────────────────────────────────────────────
@@ -291,7 +292,8 @@ export function getDevotionalCardImage(item?: AnyItem | string | null): SarvdevI
   return getBlogCardImage(
     typeof item === 'string' ? item :
     item ? mediaFields(item) :
-    FALLBACK_IMAGE
+    getContentPlaceholder('devotional'),
+    getContentPlaceholder('devotional')
   )
 }
 
@@ -300,7 +302,8 @@ export function getDevotionalHeroImage(item?: AnyItem | string | null): SarvdevI
   return getBlogHeroImage(
     typeof item === 'string' ? item :
     item ? mediaFields(item) :
-    FALLBACK_IMAGE
+    getContentPlaceholder('devotional'),
+    getContentPlaceholder('devotional')
   )
 }
 
@@ -309,7 +312,8 @@ export function getEventCardImage(item?: AnyItem | string | null): SarvdevImageS
   return getBlogCardImage(
     typeof item === 'string' ? item :
     item ? mediaFields(item) :
-    FALLBACK_IMAGE
+    getContentPlaceholder('event'),
+    getContentPlaceholder('event')
   )
 }
 
@@ -318,7 +322,8 @@ export function getEventHeroImage(item?: AnyItem | string | null): SarvdevImageS
   return getBlogHeroImage(
     typeof item === 'string' ? item :
     item ? mediaFields(item) :
-    FALLBACK_IMAGE
+    getContentPlaceholder('event'),
+    getContentPlaceholder('event')
   )
 }
 
@@ -334,7 +339,8 @@ export function getDarshanCardImage(item?: AnyItem | string | null): SarvdevImag
       cardMedia: item.cardMedia,
       heroMedia: item.heroMedia,
     } :
-    FALLBACK_IMAGE
+    getContentPlaceholder('darshan'),
+    getContentPlaceholder('darshan')
   )
 }
 
@@ -343,7 +349,7 @@ export function getSpiritualIconCardImage(item?: AnyItem | string | null): Sarvd
   return _getSpiritualIconCardImage(
     typeof item === 'string' ? item :
     item ? mediaFields(item) :
-    FALLBACK_IMAGE
+    getContentPlaceholder('spiritualIcon')
   )
 }
 
@@ -352,7 +358,7 @@ export function getSpiritualIconHeroImage(item?: AnyItem | string | null): Sarvd
   return getDeityHeroImage(
     typeof item === 'string' ? item :
     item ? mediaFields(item) :
-    FALLBACK_IMAGE
+    getContentPlaceholder('spiritualIcon')
   )
 }
 

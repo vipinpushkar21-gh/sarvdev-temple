@@ -6,7 +6,7 @@
  * preserving Sarvdev's sacred safe-framing rules.
  */
 
-import { FALLBACK_IMAGE, LOCAL_PLACEHOLDER, sanitizeImageUrl } from './imageGuard'
+import { FALLBACK_IMAGE, LOCAL_PLACEHOLDER, getContentPlaceholder, sanitizeImageUrl } from './imageGuard'
 import { isMediaAsset, resolveMediaOriginal, type SarvdevMediaAsset, type SarvdevMediaInput, type SarvdevMediaKind } from './media-asset'
 
 /** Local emergency fallback served from public/. */
@@ -168,7 +168,7 @@ const PRESETS: Record<ImageRole, ImagePreset> = {
   },
 }
 
-function resolveImageUrl(input: ImageInput, preferred: 'image' | 'imageCard' | 'imageHero' | 'heroImage' | 'ogImage' = 'image') {
+function resolveImageUrl(input: ImageInput, preferred: 'image' | 'imageCard' | 'imageHero' | 'heroImage' | 'ogImage' = 'image', fallback: string = FALLBACK_IMAGE) {
   const directMedia = isMediaAsset(input)
   const candidates =
     typeof input === 'string' || !input || directMedia
@@ -187,7 +187,7 @@ function resolveImageUrl(input: ImageInput, preferred: 'image' | 'imageCard' | '
     if (safeUrl) return safeUrl
   }
 
-  return FALLBACK_IMAGE
+  return fallback
 }
 
 export function isCloudinaryImageUrl(url: string | undefined | null): boolean {
@@ -263,16 +263,17 @@ function getBlurPlaceholder(url: string) {
   ])
 }
 
-function getFallbackForPreset(preset: ImagePreset) {
-  return transformCloudinaryUrl(FALLBACK_IMAGE, buildTransform(preset, preset.widths[0]))
+function getFallbackForPreset(preset: ImagePreset, fallback: string) {
+  return transformCloudinaryUrl(fallback, buildTransform(preset, preset.widths[0]))
 }
 
 function buildImageSource(
   input: ImageInput,
   preset: ImagePreset,
-  preferred: 'image' | 'imageCard' | 'imageHero' | 'heroImage' | 'ogImage' = 'image'
+  preferred: 'image' | 'imageCard' | 'imageHero' | 'heroImage' | 'ogImage' = 'image',
+  fallback: string = FALLBACK_IMAGE
 ): SarvdevImageSource {
-  const source = resolveImageUrl(input, preferred)
+  const source = resolveImageUrl(input, preferred, fallback)
   const isCloudinary = isCloudinaryImageUrl(source)
   const width = preset.widths[preset.widths.length - 1]
   const src = isCloudinary
@@ -308,7 +309,7 @@ function buildImageSource(
     srcSet: buildSrcSet(source, preset),
     sizes: preset.sizes,
     placeholder: getBlurPlaceholder(source),
-    fallback: getFallbackForPreset(preset),
+    fallback: getFallbackForPreset(preset, fallback),
     width,
     height: getDimensionsFromAspectRatio(width, preset.aspectRatio),
     aspectRatio: preset.aspectRatio,
@@ -322,31 +323,31 @@ function buildImageSource(
 }
 
 export function getTempleHeroImage(input: ImageInput): SarvdevImageSource {
-  return buildImageSource(input, PRESETS.templeHero, 'imageHero')
+  return buildImageSource(input, PRESETS.templeHero, 'imageHero', getContentPlaceholder('temple'))
 }
 
 export function getTempleCardImage(input: ImageInput): SarvdevImageSource {
-  return buildImageSource(input, PRESETS.templeCard, 'imageCard')
+  return buildImageSource(input, PRESETS.templeCard, 'imageCard', getContentPlaceholder('temple'))
 }
 
 export function getDeityHeroImage(input: ImageInput): SarvdevImageSource {
-  return buildImageSource(input, PRESETS.deityHero, 'imageHero')
+  return buildImageSource(input, PRESETS.deityHero, 'imageHero', getContentPlaceholder('deity'))
 }
 
 export function getDeityCardImage(input: ImageInput): SarvdevImageSource {
-  return buildImageSource(input, PRESETS.deityCard, 'imageCard')
+  return buildImageSource(input, PRESETS.deityCard, 'imageCard', getContentPlaceholder('deity'))
 }
 
-export function getBlogHeroImage(input: ImageInput): SarvdevImageSource {
-  return buildImageSource(input, PRESETS.blogHero, 'imageHero')
+export function getBlogHeroImage(input: ImageInput, fallback = getContentPlaceholder('blog')): SarvdevImageSource {
+  return buildImageSource(input, PRESETS.blogHero, 'imageHero', fallback)
 }
 
-export function getBlogCardImage(input: ImageInput): SarvdevImageSource {
-  return buildImageSource(input, PRESETS.blogCard, 'imageCard')
+export function getBlogCardImage(input: ImageInput, fallback = getContentPlaceholder('blog')): SarvdevImageSource {
+  return buildImageSource(input, PRESETS.blogCard, 'imageCard', fallback)
 }
 
 export function getSpiritualIconCardImage(input: ImageInput): SarvdevImageSource {
-  return buildImageSource(input, PRESETS.spiritualIconCard, 'imageCard')
+  return buildImageSource(input, PRESETS.spiritualIconCard, 'imageCard', getContentPlaceholder('spiritualIcon'))
 }
 
 export function getGalleryImage(input: ImageInput, mode: 'thumb' | 'lightbox' = 'thumb'): SarvdevImageSource {

@@ -1,9 +1,10 @@
 import { connectDB } from '@/lib/db'
 import Blog from '@/models/Blog'
 import { resolveMediaOriginal } from '@/lib/media-asset'
+import { publicContentSlugFilter } from '@/lib/public-content'
 
 export const STORY_PAGE_SIZE = 24
-export const PUBLIC_STORY_FILTER = { status: { $in: ['published', 'approved'] } }
+export const PUBLIC_STORY_FILTER = { status: { $in: ['published', 'approved'] }, ...publicContentSlugFilter }
 export const STORY_CARD_PROJECTION = 'title titleHi slug excerpt excerptHi category tags author publishedAt date createdAt featured image imageCard imageHero primaryMedia cardMedia heroMedia ogImage ogMedia'
 
 export function hasStoryMedia(story: Record<string, any>) {

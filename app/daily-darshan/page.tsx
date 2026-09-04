@@ -5,6 +5,7 @@ import Darshan from '@/models/Darshan'
 import SarvdevImage from '@/components/SarvdevImage'
 import { getDarshanCardImage } from '@/lib/media'
 import BookmarkButton from '@/components/BookmarkButton'
+import { publicContentSlugFilter } from '@/lib/public-content'
 
 export const dynamic = 'force-dynamic'
 export const metadata: Metadata = { title: 'Daily Darshan | Sarvdev', description: 'Today’s sacred Darshan from temples across Bharat.' }
@@ -13,7 +14,7 @@ const TYPES = new Set(['photo', 'video', 'live'])
 const escape = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
 export default async function DailyDarshanPage({ searchParams }: { searchParams: Promise<Params> }) {
-  const params = await searchParams; const page = Math.max(1, Number(params.page) || 1); const today = new Date().toISOString().slice(0, 10); const filter: any = { status: { $in: ['active', 'approved'] } }
+  const params = await searchParams; const page = Math.max(1, Number(params.page) || 1); const today = new Date().toISOString().slice(0, 10); const filter: any = { status: { $in: ['active', 'approved'] }, ...publicContentSlugFilter }
   if (params.type && TYPES.has(params.type)) filter.contentType = params.type
   if (params.temple) filter.templeSlug = params.temple
   if (params.deity) filter.deitySlug = params.deity

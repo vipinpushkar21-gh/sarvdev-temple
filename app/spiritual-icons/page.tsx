@@ -4,6 +4,7 @@ import { connectDB } from '@/lib/db'
 import SpiritualIcon from '@/models/SpiritualIcon'
 import SarvdevImage from '@/components/SarvdevImage'
 import { getSpiritualIconCardImage } from '@/lib/temple-image'
+import { publicContentSlugFilter } from '@/lib/public-content'
 
 const BASE = 'https://sarvdev.com'; const PAGE_SIZE = 24
 export const metadata: Metadata = { title: 'Spiritual Icons of Bharat — Sarvdev', description: 'A growing cultural archive of spiritual personalities represented on Sarvdev.', alternates: { canonical: `${BASE}/spiritual-icons` } }
@@ -11,7 +12,7 @@ const projection = 'name nameHi slug category categorySlug title titleHi shortBi
 
 export default async function SpiritualIconsPage({ searchParams }: { searchParams: Promise<{ q?: string; category?: string; state?: string; page?: string }> }) {
   const { q = '', category = '', state = '', page: pageValue = '1' } = await searchParams; const page = Math.max(1, Number(pageValue) || 1)
-  const filter: Record<string, unknown> = { status: 'active' }; if (category) filter.categorySlug = category; if (state) filter.state = state; if (q.trim()) filter.$or = ['name', 'nameHi', 'title', 'shortBio'].map(field => ({ [field]: { $regex: q.trim(), $options: 'i' } }))
+  const filter: Record<string, unknown> = { status: 'active', ...publicContentSlugFilter }; if (category) filter.categorySlug = category; if (state) filter.state = state; if (q.trim()) filter.$or = ['name', 'nameHi', 'title', 'shortBio'].map(field => ({ [field]: { $regex: q.trim(), $options: 'i' } }))
   let items: any[] = []; let total = 0
   try { await connectDB(); [items, total] = await Promise.all([SpiritualIcon.find(filter, projection).sort({ featured: -1, priority: 1, name: 1, _id: 1 }).skip((page - 1) * PAGE_SIZE).limit(PAGE_SIZE).lean(), SpiritualIcon.countDocuments(filter)]) } catch { items = []; total = 0 }
   const pages = Math.max(1, Math.ceil(total / PAGE_SIZE)); const params = (next: number) => { const query = new URLSearchParams(); if (q) query.set('q', q); if (category) query.set('category', category); if (state) query.set('state', state); if (next > 1) query.set('page', String(next)); return `/spiritual-icons${query.size ? `?${query}` : ''}` }

@@ -2,7 +2,6 @@ import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
 
 const BASE = 'https://sarvdev.com'
-const OG_IMAGE = 'https://res.cloudinary.com/dc2qg7bwr/image/upload/image_2_xljqwa'
 
 export const metadata: Metadata = {
   title: 'Spiritual Icons - Katha Vachak, Bhajan Gayak, Pandit & Gurus | Sarvdev',
@@ -28,13 +27,11 @@ export const metadata: Metadata = {
     url: `${BASE}/spiritual-icons`,
     type: 'website',
     siteName: 'Sarvdev',
-    images: [{ url: OG_IMAGE, width: 1200, height: 630, alt: 'Spiritual Icons on Sarvdev' }],
   },
   twitter: {
-    card: 'summary_large_image',
+    card: 'summary',
     title: 'Spiritual Icons on Sarvdev',
     description: 'Explore verified dharmic leaders, katha vachaks, bhajan gayaks, gurus and scholars.',
-    images: [OG_IMAGE],
   },
 }
 

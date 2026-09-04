@@ -9,11 +9,25 @@
 /** The only allowed remote image hostname */
 export const CLOUDINARY_HOST = 'res.cloudinary.com'
 
-/** Canonical Cloudinary fallback used across the entire site */
-export const FALLBACK_IMAGE = 'https://res.cloudinary.com/dc2qg7bwr/image/upload/image_2_xljqwa'
+/** Local, explicitly generic placeholders. They never represent uploaded content. */
+export const CONTENT_PLACEHOLDERS = {
+  temple: '/images/placeholders/temple.svg',
+  deity: '/images/placeholders/deity.svg',
+  devotional: '/images/placeholders/devotional.svg',
+  blog: '/images/placeholders/story.svg',
+  event: '/images/placeholders/event.svg',
+  darshan: '/images/placeholders/darshan.svg',
+  spiritualIcon: '/images/placeholders/spiritual-icon.svg',
+  generic: '/images/placeholders/generic.svg',
+} as const
 
-/** Local SVG placeholder (public/images/temple-placeholder.svg) */
-export const LOCAL_PLACEHOLDER = '/images/temple-placeholder.svg'
+export type PlaceholderContentType = keyof typeof CONTENT_PLACEHOLDERS
+export const FALLBACK_IMAGE = CONTENT_PLACEHOLDERS.generic
+export const LOCAL_PLACEHOLDER = CONTENT_PLACEHOLDERS.temple
+
+export function getContentPlaceholder(type: PlaceholderContentType = 'generic'): string {
+  return CONTENT_PLACEHOLDERS[type]
+}
 
 /**
  * Returns true only for:
@@ -52,7 +66,7 @@ export function sanitizeImageUrl(
  * Returns Cloudinary URL if allowed, otherwise FALLBACK_IMAGE.
  */
 export function getSafeTempleImage(url?: string | null): string {
-  return sanitizeImageUrl(url, FALLBACK_IMAGE)
+  return sanitizeImageUrl(url, CONTENT_PLACEHOLDERS.temple)
 }
 
 /**
@@ -60,7 +74,7 @@ export function getSafeTempleImage(url?: string | null): string {
  * Returns Cloudinary URL if allowed, otherwise FALLBACK_IMAGE.
  */
 export function getSafeDeityImage(url?: string | null): string {
-  return sanitizeImageUrl(url, FALLBACK_IMAGE)
+  return sanitizeImageUrl(url, CONTENT_PLACEHOLDERS.deity)
 }
 
 /**
@@ -68,5 +82,5 @@ export function getSafeDeityImage(url?: string | null): string {
  * Convenience alias for components that need a hardcoded fallback.
  */
 export function getDefaultImage(): string {
-  return FALLBACK_IMAGE
+  return CONTENT_PLACEHOLDERS.generic
 }

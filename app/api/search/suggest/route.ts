@@ -15,6 +15,7 @@ import { SACRED_CATEGORIES } from '@/lib/sacred-categories'
 import { buildRegex, type Suggestion } from '@/lib/search'
 import { expandQuery, buildExpandedRegex } from '@/lib/transliteration'
 import { applyRateLimit } from '@/lib/rate-limit'
+import { publicContentSlugFilter } from '@/lib/public-content'
 
 const MAX_SUGGESTIONS = 10
 const PER_TYPE = 4  // fetch a few extra per type so ranking can re-sort
@@ -78,15 +79,15 @@ export async function GET(req: NextRequest) {
 
     const [rawDeities, rawTemples, rawDevotionals] = await Promise.all([
       quickFind(Deity, q, expandedTerms,
-        { status: { $ne: 'rejected' } },
+        { status: { $ne: 'rejected' }, ...publicContentSlugFilter },
         ['name', 'nameHi', 'description', 'categoryName'],
         ['name', 'nameHi', 'slug', 'imageCard', 'image', 'categoryName']),
       quickFind(Temple, q, expandedTerms,
-        { status: { $ne: 'rejected' } },
+        { status: { $ne: 'rejected' }, ...publicContentSlugFilter },
         ['title', 'titleHi', 'deity', 'city', 'state'],
         ['title', 'titleHi', 'slug', 'imageCard', 'image', 'city', 'state', 'deity']),
       quickFind(Devotional, q, expandedTerms,
-        {},
+        { ...publicContentSlugFilter },
         ['title', 'titleHi', 'deity', 'category'],
         ['title', 'titleHi', 'slug', 'imageCard', 'image', 'category', 'deity']),
     ])

@@ -14,6 +14,7 @@ import { hasUsableDeityMedia, getDeityGalleryMedia } from '@/lib/deity-media'
 import { compactText } from '@/lib/text-formatting'
 import { findDevotionalsForDeity, type RelatedDevotional } from '@/lib/deity-relations'
 import type { SarvdevMediaAsset, SarvdevMediaInput } from '@/lib/media-asset'
+import { publicContentSlugFilter } from '@/lib/public-content'
 
 export const dynamic = 'force-dynamic'
 
@@ -43,6 +44,7 @@ async function loadDeity(slug: string): Promise<DeityRecord | null> {
   await connectDB()
   const row = await Deity.findOne({
     status: { $ne: 'rejected' },
+    ...publicContentSlugFilter,
     $or: [{ slug }, { staticSlug: slug }, { slugAliases: slug }],
   }).lean()
   if (!row) return null
