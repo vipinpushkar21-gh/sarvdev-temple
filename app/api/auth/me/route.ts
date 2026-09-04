@@ -4,6 +4,26 @@ import { verifyToken, AUTH_COOKIE_NAME } from '@/lib/auth'
 import { connectDB } from '@/lib/db'
 import User from '@/models/User'
 
+type CurrentUserRecord = {
+  _id: { toString(): string }
+  name: string
+  email: string
+  role: string
+  status: string
+  photo?: string
+  phone?: string
+  city?: string
+  state?: string
+  templeId?: { toString(): string }
+  templeName?: string
+  designation?: string
+  bio?: string
+  specialization?: string[]
+  experience?: number
+  languages?: string[]
+  services?: string[]
+}
+
 export async function GET(req: NextRequest) {
   const token = req.cookies.get(AUTH_COOKIE_NAME)?.value
   if (!token) return NextResponse.json({ user: null }, { status: 401 })
@@ -15,7 +35,7 @@ export async function GET(req: NextRequest) {
     await connectDB()
     const user = await User.findById(payload.id)
       .select('name email role status photo phone city state templeId templeName designation bio specialization experience languages services')
-      .lean()
+      .lean<CurrentUserRecord | null>()
     if (!user) return NextResponse.json({ user: null }, { status: 401 })
     return NextResponse.json({
       user: {
