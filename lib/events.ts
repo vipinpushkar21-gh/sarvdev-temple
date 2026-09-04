@@ -1,6 +1,7 @@
 import { hinduEvents, type HinduEvent } from '@/data/events'
+import { getContentPlaceholder } from './imageGuard'
 
-export const EVENT_FALLBACK_IMAGE = 'https://res.cloudinary.com/dc2qg7bwr/image/upload/image_2_xljqwa'
+export const EVENT_FALLBACK_IMAGE = getContentPlaceholder('event')
 
 export function slugifyEvent(title: string, date?: string) {
   const base = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')

@@ -3,6 +3,11 @@ import mongoose from 'mongoose';
 
 const MONGODB_URI = process.env.MONGODB_URI!;
 
+const DB_SERVER_SELECTION_TIMEOUT_MS = Number(
+  process.env.MONGODB_SERVER_SELECTION_TIMEOUT_MS ?? 5000,
+);
+const DB_SOCKET_TIMEOUT_MS = Number(process.env.MONGODB_SOCKET_TIMEOUT_MS ?? 15000);
+
 if (!MONGODB_URI) {
   throw new Error('Please define the MONGODB_URI environment variable inside .env.local');
 }
@@ -25,8 +30,12 @@ export async function connectDB() {
     cached.promise = mongoose.connect(MONGODB_URI, {
       bufferCommands: false,
       maxPoolSize: 10,
-      serverSelectionTimeoutMS: 30000,
-      socketTimeoutMS: 45000,
+      // Fail quickly when Atlas is paused, its IP allow-list blocks the host, or
+      // the network cannot reach port 27017. Pages can then render their
+      // database-free fallback instead of leaving only the streamed layout visible.
+      serverSelectionTimeoutMS: DB_SERVER_SELECTION_TIMEOUT_MS,
+      connectTimeoutMS: DB_SERVER_SELECTION_TIMEOUT_MS,
+      socketTimeoutMS: DB_SOCKET_TIMEOUT_MS,
     }).then((mongoose) => { console.log("[db] connectDB: " + (performance.now() - _t0).toFixed(0) + "ms"); return mongoose })
       .catch((err) => {
         cached.promise = null;

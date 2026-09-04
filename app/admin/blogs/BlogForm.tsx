@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import ImageUpload from '../../../components/ImageUpload'
 import { calculateReadingTime, listToCsv, slugifyBlog } from '../../../lib/blog-utils'
+import type { SarvdevMediaAsset } from '../../../lib/media-asset'
 
 export type BlogFormValues = {
   title: string
@@ -18,9 +19,13 @@ export type BlogFormValues = {
   author: string
   authorRole: string
   image: string
+  primaryMedia: SarvdevMediaAsset | null
   imageCard: string
+  cardMedia: SarvdevMediaAsset | null
   imageHero: string
+  heroMedia: SarvdevMediaAsset | null
   ogImage: string
+  ogMedia: SarvdevMediaAsset | null
   featured: boolean
   status: 'draft' | 'published' | 'archived'
   date: string
@@ -48,9 +53,13 @@ export const DEFAULT_BLOG_FORM: BlogFormValues = {
   author: 'Sarvdev Editorial',
   authorRole: 'Editorial Team',
   image: '',
+  primaryMedia: null,
   imageCard: '',
+  cardMedia: null,
   imageHero: '',
+  heroMedia: null,
   ogImage: '',
+  ogMedia: null,
   featured: false,
   status: 'draft',
   date: new Date().toISOString().slice(0, 10),
@@ -80,9 +89,13 @@ export function mapBlogToForm(blog: any): BlogFormValues {
     author: blog.author || DEFAULT_BLOG_FORM.author,
     authorRole: blog.authorRole || DEFAULT_BLOG_FORM.authorRole,
     image: blog.image || '',
+    primaryMedia: blog.primaryMedia || null,
     imageCard: blog.imageCard || '',
+    cardMedia: blog.cardMedia || null,
     imageHero: blog.imageHero || '',
+    heroMedia: blog.heroMedia || null,
     ogImage: blog.ogImage || '',
+    ogMedia: blog.ogMedia || null,
     featured: Boolean(blog.featured),
     status: blog.status === 'approved' ? 'published' : blog.status === 'rejected' ? 'archived' : blog.status === 'pending' ? 'draft' : blog.status || 'draft',
     date: blog.date ? String(blog.date).slice(0, 10) : blog.publishedAt ? new Date(blog.publishedAt).toISOString().slice(0, 10) : '',
@@ -188,9 +201,9 @@ export default function BlogForm({ mode, initialValues = DEFAULT_BLOG_FORM, onSu
 
       <Section title="Images">
         <div className="grid gap-5 lg:grid-cols-3">
-          <ImageUpload value={form.imageCard} onChange={(url) => setForm((prev) => ({ ...prev, imageCard: url, image: prev.image || url }))} folder="sarvdev/blogs/cards" label="Card Image" guidance="blogCard" />
-          <ImageUpload value={form.imageHero} onChange={(url) => setForm((prev) => ({ ...prev, imageHero: url, image: prev.image || url }))} folder="sarvdev/blogs/heroes" label="Hero Image" guidance="blogHero" />
-          <ImageUpload value={form.ogImage} onChange={(url) => setField('ogImage', url)} folder="sarvdev/blogs/og" label="OG Image" guidance="blogOg" />
+          <ImageUpload value={form.imageCard} media={form.cardMedia} onChange={(url) => setForm((prev) => ({ ...prev, imageCard: url, image: prev.image === prev.imageCard ? url : prev.image || url }))} onMediaChange={(media) => setField('cardMedia', media)} folder="sarvdev/blogs" label="Card Image" guidance="blogCard" kind="blog-photo" />
+          <ImageUpload value={form.imageHero} media={form.heroMedia} onChange={(url) => setForm((prev) => ({ ...prev, imageHero: url, image: prev.image || url }))} onMediaChange={(media) => setField('heroMedia', media)} folder="sarvdev/blogs" label="Hero Image" guidance="blogHero" kind="blog-photo" />
+          <ImageUpload value={form.ogImage} media={form.ogMedia} onChange={(url) => setField('ogImage', url)} onMediaChange={(media) => setField('ogMedia', media)} folder="sarvdev/blogs" label="OG Image" guidance="blogOg" kind="blog-photo" />
         </div>
         <Field label="Image Prompt Suggestion"><textarea name="imagePrompt" value={form.imagePrompt} onChange={handleTextChange} rows={2} className="admin-input w-full" placeholder="Optional prompt for future AI image generation..." /></Field>
       </Section>

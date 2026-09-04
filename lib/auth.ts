@@ -40,6 +40,7 @@ interface TokenPayload {
   name: string
   email: string
   role: 'guest' | 'user' | 'temple' | 'pandit' | 'admin'
+  status: 'pending' | 'approved' | 'rejected'
   exp: number
 }
 
@@ -55,12 +56,13 @@ function hmac(data: string): string {
   return crypto.createHmac('sha256', TOKEN_SECRET!).update(data).digest('base64url')
 }
 
-export function createToken(user: { _id: string; name: string; email: string; role: string }): string {
+export function createToken(user: { _id: string; name: string; email: string; role: string; status: string }): string {
   const payload: TokenPayload = {
     id: String(user._id),
     name: user.name,
     email: user.email,
     role: user.role as TokenPayload['role'],
+    status: user.status as TokenPayload['status'],
     exp: Math.floor(Date.now() / 1000) + TOKEN_MAX_AGE,
   }
   const encoded = base64url(JSON.stringify(payload))

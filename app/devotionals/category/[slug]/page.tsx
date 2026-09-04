@@ -1,349 +1,242 @@
-﻿"use client"
-
-import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { useParams } from 'next/navigation'
-import { Filter, Library, Search, Sparkles } from 'lucide-react'
-import CategoryHero from '../../components/CategoryHero'
-import DevotionalCardPremium from '../../components/DevotionalCardPremium'
-import DevotionalFilterChips from '../../components/DevotionalFilterChips'
-import { EXCLUDED_CATEGORY_IDS, FULL_CATEGORIES } from '../../components/categories'
 import {
-  categoryToSlug,
-  getCategoryDescription,
-  getCategoryInfo,
-  getCategoryPracticeTitle,
-  getDevotionalHref,
-  matchesCategory,
-} from '../../components/devotional-utils'
-import type { Devotional } from '../../types'
+  categoryFacets,
+  deityFacets,
+  devotionalHref,
+  findDevotionals,
+  languageFacets,
+  normalizeDevotionalSort,
+  slugifyDevotionalText,
+  subcategoryFacets,
+  titleFromSlug,
+  type DevotionalCardRecord,
+  type DevotionalFacet,
+} from '@/lib/devotional-discovery'
+import DevotionalCard from '../../components/DevotionalCard'
+import DevotionalLibraryControls, { type LibraryOption } from '../../components/DevotionalLibraryControls'
+import DevotionalPagination from '../../components/DevotionalPagination'
+import { getCategoryDescription, getCategoryInfo } from '../../components/devotional-utils'
 
-type SortKey = 'popular' | 'newest' | 'az' | 'audio'
+export const dynamic = 'force-dynamic'
 
-export default function CategoryPage() {
-  const params = useParams()
-  const categorySlug = params.slug as string
+const BASE_URL = 'https://sarvdev.com'
+const PAGE_SIZE = 24
+
+type SearchParams = {
+  q?: string
+  deity?: string
+  language?: string
+  subcategory?: string
+  sort?: string
+  page?: string
+}
+
+export default async function DevotionalCategoryPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string }>
+  searchParams: Promise<SearchParams>
+}) {
+  const { slug } = await params
+  const resolved = await searchParams
+  const categorySlug = slug.toLowerCase()
   const categoryInfo = getCategoryInfo(categorySlug)
-  const label = categoryInfo?.label || categorySlug.split('-').map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(' ')
+  const label = categoryInfo?.label || titleFromSlug(categorySlug)
   const description = categoryInfo?.description || getCategoryDescription(label)
 
-  const [allDevotionals, setAllDevotionals] = useState<Devotional[]>([])
-  const [loading, setLoading] = useState(true)
-  const [selectedDeity, setSelectedDeity] = useState('all')
-  const [selectedSubcategory, setSelectedSubcategory] = useState('all')
-  const [sort, setSort] = useState<SortKey>('popular')
-  const [search, setSearch] = useState('')
-  const [visibleCount, setVisibleCount] = useState(24)
+  const q = (resolved.q || '').trim()
+  const deity = (resolved.deity || '').trim()
+  const language = (resolved.language || '').trim()
+  const subcategory = (resolved.subcategory || '').trim()
+  const sort = normalizeDevotionalSort(resolved.sort)
+  const page = Math.max(1, parseInt(resolved.page || '1', 10) || 1)
 
-  useEffect(() => {
-    let cancelled = false
-    async function load() {
-      try {
-        const params = new URLSearchParams({ page: '1', limit: '60' })
-        params.set('categorySlug', categorySlug)
-        if (categoryInfo?.id) params.set('category', categoryInfo.id)
-        const res = await fetch(`/api/devotionals?${params.toString()}`, { cache: 'no-store' })
-        if (!res.ok) return
-        const data = await res.json()
-        if (!cancelled) {
-          const items = Array.isArray(data) ? data : (data.items || data.data || [])
-          const approved = items.filter((item: Devotional) => item.status === 'approved' || !item.status)
-          setAllDevotionals(approved)
-        }
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
-    }
-    load()
-    return () => { cancelled = true }
-  }, [])
+  let devotionals: DevotionalCardRecord[] = []
+  let total = 0
+  let pages = 1
+  let deities: DevotionalFacet[] = []
+  let languages: DevotionalFacet[] = []
+  let subcategories: DevotionalFacet[] = []
+  let siblings: DevotionalFacet[] = []
+  let failed = false
 
-  const categoryDevotionals = useMemo(
-    () => allDevotionals.filter((devotional) => matchesCategory(devotional, categorySlug)),
-    [allDevotionals, categorySlug]
-  )
-
-  const deityCounts = useMemo(() => {
-    const counts = new Map<string, number>()
-    categoryDevotionals.forEach((devotional) => {
-      if (!devotional.deity) return
-      counts.set(devotional.deity, (counts.get(devotional.deity) || 0) + 1)
-    })
-    return Array.from(counts.entries()).sort((a, b) => b[1] - a[1])
-  }, [categoryDevotionals])
-
-  const deityChips = useMemo(() => [
-    { id: 'all', label: 'All Deities', meta: categoryDevotionals.length },
-    ...deityCounts.map(([deity, count]) => ({ id: deity, label: deity, meta: count })),
-  ], [categoryDevotionals.length, deityCounts])
-
-  const subcategoryCounts = useMemo(() => {
-    if (categoryInfo?.id !== 'Aarti') return []
-    const counts = new Map<string, number>()
-    categoryDevotionals.forEach((devotional) => {
-      if (!devotional.subcategory) return
-      counts.set(devotional.subcategory, (counts.get(devotional.subcategory) || 0) + 1)
-    })
-    return Array.from(counts.entries()).sort((a, b) => b[1] - a[1])
-  }, [categoryDevotionals, categoryInfo?.id])
-
-  const subcategoryChips = useMemo(() => {
-    if (categoryInfo?.id !== 'Aarti') return []
-    const aartiCategory = FULL_CATEGORIES.find((cat) => cat.id === 'Aarti')
-    if (!aartiCategory?.subcategories) return []
-    return [
-      { id: 'all', label: 'सब (All)', meta: categoryDevotionals.length },
-      ...aartiCategory.subcategories.map((sub) => ({
-        id: sub.id,
-        label: sub.label,
-        meta: subcategoryCounts.find(([id]) => id === sub.id)?.[1] || 0,
-      })),
-    ]
-  }, [categoryDevotionals.length, subcategoryCounts, categoryInfo?.id])
-
-  const filtered = useMemo(() => {
-    const term = search.trim().toLowerCase()
-    return categoryDevotionals.filter((devotional) => {
-      if (selectedDeity !== 'all' && devotional.deity !== selectedDeity) return false
-      if (categoryInfo?.id === 'Aarti' && selectedSubcategory !== 'all' && devotional.subcategory !== selectedSubcategory) return false
-      if (!term) return true
-      return [devotional.title, devotional.description, devotional.deity, devotional.language, devotional.artist]
-        .filter(Boolean)
-        .some((value) => value!.toLowerCase().includes(term))
-    })
-  }, [categoryDevotionals, search, selectedDeity, selectedSubcategory, categoryInfo?.id])
-
-  const sorted = useMemo(() => {
-    const list = [...filtered]
-    if (sort === 'audio') return list.sort((a, b) => Number(Boolean(b.audio)) - Number(Boolean(a.audio)))
-    if (sort === 'newest') return list.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
-    if (sort === 'az') return list.sort((a, b) => (a.title || '').localeCompare(b.title || ''))
-    return list.sort((a, b) =>
-      Number(Boolean(b.audio)) - Number(Boolean(a.audio)) ||
-      Number(Boolean(b.duration)) - Number(Boolean(a.duration)) ||
-      new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
-    )
-  }, [filtered, sort])
-
-  useEffect(() => setVisibleCount(24), [categorySlug, search, selectedDeity, selectedSubcategory, sort])
-
-  const popular = useMemo(() => sorted.slice(0, 6), [sorted])
-  const relatedCategories = useMemo(() => {
-    return FULL_CATEGORIES
-      .filter((category) => !EXCLUDED_CATEGORY_IDS.has(category.id) && categoryToSlug(category.id) !== categorySlug)
-      .slice(0, 6)
-  }, [categorySlug])
-
-  const groupedByDeity = useMemo(() => {
-    return deityCounts.slice(0, 8).map(([deity]) => ({
-      deity,
-      items: categoryDevotionals.filter((item) => item.deity === deity).slice(0, 4),
-    }))
-  }, [categoryDevotionals, deityCounts])
-
-  const itemListJsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'ItemList',
-    name: `${label} Devotionals`,
-    itemListElement: sorted.slice(0, 24).map((item, index) => ({
-      '@type': 'ListItem',
-      position: index + 1,
-      name: item.title,
-      url: `https://sarvdev.com${getDevotionalHref(item)}`,
-    })),
+  try {
+    const [results, deityRows, languageRows, subcategoryRows, categoryRows] = await Promise.all([
+      findDevotionals({ q, categorySlug, deity, language, subcategory, sort, page, pageSize: PAGE_SIZE }),
+      deityFacets(24, { categorySlug }),
+      languageFacets(),
+      subcategoryFacets(categorySlug),
+      categoryFacets(),
+    ])
+    devotionals = results.devotionals
+    total = results.total
+    pages = results.pages
+    deities = deityRows
+    languages = languageRows
+    subcategories = subcategoryRows
+    siblings = categoryRows
+  } catch {
+    failed = true
   }
 
-  const breadcrumbJsonLd = {
+  const basePath = `/devotionals/category/${categorySlug}`
+  const baseParams: Record<string, string> = {}
+  if (q) baseParams.q = q
+  if (deity) baseParams.deity = deity
+  if (language) baseParams.language = language
+  if (subcategory) baseParams.subcategory = subcategory
+  if (sort !== 'featured') baseParams.sort = sort
+
+  const toOption = (row: DevotionalFacet): LibraryOption => ({
+    value: row.value,
+    label: row.label,
+    count: row.count,
+  })
+
+  function subcategoryHref(value: string) {
+    const next = new URLSearchParams(baseParams)
+    if (value) next.set('subcategory', value)
+    else next.delete('subcategory')
+    next.delete('page')
+    const search = next.toString()
+    return search ? `${basePath}?${search}` : basePath
+  }
+
+  const itemListLd = {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: `${label} devotionals on Sarvdev`,
+    numberOfItems: devotionals.length,
+    itemListElement: devotionals.map((devotional, index) => ({
+      '@type': 'ListItem',
+      position: (page - 1) * PAGE_SIZE + index + 1,
+      name: devotional.title,
+      url: `${BASE_URL}${devotionalHref(devotional)}`,
+    })),
+  }
+  const breadcrumbLd = {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
-      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://sarvdev.com' },
-      { '@type': 'ListItem', position: 2, name: 'Devotionals', item: 'https://sarvdev.com/devotionals' },
-      { '@type': 'ListItem', position: 3, name: label, item: `https://sarvdev.com/devotionals/category/${categorySlug}` },
+      { '@type': 'ListItem', position: 1, name: 'Home', item: BASE_URL },
+      { '@type': 'ListItem', position: 2, name: 'Devotionals', item: `${BASE_URL}/devotionals` },
+      { '@type': 'ListItem', position: 3, name: label, item: `${BASE_URL}${basePath}` },
     ],
-  }
-
-  if (loading) {
-    return (
-      <main className="min-h-screen bg-surface">
-        <div className="h-80 animate-pulse bg-stone-900" />
-        <div className="page-container py-12">
-          <div className="grid gap-5 md:grid-cols-3">
-            {Array.from({ length: 6 }).map((_, index) => <div key={index} className="h-72 rounded-2xl bg-stone-100" />)}
-          </div>
-        </div>
-      </main>
-    )
   }
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
+      {devotionals.length > 0 && (
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListLd) }} />
+      )}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }} />
 
-      <CategoryHero
-        label={label}
-        hindi={categoryInfo?.hindi}
-        description={description}
-        count={categoryDevotionals.length}
-        deityCount={deityCounts.length}
-        audioCount={categoryDevotionals.filter((item) => item.audio).length}
+      <header className="border-b border-surface-border py-section-sm">
+        <div className="page-container max-w-3xl">
+          <nav aria-label="Breadcrumb" className="text-caption text-ink-muted">
+            <Link href="/devotionals" className="no-underline hover:text-primary-700">Bhakti Library</Link>
+            <span className="px-2">/</span>
+            <span>{label}</span>
+          </nav>
+          <h1 className="mt-3 font-display text-display-sm text-secondary-800">{label}</h1>
+          {categoryInfo?.hindi && (
+            <p className="mt-1 font-devanagari text-h3 text-ink-muted">{categoryInfo.hindi}</p>
+          )}
+          <p className="mt-4 text-body text-ink-muted">{description}</p>
+        </div>
+      </header>
+
+      <DevotionalLibraryControls
+        basePath={basePath}
+        filters={{ q, category: label, deity, language, sort }}
+        categories={[]}
+        deities={deities.map(toOption)}
+        languages={languages.map(toOption)}
+        lockedCategory
+        extraParams={subcategory ? { subcategory } : undefined}
+        searchPlaceholder={`Search within ${label}`}
       />
 
-      <main className="min-h-screen bg-surface pb-16">
-        <div className="sticky top-0 z-30 border-b border-amber-200/60 bg-surface/90 backdrop-blur-xl">
-          <div className="page-container flex gap-2 overflow-x-auto py-3 scrollbar-none">
-            {FULL_CATEGORIES.filter((category) => !EXCLUDED_CATEGORY_IDS.has(category.id)).map((category) => {
-              const slug = categoryToSlug(category.id)
-              return (
-                <Link
-                  key={category.id}
-                  href={`/devotionals/category/${slug}`}
-                  className="category-pill whitespace-nowrap no-underline hover:no-underline"
-                  data-active={slug === categorySlug ? 'true' : 'false'}
-                >
-                  {category.label}
-                </Link>
-              )
-            })}
+      <main className="page-container py-section-sm">
+        {subcategories.length > 0 && (
+          <div className="mb-8 flex flex-wrap gap-x-5 gap-y-2 border-b border-surface-border pb-5 text-body-sm">
+            <Link
+              href={subcategoryHref('')}
+              className={`no-underline ${subcategory ? 'text-ink-muted hover:text-primary-700' : 'font-semibold text-primary-700'}`}
+            >
+              All
+            </Link>
+            {subcategories.map((row) => (
+              <Link
+                key={row.value}
+                href={subcategoryHref(row.value)}
+                className={`font-devanagari no-underline ${subcategory === row.value ? 'font-semibold text-primary-700' : 'text-ink-muted hover:text-primary-700'}`}
+              >
+                {row.label} <span className="text-caption text-ink-faint">{row.count}</span>
+              </Link>
+            ))}
           </div>
-        </div>
+        )}
 
-        <div className="page-container space-y-14 py-12">
-          <section className="rounded-3xl border border-amber-200 bg-white p-6 shadow-sm md:p-8">
-            <div className="grid gap-6 lg:grid-cols-[1fr_22rem]">
-              <div>
-                <p className="text-xs font-black uppercase tracking-[0.18em] text-orange-700">Category Guide</p>
-                <h2 className="mt-1 text-3xl font-black text-stone-950">{getCategoryPracticeTitle(label)}</h2>
-                <p className="mt-3 max-w-3xl text-base leading-8 text-stone-600">
-                  {description} Use the filters below to find deity-specific versions, audio-ready entries and readable lyrics for home puja or daily chanting.
-                </p>
-              </div>
-              <div className="rounded-2xl bg-orange-50 p-5">
-                <p className="text-sm font-black text-stone-900">SEO focus</p>
-                <p className="mt-2 text-sm leading-6 text-stone-600">
-                  {label} lyrics, {label.toLowerCase()} audio, Hindi and Sanskrit devotional reading, and deity-wise discovery.
-                </p>
-              </div>
-            </div>
-          </section>
+        {failed ? (
+          <div className="border border-surface-border bg-surface-raised p-8 text-center">
+            <h2 className="font-display text-h3 text-secondary-800">This collection is unavailable right now</h2>
+            <p className="mt-2 text-body-sm text-ink-muted">Please refresh in a moment.</p>
+          </div>
+        ) : devotionals.length === 0 ? (
+          <div className="border border-surface-border bg-surface-raised p-8 text-center">
+            <h2 className="font-display text-h3 text-secondary-800">No {label} texts match this search</h2>
+            <Link href={basePath} className="mt-4 inline-flex text-body-sm font-semibold text-primary-700 no-underline hover:text-maroon">
+              Show all {label}
+            </Link>
+          </div>
+        ) : (
+          <>
+            <p className="text-body-sm text-ink-muted">
+              {total} {total === 1 ? 'text' : 'texts'}
+              {subcategory ? ` in ${subcategory}` : ''}
+              {deity ? ` for ${deity}` : ''}
+              {q ? ` matching “${q}”` : ''}
+              {pages > 1 ? ` · page ${page} of ${pages}` : ''}
+            </p>
 
-          <section className="space-y-5">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-              <div>
-                <p className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.18em] text-orange-700">
-                  <Filter className="h-4 w-4" />
-                  Filters
-                </p>
-                <h2 className="mt-1 text-2xl font-black text-stone-950">Refine {label}</h2>
-              </div>
-              <div className="flex flex-col gap-3 sm:flex-row">
-                <label className="relative min-w-[18rem]">
-                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
-                  <input
-                    value={search}
-                    onChange={(event) => setSearch(event.target.value)}
-                    className="input bg-white pl-10"
-                    placeholder={`Search ${label.toLowerCase()}...`}
-                  />
-                </label>
-                <select value={sort} onChange={(event) => setSort(event.target.value as SortKey)} className="input w-auto bg-white">
-                  <option value="popular">Popular first</option>
-                  <option value="audio">Audio first</option>
-                  <option value="newest">Newest first</option>
-                  <option value="az">A to Z</option>
-                </select>
-              </div>
-            </div>
-
-            {deityChips.length > 1 && (
-              <DevotionalFilterChips chips={deityChips} activeId={selectedDeity} onChange={setSelectedDeity} ariaLabel={`Filter ${label} by deity`} />
-            )}
-
-            {subcategoryChips.length > 0 && (
-              <DevotionalFilterChips chips={subcategoryChips} activeId={selectedSubcategory} onChange={setSelectedSubcategory} ariaLabel={`Filter ${label} by subcategory`} />
-            )}
-          </section>
-
-          {popular.length > 0 && (
-            <section>
-              <SectionTitle title={categorySlug === 'aarti' ? 'Popular Aartis' : `Popular ${label}`} subtitle="Prioritized by audio availability, freshness and completeness." />
-              <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-                {popular.map((devotional) => <DevotionalCardPremium key={devotional._id} devotional={devotional} featured />)}
-              </div>
-            </section>
-          )}
-
-          <section>
-            <SectionTitle title={`All ${label}`} subtitle={`${sorted.length} result${sorted.length === 1 ? '' : 's'} after filters.`} />
-            {sorted.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-amber-300 bg-white p-10 text-center">
-                <Library className="mx-auto h-10 w-10 text-stone-400" />
-                <h3 className="mt-3 text-xl font-black text-stone-900">No entries found</h3>
-                <p className="mt-2 text-stone-600">Try another deity or clear the search text.</p>
-                <button type="button" onClick={() => { setSearch(''); setSelectedDeity('all') }} className="btn btn-primary mt-5">Reset filters</button>
-              </div>
-            ) : (
-              <>
-                <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-                  {sorted.slice(0, visibleCount).map((devotional) => <DevotionalCardPremium key={devotional._id} devotional={devotional} />)}
-                </div>
-                {sorted.length > visibleCount && (
-                  <div className="mt-10 text-center">
-                    <button type="button" onClick={() => setVisibleCount((count) => count + 24)} className="btn btn-outline bg-white">
-                      Load more
-                      <span className="text-stone-500">({sorted.length - visibleCount} left)</span>
-                    </button>
-                  </div>
-                )}
-              </>
-            )}
-          </section>
-
-          {groupedByDeity.length > 0 && (
-            <section>
-              <SectionTitle title={`${label} by Deity`} subtitle="Dynamic deity grouping across this category." />
-              <div className="grid gap-5 lg:grid-cols-2">
-                {groupedByDeity.map((group) => (
-                  <div key={group.deity} className="rounded-2xl border border-amber-200 bg-white p-5 shadow-sm">
-                    <h3 className="mb-4 text-lg font-black text-stone-900">{group.deity} {label}</h3>
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      {group.items.map((item) => <DevotionalCardPremium key={item._id} devotional={item} compact />)}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-          )}
-
-          <section>
-            <SectionTitle title="Related Categories" subtitle="Continue exploring other devotional forms." />
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {relatedCategories.map((category) => (
-                <Link key={category.id} href={`/devotionals/category/${categoryToSlug(category.id)}`} className="rounded-2xl border border-amber-200 bg-white p-5 no-underline shadow-sm transition hover:-translate-y-0.5 hover:border-orange-300 hover:text-orange-800 hover:shadow-md">
-                  <p className="text-xs font-black uppercase tracking-wide text-orange-700">Category</p>
-                  <h3 className="mt-1 text-xl font-black text-stone-900">{category.label}</h3>
-                  {category.hindi && <p className="font-devanagari text-stone-500">{category.hindi}</p>}
-                  <p className="mt-2 text-sm leading-6 text-stone-600">{category.description}</p>
-                </Link>
+            <div className="mt-7 grid gap-x-8 gap-y-8 sm:grid-cols-2 lg:grid-cols-3">
+              {devotionals.map((devotional) => (
+                <DevotionalCard key={devotional._id} devotional={devotional} />
               ))}
             </div>
-          </section>
-        </div>
-      </main>
-    </>
-  )
-}
 
-function SectionTitle({ title, subtitle }: { title: string; subtitle?: string }) {
-  return (
-    <div className="mb-6">
-      <p className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.18em] text-orange-700">
-        <Sparkles className="h-4 w-4" />
-        Collection
-      </p>
-      <h2 className="mt-1 text-3xl font-black tracking-normal text-stone-950">{title}</h2>
-      {subtitle && <p className="mt-2 text-sm leading-6 text-stone-600">{subtitle}</p>}
-    </div>
+            <DevotionalPagination basePath={basePath} params={baseParams} page={page} pages={pages} />
+          </>
+        )}
+      </main>
+
+      {siblings.length > 0 && (
+        <section className="border-t border-surface-border bg-surface-raised py-section-sm">
+          <div className="page-container">
+            <p className="text-overline font-semibold uppercase tracking-[0.14em] text-primary">Continue reading</p>
+            <h2 className="mt-2 font-display text-h1 text-secondary-800">Other devotional forms</h2>
+            <ul className="mt-8 grid gap-x-10 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
+              {siblings
+                .filter((row) => slugifyDevotionalText(row.value) !== categorySlug)
+                .map((row) => (
+                  <li key={row.value} className="border-b border-surface-border pb-3">
+                    <Link
+                      href={`/devotionals/category/${slugifyDevotionalText(row.value)}`}
+                      className="group flex items-baseline justify-between gap-4 no-underline hover:no-underline"
+                    >
+                      <span className="text-body text-secondary-800 transition-colors group-hover:text-primary-700">
+                        {row.label}
+                      </span>
+                      <span className="shrink-0 text-caption text-ink-muted">{row.count}</span>
+                    </Link>
+                  </li>
+                ))}
+            </ul>
+          </div>
+        </section>
+      )}
+    </>
   )
 }

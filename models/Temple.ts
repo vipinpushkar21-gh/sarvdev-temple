@@ -1,5 +1,6 @@
 // models/Temple.ts
 import mongoose, { Schema, Model, models } from 'mongoose';
+import { MediaAssetSchema } from './shared/MediaAssetSchema';
 import {
   TEMPLE_DATA_QUALITY_VALUES,
   buildTempleUniqueKey,
@@ -34,6 +35,11 @@ const TempleSchema = new Schema({
 
   // ── Media ──
   primaryImage: { type: String },
+  primaryMedia: { type: MediaAssetSchema },
+  cardMedia: { type: MediaAssetSchema },
+  heroMedia: { type: MediaAssetSchema },
+  ogMedia: { type: MediaAssetSchema },
+  galleryMedia: { type: [MediaAssetSchema], default: [] },
   image: { type: String },
   imageCard: { type: String },
   imageHero: { type: String },
@@ -196,6 +202,7 @@ const TempleSchema = new Schema({
   verified: { type: String, enum: ['verified', 'not-verified'], default: 'not-verified' },
   submittedBy: { type: String },
   submitterEmail: { type: String },
+  source: { type: String, enum: ['admin', 'community', 'imported', 'legacy'], default: 'admin', index: true },
   moderationNotes: { type: String },
   reviewedAt: { type: Date },
   createdAt: { type: Date, default: Date.now },

@@ -40,6 +40,9 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     || icon.fullBio
     || `Explore ${icon.name}${icon.title ? `, ${icon.title}` : ''} on Sarvdev.`
   const image = getTempleHeroImage({
+    heroMedia: icon.heroMedia,
+    primaryMedia: icon.primaryMedia,
+    cardMedia: icon.cardMedia,
     imageHero: icon.ogImage || icon.imageHero || icon.imageCard || icon.image || '',
     image: icon.ogImage || icon.imageHero || icon.imageCard || icon.image || '',
   }).src

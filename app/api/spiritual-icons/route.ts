@@ -1,11 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { connectDB } from '@/lib/db'
-import {
-  filterSpiritualIcons,
-  getStaticSpiritualIconsForSeed,
-  normalizeSpiritualIcon,
-  resolveSpiritualIconCategorySlug,
-} from '@/lib/spiritual-icons'
+import { normalizeSpiritualIcon, resolveSpiritualIconCategorySlug } from '@/lib/spiritual-icons'
 import SpiritualIcon from '@/models/SpiritualIcon'
 import { buildCursorFilter, paginateCursor, parseCursorLimit, SPIRITUAL_ICON_CARD_PROJ } from '@/lib/cursor-pagination'
 
@@ -89,9 +84,6 @@ export async function GET(req: NextRequest) {
         SpiritualIcon.countDocuments(filter),
       ])
       records = items
-      if (records.length === 0 && total === 0 && !hasFilters) {
-        records = getStaticSpiritualIconsForSeed().slice(skip, skip + limit)
-      }
       const normalized = records.map(normalizeSpiritualIcon)
       return NextResponse.json({
         items: normalized,
@@ -111,16 +103,12 @@ export async function GET(req: NextRequest) {
         .sort({ featured: -1, priority: 1, name: 1 })
         .limit(limit)
         .lean()
-      if (records.length === 0) {
-        records = filterSpiritualIcons(getStaticSpiritualIconsForSeed(), searchParams).slice(0, limit)
-      }
       if (!hasFilters) cache = { data: records, ts: Date.now() }
     }
 
     const normalized = records.map(normalizeSpiritualIcon)
-    return NextResponse.json(filterSpiritualIcons(normalized, searchParams).slice(0, limit), { headers: { 'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=1200' } })
+    return NextResponse.json(normalized, { headers: { 'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=1200' } })
   } catch (error) {
-    const fallback = filterSpiritualIcons(getStaticSpiritualIconsForSeed(), new URL(req.url).searchParams)
-    return NextResponse.json(fallback.slice(0, DEFAULT_LIMIT))
+    return NextResponse.json({ error: 'Unable to load Spiritual Icons.' }, { status: 503 })
   }
 }

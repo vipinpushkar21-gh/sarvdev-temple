@@ -1,118 +1,25 @@
 "use client"
 
-import React, { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useTranslation } from '../lib/translation'
-
-type PanchangData = {
-  date: string
-  sun: { sunrise: string; sunset: string }
-  tithi?: string
-  nakshatra?: string
-  yoga?: string
-  karana?: string
-}
+import { getCalendarDateInTimeZone, type PanchangApiResponse } from '../lib/panchang/providers/types'
 
 export default function PanchangToday() {
   const { language } = useTranslation()
-  const [data, setData] = useState<PanchangData | null>(null)
-  const [loading, setLoading] = useState(true)
-  const tz = useMemo(() => Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Kolkata', [])
+  const [response, setResponse] = useState<PanchangApiResponse | null>(null)
 
   useEffect(() => {
-    const today = new Date().toISOString().slice(0, 10)
-    const params = new URLSearchParams({
-      date: today,
-      lat: '28.6139',
-      lon: '77.2090',
-      tz,
-      lang: language,
-      city: 'Delhi',
-    })
+    const params = new URLSearchParams({ date: getCalendarDateInTimeZone('Asia/Kolkata'), lat: '28.6139', lon: '77.2090', tz: 'Asia/Kolkata', lang: language, city: 'Delhi' })
     fetch(`/api/panchang?${params.toString()}`, { cache: 'no-store' })
-      .then((r) => r.json())
-      .then(setData)
-      .catch(console.error)
-      .finally(() => setLoading(false))
-  }, [language, tz])
+      .then(async (result) => setResponse(await result.json() as PanchangApiResponse))
+      .catch(() => setResponse({ status: 'unavailable', message: 'Panchang calculations are temporarily unavailable.' }))
+  }, [language])
 
-  if (loading) {
-    return (
-      <section className="section-sm">
-        <div className="page-container">
-          <div className="card p-6 animate-pulse">
-            <div className="h-5 bg-secondary-100 rounded w-48 mb-5" />
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="h-20 bg-surface-sunken rounded-xl" />
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-    )
-  }
+  if (!response) return null
+  if (response.status !== 'success') return <section className="section-sm"><div className="page-container"><div className="rounded-2xl border border-amber-100 bg-white p-5 text-body-sm text-gray-600"><p className="font-semibold text-gray-900">{language === 'hi' ? 'पंचांग गणना अस्थायी रूप से उपलब्ध नहीं है।' : 'Panchang calculations are temporarily unavailable.'}</p><Link href="/panchang" className="mt-2 inline-block text-body-sm font-semibold text-primary no-underline hover:underline">{language === 'hi' ? 'पंचांग देखें' : 'Visit Panchang'}</Link></div></div></section>
 
-  if (!data) return null
-
-  const icons = ['🌙', '⭐', '🕉️', '📿', '🌅', '🌇']
-  const items = [
-    { label: language === 'hi' ? 'तिथि' : 'Tithi', value: data.tithi },
-    { label: language === 'hi' ? 'नक्षत्र' : 'Nakshatra', value: data.nakshatra },
-    { label: language === 'hi' ? 'योग' : 'Yoga', value: data.yoga },
-    { label: language === 'hi' ? 'करण' : 'Karana', value: data.karana },
-    { label: language === 'hi' ? 'सूर्योदय' : 'Sunrise', value: data.sun?.sunrise },
-    { label: language === 'hi' ? 'सूर्यास्त' : 'Sunset', value: data.sun?.sunset },
-  ]
-
-  return (
-    <section className="section-sm">
-      <div className="page-container">
-        <div className="border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
-          <div className="p-6 md:p-8">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <p className="text-overline uppercase tracking-[0.12em] text-gray-400 mb-1">
-                  {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}
-                </p>
-                <h2 className="text-h2 font-serif text-gray-900">
-                  {language === 'hi' ? 'आज का पंचांग' : "Today's Panchang"}
-                </h2>
-              </div>
-              <Link
-                href="/panchang"
-                className="hidden sm:inline-flex items-center gap-1.5 text-body-sm font-semibold text-gray-900 border-b-2 border-gray-900 hover:border-primary hover:text-primary transition-colors duration-200 no-underline hover:no-underline"
-              >
-                {language === 'hi' ? 'पूरा पंचांग' : 'Full Panchang'}
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" /></svg>
-              </Link>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
-              {items.map((item, idx) => (
-                <div
-                  key={item.label}
-                  className="p-4 rounded-xl bg-gray-50 border border-gray-100 hover:border-gray-200 hover:bg-white transition-all duration-200 text-center"
-                >
-                  <span className="text-xl mb-2 block">{icons[idx]}</span>
-                  <p className="text-overline text-gray-400 mb-1 uppercase tracking-wider">{item.label}</p>
-                  <p className="text-body-sm font-semibold text-gray-900 truncate">{item.value || '–'}</p>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-4 sm:hidden">
-              <Link
-                href="/panchang"
-                className="inline-flex items-center gap-1.5 text-body-sm font-semibold text-gray-900 border-b-2 border-gray-900 hover:border-primary hover:text-primary transition-colors no-underline hover:no-underline"
-              >
-                {language === 'hi' ? 'पूरा पंचांग देखें' : 'View Full Panchang'}
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" /></svg>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  )
+  const data = response.data
+  const items = [['Tithi', data.tithi], ['Nakshatra', data.nakshatra], ['Sunrise', data.sunrise], ['Sunset', data.sunset]].filter((item): item is [string, string] => Boolean(item[1]?.trim()))
+  return <section className="section-sm"><div className="page-container"><div className="rounded-2xl border border-gray-100 p-6 shadow-sm"><div className="flex items-center justify-between gap-4"><div><p className="text-overline uppercase tracking-[0.12em] text-gray-400">{data.date} · {data.location.label || 'Delhi'}</p><h2 className="mt-1 text-h2 font-serif text-gray-900">{language === 'hi' ? 'आज का पंचांग' : "Today's Panchang"}</h2></div><Link href="/panchang" className="text-body-sm font-semibold text-primary no-underline hover:underline">{language === 'hi' ? 'पूरा पंचांग' : 'Full Panchang'}</Link></div>{items.length ? <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">{items.map(([label, value]) => <div key={label} className="rounded-xl border border-gray-100 bg-gray-50 p-4 text-center"><p className="text-overline text-gray-400">{label}</p><p className="mt-1 text-body-sm font-semibold text-gray-900">{value}</p></div>)}</div> : null}</div></div></section>
 }

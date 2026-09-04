@@ -18,6 +18,8 @@ export type BlogLike = {
   readingTime?: number
 }
 
+import { normalizeMediaAsset } from './media-asset'
+
 export const PUBLIC_BLOG_STATUSES = new Set(['published', 'approved'])
 export const ADMIN_BLOG_STATUSES = ['draft', 'published', 'archived'] as const
 
@@ -123,9 +125,13 @@ export function prepareBlogPayload(input: Record<string, any>) {
     author: String(input.author || 'Sarvdev Editorial').trim(),
     authorRole: String(input.authorRole || 'Editorial Team').trim(),
     image: String(input.image || input.imageCard || input.imageHero || '').trim(),
+    primaryMedia: normalizeMediaAsset(input.primaryMedia, 'blog-photo') ?? null,
     imageCard: String(input.imageCard || '').trim(),
+    cardMedia: normalizeMediaAsset(input.cardMedia, 'blog-photo') ?? null,
     imageHero: String(input.imageHero || '').trim(),
+    heroMedia: normalizeMediaAsset(input.heroMedia, 'blog-photo') ?? null,
     ogImage: String(input.ogImage || '').trim(),
+    ogMedia: normalizeMediaAsset(input.ogMedia, 'blog-photo') ?? null,
     featured: Boolean(input.featured),
     status,
     date: input.date || (publishedAt ? new Date(publishedAt).toISOString().slice(0, 10) : ''),

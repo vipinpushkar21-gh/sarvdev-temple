@@ -21,11 +21,13 @@ export function AdminPageHeader({
   eyebrow,
   title,
   subtitle,
+  status,
   actions,
 }: {
   eyebrow?: string
   title: string
   subtitle?: string
+  status?: 'healthy' | 'attention'
   actions?: ReactNode
 }) {
   return (
@@ -33,7 +35,12 @@ export function AdminPageHeader({
       <div className="min-w-0">
         {eyebrow && <p className="admin-eyebrow">{eyebrow}</p>}
         <h1 className="admin-page-title">{title}</h1>
-        {subtitle && <p className="admin-section-subtitle max-w-3xl">{subtitle}</p>}
+        {subtitle && (
+          <p className="admin-section-subtitle admin-command-status max-w-3xl">
+            {status && <span className={`admin-status-dot ${status}`} aria-hidden="true" />}
+            {subtitle}
+          </p>
+        )}
       </div>
       {actions && <div className="admin-page-actions">{actions}</div>}
     </div>

@@ -1,13 +1,19 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { connectDB } from '@/lib/db'
-import Temple from '@/models/Temple'
-import SarvdevImage from '@/components/SarvdevImage'
-import { getTempleCardImage } from '@/lib/temple-image'
+import {
+  findTemples,
+  statesInPlace,
+  templeHref,
+  type PlaceCount,
+  type TempleCardRecord,
+} from '@/lib/temple-discovery'
+import { normalizeTempleText } from '@/lib/temple-normalization'
+import TempleCollection, { type FacetGroup } from '../../components/TempleCollection'
 
 export const revalidate = 3600
 
 const BASE = 'https://sarvdev.com'
+const PAGE_SIZE = 24
 
 function slugify(text: string) {
   return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
@@ -64,8 +70,16 @@ export async function generateMetadata(
   }
 }
 
-export default async function RegionalTemplesPage({ params }: { params: Promise<{ region: string }> }) {
+export default async function RegionalTemplesPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ region: string }>
+  searchParams: Promise<{ page?: string }>
+}) {
   const { region } = await params
+  const { page: pageParam } = await searchParams
+  const page = Math.max(1, parseInt(pageParam || '1', 10) || 1)
   const r = REGIONS[region]
 
   if (!r) {
@@ -77,25 +91,34 @@ export default async function RegionalTemplesPage({ params }: { params: Promise<
     )
   }
 
-  let temples: any[] = []
+  let temples: TempleCardRecord[] = []
+  let total = 0
+  let pages = 1
+  let states: PlaceCount[] = []
+
   try {
-    await connectDB()
-    const statePattern = r.states.map(s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')
-    temples = await Temple.find(
-      { status: 'approved', state: { $regex: new RegExp(statePattern, 'i') } },
-      'title description image city state deity'
-    ).lean() as any[]
-  } catch (e) {
-    console.error('Regional temples error:', e)
+    const [results, stateRows] = await Promise.all([
+      findTemples({ states: r.states, sort: 'place', page, pageSize: PAGE_SIZE }),
+      statesInPlace({ stateNormalized: { $in: r.states.map((state) => normalizeTempleText(state)) } }, 40),
+    ])
+    temples = results.temples
+    total = results.total
+    pages = results.pages
+    states = stateRows
+  } catch (error) {
+    console.error('Regional temples error:', error)
   }
 
-  const stateGroups: Record<string, any[]> = {}
-  for (const t of temples) {
-    const st = t.state || 'Other'
-    if (!stateGroups[st]) stateGroups[st] = []
-    stateGroups[st].push(t)
-  }
-  const sortedStates = Object.entries(stateGroups).sort((a, b) => b[1].length - a[1].length)
+  const facets: FacetGroup[] = [
+    {
+      title: 'States in this region',
+      links: states.map((row) => ({
+        href: `/temples/state/${slugify(row.name)}`,
+        label: row.name,
+        count: row.count,
+      })),
+    },
+  ]
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -105,12 +128,12 @@ export default async function RegionalTemplesPage({ params }: { params: Promise<
     url: `${BASE}/temples/region/${region}`,
     mainEntity: {
       '@type': 'ItemList',
-      numberOfItems: temples.length,
-      itemListElement: temples.slice(0, 50).map((t: any, i: number) => ({
+      numberOfItems: total,
+      itemListElement: temples.map((temple, index) => ({
         '@type': 'ListItem',
-        position: i + 1,
-        name: t.title,
-        url: `${BASE}/temples/${slugify(t.title)}`,
+        position: (page - 1) * PAGE_SIZE + index + 1,
+        name: temple.title,
+        url: `${BASE}${templeHref(temple)}`,
       })),
     },
     breadcrumb: {
@@ -126,83 +149,35 @@ export default async function RegionalTemplesPage({ params }: { params: Promise<
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-
-      <section className="bg-gradient-to-br from-primary-50 via-surface to-accent-50/30 border-b border-surface-border">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
-          <nav className="flex items-center gap-2 text-body-sm text-ink-muted mb-6">
-            <Link href="/" className="hover:text-primary-600 transition-colors no-underline">Home</Link>
-            <span>/</span>
-            <Link href="/temples" className="hover:text-primary-600 transition-colors no-underline">Temples</Link>
-            <span>/</span>
-            <span className="text-ink font-medium">{r.title}</span>
-          </nav>
-          <h1 className="text-display font-serif text-secondary-800 mb-2">{r.title}</h1>
-          <p className="text-body-sm font-medium text-primary-700 mb-3">{r.titleHi}</p>
-          <p className="text-body text-ink-muted max-w-2xl">{r.description}</p>
-          <p className="mt-4 text-body-sm text-ink-faint">
-            <strong className="text-ink">{temples.length}</strong> temples across <strong className="text-ink">{sortedStates.length}</strong> states
+      <TempleCollection
+        breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'Temples', href: '/temples' }, { label: r.title }]}
+        overline="Sacred atlas · Region"
+        title={r.title}
+        intro={r.description}
+        temples={temples}
+        total={total}
+        page={page}
+        pages={pages}
+        pageHref={(next) => (next > 1 ? `/temples/region/${region}?page=${next}` : `/temples/region/${region}`)}
+        facets={facets}
+        emptyMessage="No temples recorded in this region yet"
+      >
+        <section className="mt-14 border-t border-surface-border pt-8">
+          <h2 className="text-overline font-semibold uppercase tracking-[0.14em] text-primary">Other regions</h2>
+          <p className="mt-2.5 text-body-sm leading-loose text-ink-muted">
+            {Object.entries(REGIONS)
+              .filter(([key]) => key !== region)
+              .map(([key, value], index, list) => (
+                <span key={key}>
+                  <Link href={`/temples/region/${key}`} className="text-ink-muted no-underline transition-colors hover:text-primary-700">
+                    {value.title}
+                  </Link>
+                  {index < list.length - 1 ? <span className="px-2 text-ink-faint">·</span> : null}
+                </span>
+              ))}
           </p>
-        </div>
-      </section>
-
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        {/* State navigation */}
-        <section className="mb-10">
-          <h2 className="text-h3 font-serif text-secondary-700 mb-4">States in This Region</h2>
-          <div className="flex flex-wrap gap-2">
-            {sortedStates.map(([state, stTemples]) => (
-              <Link key={state} href={`/temples/state/${slugify(state)}`}
-                className="px-3 py-1.5 rounded-full text-body-sm font-medium border border-surface-border hover:border-primary-300 hover:bg-primary-50 text-ink-muted hover:text-primary-700 transition-all no-underline">
-                {state} ({stTemples.length})
-              </Link>
-            ))}
-          </div>
         </section>
-
-        {/* Temple grid — show top 30 */}
-        {temples.length === 0 ? (
-          <div className="text-center py-16">
-            <p className="text-h3 font-serif text-ink-muted mb-3">No temples found in this region</p>
-            <Link href="/list-temple" className="btn btn-primary no-underline hover:no-underline">Submit Temple</Link>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {temples.slice(0, 30).map((t: any) => (
-              <Link key={t._id.toString()} href={`/temples/${slugify(t.title)}`}
-                className="group card overflow-hidden hover:shadow-md transition-all duration-300 no-underline">
-                <div className="relative h-48 overflow-hidden">
-                  <SarvdevImage
-                    image={getTempleCardImage(t)}
-                    alt={`${t.title}${t.city ? ` in ${t.city}` : ''}${t.state ? `, ${t.state}` : ''}`}
-                    className="absolute inset-0"
-                    imgClassName="object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                  {t.deity && (
-                    <span className="absolute bottom-2 left-2 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-white/90 text-ink backdrop-blur-sm">{t.deity}</span>
-                  )}
-                </div>
-                <div className="p-4">
-                  <h3 className="text-body font-semibold text-ink group-hover:text-primary-700 transition-colors line-clamp-1">{t.title}</h3>
-                  <p className="text-caption text-ink-muted mt-1">{[t.city, t.state].filter(Boolean).join(', ')}</p>
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
-
-        {/* Other regions */}
-        <section className="mt-16 pt-10 border-t border-surface-border">
-          <h2 className="text-h3 font-serif text-secondary-700 mb-4">Explore Other Regions</h2>
-          <div className="flex flex-wrap gap-3">
-            {Object.entries(REGIONS).filter(([k]) => k !== region).map(([k, v]) => (
-              <Link key={k} href={`/temples/region/${k}`}
-                className="px-4 py-2 rounded-xl text-body-sm font-medium border border-surface-border hover:border-primary-300 hover:bg-primary-50 text-ink-muted hover:text-primary-700 transition-all no-underline">
-                {v.title}
-              </Link>
-            ))}
-          </div>
-        </section>
-      </main>
+      </TempleCollection>
     </>
   )
 }

@@ -37,9 +37,10 @@ export default function SarvdevImage({
   }, [image.src, image.srcSet, image.fallback])
 
   const requestedMode = renderMode || image.renderMode || 'auto'
+  const kindRequiresContain = image.kind === 'deity-artwork' || image.kind === 'devotional-artwork' || image.kind === 'icon'
   const prefersFocalSafe = requestedMode === 'focal-safe' || (requestedMode === 'auto' && image.role === 'deityHero')
   const effectiveMode: Exclude<ImageRenderMode, 'auto'> =
-    requestedMode === 'safe-contain' || autoContain
+    requestedMode === 'safe-contain' || kindRequiresContain || autoContain
       ? 'safe-contain'
       : requestedMode === 'cinematic-cover'
         ? 'cinematic-cover'
@@ -50,7 +51,9 @@ export default function SarvdevImage({
   const isContainMode = effectiveMode === 'safe-contain'
   const containPadding = image.role === 'deityHero'
     ? 'clamp(16px, 3vw, 56px) clamp(12px, 2.4vw, 44px) clamp(28px, 5vw, 92px)'
-    : 'clamp(10px, 2.2vw, 32px)'
+    : (image.role === 'blogCard' || image.role === 'blogHero') && !autoContain
+      ? '0px'
+      : 'clamp(10px, 2.2vw, 32px)'
 
   const frameStyle = useMemo(
     () => ({

@@ -6,24 +6,35 @@ import Link from "next/link"
 import ImageUpload from "../../../../../components/ImageUpload"
 import { getCategoryOptions, resolveCanonicalCategoryId } from "../../../../../lib/deity-categories"
 import { compactText } from "../../../../../lib/text-formatting"
+import type { SarvdevMediaAsset } from "../../../../../lib/media-asset"
 
 type FormState = {
   name: string
   nameHi: string
+  slug: string
+  staticSlug: string
+  order: string
   description: string
   descriptionHi: string
   mantra: string
   attributes: string
+  aliases: string
+  slugAliases: string
   categories: string[]
   imageUrl: string
+  primaryMedia: SarvdevMediaAsset | null
   imageCard: string
+  cardMedia: SarvdevMediaAsset | null
   imageHero: string
+  heroMedia: SarvdevMediaAsset | null
   images: string[]
   metaTitle: string
   metaDescription: string
   metaKeywords: string
   ogImage: string
+  ogMedia: SarvdevMediaAsset | null
   status: string
+  source: string
 }
 
 const i = "admin-input w-full"
@@ -46,20 +57,30 @@ export default function AdminEditDeityPage({ params }: { params: Promise<{ id: s
   const [form, setForm] = useState<FormState>({
     name: "",
     nameHi: "",
+    slug: "",
+    staticSlug: "",
+    order: "0",
     description: "",
     descriptionHi: "",
     mantra: "",
     attributes: "",
+    aliases: "",
+    slugAliases: "",
     categories: [],
     imageUrl: "",
+    primaryMedia: null,
     imageCard: "",
+    cardMedia: null,
     imageHero: "",
+    heroMedia: null,
     images: [],
     metaTitle: "",
     metaDescription: "",
     metaKeywords: "",
     ogImage: "",
-    status: "pending"
+    ogMedia: null,
+    status: "pending",
+    source: "manual"
   })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -96,20 +117,30 @@ export default function AdminEditDeityPage({ params }: { params: Promise<{ id: s
           setForm({
             name: deity.name || "",
             nameHi: deity.nameHi || "",
+            slug: deity.slug || "",
+            staticSlug: deity.staticSlug || "",
+            order: String(deity.order ?? 0),
             description: deity.description || "",
             descriptionHi: deity.descriptionHi || "",
             mantra: deity.mantra || "",
             attributes: Array.isArray(deity.attributes) ? deity.attributes.join(', ') : "",
+            aliases: Array.isArray(deity.aliases) ? deity.aliases.join(', ') : "",
+            slugAliases: Array.isArray(deity.slugAliases) ? deity.slugAliases.join(', ') : "",
             categories: selectedCategories,
             imageUrl: deity.image || "",
+            primaryMedia: deity.primaryMedia || null,
             imageCard: deity.imageCard || "",
+            cardMedia: deity.cardMedia || null,
             imageHero: deity.imageHero || "",
+            heroMedia: deity.heroMedia || null,
             images: Array.isArray(deity.images) ? deity.images : [],
             metaTitle: deity.metaTitle || "",
             metaDescription: deity.metaDescription || "",
             metaKeywords: deity.metaKeywords || "",
             ogImage: deity.ogImage || "",
-            status: ['pending', 'approved', 'rejected'].includes(deity.status) ? deity.status : "approved"
+            ogMedia: deity.ogMedia || null,
+            status: ['pending', 'approved', 'rejected'].includes(deity.status) ? deity.status : "approved",
+            source: deity.source || "manual"
           })
         }
       } catch (err) {
@@ -122,7 +153,7 @@ export default function AdminEditDeityPage({ params }: { params: Promise<{ id: s
     fetchDeity()
   }, [params])
 
-  const handleChange = (field: keyof FormState, value: string | string[]) => {
+  const handleChange = <K extends keyof FormState>(field: K, value: FormState[K]) => {
     setForm(prev => ({ ...prev, [field]: value }))
   }
 
@@ -167,20 +198,30 @@ export default function AdminEditDeityPage({ params }: { params: Promise<{ id: s
         id,
         name: form.name,
         nameHi: form.nameHi,
+        slug: form.slug,
+        staticSlug: form.staticSlug,
+        order: Number(form.order) || 0,
         description: form.description,
         descriptionHi: form.descriptionHi,
         mantra: form.mantra,
+        aliases: form.aliases.split(',').map(value => value.trim()).filter(Boolean),
+        slugAliases: form.slugAliases.split(',').map(value => value.trim()).filter(Boolean),
         categories: form.categories,
         metaTitle: form.metaTitle,
         metaDescription: form.metaDescription,
         metaKeywords: form.metaKeywords,
         ogImage: form.ogImage,
+        ogMedia: form.ogMedia,
         status: form.status,
         attributes: form.attributes.split(',').map(a => a.trim()).filter(a => a),
         images: form.images,
         image: form.imageUrl,
+        primaryMedia: form.primaryMedia,
         imageCard: form.imageCard,
+        cardMedia: form.cardMedia,
         imageHero: form.imageHero,
+        heroMedia: form.heroMedia,
+        allowSlugChange: true,
       }
 
       const res = await fetch('/api/deities', {
@@ -275,6 +316,16 @@ export default function AdminEditDeityPage({ params }: { params: Promise<{ id: s
             </div>
 
             <div>
+              <label className={l}>Public Slug</label>
+              <input type="text" className={i} value={form.slug} onChange={(e) => handleChange('slug', e.target.value)} />
+            </div>
+
+            <div>
+              <label className={l}>Static Slug</label>
+              <input type="text" className={i} value={form.staticSlug} onChange={(e) => handleChange('staticSlug', e.target.value)} />
+            </div>
+
+            <div>
               <label className={l}>Categories (Multiple Select)</label>
               <select
                 multiple
@@ -304,6 +355,11 @@ export default function AdminEditDeityPage({ params }: { params: Promise<{ id: s
                 <option value="approved">Approved</option>
                 <option value="rejected">Rejected</option>
               </select>
+            </div>
+
+            <div>
+              <label className={l}>Display Order</label>
+              <input type="number" className={i} value={form.order} onChange={(e) => handleChange('order', e.target.value)} />
             </div>
           </div>
         </div>
@@ -365,6 +421,16 @@ export default function AdminEditDeityPage({ params }: { params: Promise<{ id: s
                 placeholder="e.g., Destroyer, Trishul, Third Eye, Mount Kailash"
               />
             </div>
+
+            <div>
+              <label className={l}>Aliases (comma-separated)</label>
+              <input type="text" className={i} value={form.aliases} onChange={(e) => handleChange('aliases', e.target.value)} placeholder="e.g., Mahadev, Bholenath" />
+            </div>
+
+            <div>
+              <label className={l}>Slug Aliases (comma-separated)</label>
+              <input type="text" className={i} value={form.slugAliases} onChange={(e) => handleChange('slugAliases', e.target.value)} placeholder="e.g., mahadev, bholenath" />
+            </div>
           </div>
         </div>
 
@@ -376,7 +442,10 @@ export default function AdminEditDeityPage({ params }: { params: Promise<{ id: s
             <ImageUpload
               label="Card Image"
               value={form.imageCard}
+              media={form.cardMedia}
               onChange={(url) => handleChange('imageCard', url)}
+              onMediaChange={(media) => handleChange('cardMedia', media)}
+              kind="deity-artwork"
               folder="sarvdev/deities/cards"
               guidance="card"
             />
@@ -384,7 +453,10 @@ export default function AdminEditDeityPage({ params }: { params: Promise<{ id: s
             <ImageUpload
               label="Hero Image"
               value={form.imageHero}
+              media={form.heroMedia}
               onChange={(url) => handleChange('imageHero', url)}
+              onMediaChange={(media) => handleChange('heroMedia', media)}
+              kind="deity-artwork"
               folder="sarvdev/deities/heroes"
               guidance="hero"
             />
@@ -392,7 +464,10 @@ export default function AdminEditDeityPage({ params }: { params: Promise<{ id: s
             <ImageUpload
               label="Legacy Main Image"
               value={form.imageUrl}
+              media={form.primaryMedia}
               onChange={(url) => handleChange('imageUrl', url)}
+              onMediaChange={(media) => handleChange('primaryMedia', media)}
+              kind="deity-artwork"
               folder="sarvdev/deities"
             />
 
@@ -459,7 +534,11 @@ export default function AdminEditDeityPage({ params }: { params: Promise<{ id: s
             <ImageUpload
               label="OG Image"
               value={form.ogImage}
+              media={form.ogMedia}
               onChange={(url) => handleChange('ogImage', url)}
+              onMediaChange={(media) => handleChange('ogMedia', media)}
+              folder="sarvdev/deities"
+              kind="deity-artwork"
             />
           </div>
         </div>

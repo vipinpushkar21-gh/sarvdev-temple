@@ -10,7 +10,7 @@ type Props = {
 
 export default function BookmarkButton({ item, className = '', size = 'md' }: Props) {
   const { isBookmarked, toggle } = useFavourites()
-  const active = isBookmarked(item.id)
+  const active = isBookmarked(item)
   const iconSize = size === 'sm' ? 'w-4 h-4' : 'w-5 h-5'
 
   return (

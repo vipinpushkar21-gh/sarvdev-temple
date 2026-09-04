@@ -1,5 +1,6 @@
 // models/Deity.ts
 import mongoose, { Schema, models } from 'mongoose';
+import { MediaAssetSchema } from './shared/MediaAssetSchema';
 
 const DeitySchema = new Schema({
   name: { type: String, required: true },
@@ -9,6 +10,11 @@ const DeitySchema = new Schema({
   mantra: { type: String },
   attributes: { type: [String], default: [] },
   image: { type: String },
+  primaryMedia: { type: MediaAssetSchema },
+  cardMedia: { type: MediaAssetSchema },
+  heroMedia: { type: MediaAssetSchema },
+  ogMedia: { type: MediaAssetSchema },
+  galleryMedia: { type: [MediaAssetSchema], default: [] },
   imageCard: { type: String },
   imageHero: { type: String },
   images: { type: [String], default: [] },

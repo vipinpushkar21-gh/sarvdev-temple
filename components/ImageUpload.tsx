@@ -3,14 +3,18 @@
 import { useEffect, useRef, useState } from 'react'
 import { getTempleCardImage, getTempleHeroImage } from '../lib/temple-image'
 import SarvdevImage from './SarvdevImage'
+import type { SarvdevMediaAsset, SarvdevMediaKind } from '../lib/media-asset'
 
 type Props = {
   value?: string
+  media?: SarvdevMediaAsset | null
   onChange: (url: string) => void
+  onMediaChange?: (media: SarvdevMediaAsset | null) => void
   folder?: string
   label?: string
   language?: 'en' | 'hi'
   guidance?: 'card' | 'hero' | 'gallery' | 'general' | 'devotionalCard' | 'devotionalHero' | 'darshanCard' | 'darshanHero' | 'blogCard' | 'blogHero' | 'blogOg'
+  kind?: SarvdevMediaKind
 }
 
 type PendingImage = {
@@ -121,7 +125,7 @@ function helperText(guidance: Props['guidance'] = 'general', language: Props['la
   return 'Safe frame uses top-center panoramic crop.'
 }
 
-export default function ImageUpload({ value, onChange, folder = 'sarvdev', label = 'Image', language = 'en', guidance = 'general' }: Props) {
+export default function ImageUpload({ value, media, onChange, onMediaChange, folder = 'sarvdev/uploads', label = 'Image', language = 'en', guidance = 'general', kind = 'other' }: Props) {
   const hi = language === 'hi'
   const t = hi
     ? { onlyImage: 'केवल चित्र फ़ाइलें स्वीकार हैं', tooLarge: 'चित्र 15MB से छोटा होना चाहिए', previewError: 'नेटवर्क त्रुटि, फिर से प्रयास करें', uploadFailed: 'अपलोड विफल हुआ', url: 'Cloudinary चित्र URL या नीचे अपलोड करें', choose: 'चित्र चुनें', upload: 'अपलोड करें', uploading: 'अपलोड हो रहा है...', remove: 'हटाएँ', preview: 'पूर्वावलोकन', heroPreview: 'हीरो क्रॉप पूर्वावलोकन' }
@@ -157,29 +161,40 @@ export default function ImageUpload({ value, onChange, folder = 'sarvdev', label
     setError('')
     setUploading(true)
     try {
+      const signatureResponse = await fetch('/api/upload/signature', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fileName: pending.file.name, mimeType: pending.file.type, bytes: pending.file.size, folder }),
+      })
+      const signed = await signatureResponse.json()
+      if (!signatureResponse.ok) throw new Error(signed.error || t.uploadFailed)
       const fd = new FormData()
       fd.append('file', pending.file)
-      fd.append('folder', folder)
-      const res = await fetch('/api/upload', { method: 'POST', body: fd })
-      const data = await res.json()
-      if (res.ok) {
-        onChange(data.url)
-        setOptimizedPreview(data.previewUrl || data.optimizedUrl || data.url)
-        setServerWarnings(Array.isArray(data.warnings) ? data.warnings : [])
+      fd.append('api_key', signed.apiKey)
+      fd.append('signature', signed.signature)
+      Object.entries(signed.params as Record<string, string | number | boolean>).forEach(([key, item]) => fd.append(key, String(item)))
+      const cloudinaryResponse = await fetch(`https://api.cloudinary.com/v1_1/${encodeURIComponent(signed.cloudName)}/image/upload`, { method: 'POST', body: fd })
+      const data = await cloudinaryResponse.json()
+      if (cloudinaryResponse.ok) {
+        const media: SarvdevMediaAsset = { url: data.secure_url, publicId: data.public_id, assetId: data.asset_id, version: data.version, width: data.width, height: data.height, format: data.format, bytes: data.bytes, folder, kind }
+        onChange(media.url || '')
+        onMediaChange?.(media)
+        setOptimizedPreview(media.url || '')
+        setServerWarnings([])
         setPending(null)
       } else {
-        setError(data.error || t.uploadFailed)
+        setError(typeof data.error === 'string' ? data.error : data.error?.message || t.uploadFailed)
       }
-    } catch {
-      setError(t.previewError)
+    } catch (uploadError) {
+      setError(uploadError instanceof Error ? uploadError.message : t.previewError)
     } finally {
       setUploading(false)
     }
   }
 
-  const currentPreview = optimizedPreview || value || ''
-  const previewImage = currentPreview ? getTempleCardImage(currentPreview) : null
-  const heroPreview = pending?.previewUrl ? pending.previewUrl : currentPreview ? getTempleHeroImage(currentPreview).src : ''
+  const currentPreview = optimizedPreview || value || media?.url || ''
+  const previewInput = media?.publicId || media?.url ? media : currentPreview
+  const previewImage = currentPreview ? getTempleCardImage(previewInput) : null
+  const heroPreview = pending?.previewUrl ? pending.previewUrl : currentPreview ? getTempleHeroImage(previewInput).src : ''
   const safePreviewSrc = pending?.previewUrl || currentPreview
   const allWarnings = [...(pending?.warnings || []), ...serverWarnings]
 
@@ -191,7 +206,7 @@ export default function ImageUpload({ value, onChange, folder = 'sarvdev', label
           <input
             type="text"
             value={value || ''}
-            onChange={e => { onChange(e.target.value); setOptimizedPreview('') }}
+            onChange={e => { onChange(e.target.value); onMediaChange?.(null); setOptimizedPreview('') }}
             placeholder={t.url}
             className="admin-input w-full text-sm"
           />
@@ -239,7 +254,7 @@ export default function ImageUpload({ value, onChange, folder = 'sarvdev', label
             )}
 
             {value && (
-              <button type="button" onClick={() => { onChange(''); setOptimizedPreview('') }} className="text-xs text-red-500 hover:text-red-700">
+              <button type="button" onClick={() => { onChange(''); onMediaChange?.(null); setOptimizedPreview('') }} className="text-xs text-red-500 hover:text-red-700">
                 {t.remove}
               </button>
             )}

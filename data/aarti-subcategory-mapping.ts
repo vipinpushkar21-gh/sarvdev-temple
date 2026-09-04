@@ -27,11 +27,13 @@ export const AARTI_SUBCATEGORY_MAPPING: Record<string, string> = {
   'श्री सीता माता आरती (Shri Sita Mata Aarti)': 'vishnu-avtar',
   'श्री सत्यनारायण जी की आरती': 'vishnu-avtar',
   'श्री सत्यनारायण जी की आरती (Shri Satyanarayan Ji Ki Aarti)': 'vishnu-avtar',
-  'श्री सालासर बालाजी जी की आरती': 'vishnu-avtar',
-  'श्री बालाजी जी की आरती': 'vishnu-avtar',
-  'श्री बालाजी जी की आरती (Shri Balaji Ji Ki Aarti)': 'vishnu-avtar',
-  'श्री हनुमान आरती (शुद्ध हिंदी रूप)': 'vishnu-avtar',
   'गीत गोविंद जगन्नाथ आरती': 'vishnu-avtar',
+
+  // हनुमान व बालाजी (Hanuman & Balaji)
+  'श्री सालासर बालाजी जी की आरती': 'hanuman-balaji',
+  'श्री बालाजी जी की आरती': 'hanuman-balaji',
+  'श्री बालाजी जी की आरती (Shri Balaji Ji Ki Aarti)': 'hanuman-balaji',
+  'श्री हनुमान आरती (शुद्ध हिंदी रूप)': 'hanuman-balaji',
 
   // दुर्गा व शक्ति (Durga & Shakti)
   'जय अम्बे गौरी आरती': 'durga-shakti',

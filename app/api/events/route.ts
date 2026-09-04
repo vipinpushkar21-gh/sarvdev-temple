@@ -77,14 +77,14 @@ export async function GET(req: NextRequest) {
       const limit = Math.min(100, Math.max(1, parseInt(limitParam || '24', 10)))
       const skip = (page - 1) * limit
       const [items, total] = await Promise.all([
-        Event.find(filter, { __v: 0 }).sort({ featured: -1, priority: -1, startDate: 1, date: 1 }).skip(skip).limit(limit).lean(),
+        Event.find(filter, EVENT_CARD_PROJ).sort({ featured: -1, priority: -1, startDate: 1, date: 1 }).skip(skip).limit(limit).lean(),
         Event.countDocuments(filter),
       ])
       return NextResponse.json({ items: items.map(eventToPlain), total, page, pages: Math.ceil(total / limit), limit }, { headers: { 'Cache-Control': EVENTS_CACHE_CC } })
     }
 
     const legacyLimit = Math.min(100, Math.max(1, parseInt(limitParam || '50', 10) || 50))
-    const events = await Event.find(filter, { __v: 0 }).sort({ featured: -1, priority: -1, startDate: 1, date: 1 }).limit(legacyLimit).lean()
+    const events = await Event.find(filter, EVENT_CARD_PROJ).sort({ featured: -1, priority: -1, startDate: 1, date: 1 }).limit(legacyLimit).lean()
     return NextResponse.json(events.map(eventToPlain), { headers: { 'Cache-Control': EVENTS_CACHE_CC } })
   } catch (error) {
     console.error('Events API Error:', error)

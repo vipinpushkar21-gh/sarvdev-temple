@@ -4,6 +4,7 @@ import { Clock, Headphones, Languages, Music2, Sparkles } from 'lucide-react'
 import BookmarkButton from '../../../components/BookmarkButton'
 import SarvdevImage from '../../../components/SarvdevImage'
 import { getDevotionalCardImage } from '../../../lib/devotional-image'
+import { useTranslation } from '../../../lib/translation'
 import type { Devotional } from '../types'
 import { renderBilingualTitle } from '../utils/bilingual'
 import { getDevotionalHref } from './devotional-utils'
@@ -16,7 +17,8 @@ type Props = {
 }
 
 export default function DevotionalCardPremium({ devotional, featured, compact, highlight }: Props) {
-  const title = renderBilingualTitle(devotional.title || '')
+  const { language } = useTranslation()
+  const title = renderBilingualTitle(devotional.title || '', devotional.titleHi, language)
   const image = getDevotionalCardImage(devotional)
   const href = getDevotionalHref(devotional)
 
@@ -24,7 +26,7 @@ export default function DevotionalCardPremium({ devotional, featured, compact, h
     <article className="group relative h-full overflow-hidden rounded-2xl border border-amber-200/70 bg-white shadow-[0_14px_40px_rgba(92,64,51,0.08)] transition duration-300 hover:-translate-y-1 hover:border-orange-300 hover:shadow-[0_18px_52px_rgba(255,153,51,0.18)]">
       <Link href={href} className="block h-full text-inherit no-underline hover:no-underline">
         <div className="relative aspect-[16/9] overflow-hidden bg-stone-950">
-          <SarvdevImage image={image} alt={title.primary || devotional.title} className="absolute inset-0" imgClassName="object-cover transition duration-700 group-hover:scale-105" renderMode="auto" />
+          <SarvdevImage image={image} alt={title.primary || devotional.title} className="absolute inset-0" imgClassName="transition duration-700" renderMode="safe-contain" />
           <div className="absolute inset-0 bg-gradient-to-t from-stone-950/70 via-stone-950/10 to-transparent" />
           <div className="absolute left-3 top-3 flex flex-wrap gap-2">
             {featured && (

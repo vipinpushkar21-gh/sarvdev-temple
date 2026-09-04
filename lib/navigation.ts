@@ -89,7 +89,7 @@ export const MAIN_NAV_ITEMS: MainNavItem[] = [
 ]
 
 export const MOBILE_BOTTOM_NAV_ITEMS = MAIN_NAV_ITEMS.filter((item) =>
-  ['home', 'deities', 'temples', 'daily-darshan', 'devotionals'].includes(item.id)
+  ['home', 'temples', 'daily-darshan', 'devotionals'].includes(item.id)
 )
 
 export const FOOTER_QUICK_LINKS = MAIN_NAV_ITEMS

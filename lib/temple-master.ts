@@ -1,4 +1,5 @@
 import { buildTempleUniqueKey, normalizeTempleDataQuality, slugifyTemple, uniqueStrings } from './temple-normalization'
+import type { SarvdevMediaAsset } from './media-asset'
 
 export type TempleFormMode = 'admin-create' | 'admin-edit' | 'public'
 
@@ -30,8 +31,11 @@ export type TempleMasterValues = {
   phone: string
   website: string
   primaryImage: string
+  primaryMedia: SarvdevMediaAsset | null
   imageCard: string
+  cardMedia: SarvdevMediaAsset | null
   imageHero: string
+  heroMedia: SarvdevMediaAsset | null
   nearestAirport: string
   nearestRailwayStation: string
   nearestBusStand: string
@@ -45,6 +49,7 @@ export type TempleMasterValues = {
   metaDescription: string
   metaKeywords: string
   ogImage: string
+  ogMedia: SarvdevMediaAsset | null
   status: 'pending' | 'approved' | 'rejected'
 }
 
@@ -65,10 +70,10 @@ export function emptyTempleMasterValues(): TempleMasterValues {
     description: '', descriptionHi: '', establishedYear: '', speciality: '', sacredCategories: [],
     streetAddress: '', streetAddressHi: '', city: '', cityHi: '', district: '', districtHi: '',
     state: '', stateHi: '', pincode: '', country: 'India', mapsLink: '', timings: '',
-    phone: '', website: '', primaryImage: '', imageCard: '', imageHero: '',
+    phone: '', website: '', primaryImage: '', primaryMedia: null, imageCard: '', cardMedia: null, imageHero: '', heroMedia: null,
     nearestAirport: '', nearestRailwayStation: '', nearestBusStand: '', parkingAvailable: '',
     localTransport: '', templeFestivals: '', templeFestivalsHi: '', tags: '', dataQuality: 'B',
-    metaTitle: '', metaDescription: '', metaKeywords: '', ogImage: '', status: 'pending',
+    metaTitle: '', metaDescription: '', metaKeywords: '', ogImage: '', ogMedia: null, status: 'pending',
   }
 }
 
@@ -112,14 +117,16 @@ export function templeMasterValuesFromRecord(record: Record<string, any> | null 
     mapsLink: text(record.mapsLink || record.googleMapsUrl || record.googleMapUrl),
     timings: text(record.timings || listText(record.timingSlots)),
     phone: text(record.phone), website: text(record.website),
-    primaryImage: text(record.primaryImage || record.image), imageCard: text(record.imageCard), imageHero: text(record.imageHero || record.heroImage),
+    primaryImage: text(record.primaryImage || record.image), primaryMedia: record.primaryMedia || null,
+    imageCard: text(record.imageCard), cardMedia: record.cardMedia || null,
+    imageHero: text(record.imageHero || record.heroImage), heroMedia: record.heroMedia || null,
     nearestAirport: text(record.nearestAirport), nearestRailwayStation: text(record.nearestRailwayStation),
     nearestBusStand: text(record.nearestBusStand), parkingAvailable: text(record.parkingAvailable), localTransport: text(record.localTransport),
     templeFestivals: text(record.templeFestivals) || festivalText(record.festivals),
     templeFestivalsHi: text(record.templeFestivalsHi || record.festivalsHi) || festivalText(record.festivals, true),
     tags: listText(record.tags), dataQuality: text(record.dataQuality) || 'B', metaTitle: text(record.metaTitle),
     metaDescription: text(record.metaDescription), metaKeywords: text(record.metaKeywords || listText(record.keywords)),
-    ogImage: text(record.ogImage), status: ['approved', 'rejected'].includes(record.status) ? record.status : 'pending',
+    ogImage: text(record.ogImage), ogMedia: record.ogMedia || null, status: ['approved', 'rejected'].includes(record.status) ? record.status : 'pending',
   }
 }
 
@@ -189,14 +196,15 @@ export function templeMasterPayload(values: TempleMasterValues, mode: TempleForm
     mapsLink, googleMapsUrl: mapsLink, googleMapUrl: mapsLink,
     timings: values.timings.trim(), timingSlots: splitTempleList(values.timings),
     phone: values.phone.trim(), website: values.website.trim(),
-    primaryImage: values.primaryImage.trim(), image: values.primaryImage.trim(), imageCard: values.imageCard.trim(),
-    imageHero: values.imageHero.trim(), heroImage: values.imageHero.trim(),
+    primaryImage: values.primaryImage.trim(), image: values.primaryImage.trim(), primaryMedia: values.primaryMedia,
+    imageCard: values.imageCard.trim(), cardMedia: values.cardMedia,
+    imageHero: values.imageHero.trim(), heroImage: values.imageHero.trim(), heroMedia: values.heroMedia,
     nearestAirport: values.nearestAirport.trim(), nearestRailwayStation: values.nearestRailwayStation.trim(),
     nearestBusStand: values.nearestBusStand.trim(), parkingAvailable: values.parkingAvailable.trim(), localTransport: values.localTransport.trim(),
     templeFestivals: values.templeFestivals.trim(), templeFestivalsHi: values.templeFestivalsHi.trim(), festivals, festivalsHi: values.templeFestivalsHi.trim(),
     tags: splitTempleList(values.tags), dataQuality: normalizeTempleDataQuality(values.dataQuality, 'B'),
     metaTitle: values.metaTitle.trim(), metaDescription: values.metaDescription.trim(), metaKeywords: values.metaKeywords.trim(),
-    keywords: splitTempleList(values.metaKeywords), ogImage: values.ogImage.trim(),
+    keywords: splitTempleList(values.metaKeywords), ogImage: values.ogImage.trim(), ogMedia: values.ogMedia,
     status: mode === 'public' ? 'pending' : values.status,
   }
 }

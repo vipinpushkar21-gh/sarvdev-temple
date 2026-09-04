@@ -13,6 +13,7 @@ import {
 import { buildCursorFilter, paginateCursor, parseCursorLimit, DEVOTIONAL_CARD_PROJ } from '@/lib/cursor-pagination'
 import { applyRateLimit } from '@/lib/rate-limit'
 import { expandQuery } from '@/lib/transliteration'
+import { normalizeMediaAsset } from '@/lib/media-asset'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -21,6 +22,7 @@ export const revalidate = 0
 let _cache: { data: any[]; ts: number } | null = null
 const CACHE_TTL = 60_000
 const DEVOTIONAL_IMAGE_FIELDS = ['image', 'imageCard', 'imageHero', 'ogImage', 'thumbnail', 'coverImage'] as const
+const DEVOTIONAL_PROTECTED_IMAGE_FIELDS = ['imageCard', 'imageHero', 'ogImage', 'thumbnail', 'coverImage'] as const
 const ALLOW_REMOTE_FALLBACK = process.env.NODE_ENV === 'production'
 
 function isAdmin(request: NextRequest) {
@@ -138,7 +140,7 @@ async function getAdminDevotionalFacets() {
 
 function removeDevotionalImageFields<T extends Record<string, any>>(input: T): T {
   const output = { ...input }
-  for (const field of DEVOTIONAL_IMAGE_FIELDS) {
+  for (const field of DEVOTIONAL_PROTECTED_IMAGE_FIELDS) {
     delete output[field]
   }
   return output
@@ -424,6 +426,15 @@ export async function POST(request: NextRequest) {
     await connectDB()
     const body = await request.json()
     const safe = removeDevotionalImageFields(body)
+    if (Object.prototype.hasOwnProperty.call(safe, 'primaryMedia')) safe.primaryMedia = normalizeMediaAsset(safe.primaryMedia, 'devotional-artwork') ?? null
+    if (safe.category === 'Mantra') {
+      const { isValidMantraSubcategory, MANTRA_SUBCATEGORIES } = await import('@/lib/mantra-subcategories')
+      if (!isValidMantraSubcategory(safe.subcategory)) return NextResponse.json({ error: `Mantra Subcategory is required and must be one of: ${MANTRA_SUBCATEGORIES.join(' | ')}` }, { status: 400 })
+    }
+    if (safe.category === 'Namavali' || safe.category === '108 Namavali' || safe.category === 'Sahasranamavali') {
+      const { isValidNamavaliSubcategory, NAMAVALI_SUBCATEGORIES } = await import('@/lib/namavali-subcategories')
+      if (!isValidNamavaliSubcategory(safe.subcategory)) return NextResponse.json({ error: `Namavali Subcategory is required and must be one of: ${NAMAVALI_SUBCATEGORIES.join(' | ')}` }, { status: 400 })
+    }
 
     // Auto-generate slug from title if not provided
     if (!safe.slug && safe.title) {
@@ -458,6 +469,25 @@ export async function PUT(request: NextRequest) {
     const body = await request.json()
     const { id, ...updateData } = body
     const safe = removeDevotionalImageFields(updateData)
+    if (Object.prototype.hasOwnProperty.call(safe, 'primaryMedia')) safe.primaryMedia = normalizeMediaAsset(safe.primaryMedia, 'devotional-artwork') ?? null
+    if (Object.prototype.hasOwnProperty.call(safe, 'lyrics')) {
+      safe.content = safe.lyrics
+      delete safe.lyrics
+    }
+    const existingCategoryRecord: any = Object.prototype.hasOwnProperty.call(safe, 'subcategory')
+      ? await Devotional.findById(id).select('category').lean()
+      : null
+    const categoryForValidation = safe.category || (
+      existingCategoryRecord?.category
+    )
+    if (categoryForValidation === 'Mantra') {
+      const { isValidMantraSubcategory, MANTRA_SUBCATEGORIES } = await import('@/lib/mantra-subcategories')
+      if (!isValidMantraSubcategory(safe.subcategory)) return NextResponse.json({ error: `Mantra Subcategory is required and must be one of: ${MANTRA_SUBCATEGORIES.join(' | ')}` }, { status: 400 })
+    }
+    if (categoryForValidation === 'Namavali' || categoryForValidation === '108 Namavali' || categoryForValidation === 'Sahasranamavali') {
+      const { isValidNamavaliSubcategory, NAMAVALI_SUBCATEGORIES } = await import('@/lib/namavali-subcategories')
+      if (!isValidNamavaliSubcategory(safe.subcategory)) return NextResponse.json({ error: `Namavali Subcategory is required and must be one of: ${NAMAVALI_SUBCATEGORIES.join(' | ')}` }, { status: 400 })
+    }
 
     // Preserve existing slug — only update if explicitly provided and non-empty
     if (!safe.slug) delete safe.slug

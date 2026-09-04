@@ -64,18 +64,28 @@ export function devanagariToLatin(text: string): string {
   return toTitleCase(converted);
 }
 
-export function renderBilingualTitle(title: string): { primary: string, secondary?: string } {
+export function renderBilingualTitle(title: string, titleHi?: string, language: string = 'en'): { primary: string, secondary?: string } {
   if (!title) return { primary: '' };
-  // If title already contains English in parentheses, prefer that pairing
+  const preferHindi = language === 'hi';
   const parenMatch = title.match(/^(.*?)\s*\(([^)]+)\)\s*$/);
   if (parenMatch) {
     const hindi = parenMatch[1].trim();
     const english = parenMatch[2].trim();
-    return { primary: hindi || title, secondary: english };
+    if (preferHindi) return { primary: titleHi || hindi || title, secondary: english };
+    return { primary: english || title, secondary: titleHi || hindi || undefined };
+  }
+
+  if (titleHi) {
+    return preferHindi
+      ? { primary: titleHi, secondary: title }
+      : { primary: title, secondary: titleHi };
   }
 
   if (isDevanagari(title)) {
-    return { primary: title, secondary: devanagariToLatin(title) };
+    const english = devanagariToLatin(title);
+    return preferHindi
+      ? { primary: title, secondary: english }
+      : { primary: english, secondary: title };
   }
   // If not Devanagari, attempt an approximate Hindi rendering from common words
   const hindiApprox = englishToHindiApprox(title);
@@ -83,7 +93,9 @@ export function renderBilingualTitle(title: string): { primary: string, secondar
   // Allow digits, spaces, punctuation — but reject if any a-z letters remain
   const hasLatinLeftover = /[a-zA-Z]/.test(hindiApprox);
   if (hindiApprox && !hasLatinLeftover) {
-    return { primary: hindiApprox, secondary: title };
+    return preferHindi
+      ? { primary: hindiApprox, secondary: title }
+      : { primary: title, secondary: hindiApprox };
   }
   // Incomplete conversion — show English title as primary, no broken Hindi
   return { primary: title };

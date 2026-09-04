@@ -1,4 +1,4 @@
-import { redirect } from 'next/navigation'
+import { permanentRedirect } from 'next/navigation'
 import { getRegistryEntry } from '@/lib/sacred-category-registry'
 import type { Metadata } from 'next'
 
@@ -18,5 +18,5 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function SacredCategorySlugRedirect({ params }: Props) {
   const { slug } = await params
-  redirect(`/temples/pilgrimage/${slug}`)
+  permanentRedirect(`/temples/pilgrimage/${slug}`)
 }

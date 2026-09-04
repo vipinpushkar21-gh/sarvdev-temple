@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import ImageUpload from '../../../components/ImageUpload'
 import { SPIRITUAL_ICON_CATEGORIES } from '../../../data/spiritual-icon-categories'
 import { slugifySpiritualIcon, type SpiritualIconRecord } from '../../../lib/spiritual-icons'
+import type { SarvdevMediaAsset, SarvdevMediaKind } from '../../../lib/media-asset'
 
 type FormValues = {
   name: string
@@ -19,8 +20,11 @@ type FormValues = {
   fullBio: string
   fullBioHi: string
   image: string
+  primaryMedia: SarvdevMediaAsset | null
   imageCard: string
+  cardMedia: SarvdevMediaAsset | null
   imageHero: string
+  heroMedia: SarvdevMediaAsset | null
   galleryImages: string
   location: string
   city: string
@@ -47,6 +51,7 @@ type FormValues = {
   metaTitle: string
   metaDescription: string
   ogImage: string
+  ogMedia: SarvdevMediaAsset | null
 }
 
 const DEFAULT_FORM: FormValues = {
@@ -61,8 +66,11 @@ const DEFAULT_FORM: FormValues = {
   fullBio: '',
   fullBioHi: '',
   image: '',
+  primaryMedia: null,
   imageCard: '',
+  cardMedia: null,
   imageHero: '',
+  heroMedia: null,
   galleryImages: '',
   location: '',
   city: '',
@@ -89,6 +97,7 @@ const DEFAULT_FORM: FormValues = {
   metaTitle: '',
   metaDescription: '',
   ogImage: '',
+  ogMedia: null,
 }
 
 function listToString(value?: string[]) {
@@ -110,8 +119,11 @@ export function iconToForm(icon?: Partial<SpiritualIconRecord>): FormValues {
     fullBio: icon.fullBio || '',
     fullBioHi: icon.fullBioHi || '',
     image: icon.image || '',
+    primaryMedia: icon.primaryMedia || null,
     imageCard: icon.imageCard || '',
+    cardMedia: icon.cardMedia || null,
     imageHero: icon.imageHero || '',
+    heroMedia: icon.heroMedia || null,
     galleryImages: listToString(icon.galleryImages),
     location: icon.location || '',
     city: icon.city || '',
@@ -138,6 +150,7 @@ export function iconToForm(icon?: Partial<SpiritualIconRecord>): FormValues {
     metaTitle: icon.metaTitle || '',
     metaDescription: icon.metaDescription || '',
     ogImage: icon.ogImage || '',
+    ogMedia: icon.ogMedia || null,
   }
 }
 
@@ -153,6 +166,7 @@ export default function SpiritualIconForm({ mode, id, initialValues }: Props) {
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const category = useMemo(() => SPIRITUAL_ICON_CATEGORIES.find((item) => item.slug === form.categorySlug), [form.categorySlug])
+  const mediaKind: SarvdevMediaKind = form.categorySlug === 'kirtan-mandali' ? 'other' : 'portrait'
 
   function setField<K extends keyof FormValues>(key: K, value: FormValues[K]) {
     setForm((current) => ({ ...current, [key]: value }))
@@ -261,8 +275,8 @@ export default function SpiritualIconForm({ mode, id, initialValues }: Props) {
         </Section>
 
         <Section title="Media" subtitle="Use Cloudinary/local images only. Keep face and body centered.">
-          <ImageUpload value={form.imageCard} onChange={(url) => setField('imageCard', url)} folder="sarvdev/spiritual-icons/cards" label="Card Image" guidance="card" />
-          <ImageUpload value={form.imageHero} onChange={(url) => setField('imageHero', url)} folder="sarvdev/spiritual-icons/heroes" label="Hero Image" guidance="hero" />
+          <ImageUpload value={form.imageCard} media={form.cardMedia} onChange={(url) => setField('imageCard', url)} onMediaChange={(media) => setField('cardMedia', media)} folder="sarvdev/spiritual-icons" label="Card Image" guidance="card" kind={mediaKind} />
+          <ImageUpload value={form.imageHero} media={form.heroMedia} onChange={(url) => setField('imageHero', url)} onMediaChange={(media) => setField('heroMedia', media)} folder="sarvdev/spiritual-icons" label="Hero Image" guidance="hero" kind={mediaKind} />
           <Field label="Gallery Images" value={form.galleryImages} onChange={(value) => setField('galleryImages', value)} placeholder="Comma-separated Cloudinary/local URLs" />
           <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs leading-5 text-amber-800">
             Card image: 3000 x 3000 square safe. Hero image: 3360 x 1440 panoramic. Keep face/body centered, not cropped.
@@ -303,7 +317,7 @@ export default function SpiritualIconForm({ mode, id, initialValues }: Props) {
         <Section title="SEO" subtitle="Optional metadata for search and sharing.">
           <Field label="Meta Title" value={form.metaTitle} onChange={(value) => setField('metaTitle', value)} maxLength={70} />
           <TextArea label="Meta Description" value={form.metaDescription} onChange={(value) => setField('metaDescription', value)} rows={3} maxLength={180} />
-          <ImageUpload value={form.ogImage} onChange={(url) => setField('ogImage', url)} folder="sarvdev/spiritual-icons/og" label="OG Image" guidance="card" />
+          <ImageUpload value={form.ogImage} media={form.ogMedia} onChange={(url) => setField('ogImage', url)} onMediaChange={(media) => setField('ogMedia', media)} folder="sarvdev/spiritual-icons" label="OG Image" guidance="card" kind={mediaKind} />
         </Section>
 
         <div className="flex flex-wrap gap-3">

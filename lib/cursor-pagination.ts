@@ -133,7 +133,7 @@ export const TEMPLE_CARD_PROJ = {
   deity: 1, deitySlug: 1, mainDeity: 1,
   city: 1, district: 1, state: 1, location: 1,
   latitude: 1, longitude: 1,
-  imageCard: 1, imageHero: 1, heroImage: 1, image: 1,
+  imageCard: 1, imageHero: 1, heroImage: 1, image: 1, cardMedia: 1, heroMedia: 1, primaryMedia: 1,
   sacredCategorySlugs: 1, categories: 1,
   status: 1, verified: 1,
   shortDescription: 1, description: 1,
@@ -144,7 +144,7 @@ export const TEMPLE_CARD_PROJ = {
 export const DEITY_CARD_PROJ = {
   name: 1, nameHi: 1, slug: 1,
   categoryName: 1, categorySlug: 1, categoryNameHi: 1,
-  imageCard: 1, image: 1,
+  imageCard: 1, image: 1, cardMedia: 1, primaryMedia: 1,
   order: 1, status: 1,
   createdAt: 1,
 } as const
@@ -155,7 +155,7 @@ export const DEVOTIONAL_CARD_PROJ = {
   category: 1, categorySlug: 1,
   subcategory: 1,
   deity: 1, deitySlug: 1,
-  imageCard: 1, image: 1,
+  imageCard: 1, image: 1, cardMedia: 1, primaryMedia: 1,
   language: 1, featured: 1, status: 1,
   createdAt: 1,
 } as const
@@ -164,7 +164,7 @@ export const DEVOTIONAL_CARD_PROJ = {
 export const BLOG_CARD_PROJ = {
   title: 1, titleHi: 1, slug: 1,
   category: 1, excerpt: 1,
-  imageCard: 1, image: 1,
+  imageCard: 1, image: 1, cardMedia: 1, primaryMedia: 1,
   author: 1, featured: 1, status: 1,
   publishedAt: 1, createdAt: 1,
 } as const
@@ -173,7 +173,7 @@ export const BLOG_CARD_PROJ = {
 export const EVENT_CARD_PROJ = {
   title: 1, titleHi: 1, slug: 1,
   category: 1,
-  imageCard: 1, image: 1,
+  imageCard: 1, image: 1, cardMedia: 1, primaryMedia: 1,
   city: 1, state: 1,
   startDate: 1, date: 1,
   featured: 1, priority: 1, status: 1,
@@ -183,12 +183,12 @@ export const EVENT_CARD_PROJ = {
 
 /** Darshan list card */
 export const DARSHAN_CARD_PROJ = {
-  title: 1, titleHi: 1,
+  title: 1, titleHi: 1, slug: 1,
   temple: 1, templeName: 1,
-  city: 1, state: 1,
-  imageCard: 1, image: 1, thumbnail: 1,
-  youtubeId: 1, youtubeUrl: 1,
-  darshanType: 1, isLive: 1,
+  templeSlug: 1, deity: 1, deitySlug: 1, city: 1, state: 1,
+  imageCard: 1, image: 1, thumbnail: 1, cardMedia: 1, primaryMedia: 1, galleryMedia: { $slice: 1 },
+  youtubeId: 1, youtubeUrl: 1, videoUrl: 1, externalUrl: 1, provider: 1,
+  darshanType: 1, contentType: 1, isLive: 1, streamStatus: 1,
   isFeatured: 1, featured: 1, priority: 1,
   status: 1, createdAt: 1,
 } as const
@@ -197,7 +197,7 @@ export const DARSHAN_CARD_PROJ = {
 export const SPIRITUAL_ICON_CARD_PROJ = {
   name: 1, nameHi: 1, slug: 1,
   category: 1, categorySlug: 1,
-  imageCard: 1, image: 1,
+  imageCard: 1, image: 1, cardMedia: 1, primaryMedia: 1,
   city: 1, state: 1, location: 1,
   featured: 1, priority: 1, status: 1,
   shortBio: 1,

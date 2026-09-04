@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import SarvdevImage from '../../components/SarvdevImage'
 import { getTempleCardImage } from '../../lib/temple-image'
 
@@ -14,9 +15,16 @@ type TempleUser = {
 type TempleData = { _id: string; title: string; city?: string; state?: string; status?: string; image?: string }
 
 export default function TemplePortalPage() {
+  const router = useRouter()
   const [user, setUser] = useState<TempleUser | null>(null)
   const [temple, setTemple] = useState<TempleData | null>(null)
   const [loading, setLoading] = useState(true)
+
+  async function logout() {
+    await fetch('/api/auth/logout', { method: 'POST' })
+    router.replace('/')
+    router.refresh()
+  }
 
   useEffect(() => {
     fetch('/api/auth/me')
@@ -72,7 +80,7 @@ export default function TemplePortalPage() {
             <h1 className="text-2xl font-serif font-bold text-gray-900">🛕 Temple Portal</h1>
             <p className="text-sm text-gray-500 mt-0.5">Namaste, {user.name}!</p>
           </div>
-          <Link href="/api/auth/logout" className="text-sm text-gray-500 hover:text-red-500 transition-colors">Logout →</Link>
+          <button type="button" onClick={logout} className="text-sm text-gray-500 hover:text-red-500 transition-colors">Logout →</button>
         </div>
 
         {/* Status banner */}

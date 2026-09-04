@@ -4,9 +4,11 @@ import { connectDB } from '@/lib/db'
 import User from '@/models/User'
 import { hashPassword, createToken, AUTH_COOKIE_NAME, AUTH_COOKIE_OPTIONS } from '@/lib/auth'
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
+import { hasTrustedAuthOrigin } from '@/lib/auth-origin'
 
 export async function POST(req: NextRequest) {
   try {
+    if (!hasTrustedAuthOrigin(req)) return NextResponse.json({ error: 'Invalid request origin' }, { status: 403 })
     const ip = getClientIp(req)
     const { ok } = checkRateLimit(`register:${ip}`, 3, 60_000)
     if (!ok) {
@@ -85,8 +87,8 @@ export async function POST(req: NextRequest) {
         success: true,
         pending: true,
         message: role === 'temple'
-          ? 'Your temple manager account has been submitted. Admin will review and approve within 24 hours.'
-          : 'Your pandit account has been submitted. Admin will review and approve within 24 hours.',
+          ? 'Your temple manager account has been submitted for review.'
+          : 'Your pandit account has been submitted for review.',
       })
     }
 

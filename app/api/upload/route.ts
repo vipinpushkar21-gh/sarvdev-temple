@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { v2 as cloudinary } from 'cloudinary'
 import { verifyToken, AUTH_COOKIE_NAME } from '@/lib/auth'
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
-import { getTempleCardImage, getTempleHeroImage } from '@/lib/temple-image'
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -107,21 +106,13 @@ export async function POST(request: NextRequest) {
       invalidate: true,
       quality_analysis: true,
       phash: true,
-      colors: true,
-      eager_async: true,
-      eager: [
-        { width: 1600, crop: 'fill', gravity: 'auto', aspect_ratio: '16:9', quality: 'auto:best', fetch_format: 'auto' },
-        { width: 960, crop: 'fill', gravity: 'auto', aspect_ratio: '4:3', quality: 'auto:best', fetch_format: 'webp' },
-      ],
     })
-    const hero = getTempleHeroImage(result.secure_url)
-    const card = getTempleCardImage(result.secure_url)
 
     return NextResponse.json({
       url: result.secure_url,
-      optimizedUrl: hero.src,
-      previewUrl: card.src,
       publicId: result.public_id,
+      assetId: result.asset_id,
+      version: result.version,
       width: result.width,
       height: result.height,
       bytes: result.bytes,

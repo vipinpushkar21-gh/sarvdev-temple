@@ -6,12 +6,15 @@ import SarvdevImage from '../../../components/SarvdevImage'
 import { getDevotionalCardImage } from '../../../lib/devotional-image'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { DEVOTIONAL_CATEGORIES } from '@/lib/devotional-categories'
+import { FULL_CATEGORIES } from '@/app/devotionals/components/categories'
 
 type Devotional = {
   _id: string
+  slug?: string
   title: string
   description?: string
   category?: string
+  subcategory?: string
   language?: string
   deity?: string
   audio?: string
@@ -42,6 +45,28 @@ type CleanupReport = {
   error?: string
 }
 
+type ImportRowResult = {
+  row: number
+  title: string
+  action: 'create' | 'update' | 'skip'
+  matchedBy?: 'id' | 'slug' | 'title'
+  id?: string
+  changedFields?: string[]
+  reason?: string
+}
+
+type ImportReport = {
+  ok: boolean
+  mode: 'dry-run' | 'execute'
+  category: string
+  totalRows: number
+  created: number
+  updated: number
+  skipped: number
+  errors: string[]
+  rows: ImportRowResult[]
+}
+
 type AdminDevotionalFacets = {
   totalAll: number
   withAudio?: number
@@ -57,8 +82,20 @@ type SortDir = 'asc' | 'desc'
 
 function normalizeAdminCategoryName(value?: string) {
   const category = String(value || '').trim()
-  if (category.toLowerCase() === '108 namavali') return 'Namavali'
+  if (['108 namavali', '108 namawali'].includes(category.toLowerCase())) return 'Namavali'
   return category
+}
+
+function getAdminCategoryLabel(value: string) {
+  return value === 'Namavali' ? '108 Namavali' : value
+}
+
+const SUBCATEGORY_LABELS = new Map(
+  FULL_CATEGORIES.flatMap(category => (category.subcategories || []).map(subcategory => [subcategory.id, subcategory.label] as const))
+)
+
+function getSubcategoryLabel(value?: string) {
+  return value ? SUBCATEGORY_LABELS.get(value) || value : '-'
 }
 
 export default function AdminDevotionalsPage() {
@@ -80,6 +117,12 @@ export default function AdminDevotionalsPage() {
   const [cleanupLoading, setCleanupLoading] = useState(false)
   const [cleanupReport, setCleanupReport] = useState<CleanupReport | null>(null)
   const [exportLoading, setExportLoading] = useState(false)
+  const [importOpen, setImportOpen] = useState(false)
+  const [importCategory, setImportCategory] = useState('')
+  const [importFile, setImportFile] = useState<File | null>(null)
+  const [importLoading, setImportLoading] = useState(false)
+  const [importReport, setImportReport] = useState<ImportReport | null>(null)
+  const [importError, setImportError] = useState('')
 
   const debouncedSearch = useDebouncedValue(search)
 
@@ -275,6 +318,47 @@ export default function AdminDevotionalsPage() {
     }
   }
 
+  const openImport = () => {
+    setImportCategory(categoryFilter)
+    setImportFile(null)
+    setImportReport(null)
+    setImportError('')
+    setImportOpen(true)
+  }
+
+  const downloadImportTemplate = () => {
+    const params = new URLSearchParams()
+    if (importCategory) params.set('category', importCategory)
+    window.open(`/api/admin/devotionals/import?${params.toString()}`, '_blank')
+  }
+
+  // Same category-scoped contract as the export: pick a category, then upload its rows.
+  const runImport = async (mode: 'dry-run' | 'execute') => {
+    if (!importCategory) { setImportError('Select a category first'); return }
+    if (!importFile) { setImportError('Choose a CSV file first'); return }
+    setImportLoading(true)
+    setImportError('')
+    try {
+      const body = new FormData()
+      body.set('category', importCategory)
+      body.set('mode', mode)
+      body.set('file', importFile)
+      const res = await fetch('/api/admin/devotionals/import', { method: 'POST', credentials: 'include', body })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok || !data?.ok) {
+        setImportReport(null)
+        setImportError(data?.error || (data?.errors || []).join(', ') || 'Import failed')
+        return
+      }
+      setImportReport(data)
+      if (mode === 'execute') await fetchDevotionals()
+    } catch {
+      setImportError('Network error while importing')
+    } finally {
+      setImportLoading(false)
+    }
+  }
+
   // Preview modal item
   const previewItem = previewId ? devotionals.find(d => d._id === previewId) : null
 
@@ -306,6 +390,7 @@ export default function AdminDevotionalsPage() {
           <button onClick={exportCSV} disabled={exportLoading} className="admin-btn admin-btn-ghost px-4 py-2 text-sm disabled:opacity-60">
             {exportLoading ? 'Exporting...' : 'Export CSV'}
           </button>
+          <button onClick={openImport} className="admin-btn admin-btn-ghost px-4 py-2 text-sm">Import CSV</button>
           <Link href="/admin/devotionals/data-integrity" className="admin-btn admin-btn-ghost px-4 py-2 text-sm border-orange-200 text-orange-700 hover:bg-orange-50">Data Integrity</Link>
           <Link href="/admin/devotionals/new" className="admin-btn admin-btn-primary px-4 py-2 text-sm">+ New Devotional</Link>
         </div>
@@ -404,7 +489,7 @@ export default function AdminDevotionalsPage() {
         </button>
         {categories.map(c => (
           <button key={c} onClick={() => setCategoryFilter(c)} className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${categoryFilter === c ? 'admin-badge-orange' : 'admin-btn admin-btn-ghost'}`}>
-            {c} ({catCounts[c] || 0})
+            {getAdminCategoryLabel(c)} ({catCounts[c] || 0})
           </button>
         ))}
       </div>
@@ -415,7 +500,7 @@ export default function AdminDevotionalsPage() {
           <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search title, deity, artist..." className="admin-input" />
           <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} className="admin-input">
             <option value="">All Categories</option>
-            {categories.map(c => <option key={c} value={c}>{c}</option>)}
+            {categories.map(c => <option key={c} value={c}>{getAdminCategoryLabel(c)}</option>)}
           </select>
           <select value={deityFilter} onChange={e => setDeityFilter(e.target.value)} className="admin-input">
             <option value="">All Deities</option>
@@ -478,6 +563,7 @@ export default function AdminDevotionalsPage() {
                 <th className="cursor-pointer group select-none" onClick={() => handleSort('title')}>Title<SortIcon col="title" /></th>
                 <th>Public Image</th>
                 <th className="cursor-pointer group select-none" onClick={() => handleSort('category')}>Category<SortIcon col="category" /></th>
+                <th>Subcategory</th>
                 <th className="cursor-pointer group select-none" onClick={() => handleSort('deity')}>Deity<SortIcon col="deity" /></th>
                 <th className="cursor-pointer group select-none" onClick={() => handleSort('language')}>Language<SortIcon col="language" /></th>
                 <th className="cursor-pointer group select-none" onClick={() => handleSort('artist')}>Artist<SortIcon col="artist" /></th>
@@ -511,7 +597,8 @@ export default function AdminDevotionalsPage() {
                       </div>
                     </div>
                   </td>
-                  <td><span className="admin-badge-purple text-[10px]">{d.category || '-'}</span></td>
+                  <td><span className="admin-badge-purple text-[10px]">{getAdminCategoryLabel(normalizeAdminCategoryName(d.category)) || '-'}</span></td>
+                  <td><span className="admin-badge-orange text-[10px]">{getSubcategoryLabel(d.subcategory)}</span></td>
                   <td className="text-gray-500 text-xs">{d.deity || '-'}</td>
                   <td className="text-gray-500 text-xs">{d.language || '-'}</td>
                   <td className="text-gray-500 text-xs truncate max-w-[100px]">{d.artist || '-'}</td>
@@ -529,7 +616,7 @@ export default function AdminDevotionalsPage() {
                   </td>
                   <td>
                     <div className="flex gap-1">
-                      <button onClick={() => setPreviewId(d._id)} className="admin-btn admin-btn-ghost text-[10px]" title="Preview">View</button>
+                      <Link href={`/devotionals/${encodeURIComponent(d.slug || d._id)}`} target="_blank" rel="noopener noreferrer" className="admin-btn admin-btn-ghost text-[10px]" title="View live devotional">View</Link>
                       <Link href={`/admin/devotionals/${d._id}/edit`} className="admin-btn admin-btn-ghost text-[10px]" title="Edit">Edit</Link>
                       <button onClick={() => approve(d._id)} className="admin-btn admin-btn-success text-[10px]">✓</button>
                       <button onClick={() => reject(d._id)} className="admin-btn admin-btn-danger text-[10px]">✗</button>
@@ -539,7 +626,7 @@ export default function AdminDevotionalsPage() {
                 </tr>
               ))}
               {paginated.length === 0 && (
-                <tr><td colSpan={10} className="px-5 py-10 text-center text-gray-400">No devotionals found.</td></tr>
+                <tr><td colSpan={11} className="px-5 py-10 text-center text-gray-400">No devotionals found.</td></tr>
               )}
             </tbody>
           </table>
@@ -567,6 +654,96 @@ export default function AdminDevotionalsPage() {
         )}
       </div>
 
+      {/* Import Modal */}
+      {importOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setImportOpen(false)}>
+          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="p-6 space-y-4">
+              <div className="flex items-start justify-between">
+                <div>
+                  <h2 className="text-lg font-bold text-gray-900">Import Devotionals</h2>
+                  <p className="admin-section-subtitle mt-1">Pick a category and upload a CSV. Rows are matched by ID, then Slug, then Title.</p>
+                </div>
+                <button onClick={() => setImportOpen(false)} className="p-1.5 rounded-xl hover:bg-gray-100 text-gray-400 transition-colors">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-600 mb-1">Category *</label>
+                <select value={importCategory} onChange={e => { setImportCategory(e.target.value); setImportReport(null) }} className="admin-input w-full">
+                  <option value="">Select a category</option>
+                  {categories.map(c => <option key={c} value={c}>{getAdminCategoryLabel(c)}</option>)}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-600 mb-1">CSV file *</label>
+                <input
+                  type="file"
+                  accept=".csv,text/csv"
+                  onChange={e => { setImportFile(e.target.files?.[0] || null); setImportReport(null) }}
+                  className="admin-input w-full text-sm"
+                />
+                <button type="button" onClick={downloadImportTemplate} className="mt-2 text-xs text-orange-600 hover:text-orange-700 font-semibold">
+                  Download blank template
+                </button>
+              </div>
+
+              {importError && (
+                <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{importError}</div>
+              )}
+
+              {importReport && (
+                <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-4 text-sm text-stone-800">
+                  <div className="grid gap-3 sm:grid-cols-5">
+                    <div><span className="block text-xs font-bold uppercase text-stone-500">Mode</span>{importReport.mode === 'dry-run' ? 'Preview' : 'Imported'}</div>
+                    <div><span className="block text-xs font-bold uppercase text-stone-500">Rows</span>{importReport.totalRows}</div>
+                    <div><span className="block text-xs font-bold uppercase text-stone-500">New</span>{importReport.created}</div>
+                    <div><span className="block text-xs font-bold uppercase text-stone-500">Updated</span>{importReport.updated}</div>
+                    <div><span className="block text-xs font-bold uppercase text-stone-500">Skipped</span>{importReport.skipped}</div>
+                  </div>
+                  {importReport.rows.length > 0 && (
+                    <div className="mt-3 max-h-56 overflow-y-auto space-y-1.5">
+                      {importReport.rows.map(row => (
+                        <div key={row.row} className="rounded-xl bg-white/80 px-3 py-2">
+                          <div className="flex items-center gap-2">
+                            <span className={`${row.action === 'create' ? 'admin-badge-green' : row.action === 'update' ? 'admin-badge-blue' : 'admin-badge-yellow'} text-[10px]`}>{row.action}</span>
+                            <span className="truncate font-semibold">Row {row.row}: {row.title || '(no title)'}</span>
+                          </div>
+                          {(row.reason || row.changedFields?.length) && (
+                            <span className="text-xs text-stone-500">{row.reason || `Changes: ${row.changedFields?.join(', ')}`}</span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => runImport('dry-run')}
+                  disabled={importLoading}
+                  className="admin-btn admin-btn-ghost px-4 py-2 text-sm disabled:opacity-60"
+                >
+                  {importLoading ? 'Working...' : 'Preview changes'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => runImport('execute')}
+                  disabled={importLoading || !importReport?.ok || importReport.mode === 'execute'}
+                  className="admin-btn admin-btn-primary px-4 py-2 text-sm disabled:opacity-60"
+                >
+                  Import {importReport && importReport.mode === 'dry-run' ? `${importReport.created + importReport.updated} row(s)` : ''}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Preview Modal */}
       {previewItem && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setPreviewId(null)}>
@@ -577,6 +754,7 @@ export default function AdminDevotionalsPage() {
                   <h2 className="text-lg font-bold text-gray-900">{previewItem.title}</h2>
                   <div className="flex flex-wrap gap-2 mt-2">
                     {previewItem.category && <span className="admin-badge-orange">{previewItem.category}</span>}
+                    {previewItem.subcategory && <span className="admin-badge-purple">{getSubcategoryLabel(previewItem.subcategory)}</span>}
                     {previewItem.deity && <span className="admin-badge-blue">{previewItem.deity}</span>}
                     {previewItem.language && <span className="admin-badge-purple">{previewItem.language}</span>}
                   </div>

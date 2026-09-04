@@ -71,6 +71,10 @@ type TempleRow = {
   imageHero?: string
   status?: 'approved' | 'pending' | 'rejected'
   verified?: 'verified' | 'not-verified'
+  source?: 'admin' | 'community' | 'imported' | 'legacy'
+  moderationNotes?: string
+  createdAt?: string
+  reviewedAt?: string
 }
 
 type CsvImportResult = {
@@ -112,6 +116,7 @@ export default function AdminTemplesPage() {
   const [stateFilter, setStateFilter] = useState('')
   const [typeFilter, setTypeFilter] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
+  const [sourceFilter, setSourceFilter] = useState('')
   const [dataQualityFilter, setDataQualityFilter] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('')
   const [page, setPage] = useState(1)
@@ -130,8 +135,8 @@ export default function AdminTemplesPage() {
   
   const debouncedSearch = useDebouncedValue(search)
 
-  useEffect(() => { fetchTemples(page) }, [page, pageSize, debouncedSearch, deityFilter, stateFilter, typeFilter, statusFilter, dataQualityFilter, categoryFilter, sortCol, sortDir])
-  useEffect(() => { setPage(1) }, [pageSize, debouncedSearch, deityFilter, stateFilter, typeFilter, statusFilter, dataQualityFilter, categoryFilter, sortCol, sortDir])
+  useEffect(() => { fetchTemples(page) }, [page, pageSize, debouncedSearch, deityFilter, stateFilter, typeFilter, statusFilter, sourceFilter, dataQualityFilter, categoryFilter, sortCol, sortDir])
+  useEffect(() => { setPage(1) }, [pageSize, debouncedSearch, deityFilter, stateFilter, typeFilter, statusFilter, sourceFilter, dataQualityFilter, categoryFilter, sortCol, sortDir])
   
   async function fetchTemples(targetPage = page) {
     try {
@@ -148,6 +153,7 @@ export default function AdminTemplesPage() {
       if (stateFilter) params.set('state', stateFilter)
       if (typeFilter) params.set('templeType', typeFilter)
       if (statusFilter) params.set('status', statusFilter)
+      if (sourceFilter) params.set('source', sourceFilter)
       if (dataQualityFilter) params.set('dataQuality', dataQualityFilter)
       if (categoryFilter) params.set('category', categoryFilter)
       const res = await fetch(`/api/temples?${params.toString()}`, { credentials: 'include', cache: 'no-store' })
@@ -608,6 +614,10 @@ export default function AdminTemplesPage() {
             <option value="pending">Pending</option>
             <option value="rejected">Rejected</option>
           </select>
+          <select value={sourceFilter} onChange={e => setSourceFilter(e.target.value)} className="admin-input">
+            <option value="">All sources</option>
+            <option value="community">Community submissions</option>
+          </select>
           <select value={dataQualityFilter} onChange={e => setDataQualityFilter(e.target.value)} className="admin-input">
             <option value="">All Quality</option>
             <option value="A+">A+</option>
@@ -642,6 +652,7 @@ export default function AdminTemplesPage() {
                 <th>Location</th>
                 <th>Deity</th>
                 <th>Quality</th>
+                <th>Source</th>
                 <th className="cursor-pointer hover:text-gray-900" onClick={() => toggleSort('status')}>
                   Status {sortCol === 'status' && (sortDir === 'asc' ? '↑' : '↓')}
                 </th>
@@ -657,6 +668,7 @@ export default function AdminTemplesPage() {
                   <td className="text-gray-500 max-w-[200px] truncate">{r.location}</td>
                   <td className="text-gray-500">{r.deity}</td>
                   <td><span className="admin-badge-blue">{r.dataQuality || 'B'}</span></td>
+                  <td><span className={r.source === 'community' ? 'admin-badge-yellow' : 'text-gray-500 text-xs'}>{r.source === 'community' ? 'Community' : 'Admin/import'}</span></td>
                   <td>
                     <span className={r.status === 'approved' ? 'admin-badge-green' : r.status === 'pending' ? 'admin-badge-yellow' : 'admin-badge-red'}>
                       {r.status || 'approved'}
@@ -687,7 +699,7 @@ export default function AdminTemplesPage() {
                 </tr>
               ))}
               {paginated.length === 0 && (
-                <tr><td colSpan={8} className="px-5 py-8 text-center text-gray-400">No temples match filters.</td></tr>
+                <tr><td colSpan={9} className="px-5 py-8 text-center text-gray-400">No temples match filters.</td></tr>
               )}
             </tbody>
           </table>

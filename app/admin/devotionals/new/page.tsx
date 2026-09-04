@@ -3,7 +3,9 @@
 import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import ImageUpload from '@/components/ImageUpload'
 import { FULL_CATEGORIES } from '@/app/devotionals/components/categories'
+import type { SarvdevMediaAsset } from '@/lib/media-asset'
 
 function createSlug(title: string): string {
   const englishMatch = title.match(/\(([^)]+)\)/)
@@ -36,6 +38,8 @@ export default function NewDevotionalPage() {
     metaTitle: '',
     metaDescription: '',
     metaKeywords: '',
+    image: '',
+    primaryMedia: null as SarvdevMediaAsset | null,
   })
 
   const slugPreview = useMemo(() => formData.slug || createSlug(formData.title), [formData.title, formData.slug])
@@ -63,7 +67,7 @@ export default function NewDevotionalPage() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target
     const checked = (e.target as HTMLInputElement).checked
-    setFormData({ ...formData, [name]: type === 'checkbox' ? checked : value })
+    setFormData({ ...formData, [name]: type === 'checkbox' ? checked : value, ...(name === 'category' ? { subcategory: '' } : {}) })
   }
 
   return (
@@ -118,12 +122,12 @@ export default function NewDevotionalPage() {
             </div>
           </div>
 
-          {formData.category === 'Aarti' && (
+          {(formData.category === 'Aarti' || formData.category === 'Mantra' || formData.category === 'Namavali' || formData.category === '108 Namavali' || formData.category === 'Sahasranamavali') && (
             <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1">Aarti Subcategory</label>
-              <select name="subcategory" value={formData.subcategory} onChange={handleChange} className="admin-input w-full">
+              <label className="block text-sm font-medium text-gray-600 mb-1">{formData.category} Subcategory</label>
+              <select name="subcategory" value={formData.subcategory} onChange={handleChange} required={formData.category === 'Mantra' || formData.category === 'Namavali' || formData.category === '108 Namavali' || formData.category === 'Sahasranamavali'} className="admin-input w-full">
                 <option value="">— Select Subcategory —</option>
-                {FULL_CATEGORIES.find((cat) => cat.id === 'Aarti')?.subcategories?.map((sub) => (
+                {FULL_CATEGORIES.find((cat) => cat.id === formData.category || (formData.category === '108 Namavali' && cat.id === 'Namavali'))?.subcategories?.map((sub) => (
                   <option key={sub.id} value={sub.id}>{sub.label}</option>
                 ))}
               </select>
@@ -167,6 +171,16 @@ export default function NewDevotionalPage() {
           <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-4 text-sm text-amber-900">
             Public devotional pages currently use one optimized fallback image for speed. Devotional-specific and deity images are ignored on the public devotional UI for now.
           </div>
+          <ImageUpload
+            value={formData.image}
+            onChange={(url) => setFormData({ ...formData, image: url })}
+            media={formData.primaryMedia}
+            onMediaChange={(media) => setFormData((current) => ({ ...current, primaryMedia: media }))}
+            folder="sarvdev/devotionals"
+            label="Devotional Image"
+            guidance="devotionalCard"
+            kind="devotional-artwork"
+          />
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-1">Audio URL</label>
             <input type="url" name="audio" value={formData.audio} onChange={handleChange} className="admin-input w-full" placeholder="https://example.com/audio.mp3" />

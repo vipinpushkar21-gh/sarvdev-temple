@@ -1,260 +1,44 @@
-"use client"
-
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import type { Metadata } from 'next'
 import Link from 'next/link'
-import { BookOpen, CheckCircle2, Filter, MapPin, Search, Sparkles, Star, Users } from 'lucide-react'
-import SarvdevImage from '../../components/SarvdevImage'
-import { SPIRITUAL_ICON_CATEGORIES } from '../../data/spiritual-icon-categories'
-import { filterSpiritualIcons, getStaticSpiritualIconsForSeed, type SpiritualIconRecord } from '../../lib/spiritual-icons'
-import { getTempleCardImage, getTempleHeroImage } from '../../lib/temple-image'
+import { connectDB } from '@/lib/db'
+import SpiritualIcon from '@/models/SpiritualIcon'
+import SarvdevImage from '@/components/SarvdevImage'
+import { getSpiritualIconCardImage } from '@/lib/temple-image'
+import { publicContentSlugFilter } from '@/lib/public-content'
 
-const HERO_IMAGE = 'https://res.cloudinary.com/dc2qg7bwr/image/upload/image_2_xljqwa'
+const BASE = 'https://sarvdev.com'; const PAGE_SIZE = 24
+export const metadata: Metadata = { title: 'Spiritual Icons of Bharat — Sarvdev', description: 'A growing cultural archive of spiritual personalities represented on Sarvdev.', alternates: { canonical: `${BASE}/spiritual-icons` } }
+const projection = 'name nameHi slug category categorySlug title titleHi shortBio primaryMedia cardMedia image imageCard state city priority'
+type CategoryOption = { slug: string; name: string }
 
-export default function SpiritualIconsPage() {
-  const [icons, setIcons] = useState<SpiritualIconRecord[]>(() => getStaticSpiritualIconsForSeed())
-  const [loading, setLoading] = useState(true)
-  const [activeCategory, setActiveCategory] = useState('all')
-  const [search, setSearch] = useState('')
-  const [stateFilter, setStateFilter] = useState('')
-  const [languageFilter, setLanguageFilter] = useState('')
-
-  useEffect(() => {
-    let cancelled = false
-
-    async function loadIcons() {
-      try {
-        const res = await fetch('/api/spiritual-icons?limit=50')
-        if (!res.ok) return
-        const data = await res.json()
-        const items = Array.isArray(data) ? data : (data.items || data.data || [])
-        if (!cancelled && Array.isArray(items) && items.length > 0) setIcons(items)
-      } catch {
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
-    }
-
-    loadIcons()
-    return () => { cancelled = true }
-  }, [])
-
-  const states = useMemo(() => Array.from(new Set(icons.map((icon) => icon.state).filter(Boolean) as string[])).sort(), [icons])
-  const languages = useMemo(() => Array.from(new Set(icons.flatMap((icon) => icon.languages || []).filter(Boolean))).sort(), [icons])
-  const featured = useMemo(() => {
-    const explicit = icons.filter((icon) => icon.featured)
-    return (explicit.length ? explicit : icons.slice(0, 6)).slice(0, 6)
-  }, [icons])
-
-  const filtered = useMemo(() => {
-    const params = new URLSearchParams()
-    if (activeCategory !== 'all') params.set('category', activeCategory)
-    if (search) params.set('search', search)
-    if (stateFilter) params.set('state', stateFilter)
-    if (languageFilter) params.set('language', languageFilter)
-    return filterSpiritualIcons(icons, params)
-  }, [activeCategory, icons, languageFilter, search, stateFilter])
-
-  const jsonLd = useMemo(() => [
-    {
-      '@context': 'https://schema.org',
-      '@type': 'BreadcrumbList',
-      itemListElement: [
-        { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://sarvdev.com' },
-        { '@type': 'ListItem', position: 2, name: 'Spiritual Icons', item: 'https://sarvdev.com/spiritual-icons' },
-      ],
-    },
-    {
-      '@context': 'https://schema.org',
-      '@type': 'ItemList',
-      name: 'Spiritual Icons on Sarvdev',
-      itemListElement: icons.slice(0, 24).map((icon, index) => ({
-        '@type': 'ListItem',
-        position: index + 1,
-        name: icon.name,
-        url: `https://sarvdev.com/spiritual-icons/${icon.slug}`,
-      })),
-    },
-  ], [icons])
-
-  const heroImage = getTempleHeroImage(HERO_IMAGE)
-
-  return (
-    <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-
-      <section className="relative min-h-[560px] overflow-hidden bg-stone-950 text-white">
-        <SarvdevImage image={heroImage} alt="Spiritual Icons sacred background" className="absolute inset-0 opacity-45" imgClassName="object-cover" loading="eager" />
-        <div className="absolute inset-0 bg-gradient-to-r from-stone-950/95 via-stone-950/70 to-stone-950/25" />
-        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-surface to-transparent" />
-
-        <div className="page-container relative z-10 flex min-h-[560px] flex-col justify-end pb-14 pt-24">
-          <div className="max-w-5xl">
-            <span className="inline-flex items-center gap-2 rounded-full border border-amber-200/25 bg-amber-300/15 px-3 py-1.5 text-xs font-black uppercase tracking-[0.18em] text-amber-100 backdrop-blur">
-              <Sparkles className="h-3.5 w-3.5" />
-              Spiritual Lineages
-            </span>
-            <h1 className="mt-5 text-[clamp(3rem,8vw,6.6rem)] font-black leading-[0.92] tracking-normal text-white drop-shadow-2xl">
-              Spiritual Icons
-            </h1>
-            <p className="mt-5 max-w-3xl text-xl leading-8 text-stone-100">
-              Discover revered Katha Vachaks, Bhajan Gayaks, Pandits, gurus, scholars, kirtan mandalis, and dharma pracharaks preserving Sanatan traditions.
-            </p>
-            <div className="mt-8 grid max-w-4xl gap-3 sm:grid-cols-3">
-              <HeroStat icon={<Users className="h-5 w-5" />} label="Profiles" value={icons.length} />
-              <HeroStat icon={<Filter className="h-5 w-5" />} label="Categories" value={SPIRITUAL_ICON_CATEGORIES.length} />
-              <HeroStat icon={<MapPin className="h-5 w-5" />} label="States" value={states.length} />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <main className="bg-surface pb-24">
-        <section className="page-container -mt-10 relative z-20">
-          <div className="rounded-2xl border border-amber-200 bg-white p-4 shadow-xl">
-            <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_12rem_12rem]">
-              <div className="relative">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
-                <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by name, speciality, state..." className="w-full rounded-xl border border-stone-200 bg-white py-3 pl-10 pr-4 text-sm font-semibold outline-none focus:border-orange-400" />
-              </div>
-              <select value={stateFilter} onChange={(e) => setStateFilter(e.target.value)} className="rounded-xl border border-stone-200 bg-white px-3 py-3 text-sm font-semibold">
-                <option value="">All States</option>
-                {states.map((state) => <option key={state} value={state}>{state}</option>)}
-              </select>
-              <select value={languageFilter} onChange={(e) => setLanguageFilter(e.target.value)} className="rounded-xl border border-stone-200 bg-white px-3 py-3 text-sm font-semibold">
-                <option value="">All Languages</option>
-                {languages.map((language) => <option key={language} value={language}>{language}</option>)}
-              </select>
-            </div>
-          </div>
-        </section>
-
-        <section className="page-container pt-10">
-          <SectionHeader eyebrow="All Categories" title="Explore spiritual service paths" description="Every category stays visible, even when records are still being added." />
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-            <button type="button" onClick={() => setActiveCategory('all')} className={`rounded-2xl border p-5 text-left transition ${activeCategory === 'all' ? 'border-stone-900 bg-stone-950 text-white shadow-xl' : 'border-stone-200 bg-white hover:border-amber-300'}`}>
-              <span className="text-2xl">✨</span>
-              <h3 className="mt-3 text-lg font-black">All Icons</h3>
-              <p className={`mt-1 text-sm ${activeCategory === 'all' ? 'text-stone-200' : 'text-stone-500'}`}>{icons.length} profiles</p>
-            </button>
-            {SPIRITUAL_ICON_CATEGORIES.map((category) => {
-              const count = icons.filter((icon) => icon.categorySlug === category.slug).length
-              const active = activeCategory === category.slug
-              return (
-                <button key={category.slug} type="button" onClick={() => setActiveCategory(category.slug)} className={`rounded-2xl border p-5 text-left transition ${active ? 'border-stone-900 bg-stone-950 text-white shadow-xl' : 'border-stone-200 bg-white hover:border-amber-300'}`}>
-                  <span className="text-2xl">{category.icon}</span>
-                  <h3 className="mt-3 text-lg font-black">{category.name}</h3>
-                  <p className={`mt-1 text-sm ${active ? 'text-stone-200' : 'text-stone-500'}`}>{count} profiles</p>
-                </button>
-              )
-            })}
-          </div>
-        </section>
-
-        <section className="page-container pt-14">
-          <SectionHeader eyebrow="Featured" title="Featured spiritual icons" description="Verified and highlighted voices from the spiritual community." />
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {featured.map((icon) => <IconCard key={icon.slug} icon={icon} featured />)}
-          </div>
-        </section>
-
-        <section className="page-container pt-14">
-          <SectionHeader eyebrow="Directory" title="Search results" description={`${filtered.length} profile${filtered.length === 1 ? '' : 's'} matching current filters.`} />
-          {filtered.length > 0 ? (
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {filtered.map((icon) => <IconCard key={icon.slug} icon={icon} />)}
-            </div>
-          ) : (
-            <EmptyState title="No matching spiritual icons yet" description="Try clearing filters or explore category sections below." />
-          )}
-        </section>
-
-        <section className="page-container pt-14 space-y-12">
-          {SPIRITUAL_ICON_CATEGORIES.map((category) => {
-            const categoryIcons = icons.filter((icon) => icon.categorySlug === category.slug).slice(0, 6)
-            return (
-              <section key={category.slug}>
-                <SectionHeader eyebrow={category.nameHi} title={category.name} description={category.description} />
-                {categoryIcons.length > 0 ? (
-                  <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                    {categoryIcons.map((icon) => <IconCard key={icon.slug} icon={icon} />)}
-                  </div>
-                ) : (
-                  <EmptyState title={`${category.name} profiles coming soon`} description="This category is ready in Sarvdev admin and will appear here when active records are added." />
-                )}
-              </section>
-            )
-          })}
-        </section>
-
-        {loading && <p className="page-container pt-6 text-sm text-stone-400">Refreshing spiritual icon records...</p>}
-      </main>
-    </>
-  )
+export default async function SpiritualIconsPage({ searchParams }: { searchParams: Promise<{ q?: string; category?: string; state?: string; page?: string }> }) {
+  const { q = '', category = '', state = '', page: pageValue = '1' } = await searchParams; const page = Math.max(1, Number(pageValue) || 1)
+  const filter: Record<string, unknown> = { status: 'active', ...publicContentSlugFilter }; if (category) filter.categorySlug = category; if (state) filter.state = state; if (q.trim()) filter.$or = ['name', 'nameHi', 'title', 'shortBio'].map(field => ({ [field]: { $regex: q.trim(), $options: 'i' } }))
+  const publicCategoryFilter = { status: 'active', ...publicContentSlugFilter, categorySlug: { $nin: [null, ''] }, category: { $nin: [null, ''] } }
+  let items: any[] = []; let total = 0; let categories: CategoryOption[] = []
+  try {
+    await connectDB()
+    const [pageRows, count, categoryRows] = await Promise.all([
+      SpiritualIcon.find(filter, projection).sort({ featured: -1, priority: 1, name: 1, _id: 1 }).skip((page - 1) * PAGE_SIZE).limit(PAGE_SIZE).lean(),
+      SpiritualIcon.countDocuments(filter),
+      SpiritualIcon.aggregate<{ _id: string; name: string }>([
+        { $match: publicCategoryFilter },
+        { $sort: { category: 1 } },
+        { $group: { _id: '$categorySlug', name: { $first: '$category' } } },
+        { $sort: { name: 1, _id: 1 } },
+      ]),
+    ])
+    items = pageRows
+    total = count
+    categories = categoryRows.map((row) => ({ slug: row._id, name: row.name }))
+  } catch {
+    items = []
+    total = 0
+    categories = []
+  }
+  const pages = Math.max(1, Math.ceil(total / PAGE_SIZE)); const params = (next: number) => { const query = new URLSearchParams(); if (q) query.set('q', q); if (category) query.set('category', category); if (state) query.set('state', state); if (next > 1) query.set('page', String(next)); return `/spiritual-icons${query.size ? `?${query}` : ''}` }
+  const categoryHref = (nextCategory: string) => { const next = new URLSearchParams(); if (q) next.set('q', q); if (nextCategory) next.set('category', nextCategory); if (state) next.set('state', state); return `/spiritual-icons${next.size ? `?${next}` : ''}` }
+  const jsonLd = { '@context': 'https://schema.org', '@type': 'ItemList', itemListElement: items.map((item, index) => ({ '@type': 'ListItem', position: (page - 1) * PAGE_SIZE + index + 1, name: item.name, url: `${BASE}/spiritual-icons/${item.slug}` })) }
+  return <main className="bg-surface pb-20"><script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} /><div className="page-container py-12 sm:py-16"><header className="max-w-3xl border-l-2 border-primary-700 pl-5"><p className="text-overline uppercase tracking-[.16em] text-primary-700">Cultural archive</p><h1 className="mt-3 font-serif text-4xl text-ink sm:text-5xl">Spiritual Icons of Bharat</h1><p className="mt-5 text-lg leading-8 text-ink-muted">A growing record of spiritual personalities represented through Sarvdev’s managed collection.</p></header><form className="mt-12 grid gap-3 border-y border-surface-border py-5 sm:grid-cols-[1fr_12rem_12rem_auto]"><input name="q" defaultValue={q} className="input" placeholder="Search names or profiles" /><input name="category" defaultValue={category} className="input" placeholder="Category" /><input name="state" defaultValue={state} className="input" placeholder="State" /><button className="btn btn-primary">Search</button></form>{categories.length > 0 && <nav aria-label="Spiritual Icon categories" className="mt-5 flex flex-wrap gap-2"><Link href={categoryHref('')} className={`rounded-full border px-3 py-1.5 text-sm no-underline ${!category ? 'border-primary-700 bg-primary-50 text-primary-800' : 'border-surface-border text-ink-muted hover:border-primary-300 hover:text-primary-800'}`}>All</Link>{categories.map((option) => <Link key={option.slug} href={categoryHref(option.slug)} className={`rounded-full border px-3 py-1.5 text-sm no-underline ${category === option.slug ? 'border-primary-700 bg-primary-50 text-primary-800' : 'border-surface-border text-ink-muted hover:border-primary-300 hover:text-primary-800'}`}>{option.name}</Link>)}</nav>}{items.length ? <><div className="mt-10 grid gap-x-10 gap-y-9 sm:grid-cols-2 lg:grid-cols-3">{items.map(item => <ProfileCard key={item.slug} item={item} />)}</div>{pages > 1 && <nav className="mt-12 flex justify-between border-t border-surface-border pt-5 text-sm"><span className="text-ink-muted">Page {page} of {pages}</span><span className="flex gap-5">{page > 1 && <Link href={params(page - 1)} className="text-primary-800 underline">Previous</Link>}{page < pages && <Link href={params(page + 1)} className="text-primary-800 underline">Next</Link>}</span></nav>}</> : <section className="mt-12 max-w-2xl border-y border-surface-border py-10"><h2 className="font-serif text-2xl text-ink">No public profiles match this view.</h2><p className="mt-3 text-sm leading-6 text-ink-muted">This archive shows only active records currently available on Sarvdev.</p></section>}</div></main>
 }
-
-function IconCard({ icon, featured = false }: { icon: SpiritualIconRecord; featured?: boolean }) {
-  const image = getTempleCardImage({ imageCard: icon.imageCard || icon.image || '', image: icon.imageCard || icon.image || '' })
-  return (
-    <Link href={`/spiritual-icons/${icon.slug}`} className="group overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm no-underline transition duration-300 hover:-translate-y-1 hover:border-amber-300 hover:shadow-xl">
-      <div className="relative aspect-[4/3] overflow-hidden bg-orange-50">
-        {icon.imageCard || icon.image ? (
-          <SarvdevImage image={image} alt={icon.name} className="absolute inset-0" imgClassName="object-cover transition duration-700 group-hover:scale-105" />
-        ) : (
-          <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-orange-50 to-amber-100">
-            <span className="flex h-24 w-24 items-center justify-center rounded-full bg-white text-4xl font-black text-orange-700 shadow-sm">{icon.name.charAt(0)}</span>
-          </div>
-        )}
-        <div className="absolute left-3 top-3 flex flex-wrap gap-2">
-          {featured && <Badge icon={<Star className="h-3.5 w-3.5" />} label="Featured" />}
-          {icon.verified && <Badge icon={<CheckCircle2 className="h-3.5 w-3.5" />} label="Verified" />}
-        </div>
-      </div>
-      <div className="p-5">
-        <p className="text-xs font-black uppercase tracking-[0.16em] text-orange-700">{icon.category}</p>
-        <h3 className="mt-2 text-2xl font-black leading-tight text-stone-950 group-hover:text-orange-700">{icon.name}</h3>
-        {icon.nameHi && <p className="mt-1 font-semibold text-stone-500">{icon.nameHi}</p>}
-        <p className="mt-3 line-clamp-2 text-sm leading-6 text-stone-600">{icon.shortBio || icon.fullBio || icon.title}</p>
-        <div className="mt-4 flex flex-wrap gap-2">
-          {(icon.specializations || []).slice(0, 3).map((tag) => <span key={tag} className="rounded-full bg-stone-100 px-2.5 py-1 text-xs font-bold text-stone-600">{tag}</span>)}
-        </div>
-        <div className="mt-4 flex flex-wrap gap-2 text-xs font-bold text-stone-500">
-          {icon.state && <span className="inline-flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{icon.state}</span>}
-          {(icon.languages || []).slice(0, 2).map((language) => <span key={language}>{language}</span>)}
-        </div>
-      </div>
-    </Link>
-  )
-}
-
-function HeroStat({ icon, label, value }: { icon: ReactNode; label: string; value: number }) {
-  return (
-    <div className="rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur">
-      <span className="flex items-center gap-2 text-amber-100">{icon}<span className="text-sm font-bold">{label}</span></span>
-      <p className="mt-2 text-3xl font-black text-white">{value}</p>
-    </div>
-  )
-}
-
-function SectionHeader({ eyebrow, title, description }: { eyebrow: string; title: string; description: string }) {
-  return (
-    <div className="mb-6 max-w-3xl">
-      <p className="text-xs font-black uppercase tracking-[0.18em] text-orange-700">{eyebrow}</p>
-      <h2 className="mt-2 text-3xl font-black text-stone-950 md:text-4xl">{title}</h2>
-      <p className="mt-3 text-base leading-7 text-stone-600">{description}</p>
-    </div>
-  )
-}
-
-function Badge({ icon, label }: { icon: ReactNode; label: string }) {
-  return <span className="inline-flex items-center gap-1 rounded-full bg-white/90 px-2.5 py-1 text-xs font-black text-stone-900 shadow-sm">{icon}{label}</span>
-}
-
-function EmptyState({ title, description }: { title: string; description: string }) {
-  return (
-    <div className="rounded-2xl border border-dashed border-amber-300 bg-amber-50/70 p-8 text-center">
-      <BookOpen className="mx-auto h-9 w-9 text-amber-700" />
-      <h3 className="mt-3 text-xl font-black text-stone-950">{title}</h3>
-      <p className="mt-2 text-sm text-stone-600">{description}</p>
-    </div>
-  )
-}
+function ProfileCard({ item }: { item: any }) { const image = getSpiritualIconCardImage(item); return <Link href={`/spiritual-icons/${item.slug}`} className="group border-t border-surface-border pt-4 no-underline"><div className="relative mb-4 aspect-[4/3] overflow-hidden bg-surface-sunken"><SarvdevImage image={image} alt={item.name} className="absolute inset-0" imgClassName="object-cover" /></div><p className="text-xs uppercase tracking-[.14em] text-primary-700">{item.category || item.categorySlug}</p><h2 className="mt-2 font-serif text-2xl text-ink">{item.name}</h2>{item.nameHi && <p className="mt-1 font-devanagari text-ink-muted">{item.nameHi}</p>}{item.title && <p className="mt-2 text-sm text-ink-muted">{item.title}</p>}{item.shortBio && <p className="mt-3 line-clamp-3 text-sm leading-6 text-ink-muted">{item.shortBio}</p>}{[item.city, item.state].filter(Boolean).length > 0 && <p className="mt-3 text-xs text-ink-faint">{[item.city, item.state].filter(Boolean).join(', ')}</p>}</Link> }

@@ -4,9 +4,11 @@ import { connectDB } from '@/lib/db'
 import User from '@/models/User'
 import { verifyPassword, createToken, AUTH_COOKIE_NAME, AUTH_COOKIE_OPTIONS } from '@/lib/auth'
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
+import { hasTrustedAuthOrigin } from '@/lib/auth-origin'
 
 export async function POST(req: NextRequest) {
   try {
+    if (!hasTrustedAuthOrigin(req)) return NextResponse.json({ error: 'Invalid request origin' }, { status: 403 })
     const ip = getClientIp(req)
     const { ok } = checkRateLimit(`login:${ip}`, 5, 60_000)
     if (!ok) {

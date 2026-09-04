@@ -3,17 +3,9 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
+import ImageUpload from '@/components/ImageUpload'
 import { FULL_CATEGORIES } from '@/app/devotionals/components/categories'
-
-function createSlug(title: string): string {
-  const englishMatch = title.match(/\(([^)]+)\)/)
-  let text = englishMatch ? englishMatch[1] : title
-  let slug = text.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').trim()
-  if (!slug || slug === '-') {
-    slug = title.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').trim()
-  }
-  return slug || 'devotional'
-}
+import type { SarvdevMediaAsset } from '@/lib/media-asset'
 
 export default function EditDevotionalPage() {
   const params = useParams()
@@ -47,6 +39,8 @@ export default function EditDevotionalPage() {
     metaTitle: '',
     metaDescription: '',
     metaKeywords: '',
+    image: '',
+    primaryMedia: null as SarvdevMediaAsset | null,
   })
 
   useEffect(() => {
@@ -68,7 +62,7 @@ export default function EditDevotionalPage() {
               language: found.language || '',
               deity: found.deity || '',
               audio: found.audioUrl || found.audio || '',
-              lyrics: found.content || found.lyrics || '',
+              lyrics: found.lyrics || found.content || '',
               duration: found.duration || '',
               artist: found.artist || '',
               featured: Boolean(found.featured),
@@ -76,6 +70,8 @@ export default function EditDevotionalPage() {
               metaTitle: found.metaTitle || '',
               metaDescription: found.metaDescription || '',
               metaKeywords: found.metaKeywords || '',
+              image: found.image || '',
+              primaryMedia: found.primaryMedia || null,
             })
           } else {
             showToast('error', 'Devotional not found')
@@ -95,7 +91,7 @@ export default function EditDevotionalPage() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target
     const checked = (e.target as HTMLInputElement).checked
-    setFormData({ ...formData, [name]: type === 'checkbox' ? checked : value })
+    setFormData({ ...formData, [name]: type === 'checkbox' ? checked : value, ...(name === 'category' ? { subcategory: '' } : {}) })
   }
 
   const autoGenerateSEO = () => {
@@ -149,7 +145,7 @@ export default function EditDevotionalPage() {
               language: found.language || '',
               deity: found.deity || '',
               audio: found.audioUrl || found.audio || '',
-              lyrics: found.content || found.lyrics || '',
+              lyrics: found.lyrics || found.content || '',
               duration: found.duration || '',
               artist: found.artist || '',
               featured: Boolean(found.featured),
@@ -157,6 +153,8 @@ export default function EditDevotionalPage() {
               metaTitle: found.metaTitle || '',
               metaDescription: found.metaDescription || '',
               metaKeywords: found.metaKeywords || '',
+              image: found.image || '',
+              primaryMedia: found.primaryMedia || null,
             })
           }
         }
@@ -208,7 +206,7 @@ export default function EditDevotionalPage() {
         </div>
         <div className="flex items-center gap-2">
           {formData.title && (
-            <a href={`/devotionals/${formData.slug || createSlug(formData.title)}`} target="_blank" rel="noopener noreferrer"
+            <a href={`/devotionals/${formData.slug || id}`} target="_blank" rel="noopener noreferrer"
               className="admin-btn admin-btn-ghost px-4 py-2 text-sm flex items-center gap-1.5 text-green-700 border-green-200 hover:bg-green-50">
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" /></svg>
               View Live
@@ -265,12 +263,12 @@ export default function EditDevotionalPage() {
             </div>
           </div>
 
-          {formData.category === 'Aarti' && (
+          {(formData.category === 'Aarti' || formData.category === 'Mantra' || formData.category === 'Namavali' || formData.category === '108 Namavali' || formData.category === 'Sahasranamavali') && (
             <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1">Aarti Subcategory</label>
-              <select name="subcategory" value={formData.subcategory} onChange={handleChange} className="admin-input w-full">
+              <label className="block text-sm font-medium text-gray-600 mb-1">{formData.category} Subcategory</label>
+              <select name="subcategory" value={formData.subcategory} onChange={handleChange} required={formData.category === 'Mantra' || formData.category === 'Namavali' || formData.category === '108 Namavali' || formData.category === 'Sahasranamavali'} className="admin-input w-full">
                 <option value="">— Select Subcategory —</option>
-                {FULL_CATEGORIES.find((cat) => cat.id === 'Aarti')?.subcategories?.map((sub) => (
+                {FULL_CATEGORIES.find((cat) => cat.id === formData.category || (formData.category === '108 Namavali' && cat.id === 'Namavali'))?.subcategories?.map((sub) => (
                   <option key={sub.id} value={sub.id}>{sub.label}</option>
                 ))}
               </select>
@@ -310,6 +308,16 @@ export default function EditDevotionalPage() {
           <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-4 text-sm text-amber-900">
             Public devotional pages currently use one optimized fallback image for speed. Devotional-specific and deity images are ignored on the public devotional UI for now.
           </div>
+          <ImageUpload
+            value={formData.image}
+            onChange={(url) => setFormData({ ...formData, image: url })}
+            media={formData.primaryMedia}
+            onMediaChange={(media) => setFormData((current) => ({ ...current, primaryMedia: media }))}
+            folder="sarvdev/devotionals"
+            label="Devotional Image"
+            guidance="devotionalCard"
+            kind="devotional-artwork"
+          />
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-1">Audio URL</label>
             <input type="url" name="audio" value={formData.audio} onChange={handleChange} className="admin-input w-full" placeholder="https://example.com/audio.mp3" />

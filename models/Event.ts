@@ -1,5 +1,6 @@
 // models/Event.ts
 import mongoose, { Schema, models } from 'mongoose';
+import { MediaAssetSchema } from './shared/MediaAssetSchema';
 
 const EVENT_STATUS_VALUES = ['draft', 'published', 'archived', 'pending', 'approved', 'rejected'];
 
@@ -51,6 +52,11 @@ const EventSchema = new Schema({
   relatedDevotionalSlugs: { type: [String], default: [] },
 
   image: { type: String },
+  primaryMedia: { type: MediaAssetSchema },
+  cardMedia: { type: MediaAssetSchema },
+  heroMedia: { type: MediaAssetSchema },
+  ogMedia: { type: MediaAssetSchema },
+  galleryMedia: { type: [MediaAssetSchema], default: [] },
   imageCard: { type: String },
   imageHero: { type: String },
   galleryImages: { type: [String], default: [] },
@@ -84,6 +90,12 @@ const EventSchema = new Schema({
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
 });
+
+EventSchema.index({ status: 1, startDate: 1, date: 1 });
+EventSchema.index({ status: 1, category: 1, startDate: 1 });
+EventSchema.index({ status: 1, templeSlug: 1, startDate: 1 });
+EventSchema.index({ status: 1, deitySlug: 1, startDate: 1 });
+EventSchema.index({ status: 1, state: 1, startDate: 1 });
 
 const existingEventModel = models.Event as mongoose.Model<any> | undefined
 const existingStatusEnum = (existingEventModel as any)?.schema?.path('status')?.options?.enum as string[] | undefined

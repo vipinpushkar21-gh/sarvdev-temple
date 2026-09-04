@@ -48,6 +48,7 @@ import {
 import { expandQuery, buildExpandedRegex } from '@/lib/transliteration'
 import { applyRateLimit } from '@/lib/rate-limit'
 import { ACTIVE_PROVIDER_NAME } from '@/lib/search-providers'
+import { publicContentSlugFilter } from '@/lib/public-content'
 
 const DEFAULT_LIMIT = 6
 const MAX_LIMIT = 20
@@ -202,7 +203,7 @@ export async function GET(req: NextRequest) {
     // ── Temples ───────────────────────────────────────────────────────────────
     let temples: SearchResult[] = []
     if (wants('temple')) {
-      const extraFilter: Record<string, any> = { status: { $ne: 'rejected' } }
+      const extraFilter: Record<string, any> = { status: { $ne: 'rejected' }, ...publicContentSlugFilter }
       if (state) extraFilter.$or = [{ state: buildRegex(state) }, { stateNormalized: state.toLowerCase().replace(/\s+/g, '-') }]
       if (city)  extraFilter.city = buildRegex(city)
       if (deity) extraFilter.$or  = [...(extraFilter.$or ?? []), { deity: buildRegex(deity) }, { deitySlug: deity.toLowerCase().replace(/\s+/g, '-') }]
@@ -233,7 +234,7 @@ export async function GET(req: NextRequest) {
     // ── Deities ───────────────────────────────────────────────────────────────
     let deities: SearchResult[] = []
     if (wants('deity')) {
-      const deityFilter: Record<string, any> = { status: { $ne: 'rejected' } }
+      const deityFilter: Record<string, any> = { status: { $ne: 'rejected' }, ...publicContentSlugFilter }
       if (cat) deityFilter.categorySlug = cat
 
       const rawDeities: any[] = await textWithFallback(
@@ -256,7 +257,7 @@ export async function GET(req: NextRequest) {
     // ── Devotionals ───────────────────────────────────────────────────────────
     let devotionals: SearchResult[] = []
     if (wants('devotional')) {
-      const devFilter: Record<string, any> = { status: { $ne: 'rejected' } }
+      const devFilter: Record<string, any> = { status: { $ne: 'rejected' }, ...publicContentSlugFilter }
       if (cat)   devFilter.categorySlug = cat
       if (deity) devFilter.$or = [{ deitySlug: deity }, { deity: buildRegex(deity) }]
       if (lang)  devFilter.language = buildRegex(lang)
@@ -283,7 +284,7 @@ export async function GET(req: NextRequest) {
     // ── Blogs ─────────────────────────────────────────────────────────────────
     let blogs: SearchResult[] = []
     if (wants('blog')) {
-      const blogFilter: Record<string, any> = { status: 'published' }
+      const blogFilter: Record<string, any> = { status: 'published', ...publicContentSlugFilter }
       if (cat) blogFilter.category = buildRegex(cat)
 
       const rawBlogs: any[] = await textWithFallback(
@@ -305,7 +306,7 @@ export async function GET(req: NextRequest) {
     // ── Events ────────────────────────────────────────────────────────────────
     let events: SearchResult[] = []
     if (wants('event')) {
-      const eventFilter: Record<string, any> = { status: { $in: ['approved', 'published', 'active'] } }
+      const eventFilter: Record<string, any> = { status: { $in: ['approved', 'published', 'active'] }, ...publicContentSlugFilter }
       if (state) eventFilter.state = buildRegex(state)
       if (city)  eventFilter.city  = buildRegex(city)
       if (deity) eventFilter.deity = buildRegex(deity)
@@ -331,7 +332,7 @@ export async function GET(req: NextRequest) {
     // ── Darshan ───────────────────────────────────────────────────────────────
     let darshan: SearchResult[] = []
     if (wants('darshan')) {
-      const darshanFilter: Record<string, any> = {}
+      const darshanFilter: Record<string, any> = { ...publicContentSlugFilter }
       if (state) darshanFilter.state = buildRegex(state)
 
       const rawDarshan: any[] = await textWithFallback(
@@ -353,7 +354,7 @@ export async function GET(req: NextRequest) {
     // ── Spiritual Icons ───────────────────────────────────────────────────────
     let spiritualIcons: SearchResult[] = []
     if (wants('spiritualIcon')) {
-      const iconFilter: Record<string, any> = { status: 'active' }
+      const iconFilter: Record<string, any> = { status: 'active', ...publicContentSlugFilter }
       if (cat)   iconFilter.categorySlug = cat
       if (state) iconFilter.state = buildRegex(state)
 

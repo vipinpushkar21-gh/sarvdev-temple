@@ -1,5 +1,8 @@
 ﻿// models/Devotional.ts
 import mongoose from 'mongoose';
+import { MediaAssetSchema } from './shared/MediaAssetSchema';
+import { isValidMantraSubcategory } from '../lib/mantra-subcategories';
+import { isValidNamavaliSubcategory } from '../lib/namavali-subcategories';
 
 const DevotionalSchema = new mongoose.Schema({
   // Core identity
@@ -11,7 +14,22 @@ const DevotionalSchema = new mongoose.Schema({
   category:        { type: String, default: 'Other' },
   categorySlug:    { type: String, index: true },
   categoryHi:      String,
-  subcategory:     String,
+  subcategory:     {
+    type: String,
+    validate: {
+      validator(this: { category?: string }, value?: string) {
+        // Other categories retain their existing independent subcategory systems.
+        if (this.category === 'Mantra') return isValidMantraSubcategory(value);
+        if (this.category === 'Namavali' || this.category === '108 Namavali' || this.category === 'Sahasranamavali') return isValidNamavaliSubcategory(value);
+        return true;
+      },
+      message: 'Invalid devotional subcategory: "{VALUE}"',
+    },
+  },
+
+  // Set by the migration when a legacy Mantra cannot be mapped with confidence.
+  subcategoryReviewRequired: { type: Boolean, default: false },
+  subcategoryReviewReason: String,
 
   // Deity (canonical)
   deity:           String,
@@ -33,6 +51,11 @@ const DevotionalSchema = new mongoose.Schema({
 
   // Images (legacy)
   image:           String,
+  primaryMedia:    { type: MediaAssetSchema },
+  cardMedia:       { type: MediaAssetSchema },
+  heroMedia:       { type: MediaAssetSchema },
+  ogMedia:         { type: MediaAssetSchema },
+  galleryMedia:    { type: [MediaAssetSchema], default: [] },
   imageCard:       String,
   imageHero:       String,
   ogImage:         String,

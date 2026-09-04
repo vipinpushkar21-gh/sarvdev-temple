@@ -263,7 +263,7 @@ export function formatSacredCategoryResult(cat: {
     title: cat.name,
     titleHi: cat.nameHi,
     slug: cat.slug,
-    url: cat.pilgrimage ? `/temples/pilgrimage/${cat.slug}` : `/temples/category/${cat.slug}`,
+    url: `/temples/pilgrimage/${cat.slug}`,
     excerpt: cat.description,
   }
 }

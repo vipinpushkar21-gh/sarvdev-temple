@@ -3,6 +3,7 @@ import { connectDB } from '@/lib/db'
 import Event from '@/models/Event'
 import { AUTH_COOKIE_NAME, verifyToken } from '@/lib/auth'
 import { eventToPlain, normalizeEventStatus, slugifyEvent } from '@/lib/events'
+import { normalizeMediaAsset } from '@/lib/media-asset'
 
 function isAdmin(req: NextRequest) {
   const token = req.cookies.get(AUTH_COOKIE_NAME)?.value
@@ -23,6 +24,10 @@ function clean(payload: Record<string, any>) {
     ritualsHi: Array.isArray(payload.ritualsHi) ? payload.ritualsHi : String(payload.ritualsHi || '').split(/\r?\n|,/).map((x) => x.trim()).filter(Boolean),
     relatedDevotionalSlugs: Array.isArray(payload.relatedDevotionalSlugs) ? payload.relatedDevotionalSlugs : String(payload.relatedDevotionalSlugs || '').split(/\r?\n|,/).map((x) => x.trim()).filter(Boolean),
     galleryImages: Array.isArray(payload.galleryImages) ? payload.galleryImages : String(payload.galleryImages || '').split(/\r?\n|,/).map((x) => x.trim()).filter(Boolean),
+    primaryMedia: normalizeMediaAsset(payload.primaryMedia, 'other') ?? null,
+    cardMedia: normalizeMediaAsset(payload.cardMedia, 'other') ?? null,
+    heroMedia: normalizeMediaAsset(payload.heroMedia, 'other') ?? null,
+    ogMedia: normalizeMediaAsset(payload.ogMedia, 'other') ?? null,
     updatedAt: new Date(),
   }
 }

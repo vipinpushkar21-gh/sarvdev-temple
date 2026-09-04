@@ -1,186 +1,43 @@
-'use client'
-
-import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import Hero from '../../components/Hero'
 
-const FAQ_ITEMS: { q: string; a: string }[] = [
-  {
-    q: 'What is Sarvdev?',
-    a: 'Sarvdev is a free temple directory and devotional hub that helps devotees discover Hindu temples across India and the world, along with devotional content like bhajans, aartis, chalisas, and mantras.',
-  },
-  {
-    q: 'Is Sarvdev free to use?',
-    a: 'Yes, Sarvdev is completely free. We do not charge for temple listings, devotional content, or any platform features. Our mission is spiritual accessibility for everyone.',
-  },
-  {
-    q: 'How can I list my temple on Sarvdev?',
-    a: 'You can list your temple by visiting the "List a Temple" page and filling out the submission form. Our team will review and approve your listing.',
-  },
-  {
-    q: 'What types of devotional content are available?',
-    a: 'We offer aartis, bhajans, chalisas, mantras, stotras, and other devotional music in Hindi, Sanskrit, and English with audio playback and lyrics.',
-  },
-  {
-    q: 'How do I find temples near me?',
-    a: 'Use the temple directory search to find temples by city, state, deity, or sacred category. You can also browse state-wise and deity-wise temple listings.',
-  },
-  {
-    q: 'Is the temple information verified?',
-    a: 'All temple listings go through a review process. Verified temples are marked with a verification badge. We continuously update information for accuracy.',
-  },
+const offerings = [
+  ['Temple directory', 'Discover published temple records through place, deity and sacred-collection paths.'],
+  ['Devotional study', 'Listen to and read the devotional records available in Sarvdev.'],
+  ['Living calendar', 'Explore Daily Darshan, events and Panchang where data is available.'],
 ]
 
 export default function AboutPage() {
-  const [stats, setStats] = useState({ temples: 0, devotionals: 0, categories: 0 })
-
-  useEffect(() => {
-    fetch('/api/stats')
-      .then(res => res.json())
-      .then(data => setStats(data))
-      .catch(() => {})
-  }, [])
-
   return (
-    <>
-      <Hero title="About Sarvdev" subtitle="Connecting devotees with temples and spiritual traditions worldwide" overline="Our Mission" />
-      <main className="content-container section-sm">
+    <main className="bg-surface pb-20">
+      <div className="page-container py-12 sm:py-16">
+        <header className="max-w-3xl border-l-2 border-primary-700 pl-5">
+          <p className="text-overline font-semibold uppercase tracking-[.18em] text-primary-700">About Sarvdev</p>
+          <h1 className="mt-3 font-serif text-4xl leading-tight text-ink sm:text-5xl">A place to encounter Hindu sacred traditions with care.</h1>
+          <p className="mt-5 text-lg leading-8 text-ink-muted">Sarvdev brings together a growing temple directory and devotional resources for people exploring living traditions, places of worship and cultural memory.</p>
+        </header>
 
-        <div className="space-y-12 max-w-4xl mx-auto">
+        <section className="mt-14 max-w-4xl border-y border-surface-border py-10">
+          <p className="max-w-3xl text-xl leading-9 text-ink">We make room for discovery without claiming to be a complete record of every temple, practice or tradition. Information is presented from the records currently available on Sarvdev and should be confirmed with a temple before travel or worship.</p>
+        </section>
 
-          {/* Mission */}
-          <section className="relative card overflow-hidden">
-            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-accent to-primary" />
-            <div className="p-6 md:p-8">
-              <h2 className="text-h2 font-serif text-secondary-800 mb-4">Our Mission</h2>
-              <p className="text-body text-ink-muted leading-relaxed">
-                Sarvdev is a temple directory and devotional hub dedicated to connecting worshippers with temples,
-                events, and spiritual traditions across India and the world. Our mission is to preserve and promote
-                Hindu spiritual heritage by making it accessible to everyone through technology.
-              </p>
-              <blockquote className="mt-6 text-body italic text-secondary-600 border-l-3 border-accent/60 pl-5 py-2">
-                <span className="font-devanagari text-accent-700">&ldquo;सर्वे भवन्तु सुखिनः सर्वे सन्तु निरामयाः&rdquo;</span>
-                <br />
-                <span className="text-body-sm not-italic text-ink-muted mt-1 block">
-                  May all be happy, may all be free from disease.
-                </span>
-              </blockquote>
-            </div>
-          </section>
+        <section className="mt-14 max-w-5xl">
+          <p className="text-overline font-semibold uppercase tracking-[.16em] text-primary-700">On Sarvdev</p>
+          <div className="mt-5 grid gap-x-10 gap-y-8 md:grid-cols-3">
+            {offerings.map(([title, description], index) => (
+              <article key={title} className="border-t border-surface-border pt-4">
+                <p className="font-serif text-sm text-primary-700">0{index + 1}</p>
+                <h2 className="mt-2 font-serif text-2xl text-ink">{title}</h2>
+                <p className="mt-3 text-sm leading-6 text-ink-muted">{description}</p>
+              </article>
+            ))}
+          </div>
+        </section>
 
-          {/* Live Stats */}
-          <section>
-            <h2 className="text-h2 font-serif text-secondary-800 mb-6 text-center">Sarvdev at a Glance</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-              <div className="card p-6 text-center">
-                <div className="text-display-lg font-serif font-bold text-primary-600">
-                  {stats.temples > 0 ? stats.temples.toLocaleString() : '—'}
-                </div>
-                <p className="text-body-sm text-ink-muted mt-1">Temples Listed</p>
-              </div>
-              <div className="card p-6 text-center">
-                <div className="text-display-lg font-serif font-bold text-accent-600">
-                  {stats.devotionals > 0 ? stats.devotionals.toLocaleString() : '—'}
-                </div>
-                <p className="text-body-sm text-ink-muted mt-1">Devotional Content</p>
-              </div>
-              <div className="card p-6 text-center">
-                <div className="text-display-lg font-serif font-bold text-secondary-700">
-                  {stats.categories > 0 ? stats.categories.toLocaleString() : '—'}
-                </div>
-                <p className="text-body-sm text-ink-muted mt-1">Sacred Categories</p>
-              </div>
-            </div>
-          </section>
-
-          {/* What We Offer */}
-          <section>
-            <h2 className="text-h2 font-serif text-secondary-800 mb-6">What We Offer</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              {[
-                {
-                  title: 'Temple Directory',
-                  desc: 'Comprehensive listing of Hindu temples with details like timings, deity, location, and contact info.',
-                  icon: 'M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4',
-                },
-                {
-                  title: 'Devotional Content',
-                  desc: 'Aarti, Bhajan, Chalisa, Mantra, Stotra, and more in Hindi and English with audio playback.',
-                  icon: 'M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2z',
-                },
-                {
-                  title: 'Daily Panchang',
-                  desc: 'Check Tithi, Nakshatra, Yoga, Karana, Sunrise, and Sunset for any Indian city.',
-                  icon: 'M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707',
-                },
-                {
-                  title: 'Events & Festivals',
-                  desc: 'Stay updated with Hindu festivals, yatras, cultural events, and katha schedules.',
-                  icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z',
-                },
-              ].map((item) => (
-                <div key={item.title} className="card-interactive p-5 flex items-start gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-md flex-shrink-0">
-                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d={item.icon} />
-                    </svg>
-                  </div>
-                  <div>
-                    <h3 className="text-h4 text-secondary-700 mb-1">{item.title}</h3>
-                    <p className="text-body-sm text-ink-muted">{item.desc}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          {/* FAQ */}
-          <section>
-            <h2 className="text-h2 font-serif text-secondary-800 mb-6">Frequently Asked Questions</h2>
-            <div className="space-y-4">
-              {FAQ_ITEMS.map((faq, i) => (
-                <div key={i} className="card p-5">
-                  <h3 className="text-body font-semibold text-secondary-700 mb-2">{faq.q}</h3>
-                  <p className="text-body-sm text-ink-muted leading-relaxed">{faq.a}</p>
-                </div>
-              ))}
-            </div>
-            <script
-              type="application/ld+json"
-              dangerouslySetInnerHTML={{
-                __html: JSON.stringify({
-                  '@context': 'https://schema.org',
-                  '@type': 'FAQPage',
-                  mainEntity: FAQ_ITEMS.map(faq => ({
-                    '@type': 'Question',
-                    name: faq.q,
-                    acceptedAnswer: { '@type': 'Answer', text: faq.a },
-                  })),
-                }),
-              }}
-            />
-          </section>
-
-          {/* CTA */}
-          <section className="card bg-gradient-to-br from-primary-50 to-accent-50/30 p-8 text-center">
-            <h2 className="text-h2 font-serif text-secondary-800 mb-3">Join the Community</h2>
-            <p className="text-body text-ink-muted mb-6 max-w-xl mx-auto">
-              Whether you want to explore temples, listen to devotional content, or list your temple — Sarvdev is here for you.
-            </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link href="/temples" className="btn btn-primary no-underline hover:no-underline group">
-                Explore Temples
-                <svg className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" /></svg>
-              </Link>
-              <Link href="/list-temple" className="btn btn-outline no-underline hover:no-underline group">
-                List a Temple
-                <svg className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
-              </Link>
-            </div>
-          </section>
-
-        </div>
-      </main>
-    </>
+        <section className="mt-16 flex max-w-4xl flex-col gap-5 border-t border-surface-border pt-8 sm:flex-row sm:items-end sm:justify-between">
+          <div><h2 className="font-serif text-3xl text-ink">Help shape the directory.</h2><p className="mt-2 max-w-xl text-sm leading-6 text-ink-muted">Know of a temple that should be represented? You can share its details for review.</p></div>
+          <div className="flex gap-4"><Link href="/temples" className="btn btn-outline no-underline">Explore temples</Link><Link href="/list-temple" className="btn btn-primary no-underline">List a temple</Link></div>
+        </section>
+      </div>
+    </main>
   )
 }
