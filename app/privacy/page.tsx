@@ -1,81 +1,12 @@
-import Hero from '../../components/Hero'
+import Link from 'next/link'
+import type { Metadata } from 'next'
 
-export default function PrivacyPage() {
-  return (
-    <>
-      <Hero title="Privacy Policy" subtitle="Our commitment to your privacy" overline="Legal" />
-      <main className="content-container section-sm">
-      
-      <div className="relative card overflow-hidden max-w-3xl mx-auto">
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-accent to-primary" />
-        <div className="p-6 md:p-8 space-y-8 text-ink">
-          <p className="text-caption text-ink-faint">Last Updated: March 2026</p>
+export const metadata: Metadata = { title: 'Privacy — Sarvdev', description: 'How Sarvdev handles information shared through public forms.', alternates: { canonical: 'https://sarvdev.com/privacy' } }
 
-          <div>
-            <h2 className="text-h3 font-serif text-secondary-700 mb-3">1. Information We Collect</h2>
-            <p className="text-body-sm text-ink-muted leading-relaxed">
-              When you use Sarvdev Temple Directory, we may collect the following information:
-            </p>
-            <ul className="list-disc ml-6 mt-2 space-y-1 text-body-sm text-ink-muted">
-              <li>Temple information submitted through our listing form</li>
-              <li>Contact details (name, email, phone) when you reach out to us</li>
-              <li>Usage data and analytics to improve our services</li>
-            </ul>
-          </div>
+const sections = [
+  ['Information provided to Sarvdev', 'This can include information sent through contact and temple-submission forms, along with information needed for the site to function.'],
+  ['How it is used', 'Information may be used to operate Sarvdev, handle submissions and messages, and improve the public experience. Temple information approved for publication may appear publicly.'],
+  ['Choices and questions', 'You may contact Sarvdev about information you have submitted, including correction or deletion requests.'],
+]
 
-          <div>
-            <h2 className="text-h3 font-serif text-secondary-700 mb-3">2. How We Use Your Information</h2>
-            <p className="text-body-sm text-ink-muted leading-relaxed">We use the collected information to:</p>
-            <ul className="list-disc ml-6 mt-2 space-y-1 text-body-sm text-ink-muted">
-              <li>Provide and maintain our temple directory service</li>
-              <li>Review and approve temple listings</li>
-              <li>Respond to your inquiries and support requests</li>
-              <li>Improve user experience and website functionality</li>
-              <li>Send important updates about your submissions</li>
-            </ul>
-          </div>
-
-          <div>
-            <h2 className="text-h3 font-serif text-secondary-700 mb-3">3. Data Security</h2>
-            <p className="text-body-sm text-ink-muted leading-relaxed">
-              We implement appropriate security measures to protect your personal information from unauthorized access, alteration, or disclosure. Your data is stored securely in our database with encryption.
-            </p>
-          </div>
-
-          <div>
-            <h2 className="text-h3 font-serif text-secondary-700 mb-3">4. Information Sharing</h2>
-            <p className="text-body-sm text-ink-muted leading-relaxed">
-              We do not sell, trade, or rent your personal information to third parties. Temple information submitted for public listing will be displayed on our website for visitors to view.
-            </p>
-          </div>
-
-          <div>
-            <h2 className="text-h3 font-serif text-secondary-700 mb-3">5. Your Rights</h2>
-            <p className="text-body-sm text-ink-muted leading-relaxed">You have the right to:</p>
-            <ul className="list-disc ml-6 mt-2 space-y-1 text-body-sm text-ink-muted">
-              <li>Access and review your submitted information</li>
-              <li>Request corrections to inaccurate data</li>
-              <li>Request deletion of your personal information</li>
-              <li>Opt-out of communications</li>
-            </ul>
-          </div>
-
-          <div>
-            <h2 className="text-h3 font-serif text-secondary-700 mb-3">6. Cookies</h2>
-            <p className="text-body-sm text-ink-muted leading-relaxed">
-              We use cookies to enhance your browsing experience and analyze website traffic. You can disable cookies in your browser settings, though some features may not function properly.
-            </p>
-          </div>
-
-          <div>
-            <h2 className="text-h3 font-serif text-secondary-700 mb-3">7. Contact Us</h2>
-            <p className="text-body-sm text-ink-muted leading-relaxed">
-              If you have questions about this Privacy Policy, please <a href="/contact" className="text-primary-600 font-semibold hover:text-primary-700 transition-colors">contact us</a>.
-            </p>
-          </div>
-        </div>
-      </div>
-      </main>
-    </>
-  )
-}
+export default function PrivacyPage() { return <main className="bg-surface pb-20"><article className="page-container max-w-4xl py-12 sm:py-16"><header className="border-l-2 border-primary-700 pl-5"><p className="text-overline uppercase tracking-[.16em] text-primary-700">Policies</p><h1 className="mt-3 font-serif text-4xl text-ink">Privacy</h1><p className="mt-4 text-lg leading-8 text-ink-muted">How information shared with Sarvdev is handled.</p></header><div className="mt-12 divide-y divide-surface-border border-y border-surface-border">{sections.map(([title, text], index) => <section key={title} className="grid gap-3 py-7 sm:grid-cols-[3rem_1fr]"><p className="font-serif text-primary-700">0{index + 1}</p><div><h2 className="font-serif text-2xl text-ink">{title}</h2><p className="mt-2 text-sm leading-7 text-ink-muted">{text}</p></div></section>)}</div><p className="mt-10 text-sm text-ink-muted">Questions about this policy can be sent through <Link href="/contact" className="font-semibold text-primary-800 underline">Contact</Link>.</p></article></main> }
