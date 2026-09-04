@@ -12,8 +12,8 @@ const navItems = MAIN_NAV_ITEMS
 
 // Curated primary nav for the desktop header — a focused subset of MAIN_NAV_ITEMS.
 // The mobile slide-in menu still lists every item so all sections stay reachable.
-const PRIMARY_NAV_IDS = ['temples', 'deities', 'devotionals', 'daily-darshan']
-const EXPLORE_NAV_ITEMS = ['spiritual-icons', 'panchang', 'events']
+const PRIMARY_NAV_IDS = ['temples', 'deities', 'devotionals', 'spiritual-icons']
+const EXPLORE_NAV_ITEMS = ['spiritual-icons', 'panchang', 'events', 'blog', 'daily-darshan']
 const primaryNavItems = PRIMARY_NAV_IDS
   .map((id) => navItems.find((item) => item.id === id))
   .filter((item): item is NonNullable<typeof item> => Boolean(item))
@@ -282,7 +282,7 @@ export default function Header() {
                   <svg className={`h-3 w-3 transition-transform ${megaOpen === 'explore' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" d="m6 9 6 6 6-6" /></svg>
                 </button>
                 {megaOpen === 'explore' && <div role="menu" className="absolute left-0 top-full z-[70] mt-2 w-48 border bg-surface p-2 shadow-elevated" style={{ borderColor: 'var(--color-border)' }}>
-                  {exploreNavItems.map((item) => <Link key={item.href} href={item.href} role="menuitem" onClick={() => setMegaOpen(null)} className="block rounded-lg px-3 py-2 text-body-sm text-ink no-underline hover:bg-surface-sunken hover:text-primary">{t(item.labelKey)}</Link>)}
+                  {exploreNavItems.map((item) => <Link key={item.href} href={item.href} role="menuitem" onClick={() => setMegaOpen(null)} className="block rounded-lg px-3 py-2 text-body-sm text-ink no-underline hover:bg-surface-sunken hover:text-primary">{item.id === 'blog' ? 'Blog / Sacred Stories' : t(item.labelKey)}</Link>)}
                 </div>}
               </div>
             </div>
