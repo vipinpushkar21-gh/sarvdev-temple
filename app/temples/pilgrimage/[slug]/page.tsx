@@ -4,20 +4,16 @@ import { connectDB } from '@/lib/db'
 import Temple from '@/models/Temple'
 import { notFound } from 'next/navigation'
 import RelatedSacredContent from '@/components/RelatedSacredContent'
-import { getTemplesForSacredCategory, SHAKTI_PEETH_CATEGORY } from '@/data/shakti-peethas'
+import { SHAKTI_PEETH_CATEGORY } from '@/data/shakti-peethas'
 import { SACRED_CATEGORIES, getCategoryBySlug } from '@/lib/sacred-categories'
 import SarvdevImage from '@/components/SarvdevImage'
 import { getTempleCardImage } from '@/lib/temple-image'
+import { resolveMediaOriginal, type SarvdevMediaInput } from '@/lib/media-asset'
 
 const BASE = 'https://sarvdev.com'
 
 function slugify(text: string) {
   return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
-}
-
-function matchesSacredCategory(value: string | undefined | null, cluster: PilgrimageCluster) {
-  if (!value) return false
-  return value === cluster.categoryMatch || slugify(value) === cluster.slug
 }
 
 function getCategoryQueryValues(cluster: PilgrimageCluster) {
@@ -30,6 +26,18 @@ function getCategoryQueryValues(cluster: PilgrimageCluster) {
   ].filter(Boolean) as string[]))
 }
 
+type TempleMediaFields = {
+  cardMedia?: SarvdevMediaInput
+  primaryMedia?: SarvdevMediaInput
+  imageCard?: SarvdevMediaInput
+  image?: SarvdevMediaInput
+}
+
+function hasTempleMedia(temple: TempleMediaFields) {
+  return [temple.cardMedia, temple.primaryMedia, temple.imageCard, temple.image]
+    .some((media) => Boolean(resolveMediaOriginal(media)))
+}
+
 type PilgrimageCluster = {
   slug: string
   title: string
@@ -38,7 +46,6 @@ type PilgrimageCluster = {
   longDescription: string
   categoryMatch: string
   deity: string
-  icon: string
   relatedClusters: string[]
 }
 
@@ -51,7 +58,6 @@ const CLUSTERS: PilgrimageCluster[] = SACRED_CATEGORIES.filter(c => c.isActive).
   longDescription: cat.longDescription,
   categoryMatch: cat.name,
   deity: cat.deity,
-  icon: cat.icon,
   relatedClusters: cat.relatedSlugs,
 }))
 
@@ -79,7 +85,7 @@ export async function generateMetadata(
     keywords: [cluster.title, cluster.titleHi, 'pilgrimage', 'temples', 'India', 'Sarvdev'],
     alternates: { canonical: url },
     openGraph: { title: `${cluster.title} — Sarvdev`, description: cluster.description, url, type: 'website', siteName: 'Sarvdev' },
-    twitter: { card: 'summary_large_image', title: `${cluster.title} — Sarvdev`, description: cluster.description },
+    twitter: { card: 'summary', title: `${cluster.title} — Sarvdev`, description: cluster.description },
   }
 }
 
@@ -115,14 +121,9 @@ export default async function PilgrimageClusterPage({
         ...(cluster.categoryMatch === SHAKTI_PEETH_CATEGORY ? [{ canonicalShaktiPeeth: true }] : []),
       ],
     }
-    const projection = 'title slug description image imageCard city state country deity categories sacredCategories sacredCategorySlugs templeType templeTypes canonicalShaktiPeeth canonicalShaktiPeethKey canonicalShaktiPeethName shaktiPeethMeta'
+    const projection = 'title titleHi slug description image imageCard primaryMedia cardMedia city state country deity categories sacredCategories sacredCategorySlugs templeType templeTypes canonicalShaktiPeeth canonicalShaktiPeethKey canonicalShaktiPeethName shaktiPeethMeta'
 
-    if (cluster.categoryMatch === SHAKTI_PEETH_CATEGORY) {
-      const candidates = await Temple.find(categoryFilter, projection).sort({ createdAt: -1 }).limit(300).lean() as any[]
-      const canonicalTemples = getTemplesForSacredCategory(candidates, cluster.categoryMatch)
-      totalTemples = canonicalTemples.length
-      temples = canonicalTemples.slice(skip, skip + PAGE_SIZE)
-    } else {
+    {
       const [items, total] = await Promise.all([
         Temple.find(categoryFilter, projection)
           .sort({ createdAt: -1, _id: 1 })
@@ -131,10 +132,7 @@ export default async function PilgrimageClusterPage({
           .lean() as Promise<any[]>,
         Temple.countDocuments(categoryFilter),
       ])
-      temples = items.filter((t: any) =>
-        [...(t.categories || []), ...(t.sacredCategories || [])].some((c: string) => matchesSacredCategory(c, cluster)) ||
-        (t.sacredCategorySlugs || []).includes(cluster.slug)
-      )
+      temples = items
       totalTemples = total
     }
   } catch (e) {
@@ -155,10 +153,10 @@ export default async function PilgrimageClusterPage({
     url: `${BASE}/temples/pilgrimage/${slug}`,
     mainEntity: {
       '@type': 'ItemList',
-      numberOfItems: totalTemples,
+      numberOfItems: temples.length,
       itemListElement: temples.slice(0, 50).map((t: any, i: number) => ({
         '@type': 'ListItem',
-        position: i + 1,
+        position: skip + i + 1,
         name: t.title,
         url: `${BASE}/temples/${slugify(t.title)}`,
       })),
@@ -182,7 +180,7 @@ export default async function PilgrimageClusterPage({
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
-      <section className="bg-gradient-to-br from-primary-50 via-surface to-accent-50/30 border-b border-surface-border">
+      <section className="border-b border-surface-border bg-surface">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
           <nav className="flex items-center gap-2 text-body-sm text-ink-muted mb-6">
             <Link href="/" className="hover:text-primary-600 transition-colors no-underline">Home</Link>
@@ -191,16 +189,10 @@ export default async function PilgrimageClusterPage({
             <span>/</span>
             <span className="text-ink font-medium">Pilgrimage Circuits</span>
           </nav>
-          <div className="flex items-center gap-3 mb-4">
-            <span className="text-4xl">{cluster.icon}</span>
-            <div>
-              <h1 className="text-display font-serif text-secondary-800">{cluster.title}</h1>
-              <p className="text-body-sm text-ink-faint font-serif">{cluster.titleHi}</p>
-            </div>
-          </div>
+          <div className="border-l-2 border-primary-700 pl-5"><p className="text-overline font-semibold uppercase tracking-[.16em] text-primary-700">Sacred Collection</p><h1 className="mt-3 text-display font-serif text-secondary-800">{cluster.title}</h1><p className="text-body-sm text-ink-faint font-serif">{cluster.titleHi}</p></div>
           <p className="text-body text-ink-muted max-w-3xl">{cluster.longDescription}</p>
           <p className="mt-4 text-body-sm text-ink-faint">
-            <strong className="text-ink">{totalTemples}</strong> temples in this sacred group
+            <strong className="text-ink">{totalTemples}</strong> temples currently available on Sarvdev
             {states.length > 0 && <> across <strong className="text-ink">{states.length}</strong> states</>}
           </p>
         </div>
@@ -232,23 +224,19 @@ export default async function PilgrimageClusterPage({
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 gap-x-10 gap-y-7 sm:grid-cols-2 lg:grid-cols-3">
             {temples.map((t: any) => (
               <Link key={t._id.toString()} href={`/temples/${t.slug || slugify(t.title)}`}
-                className="group card overflow-hidden hover:shadow-md transition-all duration-300 no-underline">
-                <div className="relative h-48 overflow-hidden">
-                  <SarvdevImage
-                    image={getTempleCardImage(t)}
-                    alt={`${t.title} — ${cluster.title}`}
-                    className="absolute inset-0"
-                    imgClassName="object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
+                className="group border-t border-surface-border pt-4 no-underline">
+                {hasTempleMedia(t) && <div className="relative mb-4 h-44 overflow-hidden bg-surface-sunken">
+                  <SarvdevImage image={getTempleCardImage(t)} alt={`${t.title} — ${cluster.title}`} className="absolute inset-0" imgClassName="object-cover group-hover:scale-105 transition-transform duration-500" />
                   {t.deity && (
                     <span className="absolute bottom-2 left-2 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-white/90 text-ink backdrop-blur-sm">{t.deity}</span>
                   )}
-                </div>
+                </div>}
                 <div className="p-4">
                   <h3 className="text-body font-semibold text-ink group-hover:text-primary-700 transition-colors line-clamp-1">{t.title}</h3>
+                  {t.titleHi && <p className="mt-1 font-devanagari text-body-sm text-ink-muted">{t.titleHi}</p>}
                   <p className="text-caption text-ink-muted mt-1">{[t.city, t.state].filter(Boolean).join(', ')}</p>
                   {t.description && (
                     <p className="text-caption text-ink-faint mt-2 line-clamp-2">{t.description.replace(/<[^>]+>/g, '').slice(0, 120)}</p>
@@ -289,18 +277,13 @@ export default async function PilgrimageClusterPage({
         {relatedClusters.length > 0 && (
           <section className="mt-16 pt-10 border-t border-surface-border">
             <h2 className="text-h3 font-serif text-secondary-700 mb-4">Related Pilgrimage Circuits</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-x-8 gap-y-5 sm:grid-cols-2 lg:grid-cols-3">
               {relatedClusters.map(rc => (
                 <Link key={rc.slug} href={`/temples/pilgrimage/${rc.slug}`}
-                  className="group card p-5 hover:shadow-md transition-all no-underline">
-                  <div className="flex items-start gap-3">
-                    <span className="text-2xl">{rc.icon}</span>
-                    <div>
-                      <h3 className="text-body font-semibold text-ink group-hover:text-primary-700 transition-colors">{rc.title}</h3>
-                      <p className="text-caption text-ink-faint font-serif">{rc.titleHi}</p>
-                      <p className="text-caption text-ink-muted mt-1 line-clamp-2">{rc.description}</p>
-                    </div>
-                  </div>
+                  className="group border-l border-primary-200 pl-4 no-underline">
+                  <h3 className="text-body font-semibold text-ink group-hover:text-primary-700 transition-colors">{rc.title}</h3>
+                  <p className="text-caption text-ink-faint font-serif">{rc.titleHi}</p>
+                  <p className="text-caption text-ink-muted mt-1 line-clamp-2">{rc.description}</p>
                 </Link>
               ))}
             </div>
@@ -309,7 +292,7 @@ export default async function PilgrimageClusterPage({
 
         <RelatedSacredContent
           title="Explore More"
-          states={[{ href: '/sacred-categories', label: 'All Sacred Categories' }, { href: '/temples', label: 'All Temples' }, { href: '/events', label: 'Events & Festivals' }]}
+          states={[{ href: '/temples/pilgrimage', label: 'All Sacred Collections' }, { href: '/temples', label: 'All Temples' }, { href: '/events', label: 'Events & Festivals' }]}
           deities={cluster.deity ? [{ href: `/temples/deity/${slugify(cluster.deity)}`, label: `${cluster.deity} Temples` }] : []}
         />
       </main>
