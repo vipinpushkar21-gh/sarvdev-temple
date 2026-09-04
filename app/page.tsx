@@ -79,12 +79,8 @@ export default async function HomePage() {
   try {
     await connectDB()
     const now = new Date().toISOString().slice(0, 10)
-    const [count, temple, temples, darshan, discovery, deities, devotionals, events] = await Promise.all([
+    const [count, temples, darshan, discovery, deities, devotionals, events] = await Promise.all([
       Temple.countDocuments({ status: 'approved' }),
-      Temple.findOne({ status: 'approved', $or: [{ imageHero: { $exists: true, $ne: '' } }, { heroMedia: { $exists: true, $ne: null } }, { image: { $exists: true, $ne: '' } }] })
-        .select('title image imageHero heroImage primaryMedia heroMedia location city state')
-        .sort({ updatedAt: -1, createdAt: -1 })
-        .lean(),
       Temple.find({ status: 'approved' })
         .select('title description location city state slug')
         .sort({ updatedAt: -1, createdAt: -1 })
@@ -131,7 +127,9 @@ export default async function HomePage() {
         .lean(),
     ])
     templeCount = count
-    heroTemple = JSON.parse(JSON.stringify(temple))
+    // Temple media has no stored homepage-curation or heritage-suitability signal.
+    // Do not elevate generic Temple image fields into a global homepage identity.
+    heroTemple = null
     seoTemples = JSON.parse(JSON.stringify(temples))
     featuredDarshan = JSON.parse(JSON.stringify(darshan))
     discoveryTemples = JSON.parse(JSON.stringify(discovery))
