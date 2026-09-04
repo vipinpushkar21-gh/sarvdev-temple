@@ -1,8 +1,6 @@
 import './globals.css'
 import { fontVariables } from './fonts'
-import Header from '../components/Header'
-import Footer from '../components/Footer'
-import Disclaimer from '../components/Disclaimer'
+import AppChrome from '../components/AppChrome'
 import GoogleAnalytics from './components/GoogleAnalytics'
 import { Analytics } from '@vercel/analytics/next'
 import React from 'react'
@@ -13,13 +11,8 @@ import { TempleDataProvider } from '../lib/temple-data'
 import VisitorTracker from '../components/VisitorTracker'
 import AuthGuard from '../components/AuthGuard'
 import { ToastProvider } from '../components/Toast'
-import ScrollToTop from '../components/ScrollToTop'
-import MobileBottomNav from '../components/MobileBottomNav'
-import AudioPlayerBar from '../components/AudioPlayerBar'
-import SpiritualChatbot from '../components/SpiritualChatbot'
 import { ThemeProvider } from '../lib/theme'
 import PWARegister from '../components/PWARegister'
-import ScrollRevealInit from '../components/ScrollRevealInit'
 import ScrollRestorer from '../components/ScrollRestorer'
 
 export const viewport = {
@@ -139,18 +132,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <AudioPlayerProvider>
           <ToastProvider>
             <AuthGuard />
-            <Header />
-            <Disclaimer />
             <VisitorTracker />
-            <div className="flex-1">
-              {children}
-            </div>
-            <Footer />
-            <AudioPlayerBar />
-            <MobileBottomNav />
-            <ScrollToTop />
-            <SpiritualChatbot />
-            <ScrollRevealInit />
+            <AppChrome>{children}</AppChrome>
             <ScrollRestorer />
           </ToastProvider>
           </AudioPlayerProvider>
