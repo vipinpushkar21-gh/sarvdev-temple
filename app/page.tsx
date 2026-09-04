@@ -102,6 +102,7 @@ export default async function HomePage() {
         .lean(),
       Deity.find({
         status: 'approved',
+        slug: { $not: /^smoke-test-/i },
         $or: [{ primaryMedia: { $exists: true, $ne: null } }, { cardMedia: { $exists: true, $ne: null } }],
       })
         .select('name nameHi slug description categoryName image imageCard primaryMedia cardMedia order updatedAt')
